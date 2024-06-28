@@ -1,0 +1,8 @@
+[package]
+name = "nvm1"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+chumsky = { git = "https://github.com/zesterer/chumsky" }
+clap = { version = "4.5.8", features = ["derive"] }
