@@ -1,60 +1,72 @@
+mod generator;
 mod parser;
+mod lexer;
 
-use ariadne::{sources, Color, Label, Report, ReportKind};
-use parser::{Expr, Token, parser, lexer};
-use chumsky::prelude::*;
-
+use lexer::Lexer;
+use parser::Parser;
+use chrono::{DateTime, Local};
 use clap::Parser as CliParser;
+use std::fs::{File, read_to_string};
+use std::io::{Write, BufReader, stdin, stdout};
+use std::collections::HashMap;
+
 #[derive(CliParser, Debug)]
 #[command(version, about, long_about = None)]
 struct Config {
-    /// File to be run
-    file: String,
+    /// File to be run (exclude for repl)
+    file: Option<String>,
 }
 
 fn main() {
     let config = Config::parse();
-    let src = std::fs::read_to_string(config.file.clone()).expect("unable to read file");
 
-    let (tokens, mut errs) = lexer().parse(src.as_str()).into_output_errors();
+    if let Some(file_name) = config.file {
+        let file = File::open(file_name.clone()).expect("unable to read file");
+        let reader = BufReader::new(file);
+        let mut symbol_map = HashMap::new();
+        let lexer = Lexer::new(reader, &mut symbol_map);
+        let mut parser = Parser::new(lexer);
 
-    let parse_errs = if let Some(tokens) = &tokens {
-        let (ast, parse_errs) = parser()
-            .map_with(|ast, e| (ast, e.span()))
-            .parse(tokens.as_slice().spanned((src.len()..src.len()).into()))
-            .into_output_errors();
+        let (stmts, errs) = parser.parse_program();
 
-        if let Some((stmts, file_span)) = ast.filter(|_| errs.len() + parse_errs.len() == 0) {
-            todo!("Eval the AST");
+        if !errs.is_empty() {
+            // sort the errors by their span
+            // read file line by line,
+            // if line contains the errs span
+            //  display the error
+            for err in errs.iter() {
+                println!("Error: {:#?}", err);
+            }
         }
 
-        parse_errs
-    } else {
-        Vec::new()
-    };
+        println!("{:#?}", stmts);
 
-    errs.into_iter()
-        .map(|e| e.map_token(|c| c.to_string()))
-        .chain(
-            parse_errs
-                .into_iter()
-                .map(|e| e.map_token(|tok| tok.to_string())),
-        )
-        .for_each(|e| {
-            Report::build(ReportKind::Error, config.file.clone(), e.span().start)
-                .with_message(e.to_string())
-                .with_label(
-                    Label::new((config.file.clone(), e.span().into_range()))
-                        .with_message(e.reason().to_string())
-                        .with_color(Color::Red),
-                )
-                .with_labels(e.contexts().map(|(label, span)| {
-                    Label::new((config.file.clone(), span.into_range()))
-                        .with_message(format!("while parsing this {}", label))
-                        .with_color(Color::Yellow)
-                }))
-                .finish()
-                .print(sources([(config.file.clone(), src.clone())]))
-                .unwrap()
-        });
+        // let generator = Generator::new();
+        // let code = generator.generate(ast);
+        // let vm = VM::new();
+        
+    } else {
+        let local_time: DateTime<Local> = Local::now();
+        let date = local_time.format("%Y-%m-%d %H:%M");
+
+        println!("NVM1 0.0.0 [ {} ]", date);
+        println!("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
+
+        let mut symbol_map = HashMap::new();
+
+        loop {
+            print!("==> ");
+            stdout().flush().expect("failed to flush stdout");
+
+            let stdin = stdin();
+            let reader = BufReader::new(stdin);
+            let lexer = Lexer::new(reader, &mut symbol_map);
+            let mut parser = Parser::new(lexer);
+
+            match parser.parse_stmt() {
+                Ok(stmt) => println!("{:#?}", stmt),
+                Err(err) => println!("{:#?}", err),
+            }
+        }
+    }
 }

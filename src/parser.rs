@@ -1,246 +1,485 @@
-use chumsky::prelude::*;
-use std::fmt;
+use super::lexer::{Op, Lex, Token, Ctrl, KeyWord};
 
-pub type Spanned<T> = (T, Span);
-
-#[derive(Clone, Debug, PartialEq)]
-pub enum Token<'src> {
-    Null,
-    Bool(bool),
-    Int(i64),
-    Str(&'src str),
-    Op(&'src str),
-    Ctrl(char),
-    Ident(&'src str),
-    Print,
-    While,
-    If,
-    Else,
-    Return,
-}
-
-impl<'src> fmt::Display for Token<'src> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Token::Bool(x)  => write!(f, "{}", x),
-            Token::Int(n)   => write!(f, "{}", n),
-            Token::Str(s)   => write!(f, "{}", s),
-            Token::Op(s)    => write!(f, "{}", s),
-            Token::Ctrl(c)  => write!(f, "{}", c),
-            Token::Ident(s) => write!(f, "{}", s),
-            Token::Print    => write!(f, "print"),
-            Token::If       => write!(f, "if"),
-            Token::Else     => write!(f, "else"),
-            Token::While    => write!(f, "while"),
-            Token::Return   => write!(f, "return"),
-            Token::Null     => write!(f, "null"),
+impl<T> Span<T> {
+    pub fn new(val: T, span: (usize, usize)) -> Self {
+        Self {
+            val,
+            span,
         }
     }
 }
 
-pub type Span = SimpleSpan<usize>;
-
-pub fn lexer<'src>(
-) -> impl Parser<'src, &'src str, Vec<(Token<'src>, Span)>, extra::Err<Rich<'src, char, Span>>> {
-    // A parser for numbers
-    let num = text::int(10)
-        .to_slice()
-        .from_str()
-        .unwrapped()
-        .map(Token::Int);
-
-    // A parser for strings
-    let str_ = just('"')
-        .ignore_then(none_of('"').repeated())
-        .then_ignore(just('"'))
-        .to_slice()
-        .map(Token::Str);
-
-    // A parser for operators
-    let op = one_of("+*-/!=")
-        .repeated()
-        .at_least(1)
-        .to_slice()
-        .map(Token::Op);
-
-    // A parser for control characters (delimiters, semicolons, etc.)
-    let ctrl = one_of("()[]{};:,").map(Token::Ctrl);
-
-    // A parser for identifiers and keywords
-    let ident = text::ascii::ident().map(|ident: &str| match ident {
-        "print"  => Token::Print,
-        "while"  => Token::While,
-        "if"     => Token::If,
-        "else"   => Token::Else,
-        "return" => Token::Return,
-        "true"   => Token::Bool(true),
-        "false"  => Token::Bool(false),
-        "null"   => Token::Null,
-        _        => Token::Ident(ident),
-    });
-
-    // A single token can be one of the above
-    let token = num.or(str_).or(op).or(ctrl).or(ident);
-
-    let single_line_comment = just("//")
-        .then(any().and_is(just('\n').not()).repeated())
-        .padded();
-
-    //let multi_line_comment = just("/*")
-     //   .then(any().and_is(just("*/").not()).repeated())
-      //  .then_ignore(just("*/"))
-       // .padded();
-    //
-
-    token
-        .map_with(|tok, e| (tok, e.span()))
-        .padded_by(single_line_comment.repeated())
-        //.padded_by(multi_line_comment.repeated())
-        .padded()
-        // If we encounter an error, skip and attempt to lex the next character as a token instead
-        .recover_with(skip_then_retry_until(any().ignored(), end()))
-        .repeated()
-        .collect()
+enum Context {
+    Loop,
+    Func,
 }
 
 #[derive(Debug)]
-pub enum Value<'a> {
+pub struct Span<T> {
+    val: T,
+    span: (usize, usize)
+}
+
+#[derive(Debug)]
+pub enum SyntaxError {
+    Expected(char),
+    Unexpected(Token),
+}
+
+pub struct Parser<T: Lex> {
+    lexer: T,
+    context: Vec<Context>
+}
+
+#[derive(Debug)]
+pub enum Value {
     Null,
-    Int(i64),
-    Var(&'a str),
-    Fn {
-        args: Vec<&'a str>,
-        body: Vec<Expr<'a>>,
-        then: Box<Expr<'a>>,
+    Float(f64),
+    Int(isize),
+    Ident(usize),
+    String(String),
+    Func {
+        params: Vec<usize>,
+        stmt: Box<Stmt>
     },
+    List(Vec<Span<Expr>>),
+    Map(Vec<(Span<Expr>, Span<Expr>)>),
     Bool(bool),
-    Str(&'a str)
-}
-
-#[derive(Clone, Copy, Debug)]
-enum Binop {
-    Mul, 
-    Div,
-    Add,
-    Sub,
-    Eq,
-    NotEq
 }
 
 #[derive(Debug)]
-pub enum Expr<'a> {
-    Error,
-    Value(Value<'a>),
-
-    Neg(Box<Expr<'a>>),
-    Binary(Box<Expr<'a>>, Binop, Box<Expr<'a>>),
-    Call(Box<Expr<'a>>, Vec<Expr<'a>>),
-    Print(Box<Expr<'a>>)
-}
-
-fn expr_parser<'tokens, 'src: 'tokens>() -> impl Parser<
-    'tokens,
-    ParserInput<'tokens, 'src>,
-    Spanned<Expr<'src>>,
-    extra::Err<Rich<'tokens, Token<'src>, Span>>,
-> + Clone {
-    let expr = recursive(|expr| {
-        let val = select! {
-            Token::Null => Expr::Value(Value::Null),
-            Token::Bool(x) => Expr::Value(Value::Bool(x)),
-            Token::Int(n) => Expr::Value(Value::Int(n)),
-            Token::Str(s) => Expr::Value(Value::Str(s)),
-            // TODO add funcs, objs, lists
-        }
-            .labelled("value");
-
-        let ident = select! { Token::Ident(ident) => Expr::Value(Value::Var(ident)) }.labelled("identifier");
-        let expr = ident
-            .or(val)
-            .or(just(Token::Print)
-                .ignore_then(
-                    expr.clone()
-                        .delimited_by(just(Token::Ctrl('(')), just(Token::Ctrl(')'))),
-                )
-                .map(|expr| Expr::Print(Box::new(expr))))
-            .or(expr
-                .clone()
-                .delimited_by(just(Token::Ctrl('(')), just(Token::Ctrl(')'))));
-
-        let op = just(Token::Op("*"))
-            .to(Binop::Mul)
-            .or(just(Token::Op("/")).to(Binop::Div));
-        let product = expr
-            .clone()
-            .foldl_with(op.then(expr.clone()).repeated(), |a, (op, b), _| {
-                Expr::Binary(Box::new(a), op, Box::new(b))
-            });
-
-        // Sum ops (add and subtract) have equal precedence
-        let op = just(Token::Op("+"))
-            .to(Binop::Add)
-            .or(just(Token::Op("-")).to(Binop::Sub));
-        let sum = product
-            .clone()
-            .foldl_with(op.then(product).repeated(), |a, (op, b), _| {
-                Expr::Binary(Box::new(a), op, Box::new(b))
-            });
-
-        // Comparison ops (equal, not-equal) have equal precedence
-        let op = just(Token::Op("=="))
-            .to(Binop::Eq)
-            .or(just(Token::Op("!=")).to(Binop::NotEq));
-        let compare = sum
-            .clone()
-            .foldl_with(op.then(sum).repeated(), |a, (op, b), _| {
-                Expr::Binary(Box::new(a), op, Box::new(b))
-            });
-
-        let op_expr = compare.labelled("expression").as_context();
-
-        op_expr
-    });
-
-    expr.map_with(|val, e| (val, e.span()))
-}
-
-#[derive(Debug)]
-pub enum Stmt<'a> {
-    Assign {
-        rhs: Expr<'a>,
-        lhs: Expr<'a>,
+pub enum Expr {
+    Value(Value),
+    Binop {
+        lhs: Box<Span<Expr>>,
+        op: Op,
+        rhs: Box<Span<Expr>>,
     },
-    Expr(Expr<'a>),
-    Block(Block<'a>)
+    Access {
+        store: Box<Span<Expr>>,
+        key: usize,
+    },
+    Index {
+        store: Box<Span<Expr>>,
+        key: Box<Span<Expr>>,
+    },
+    Call {
+        calle: Box<Span<Expr>>,
+        args: Vec<Span<Expr>>
+    }
 }
 
 #[derive(Debug)]
-struct Block<'a> {
-    stmts: Vec<Stmt<'a>>,
-    span: Span
+pub enum Stmt {
+    Expr(Box<Span<Expr>>),
+    Return(Box<Span<Expr>>),
+    Assign {
+        dest: Box<Span<Expr>>,
+        src: Box<Span<Expr>>
+    },
+    While {
+        cond: Box<Span<Expr>>,
+        stmt: Box<Stmt>
+    },
+    If {
+        cond: Box<Span<Expr>>,
+        stmt: Box<Stmt>
+    },
+    IfElse {
+        cond: Box<Span<Expr>>,
+        stmt: Box<Stmt>,
+        else_stmt: Box<Stmt>
+    },
+    Block {
+        stmts: Vec<Stmt>
+    },
+    Continue,
+    Break,
 }
 
-type ParserInput<'tokens, 'src> =
-    chumsky::input::SpannedInput<Token<'src>, Span, &'tokens [(Token<'src>, Span)]>;
+impl<T: Lex> Parser<T> {
+    pub fn new(lexer: T) -> Self {
+        Self {
+            lexer,
+            context: vec![],
+        }
+    }
+
+    pub fn parse_program(&mut self) -> (Vec<Stmt>, Vec<Span<SyntaxError>>) {
+        let mut stmts = vec![];
+        let mut errs = vec![];
+
+        loop {
+            if let Token::Ctrl(Ctrl::End) = self.lexer.peek().token {
+                break;
+            }
+
+            match self.parse_stmt() {
+                Ok(stmt) => stmts.push(stmt),
+                Err(err) => {
+                    errs.push(err);
+
+                    loop {
+                        match self.lexer.get_token().token {
+                            Token::Ctrl(Ctrl::SemiColon) | 
+                            Token::Ctrl(Ctrl::End) => break,
+                            _ => {}
+                        }
+                    }
+                }
+            }
+        }
+
+        (stmts, errs)
+    }
+
+    pub fn parse_stmt(&mut self) -> Result<Stmt, Span<SyntaxError>> {
+        match self.lexer.peek().token {
+            Token::KeyWord(KeyWord::If) => {
+                let _ = self.lexer.get_token();
+                let cond = Box::new(self.parse_expr()?);
+                let stmt = Box::new(self.parse_stmt()?);
+
+                if let Token::KeyWord(KeyWord::Else) = self.lexer.peek().token {
+                    let _ = self.lexer.get_token();
+                    let else_stmt = Box::new(self.parse_stmt()?);
+                    return Ok(Stmt::IfElse { cond, stmt, else_stmt })
+                }
+
+                return Ok(Stmt::If { cond, stmt })
+            }
+            Token::KeyWord(KeyWord::While) => {
+                let _ = self.lexer.get_token();
+                let cond = Box::new(self.parse_expr()?);
+                self.context.push(Context::Loop);
+                let stmt = Box::new(self.parse_stmt()?);
+                self.context.pop();
+
+                return Ok(Stmt::While { cond, stmt })
+            }
+            Token::KeyWord(KeyWord::Return) => {
+                let _ = self.lexer.get_token();
+
+                let expr = Box::new(self.parse_expr()?);
+                let next = self.lexer.get_token();
+                if let Token::Ctrl(Ctrl::SemiColon) = next.token {
+                    return Ok(Stmt::Return(expr));
+                } else {
+                    return Err(Span::new(SyntaxError::Expected(';'), next.span));
+                }
+            }
+            Token::KeyWord(KeyWord::Continue) => {
+                let token = self.lexer.get_token();
+
+                if let Some(Context::Loop) = self.context.last() {
+                    let next = self.lexer.get_token();
+                    if let Token::Ctrl(Ctrl::SemiColon) = next.token {
+                        return Ok(Stmt::Continue);
+                    } else {
+                        return Err(Span::new(SyntaxError::Expected(';'), next.span));
+                    }
+                } else {
+                    return Err(Span::new(SyntaxError::Unexpected(token.token), token.span));
+                }
+            }
+            Token::KeyWord(KeyWord::Break) => {
+                let token = self.lexer.get_token();
+
+                if let Some(Context::Loop) = self.context.last() {
+                    let next = self.lexer.get_token();
+                    if let Token::Ctrl(Ctrl::SemiColon) = next.token {
+                        return Ok(Stmt::Break);
+                    } else {
+                        return Err(Span::new(SyntaxError::Expected(';'), next.span));
+                    }
+                } else {
+                    return Err(Span::new(SyntaxError::Unexpected(token.token), token.span));
+                }
+            }
+            // TODO parse blocks, how to collect errors?
+            _ => {}
+        }
+
+        let expr = self.parse_expr()?;
+        let token = self.lexer.get_token();
+
+        match token.token {
+            Token::Ctrl(Ctrl::Equal) => {
+                let src = self.parse_expr()?;
+
+                let next = self.lexer.get_token();
+                if let Token::Ctrl(Ctrl::SemiColon) = next.token {
+                } else {
+                    return Err(Span::new(SyntaxError::Expected(';'), next.span));
+                }
+
+                // TODO assert src is either an access, ident, or index
+
+                Ok(Stmt::Assign {
+                    dest: Box::new(expr),
+                    src: Box::new(src)
+                })
+            }
+            Token::Ctrl(Ctrl::SemiColon) => Ok(Stmt::Expr(Box::new(expr))),
+            _ => {
+                Err(Span::new(SyntaxError::Expected(';'), token.span))
+            }
+        }
+    }
+
+    fn parse_expr(&mut self) -> Result<Span<Expr>, Span<SyntaxError>> {
+        let mut lhs = self.parse_expr_atom()?;
+
+        loop {
+            match self.lexer.peek().token {
+                Token::Op(op) => {
+                    let _ = self.lexer.get_token();
+                    let rhs = self.parse_expr()?;
+                    let new_span = (lhs.span.0, rhs.span.1);
+
+                    lhs = Span::new(
+                            Expr::Binop {
+                                lhs: Box::new(lhs),
+                                op,
+                                rhs: Box::new(rhs),
+                            },
+                            new_span
+                        );
+                }
+                Token::Ctrl(Ctrl::Period) => {
+                    let _ = self.lexer.get_token();
+                    let next = self.lexer.get_token();
+
+                    if let Token::Ident(id) = next.token {
+                        lhs = Span::new(
+                                Expr::Access {
+                                    store: Box::new(lhs),
+                                    key: id
+                                },
+                                next.span
+                            );
+
+                    } else {
+                        return Err(Span::new(SyntaxError::Unexpected(next.token), next.span));
+                    }
+                }
+                Token::Ctrl(Ctrl::LeftParen) => {
+                    let _ = self.lexer.get_token();
+                    if let Token::Ctrl(Ctrl::RightParen) = self.lexer.peek().token {
+                        let rp = self.lexer.get_token();
+                        let span = (lhs.span.0, rp.span.1);
+
+                        lhs = Span::new(
+                                Expr::Call {
+                                    calle: Box::new(lhs),
+                                    args: vec![]
+                                },
+                                span
+                            );
+                    } else {
+                        let mut args = vec![];
+
+                        loop {
+                            let expr = self.parse_expr()?;
+                            let next = self.lexer.get_token();
+
+                            args.push(expr);
+
+                            match next.token {
+                                Token::Ctrl(Ctrl::RightParen) => {
+                                    let span = (lhs.span.0, next.span.1);
+
+                                    lhs = Span::new(
+                                            Expr::Call {
+                                                calle: Box::new(lhs),
+                                                args
+                                            },
+                                            span
+                                        );
+                                    break;
+                                }
+                                Token::Ctrl(Ctrl::Comma) => {
+                                    if let Token::Ctrl(Ctrl::RightParen) = self.lexer.peek().token {
+                                        let rp = self.lexer.get_token();
+                                        let span = (lhs.span.0, rp.span.1);
+
+                                        lhs = Span::new(
+                                                Expr::Call {
+                                                    calle: Box::new(lhs),
+                                                    args
+                                                },
+                                                span
+                                            );
+                                        break;
+                                    }
+                                }
+                                _ => return Err(Span::new(SyntaxError::Unexpected(next.token), next.span)),
+                            }
+                        }
+                    }
+                }
+                Token::Ctrl(Ctrl::LeftBracket) => {
+                    let _ = self.lexer.get_token();
+                    let key = self.parse_expr()?;
+                    let next = self.lexer.get_token();
+
+                    match next.token {
+                        Token::Ctrl(Ctrl::RightBracket) => {
+                        lhs = Span::new(
+                                Expr::Index {
+                                    store: Box::new(lhs),
+                                    key: Box::new(key)
+                                },
+                                next.span
+                            );
+                        }
+                        _ => return Err(Span::new(SyntaxError::Expected(']'), next.span)),
+                    }
+                }
+                _ => return Ok(lhs)
+            }
+        }
+    }
+
+    fn parse_expr_atom(&mut self) -> Result<Span<Expr>, Span<SyntaxError>> {
+        let token = self.lexer.get_token();
         
-pub fn parser<'tokens, 'src: 'tokens>() -> impl Parser<
-    'tokens,
-    ParserInput<'tokens, 'src>,
-    Vec<(Stmt<'src>, Span)>,
-    extra::Err<Rich<'tokens, Token<'src>, Span>>,
-> {
-    let inline_expr = expr_parser().map(|(expr, span)| (Stmt::Expr(expr), span));
-    let assignment = expr_parser()
-        .then_ignore(just(Token::Op("=")))
-        .then(expr_parser())
-        .map_with(|(rhs, lhs), e| (Stmt::Assign{rhs: rhs.0, lhs: lhs.0}, e.span()));
+        let atom = match token.token {
+            Token::Int(i)                  => Span::new(Expr::Value(Value::Int(i)     ), token.span),
+            Token::Float(f)                => Span::new(Expr::Value(Value::Float(f)   ), token.span),
+            Token::Ident(id)               => Span::new(Expr::Value(Value::Ident(id)  ), token.span),
+            Token::String(s)               => Span::new(Expr::Value(Value::String(s)  ), token.span),
+            Token::KeyWord(KeyWord::Null)  => Span::new(Expr::Value(Value::Null       ), token.span),
+            Token::KeyWord(KeyWord::False) => Span::new(Expr::Value(Value::Bool(false)), token.span),
+            Token::KeyWord(KeyWord::True)  => Span::new(Expr::Value(Value::Bool(true) ), token.span),
+            Token::KeyWord(KeyWord::Fn)  => {
+                let mut params = vec![];
+                let mut span = token.span;
 
+                let next = self.lexer.get_token();
+                if Token::Ctrl(Ctrl::LeftParen) != next.token {
+                    return Err(Span::new(SyntaxError::Expected('('), next.span));
+                }
 
-    let stmt = assignment
-        .or(inline_expr)
-        .then_ignore(just(Token::Ctrl(';')));
+                if let Token::Ctrl(Ctrl::RightParen) = self.lexer.peek().token {
+                    let next = self.lexer.get_token();
+                    span = (token.span.0, next.span.1);
+                } else {
+                    loop {
+                        let next = self.lexer.get_token();
 
-    stmt
-        .repeated()
-        .collect::<Vec<_>>()
+                        match next.token {
+                            Token::Ident(id)  => {
+                                span = (span.0, next.span.1);
+
+                                params.push(id);
+                            }
+                            _ => return Err(Span::new(SyntaxError::Unexpected(next.token), next.span)),
+
+                        }
+
+                        let next = self.lexer.get_token();
+
+                        match next.token {
+                            Token::Ctrl(Ctrl::RightParen) => break,
+                            Token::Ctrl(Ctrl::Comma) => {
+                                if let Token::Ctrl(Ctrl::RightParen) = self.lexer.peek().token {
+                                    let _ = self.lexer.get_token();
+                                    break;
+                                }
+                            }
+                            _ => return Err(Span::new(SyntaxError::Unexpected(next.token), next.span)),
+                        }
+                    }
+                }
+
+                self.context.push(Context::Func);
+                let stmt = self.parse_stmt()?;
+                self.context.pop();
+
+                Span::new(Expr::Value(Value::Func {
+                    params,
+                    stmt: Box::new(stmt)
+                }), span)
+            } 
+            Token::Ctrl(Ctrl::LeftCurly)  => {
+                let mut entries = vec![];
+                let mut span = token.span;
+                if let Token::Ctrl(Ctrl::RightCurly) = self.lexer.peek().token {
+                    let next = self.lexer.get_token();
+                    span = (token.span.0, next.span.1);
+                } else {
+                    loop {
+                        let key = self.parse_expr()?;
+                        let colon = self.lexer.get_token();
+                        if Token::Ctrl(Ctrl::Colon) != colon.token {
+                            return Err(Span::new(SyntaxError::Expected(':'), colon.span));
+                        }
+                        let value = self.parse_expr()?;
+
+                        entries.push((key, value));
+
+                        let next = self.lexer.get_token();
+
+                        match next.token {
+                            Token::Ctrl(Ctrl::RightCurly) => break,
+                            Token::Ctrl(Ctrl::Comma) => {
+                                if let Token::Ctrl(Ctrl::RightCurly) = self.lexer.peek().token {
+                                    let _ = self.lexer.get_token();
+                                    break;
+                                }
+                            }
+                            _ => return Err(Span::new(SyntaxError::Unexpected(colon.token), colon.span)),
+                        }
+                    }
+                }
+
+                Span::new(Expr::Value(Value::Map(entries)), span)
+            }
+            Token::Ctrl(Ctrl::LeftBracket)  => {
+                let mut items = vec![];
+                let mut span = token.span;
+
+                if let Token::Ctrl(Ctrl::RightBracket) = self.lexer.peek().token {
+                    let next = self.lexer.get_token();
+                    span = (token.span.0, next.span.1);
+                } else {
+                    loop {
+                        let expr = self.parse_expr()?;
+                        let next = self.lexer.get_token();
+
+                        span = (span.0, expr.span.1);
+
+                        items.push(expr);
+
+                        match next.token {
+                            Token::Ctrl(Ctrl::RightBracket) => break,
+                            Token::Ctrl(Ctrl::Comma) => {
+                                if let Token::Ctrl(Ctrl::RightBracket) = self.lexer.peek().token {
+                                    let _ = self.lexer.get_token();
+                                    break;
+                                }
+                            }
+                            _ => return Err(Span::new(SyntaxError::Unexpected(next.token), next.span)),
+                        }
+                    }
+                }
+
+                Span::new(Expr::Value(Value::List(items)), span)
+            }
+            Token::Ctrl(Ctrl::LeftParen) => {
+                let expr = self.parse_expr()?;
+                let next = self.lexer.get_token();
+
+                if let Token::Ctrl(Ctrl::RightParen) = next.token {
+                    expr
+                } else {
+                    return Err(Span::new(SyntaxError::Expected(')'), next.span));
+                }
+            }
+            _ => return Err(Span::new(SyntaxError::Unexpected(token.token), token.span)),
+        };
+
+        Ok(atom)
+    }
 }

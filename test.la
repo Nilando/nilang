@@ -1,0 +1,22 @@
+lexer = { 
+  parse_line: fn() {
+    line = input();
+
+    i = 0;
+    while i != line.len {
+
+      if line[i] == "+" {
+        return "+";
+      } else {
+        return "Unknown Token";
+      }
+
+      i = i + 1;
+    }
+  },
+  current_line: "",
+  1 + 1: 2,
+};
+
+msg = "hello world!";
+chars = msg.to_list();
