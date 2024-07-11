@@ -24,7 +24,7 @@ fn main() {
         let file = File::open(file_name.clone()).expect("unable to read file");
         let reader = BufReader::new(file);
         let mut symbol_map = HashMap::new();
-        let lexer = Lexer::new(reader, &mut symbol_map);
+        let lexer = Lexer::new(reader, &mut symbol_map, false);
         let mut parser = Parser::new(lexer);
 
         let (stmts, errs) = parser.parse_program();
@@ -60,10 +60,10 @@ fn main() {
 
             let stdin = stdin();
             let reader = BufReader::new(stdin);
-            let lexer = Lexer::new(reader, &mut symbol_map);
+            let lexer = Lexer::new(reader, &mut symbol_map, true);
             let mut parser = Parser::new(lexer);
 
-            match parser.parse_stmt() {
+            match parser.parse_repl() {
                 Ok(stmt) => println!("{:#?}", stmt),
                 Err(err) => println!("{:#?}", err),
             }

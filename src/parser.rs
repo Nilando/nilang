@@ -38,13 +38,13 @@ pub enum Value {
     Int(isize),
     Ident(usize),
     String(String),
+    List(Vec<Span<Expr>>),
+    Map(Vec<(Span<Expr>, Span<Expr>)>),
+    Bool(bool),
     Func {
         params: Vec<usize>,
         stmt: Box<Stmt>
     },
-    List(Vec<Span<Expr>>),
-    Map(Vec<(Span<Expr>, Span<Expr>)>),
-    Bool(bool),
 }
 
 #[derive(Debug)]
@@ -110,10 +110,6 @@ impl<T: Lex> Parser<T> {
         let mut errs = vec![];
 
         loop {
-            if let Token::Ctrl(Ctrl::End) = self.lexer.peek().token {
-                break;
-            }
-
             match self.parse_stmt() {
                 Ok(stmt) => stmts.push(stmt),
                 Err(err) => {
@@ -128,9 +124,26 @@ impl<T: Lex> Parser<T> {
                     }
                 }
             }
+
+            if let Token::Ctrl(Ctrl::End) = self.lexer.peek().token {
+                break;
+            }
         }
 
         (stmts, errs)
+    }
+
+    pub fn parse_repl(&mut self) -> Result<Stmt, Span<SyntaxError>> {
+        let stmt = self.parse_stmt()?;
+
+        let token = self.lexer.peek();
+
+        match token.token {
+            Token::Ctrl(Ctrl::End) => {}
+            _ => return Err(Span::new(SyntaxError::Unexpected(token.token), token.span)),
+        }
+
+        Ok(stmt)
     }
 
     pub fn parse_stmt(&mut self) -> Result<Stmt, Span<SyntaxError>> {

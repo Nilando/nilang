@@ -4,6 +4,7 @@ use std::collections::{VecDeque, HashMap};
 pub trait Lex {
     fn get_token(&mut self) -> SpannedToken;
     fn peek(&mut self) -> SpannedToken;
+    fn parse_next_line(&mut self);
 }
 
 impl<'a, T: BufRead> Lex for Lexer<'a, T> {
@@ -20,7 +21,7 @@ impl<'a, T: BufRead> Lex for Lexer<'a, T> {
     }
 
     fn peek(&mut self) -> SpannedToken {
-        if self.eof {
+        if self.eof || (self.repl_mode && self.tokens.is_empty()) {
             return self.end_token();
         }
 
@@ -29,6 +30,28 @@ impl<'a, T: BufRead> Lex for Lexer<'a, T> {
         }
 
         self.tokens[0].clone()
+    }
+
+    fn parse_next_line(&mut self) {
+        self.buffer.clear();
+
+        match self.reader.read_line(&mut self.buffer) {
+            Ok(bytes_read) => {
+                if bytes_read == 0 {
+                    self.tokens.push_back(self.end_token());
+                    self.eof = true;
+                    return;
+                } else {
+                    self.parse_buffer();
+                    self.pos += bytes_read;
+                }
+
+            }
+            Err(err) => self.tokens.push_back(SpannedToken {
+                token: Token::Error(LexError::InputError(err.kind())),
+                span: (self.pos, self.pos)
+            })
+        }
     }
 }
 
@@ -60,6 +83,8 @@ pub enum Op {
     Minus,
     Multiply,
     Divide,
+    Equal,
+    NotEqual,
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -103,10 +128,11 @@ pub struct Lexer<'a, T: BufRead> {
     buffer: String,
     pos: usize,
     eof: bool,
+    repl_mode: bool,
 }
 
 impl<'a, T: BufRead> Lexer<'a, T> {
-    pub fn new(reader: T, symbol_map: &'a mut HashMap<String, usize>) -> Self {
+    pub fn new(reader: T, symbol_map: &'a mut HashMap<String, usize>, repl_mode: bool) -> Self {
         Self {
             reader,
             symbol_map,
@@ -114,6 +140,7 @@ impl<'a, T: BufRead> Lexer<'a, T> {
             buffer: String::new(),
             pos: 0,
             eof: false,
+            repl_mode,
         }
     }
 
@@ -121,27 +148,6 @@ impl<'a, T: BufRead> Lexer<'a, T> {
         self.eof
     }
 
-    fn parse_next_line(&mut self) {
-        self.buffer.clear();
-
-        match self.reader.read_line(&mut self.buffer) {
-            Ok(bytes_read) => {
-                if bytes_read == 0 {
-                    self.tokens.push_back(self.end_token());
-                    self.eof = true;
-                    return;
-                } else {
-                    self.parse_buffer();
-                    self.pos += bytes_read;
-                }
-
-            }
-            Err(err) => self.tokens.push_back(SpannedToken {
-                token: Token::Error(LexError::InputError(err.kind())),
-                span: (self.pos, self.pos)
-            })
-        }
-    }
 
     fn parse_buffer(&mut self) {
         let mut chars = self.buffer.chars().enumerate().peekable();
@@ -257,28 +263,37 @@ impl<'a, T: BufRead> Lexer<'a, T> {
                         }
                     }
                 }
-
-                _ => {
-                    match c {
-                        '(' => Token::Ctrl(Ctrl::LeftParen),
-                        ')' => Token::Ctrl(Ctrl::RightParen),
-                        '[' => Token::Ctrl(Ctrl::LeftBracket),
-                        ']' => Token::Ctrl(Ctrl::RightBracket),
-                        '{' => Token::Ctrl(Ctrl::LeftCurly),
-                        '}' => Token::Ctrl(Ctrl::RightCurly),
-                        '=' => Token::Ctrl(Ctrl::Equal),
-                        ':' => Token::Ctrl(Ctrl::Colon),
-                        ';' => Token::Ctrl(Ctrl::SemiColon),
-                        ',' => Token::Ctrl(Ctrl::Comma),
-                        '.' => Token::Ctrl(Ctrl::Period),
-                        '+' => Token::Op(Op::Plus),
-                        '-' => Token::Op(Op::Minus),
-                        '*' => Token::Op(Op::Multiply),
-                        '/' => Token::Op(Op::Divide),
-
-                        _   => Token::Error(LexError::Unknown)
+                '=' => {
+                    if let Some((_, '=')) = chars.peek() {
+                        Token::Op(Op::Equal)
+                    } else {
+                        Token::Ctrl(Ctrl::Equal)
                     }
-                },
+                }
+                '!' => {
+                    if let Some((_, '=')) = chars.peek() {
+                        Token::Op(Op::NotEqual)
+                    } else {
+                        Token::Error(LexError::Unknown)
+                    }
+                }
+
+                '(' => Token::Ctrl(Ctrl::LeftParen),
+                ')' => Token::Ctrl(Ctrl::RightParen),
+                '[' => Token::Ctrl(Ctrl::LeftBracket),
+                ']' => Token::Ctrl(Ctrl::RightBracket),
+                '{' => Token::Ctrl(Ctrl::LeftCurly),
+                '}' => Token::Ctrl(Ctrl::RightCurly),
+                ':' => Token::Ctrl(Ctrl::Colon),
+                ';' => Token::Ctrl(Ctrl::SemiColon),
+                ',' => Token::Ctrl(Ctrl::Comma),
+                '.' => Token::Ctrl(Ctrl::Period),
+                '+' => Token::Op(Op::Plus),
+                '-' => Token::Op(Op::Minus),
+                '*' => Token::Op(Op::Multiply),
+                '/' => Token::Op(Op::Divide),
+
+                _   => Token::Error(LexError::Unknown)
             };
 
             let spanned_token = SpannedToken {
