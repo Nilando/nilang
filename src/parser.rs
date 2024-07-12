@@ -153,15 +153,9 @@ impl<T: Lex> Parser<T> {
     }
 
     pub fn parse_block(&mut self) -> Result<Stmt, Span<SyntaxError>> {
-        let token = self.lexer.get_token();
-
-        if let Token::Ctrl(Ctrl::LeftCurly) = token.token {
-        } else {
-            return Err(Span::new(SyntaxError::Expected('{'), token.span));
-        }
+        self.expect(Token::Ctrl(Ctrl::LeftCurly), '{')?;
 
         let mut stmts = vec![];
-
         loop {
             if let Token::Ctrl(Ctrl::RightCurly) | Token::Ctrl(Ctrl::End) = self.lexer.peek().token {
                 break;
@@ -183,14 +177,9 @@ impl<T: Lex> Parser<T> {
             }
         }
 
-        let token = self.lexer.get_token();
-        if let Token::Ctrl(Ctrl::RightCurly) = token.token {
-            let block = Stmt::Block { stmts };
+        self.expect(Token::Ctrl(Ctrl::RightCurly), '}')?;
 
-            Ok(block)
-        } else {
-            return Err(Span::new(SyntaxError::Unexpected(token.token), token.span));
-        }
+        Ok(Stmt::Block { stmts })
     }
 
     pub fn parse_stmt(&mut self) -> Result<Stmt, Span<SyntaxError>> {
@@ -219,25 +208,17 @@ impl<T: Lex> Parser<T> {
             }
             Token::KeyWord(KeyWord::Return) => {
                 let _ = self.lexer.get_token();
-
                 let expr = Box::new(self.parse_expr()?);
-                let next = self.lexer.get_token();
-                if let Token::Ctrl(Ctrl::SemiColon) = next.token {
-                    return Ok(Stmt::Return(expr));
-                } else {
-                    return Err(Span::new(SyntaxError::Expected(';'), next.span));
-                }
+
+                self.expect(Token::Ctrl(Ctrl::SemiColon), ';')?;
+                return Ok(Stmt::Return(expr));
             }
             Token::KeyWord(KeyWord::Continue) => {
                 let token = self.lexer.get_token();
 
                 if let Some(Context::Loop) = self.context.last() {
-                    let next = self.lexer.get_token();
-                    if let Token::Ctrl(Ctrl::SemiColon) = next.token {
-                        return Ok(Stmt::Continue);
-                    } else {
-                        return Err(Span::new(SyntaxError::Expected(';'), next.span));
-                    }
+                    self.expect(Token::Ctrl(Ctrl::SemiColon), ';')?;
+                    return Ok(Stmt::Continue);
                 } else {
                     return Err(Span::new(SyntaxError::Unexpected(token.token), token.span));
                 }
@@ -246,12 +227,8 @@ impl<T: Lex> Parser<T> {
                 let token = self.lexer.get_token();
 
                 if let Some(Context::Loop) = self.context.last() {
-                    let next = self.lexer.get_token();
-                    if let Token::Ctrl(Ctrl::SemiColon) = next.token {
-                        return Ok(Stmt::Break);
-                    } else {
-                        return Err(Span::new(SyntaxError::Expected(';'), next.span));
-                    }
+                    self.expect(Token::Ctrl(Ctrl::SemiColon), ';')?;
+                    return Ok(Stmt::Break);
                 } else {
                     return Err(Span::new(SyntaxError::Unexpected(token.token), token.span));
                 }
@@ -266,11 +243,7 @@ impl<T: Lex> Parser<T> {
             Token::Ctrl(Ctrl::Equal) => {
                 let src = self.parse_expr()?;
 
-                let next = self.lexer.get_token();
-                if let Token::Ctrl(Ctrl::SemiColon) = next.token {
-                } else {
-                    return Err(Span::new(SyntaxError::Expected(';'), next.span));
-                }
+                self.expect(Token::Ctrl(Ctrl::SemiColon), ';')?;
 
                 // TODO assert src is either an access, ident, or index
 
@@ -281,7 +254,7 @@ impl<T: Lex> Parser<T> {
             }
             Token::Ctrl(Ctrl::SemiColon) => Ok(Stmt::Expr(Box::new(expr))),
             _ => {
-                Err(Span::new(SyntaxError::Expected(';'), token.span))
+                Err(Span::new(SyntaxError::Unexpected(token.token), token.span))
             }
         }
     }
@@ -380,20 +353,16 @@ impl<T: Lex> Parser<T> {
                 Token::Ctrl(Ctrl::LeftBracket) => {
                     let _ = self.lexer.get_token();
                     let key = self.parse_expr()?;
-                    let next = self.lexer.get_token();
+                    let span = ( key.span.0 - 1, key.span.1 + 1);
+                    self.expect(Token::Ctrl(Ctrl::RightBracket), ']')?;
 
-                    match next.token {
-                        Token::Ctrl(Ctrl::RightBracket) => {
-                        lhs = Span::new(
-                                Expr::Index {
-                                    store: Box::new(lhs),
-                                    key: Box::new(key)
-                                },
-                                next.span
-                            );
-                        }
-                        _ => return Err(Span::new(SyntaxError::Expected(']'), next.span)),
-                    }
+                    lhs = Span::new(
+                            Expr::Index {
+                                store: Box::new(lhs),
+                                key: Box::new(key)
+                            },
+                            span
+                        );
                 }
                 _ => return Ok(lhs)
             }
@@ -415,10 +384,7 @@ impl<T: Lex> Parser<T> {
                 let mut params = vec![];
                 let mut span = token.span;
 
-                let next = self.lexer.get_token();
-                if Token::Ctrl(Ctrl::LeftParen) != next.token {
-                    return Err(Span::new(SyntaxError::Expected('('), next.span));
-                }
+                self.expect(Token::Ctrl(Ctrl::LeftParen), '(')?;
 
                 if let Token::Ctrl(Ctrl::RightParen) = self.lexer.peek().token {
                     let next = self.lexer.get_token();
@@ -470,10 +436,9 @@ impl<T: Lex> Parser<T> {
                 } else {
                     loop {
                         let key = self.parse_expr()?;
-                        let colon = self.lexer.get_token();
-                        if Token::Ctrl(Ctrl::Colon) != colon.token {
-                            return Err(Span::new(SyntaxError::Expected(':'), colon.span));
-                        }
+
+                        self.expect(Token::Ctrl(Ctrl::Colon), ':')?;
+
                         let value = self.parse_expr()?;
 
                         entries.push((key, value));
@@ -488,7 +453,7 @@ impl<T: Lex> Parser<T> {
                                     break;
                                 }
                             }
-                            _ => return Err(Span::new(SyntaxError::Unexpected(colon.token), colon.span)),
+                            _ => return Err(Span::new(SyntaxError::Unexpected(next.token), next.span)),
                         }
                     }
                 }
@@ -528,17 +493,24 @@ impl<T: Lex> Parser<T> {
             }
             Token::Ctrl(Ctrl::LeftParen) => {
                 let expr = self.parse_expr()?;
-                let next = self.lexer.get_token();
 
-                if let Token::Ctrl(Ctrl::RightParen) = next.token {
-                    expr
-                } else {
-                    return Err(Span::new(SyntaxError::Expected(')'), next.span));
-                }
+                self.expect(Token::Ctrl(Ctrl::RightParen), ')')?;
+
+                expr
             }
             _ => return Err(Span::new(SyntaxError::Unexpected(token.token), token.span)),
         };
 
         Ok(atom)
+    }
+
+    fn expect(&mut self, token: Token, c: char) -> Result<(), Span<SyntaxError>> {
+        let next = self.lexer.get_token();
+
+        if token != next.token {
+            Err(Span::new(SyntaxError::Expected(c), next.span))
+        } else {
+            Ok(())
+        }
     }
 }

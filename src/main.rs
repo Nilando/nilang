@@ -3,7 +3,7 @@ mod parser;
 mod lexer;
 
 use lexer::Lexer;
-use parser::Parser;
+use parser::{Parser, SyntaxError, Span};
 use chrono::{DateTime, Local};
 use clap::Parser as CliParser;
 use std::fs::{File, read_to_string};
@@ -28,17 +28,16 @@ fn main() {
         let mut parser = Parser::new(lexer);
 
         match parser.parse_program() {
-            Ok(stmts) => println!("{:#?}", stmts),
+            Ok(stmts) => {
+                println!("{:#?}", stmts);
+                // let generator = Generator::new();
+                // let code = generator.generate(ast);
+                // let vm = VM::new();
+            }
             Err(errs) => {
-                for err in errs.iter() {
-                    println!("Error: {:#?}", err);
-                }
+                print_errors(errs, Some(file_name));
             }
         }
-
-        // let generator = Generator::new();
-        // let code = generator.generate(ast);
-        // let vm = VM::new();
         
     } else {
         let local_time: DateTime<Local> = Local::now();
@@ -64,4 +63,18 @@ fn main() {
             }
         }
     }
+}
+
+fn print_errors(errs: Vec<Span<SyntaxError>>, file_name: Option<String>) {
+    if let Some(file_name) = file_name {
+        let file = File::open(file_name.clone()).expect("unable to read file");
+        let reader = BufReader::new(file);
+
+        loop {
+
+        }
+    } else {
+        // grab the last 
+    }
+    
 }
