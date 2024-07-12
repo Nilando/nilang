@@ -27,19 +27,14 @@ fn main() {
         let lexer = Lexer::new(reader, &mut symbol_map, false);
         let mut parser = Parser::new(lexer);
 
-        let (stmts, errs) = parser.parse_program();
-
-        if !errs.is_empty() {
-            // sort the errors by their span
-            // read file line by line,
-            // if line contains the errs span
-            //  display the error
-            for err in errs.iter() {
-                println!("Error: {:#?}", err);
+        match parser.parse_program() {
+            Ok(stmts) => println!("{:#?}", stmts),
+            Err(errs) => {
+                for err in errs.iter() {
+                    println!("Error: {:#?}", err);
+                }
             }
         }
-
-        println!("{:#?}", stmts);
 
         // let generator = Generator::new();
         // let code = generator.generate(ast);

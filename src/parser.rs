@@ -28,7 +28,8 @@ pub enum SyntaxError {
 
 pub struct Parser<T: Lex> {
     lexer: T,
-    context: Vec<Context>
+    context: Vec<Context>,
+    errs: Vec<Span<SyntaxError>>
 }
 
 #[derive(Debug)]
@@ -102,18 +103,18 @@ impl<T: Lex> Parser<T> {
         Self {
             lexer,
             context: vec![],
+            errs: vec![],
         }
     }
 
-    pub fn parse_program(&mut self) -> (Vec<Stmt>, Vec<Span<SyntaxError>>) {
+    pub fn parse_program(&mut self) -> Result<Vec<Stmt>, Vec<Span<SyntaxError>>> {
         let mut stmts = vec![];
-        let mut errs = vec![];
 
         loop {
             match self.parse_stmt() {
                 Ok(stmt) => stmts.push(stmt),
                 Err(err) => {
-                    errs.push(err);
+                    self.errs.push(err);
 
                     loop {
                         match self.lexer.get_token().token {
@@ -130,12 +131,17 @@ impl<T: Lex> Parser<T> {
             }
         }
 
-        (stmts, errs)
+        if self.errs.is_empty() {
+            Ok(stmts)
+        } else {
+            let mut errs = vec![];
+            std::mem::swap(&mut errs, &mut self.errs);
+            Err(errs)
+        }
     }
 
     pub fn parse_repl(&mut self) -> Result<Stmt, Span<SyntaxError>> {
         let stmt = self.parse_stmt()?;
-
         let token = self.lexer.peek();
 
         match token.token {
@@ -146,16 +152,57 @@ impl<T: Lex> Parser<T> {
         Ok(stmt)
     }
 
+    pub fn parse_block(&mut self) -> Result<Stmt, Span<SyntaxError>> {
+        let token = self.lexer.get_token();
+
+        if let Token::Ctrl(Ctrl::LeftCurly) = token.token {
+        } else {
+            return Err(Span::new(SyntaxError::Expected('{'), token.span));
+        }
+
+        let mut stmts = vec![];
+
+        loop {
+            if let Token::Ctrl(Ctrl::RightCurly) | Token::Ctrl(Ctrl::End) = self.lexer.peek().token {
+                break;
+            }
+
+            match self.parse_stmt() {
+                Ok(stmt) => stmts.push(stmt),
+                Err(err) => {
+                    self.errs.push(err);
+
+                    loop {
+                        match self.lexer.get_token().token {
+                            Token::Ctrl(Ctrl::SemiColon) | 
+                            Token::Ctrl(Ctrl::End) => break,
+                            _ => {}
+                        }
+                    }
+                }
+            }
+        }
+
+        let token = self.lexer.get_token();
+        if let Token::Ctrl(Ctrl::RightCurly) = token.token {
+            let block = Stmt::Block { stmts };
+
+            Ok(block)
+        } else {
+            return Err(Span::new(SyntaxError::Unexpected(token.token), token.span));
+        }
+    }
+
     pub fn parse_stmt(&mut self) -> Result<Stmt, Span<SyntaxError>> {
         match self.lexer.peek().token {
             Token::KeyWord(KeyWord::If) => {
                 let _ = self.lexer.get_token();
                 let cond = Box::new(self.parse_expr()?);
-                let stmt = Box::new(self.parse_stmt()?);
+                let stmt = Box::new(self.parse_block()?);
 
                 if let Token::KeyWord(KeyWord::Else) = self.lexer.peek().token {
                     let _ = self.lexer.get_token();
-                    let else_stmt = Box::new(self.parse_stmt()?);
+                    let else_stmt = Box::new(self.parse_block()?);
                     return Ok(Stmt::IfElse { cond, stmt, else_stmt })
                 }
 
@@ -165,7 +212,7 @@ impl<T: Lex> Parser<T> {
                 let _ = self.lexer.get_token();
                 let cond = Box::new(self.parse_expr()?);
                 self.context.push(Context::Loop);
-                let stmt = Box::new(self.parse_stmt()?);
+                let stmt = Box::new(self.parse_block()?);
                 self.context.pop();
 
                 return Ok(Stmt::While { cond, stmt })
@@ -209,7 +256,6 @@ impl<T: Lex> Parser<T> {
                     return Err(Span::new(SyntaxError::Unexpected(token.token), token.span));
                 }
             }
-            // TODO parse blocks, how to collect errors?
             _ => {}
         }
 
@@ -407,7 +453,7 @@ impl<T: Lex> Parser<T> {
                 }
 
                 self.context.push(Context::Func);
-                let stmt = self.parse_stmt()?;
+                let stmt = self.parse_block()?;
                 self.context.pop();
 
                 Span::new(Expr::Value(Value::Func {

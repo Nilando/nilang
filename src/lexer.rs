@@ -230,7 +230,7 @@ impl<'a, T: BufRead> Lexer<'a, T> {
 
                     while let Some((_, p)) = chars.peek() {
                         end += 1;
-                        if !p.is_alphabetic() {
+                        if !p.is_alphabetic() && *p != '_' {
                             break;
                         }
 
@@ -265,6 +265,7 @@ impl<'a, T: BufRead> Lexer<'a, T> {
                 }
                 '=' => {
                     if let Some((_, '=')) = chars.peek() {
+                        chars.next();
                         Token::Op(Op::Equal)
                     } else {
                         Token::Ctrl(Ctrl::Equal)
@@ -272,6 +273,7 @@ impl<'a, T: BufRead> Lexer<'a, T> {
                 }
                 '!' => {
                     if let Some((_, '=')) = chars.peek() {
+                        chars.next();
                         Token::Op(Op::NotEqual)
                     } else {
                         Token::Error(LexError::Unknown)
