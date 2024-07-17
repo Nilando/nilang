@@ -1,3 +1,88 @@
-TODO:
-  parse blocks
-  display errors
+===== MAIN START =====
+        T1 = fn(1)                      (0, 0)
+        T0 = {
+          ID(1): T1, 
+          ID(6): "", 
+        }                               (0, 0)
+        ID(0) = T0                      (8, 9)
+        ID(7) = "hello world!"          (250, 264)
+        T1 = ID(7)[ID(9)]               (278, 285)
+        T0 = T1()                       (278, 287)
+        ID(8) = T0                      (278, 287)
+        T0 = true == false              (349, 362)
+        T1 = "testset" + T0             (335, 362)
+        T2 = ID(13) == T1               (323, 362)
+        T3 = ID(12) * T2                (316, 362)
+        T4 = ID(12) / T3                (309, 362)
+        T5 = ID(12) - T4                (302, 362)
+        T6 = ID(11) + T5                (296, 362)
+        ID(10) = T6                     (296, 362)
+        T0 = fn(2)                      (0, 0)
+        ID(14) = T0                     (377, 385)
+        return null                     (0, 0)
+===== MAIN END =====
+
+
+===== FUNC 2 params ( 15,  16, ) =====
+  LABEL 0                               (0, 0)
+        T0 = ID(15) == ID(16)           (397, 403)
+        Jump 1 unless T0                (397, 403)
+        T0 = true + 69                  (423, 433)
+        T1 = ID(10) == T0               (413, 433)
+        Jump 2 unless T1                (413, 433)
+        T0 = true                       (446, 450)
+        Jump 2 unless T0                (446, 450)
+        T0 = true == false              (522, 535)
+        T1 = "testset" + T0             (508, 535)
+        T2 = ID(13) == T1               (496, 535)
+        T3 = ID(12) * T2                (489, 535)
+        T4 = ID(12) / T3                (482, 535)
+        T5 = ID(12) - T4                (475, 535)
+        T6 = ID(11) + T5                (469, 535)
+        ID(10) = T6                     (469, 535)
+        return 2                        (554, 555)
+LABEL 2                                 (0, 0)
+        Jump 3                          (446, 450)
+        T0 = true == false              (640, 653)
+        T1 = "testset" + T0             (626, 653)
+        T2 = ID(13) == T1               (614, 653)
+        T3 = ID(12) * T2                (607, 653)
+        T4 = ID(12) / T3                (600, 653)
+        T5 = ID(12) - T4                (593, 653)
+        T6 = ID(11) + T5                (587, 653)
+        ID(10) = T6                     (587, 653)
+        return 1                        (672, 673)
+LABEL 3                                 (0, 0)
+LABEL 4                                 (0, 0)
+        ID(15) = 0                      (697, 698)
+        return "test"                   (711, 717)
+        Jump 0                          (0, 0)
+LABEL 1                                 (0, 0)
+        return null                     (0, 0)
+===== FUNC 2 END =====
+
+
+===== FUNC 1 params () =====
+        T0 = ID(3)()                    (43, 50)
+        ID(2) = T0                      (43, 50)
+        ID(4) = 0                       (61, 62)
+LABEL 0                                 (0, 0)
+        T0 = ID(2)[ID(5)]               (84, 87)
+        T1 = ID(4) != T0                (74, 87)
+        Jump 1 unless T1                (74, 87)
+        T0 = ID(2)[ID(4)]               (103, 106)
+        T1 = T0 == "+"                  (103, 113)
+        Jump 2 unless T1                (103, 113)
+        return "+"                      (131, 134)
+LABEL 2                                 (0, 0)
+        Jump 3                          (103, 113)
+        return "Unknown Token"          (166, 181)
+LABEL 3                                 (0, 0)
+        T0 = ID(4) + 1                  (202, 207)
+        ID(4) = T0                      (202, 207)
+        Jump 0                          (0, 0)
+LABEL 1                                 (0, 0)
+        return null                     (0, 0)
+===== FUNC 1 END =====
+
+

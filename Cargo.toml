@@ -8,3 +8,4 @@ ariadne = "0.4.1"
 chrono = "0.4.38"
 chumsky = { git = "https://github.com/zesterer/chumsky", features = ["label"]}
 clap = { version = "4.5.8", features = ["derive"] }
+colored = "2.1.0"

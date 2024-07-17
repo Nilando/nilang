@@ -1,4 +1,6 @@
 use std::io::BufRead;
+use std::fs::{File, read_to_string};
+use std::io::{Write, BufReader, stdin, stdout};
 use std::collections::{VecDeque, HashMap};
 
 pub trait Lex {
@@ -7,7 +9,7 @@ pub trait Lex {
     fn parse_next_line(&mut self);
 }
 
-impl<'a, T: BufRead> Lex for Lexer<'a, T> {
+impl<'a> Lex for Lexer<'a> {
     fn get_token(&mut self) -> SpannedToken {
         if self.eof {
             return self.end_token();
@@ -21,7 +23,7 @@ impl<'a, T: BufRead> Lex for Lexer<'a, T> {
     }
 
     fn peek(&mut self) -> SpannedToken {
-        if self.eof || (self.repl_mode && self.tokens.is_empty()) {
+        if self.eof || (self.repl_mode() && self.tokens.is_empty()) {
             return self.end_token();
         }
 
@@ -33,7 +35,12 @@ impl<'a, T: BufRead> Lex for Lexer<'a, T> {
     }
 
     fn parse_next_line(&mut self) {
-        self.buffer.clear();
+        if !self.repl_mode() {
+            self.buffer.clear();
+        } else {
+            print!("==> ");
+            stdout().flush().expect("failed to flush stdout");
+        }
 
         match self.reader.read_line(&mut self.buffer) {
             Ok(bytes_read) => {
@@ -87,6 +94,20 @@ pub enum Op {
     NotEqual,
 }
 
+use std::fmt;
+impl fmt::Display for Op {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::Plus => write!(f, "+"),
+            Self::Minus => write!(f, "-"),
+            Self::Multiply => write!(f, "*"),
+            Self::Divide => write!(f, "/"),
+            Self::Equal => write!(f, "=="),
+            Self::NotEqual => write!(f, "!="),
+        }
+    }
+}
+
 #[derive(Clone, PartialEq, Debug)]
 pub enum LexError {
     Unknown,
@@ -114,6 +135,7 @@ pub enum Token {
     Ctrl(Ctrl),
     Op(Op),
     Ident(usize),
+    Global(usize),
     Float(f64),
     Int(isize),
     String(String),
@@ -121,18 +143,28 @@ pub enum Token {
     KeyWord(KeyWord),
 }
 
-pub struct Lexer<'a, T: BufRead> {
-    reader: T,
+pub struct Lexer<'a> {
     symbol_map: &'a mut HashMap<String, usize>,
     tokens: VecDeque<SpannedToken>,
-    buffer: String,
     pos: usize,
     eof: bool,
-    repl_mode: bool,
+    file_name: Option<String>, // is none then repl mode
+    reader: Box<dyn BufRead>,
+    pub buffer: String,
 }
 
-impl<'a, T: BufRead> Lexer<'a, T> {
-    pub fn new(reader: T, symbol_map: &'a mut HashMap<String, usize>, repl_mode: bool) -> Self {
+impl<'a> Lexer<'a> {
+    pub fn new(symbol_map: &'a mut HashMap<String, usize>, file_name: Option<String>) -> Self {
+        let reader: Box<dyn BufRead> = 
+        if let Some(ref file_name) = file_name {
+            let file = File::open(file_name.clone()).expect("unable to read file");
+            Box::new(BufReader::new(file))
+        } else {
+            let stdin = stdin();
+            Box::new(BufReader::new(stdin))
+        };
+
+
         Self {
             reader,
             symbol_map,
@@ -140,7 +172,7 @@ impl<'a, T: BufRead> Lexer<'a, T> {
             buffer: String::new(),
             pos: 0,
             eof: false,
-            repl_mode,
+            file_name,
         }
     }
 
@@ -148,9 +180,18 @@ impl<'a, T: BufRead> Lexer<'a, T> {
         self.eof
     }
 
+    pub fn repl_mode(&self) -> bool {
+        self.file_name.is_none()
+    }
+
 
     fn parse_buffer(&mut self) {
-        let mut chars = self.buffer.chars().enumerate().peekable();
+        let mut chars = 
+        if self.repl_mode() {
+            self.buffer.split_at(self.pos).1.chars().enumerate().peekable()
+        } else {
+            self.buffer.chars().enumerate().peekable()
+        };
 
         loop {
             let (i, c) = match chars.next() {
@@ -225,14 +266,35 @@ impl<'a, T: BufRead> Lexer<'a, T> {
                     }
                 }
 
+                '@' => {
+                    chars.next().unwrap();
+                    let mut str = String::from(c);
+
+                    while let Some((_, p)) = chars.peek() {
+                        if !p.is_alphabetic() && *p != '_' {
+                            break;
+                        }
+
+                        end += 1;
+
+                        let (_, c) = chars.next().unwrap();
+                        str.push(c);
+                    }
+
+                    let id = self.symbol_map.len();
+                    self.symbol_map.insert(str, id);
+                    Token::Global(id)
+                }
+
                 c if c.is_alphabetic() => {
                     let mut str = String::from(c);
 
                     while let Some((_, p)) = chars.peek() {
-                        end += 1;
                         if !p.is_alphabetic() && *p != '_' {
                             break;
                         }
+
+                        end += 1;
 
                         let (_, c) = chars.next().unwrap();
                         str.push(c);
@@ -255,9 +317,9 @@ impl<'a, T: BufRead> Lexer<'a, T> {
                             match self.symbol_map.get(&str) {
                                 Some(id) => Token::Ident(*id),
                                 None => {
-                                    let len = self.symbol_map.len();
-                                    self.symbol_map.insert(str, len);
-                                    Token::Ident(len)
+                                    let id = self.symbol_map.len();
+                                    self.symbol_map.insert(str, id);
+                                    Token::Ident(id)
                                 }
                             }
                         }

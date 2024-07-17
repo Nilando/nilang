@@ -2,12 +2,16 @@ mod generator;
 mod parser;
 mod lexer;
 
+
+use colored::Colorize;
+use std::fs::{File, read_to_string};
+use std::io::BufRead;
+use std::io::{Write, BufReader, stdin, stdout};
 use lexer::Lexer;
 use parser::{Parser, SyntaxError, Span};
+use generator::IRGenerator;
 use chrono::{DateTime, Local};
 use clap::Parser as CliParser;
-use std::fs::{File, read_to_string};
-use std::io::{Write, BufReader, stdin, stdout};
 use std::collections::HashMap;
 
 #[derive(CliParser, Debug)]
@@ -21,60 +25,107 @@ fn main() {
     let config = Config::parse();
 
     if let Some(file_name) = config.file {
-        let file = File::open(file_name.clone()).expect("unable to read file");
-        let reader = BufReader::new(file);
-        let mut symbol_map = HashMap::new();
-        let lexer = Lexer::new(reader, &mut symbol_map, false);
-        let mut parser = Parser::new(lexer);
-
-        match parser.parse_program() {
-            Ok(stmts) => {
-                println!("{:#?}", stmts);
-                // let generator = Generator::new();
-                // let code = generator.generate(ast);
-                // let vm = VM::new();
-            }
-            Err(errs) => {
-                print_errors(errs, Some(file_name));
-            }
-        }
-        
+        run_file(file_name);
     } else {
-        let local_time: DateTime<Local> = Local::now();
-        let date = local_time.format("%Y-%m-%d %H:%M");
+        run_repl();
+    }
+}
 
-        println!("NVM1 0.0.0 [ {} ]", date);
-        println!("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
+fn run_file(file_name: String) {
+    let mut symbol_map = HashMap::new();
+    let lexer = Lexer::new(&mut symbol_map, Some(file_name.clone()));
+    let mut parser = Parser::new(lexer);
 
-        let mut symbol_map = HashMap::new();
+    match parser.parse_program() {
+        Ok(stmts) => {
+            //println!("{:#?}", stmts);
 
-        loop {
-            print!("==> ");
-            stdout().flush().expect("failed to flush stdout");
+            let mut generator = IRGenerator::new();
+            generator.gen_program(stmts);
 
-            let stdin = stdin();
-            let reader = BufReader::new(stdin);
-            let lexer = Lexer::new(reader, &mut symbol_map, true);
-            let mut parser = Parser::new(lexer);
+            for func in generator.funcs.iter() {
+                println!("{}", func.1);
+            }
+            // let vm = VM::new();
+            //
+            // match vm.run() {
+            //  Ok() => {}
+            //  Err(_) => {
+            //      // we get back a span
+            //      // how do we display the error?
+            //  }
+            // }
+        }
+        Err(mut errs) => {
+            errs.sort_by(|b, a| a.span.0.partial_cmp(&b.span.0).unwrap());
 
-            match parser.parse_repl() {
-                Ok(stmt) => println!("{:#?}", stmt),
-                Err(err) => println!("{:#?}", err),
+            let mut err = errs.pop().unwrap();
+            let file = File::open(file_name.clone()).expect("unable to read file");
+            let mut reader = BufReader::new(file);
+            let mut line_number = 1;
+            let mut bytes_read = 0;
+            let mut line = String::new();
+            let mut line_bytes = reader.read_line(&mut line).expect("failed reading file");
+
+            loop {
+                if err.span.0 < bytes_read + line_bytes &&  err.span.0 >= bytes_read {
+                    println!("{} {} line {}", "SYNTAX ERROR:".red(), file_name, line_number);
+                    println!("");
+
+                    print!("{}", line);
+                    let start = err.span.0 - bytes_read;
+                    let end = err.span.1 - bytes_read;
+
+                    for i in 0..end {
+                        if start <= i  {
+                            print!("{}", "^".red());
+                        } else {
+                            print!(" ")
+                        }
+                    }
+
+                    println!("");
+                    println!("{:?}", err.val);
+
+
+                    if let Some(e) = errs.pop() {
+                        err = e;
+                        continue;
+                    } else {
+                        break;
+                    }
+                }
+
+                line.clear();
+                bytes_read += line_bytes;
+                line_bytes = reader.read_line(&mut line).expect("failed reading file");
+                line_number += 1;
+
+                if line_bytes == 0 {
+                    panic!("Invalid Error Span");
+                }
             }
         }
     }
 }
 
-fn print_errors(errs: Vec<Span<SyntaxError>>, file_name: Option<String>) {
-    if let Some(file_name) = file_name {
-        let file = File::open(file_name.clone()).expect("unable to read file");
-        let reader = BufReader::new(file);
+fn run_repl() {
+    let local_time: DateTime<Local> = Local::now();
+    let date = local_time.format("%Y-%m-%d %H:%M");
 
-        loop {
+    println!("NVM1 0.0.0 [ {} ]", date);
+    println!("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
 
+    let mut symbol_map = HashMap::new();
+    let lexer = Lexer::new(&mut symbol_map, None);
+    let mut parser = Parser::new(lexer);
+
+    loop {
+        match parser.parse_repl() {
+            Ok(stmt) => println!("{:#?}", stmt),
+            Err(_) => {
+                todo!()
+            }
         }
-    } else {
-        // grab the last 
     }
-    
 }

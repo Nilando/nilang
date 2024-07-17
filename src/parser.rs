@@ -16,8 +16,8 @@ enum Context {
 
 #[derive(Debug)]
 pub struct Span<T> {
-    val: T,
-    span: (usize, usize)
+    pub val: T,
+    pub span: (usize, usize)
 }
 
 #[derive(Debug)]
@@ -27,7 +27,7 @@ pub enum SyntaxError {
 }
 
 pub struct Parser<T: Lex> {
-    lexer: T,
+    pub lexer: T,
     context: Vec<Context>,
     errs: Vec<Span<SyntaxError>>
 }
@@ -38,13 +38,14 @@ pub enum Value {
     Float(f64),
     Int(isize),
     Ident(usize),
+    Global(usize),
     String(String),
+    Bool(bool),
     List(Vec<Span<Expr>>),
     Map(Vec<(Span<Expr>, Span<Expr>)>),
-    Bool(bool),
     Func {
         params: Vec<usize>,
-        stmt: Box<Stmt>
+        stmts: Vec<Stmt>
     },
 }
 
@@ -80,19 +81,16 @@ pub enum Stmt {
     },
     While {
         cond: Box<Span<Expr>>,
-        stmt: Box<Stmt>
+        stmts: Vec<Stmt>
     },
     If {
         cond: Box<Span<Expr>>,
-        stmt: Box<Stmt>
+        stmts: Vec<Stmt>
     },
     IfElse {
         cond: Box<Span<Expr>>,
-        stmt: Box<Stmt>,
-        else_stmt: Box<Stmt>
-    },
-    Block {
-        stmts: Vec<Stmt>
+        stmts: Vec<Stmt>,
+        else_stmts: Vec<Stmt>
     },
     Continue,
     Break,
@@ -140,6 +138,17 @@ impl<T: Lex> Parser<T> {
         }
     }
 
+    pub fn display_errors(&mut self) {
+        // if in repl mode
+        // simply walk through the buffer line by line
+        // and
+        //
+        //
+
+        
+        todo!()
+    }
+
     pub fn parse_repl(&mut self) -> Result<Stmt, Span<SyntaxError>> {
         let stmt = self.parse_stmt()?;
         let token = self.lexer.peek();
@@ -152,7 +161,7 @@ impl<T: Lex> Parser<T> {
         Ok(stmt)
     }
 
-    pub fn parse_block(&mut self) -> Result<Stmt, Span<SyntaxError>> {
+    pub fn parse_block(&mut self) -> Result<Vec<Stmt>, Span<SyntaxError>> {
         self.expect(Token::Ctrl(Ctrl::LeftCurly), '{')?;
 
         let mut stmts = vec![];
@@ -179,7 +188,7 @@ impl<T: Lex> Parser<T> {
 
         self.expect(Token::Ctrl(Ctrl::RightCurly), '}')?;
 
-        Ok(Stmt::Block { stmts })
+        Ok(stmts)
     }
 
     pub fn parse_stmt(&mut self) -> Result<Stmt, Span<SyntaxError>> {
@@ -187,24 +196,24 @@ impl<T: Lex> Parser<T> {
             Token::KeyWord(KeyWord::If) => {
                 let _ = self.lexer.get_token();
                 let cond = Box::new(self.parse_expr()?);
-                let stmt = Box::new(self.parse_block()?);
+                let stmts = self.parse_block()?;
 
                 if let Token::KeyWord(KeyWord::Else) = self.lexer.peek().token {
                     let _ = self.lexer.get_token();
-                    let else_stmt = Box::new(self.parse_block()?);
-                    return Ok(Stmt::IfElse { cond, stmt, else_stmt })
+                    let else_stmts = self.parse_block()?;
+                    return Ok(Stmt::IfElse { cond, stmts, else_stmts })
                 }
 
-                return Ok(Stmt::If { cond, stmt })
+                return Ok(Stmt::If { cond, stmts })
             }
             Token::KeyWord(KeyWord::While) => {
                 let _ = self.lexer.get_token();
                 let cond = Box::new(self.parse_expr()?);
                 self.context.push(Context::Loop);
-                let stmt = Box::new(self.parse_block()?);
+                let stmts = self.parse_block()?;
                 self.context.pop();
 
-                return Ok(Stmt::While { cond, stmt })
+                return Ok(Stmt::While { cond, stmts })
             }
             Token::KeyWord(KeyWord::Return) => {
                 let _ = self.lexer.get_token();
@@ -246,6 +255,9 @@ impl<T: Lex> Parser<T> {
                 self.expect(Token::Ctrl(Ctrl::SemiColon), ';')?;
 
                 // TODO assert src is either an access, ident, or index
+                match expr.val {
+                    _ => {}
+                }
 
                 Ok(Stmt::Assign {
                     dest: Box::new(expr),
@@ -300,6 +312,8 @@ impl<T: Lex> Parser<T> {
                     if let Token::Ctrl(Ctrl::RightParen) = self.lexer.peek().token {
                         let rp = self.lexer.get_token();
                         let span = (lhs.span.0, rp.span.1);
+
+                        // TODO: assert lhs is either a fn, ident, global, access, or index
 
                         lhs = Span::new(
                                 Expr::Call {
@@ -376,6 +390,7 @@ impl<T: Lex> Parser<T> {
             Token::Int(i)                  => Span::new(Expr::Value(Value::Int(i)     ), token.span),
             Token::Float(f)                => Span::new(Expr::Value(Value::Float(f)   ), token.span),
             Token::Ident(id)               => Span::new(Expr::Value(Value::Ident(id)  ), token.span),
+            Token::Global(id)              => Span::new(Expr::Value(Value::Global(id)  ), token.span),
             Token::String(s)               => Span::new(Expr::Value(Value::String(s)  ), token.span),
             Token::KeyWord(KeyWord::Null)  => Span::new(Expr::Value(Value::Null       ), token.span),
             Token::KeyWord(KeyWord::False) => Span::new(Expr::Value(Value::Bool(false)), token.span),
@@ -419,12 +434,12 @@ impl<T: Lex> Parser<T> {
                 }
 
                 self.context.push(Context::Func);
-                let stmt = self.parse_block()?;
+                let stmts = self.parse_block()?;
                 self.context.pop();
 
                 Span::new(Expr::Value(Value::Func {
                     params,
-                    stmt: Box::new(stmt)
+                    stmts
                 }), span)
             } 
             Token::Ctrl(Ctrl::LeftCurly)  => {

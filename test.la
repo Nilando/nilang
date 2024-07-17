@@ -4,7 +4,6 @@ lexer = {
 
     i = 0;
     while i != line.len {
-
       if line[i] == "+" {
         return "+";
       } else {
@@ -15,8 +14,24 @@ lexer = {
     }
   },
   current_line: "",
-  1 + 1: 2,
 };
 
 msg = "hello world!";
 chars = msg.to_list();
+blah = ads + asdf - asdf / asdf * asdfasdf == "testset" + ( true == false );
+
+dumb_fn = fn (a, b) {
+  while a == b {
+    if blah == ( true  + 69) {
+      if true { 
+        blah = ads + asdf - asdf / asdf * asdfasdf == "testset" + ( true == false );
+        return 2;
+      } else {
+        blah = ads + asdf - asdf / asdf * asdfasdf == "testset" + ( true == false );
+        return 1;
+      }
+    }
+    a = 0;
+    return "test";
+  }
+};
