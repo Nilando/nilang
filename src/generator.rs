@@ -109,15 +109,13 @@ pub enum IRCode {
 impl fmt::Display for IRCode {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let s: String = match self {
-            Self::Label { id }        => format!("LABEL {}\t\t", id).purple().to_string(),
-            Self::Jump { label }      => format!("\tJump {}", label).purple().to_string(),
-            Self::Jnt { cond, label } => {
-                let jump = format!("\tJNT {}", label).purple().to_string();
-                let unless = format!(" {}", cond);
-                format!("{jump}{unless}")
-            }
             Self::Load { dest, src }  => format!("\t{} = {}", dest, src),
             Self::Return { dest }     => format!("\t{} {}", "return".red(), dest),
+            Self::Label { id }        => format!("\tLABEL {}", id).yellow().to_string(),
+            Self::Jump { label }      => format!("\tJump {}", label).yellow().to_string(),
+            Self::Jnt { cond, label } => {
+                format!("\tJNT {} {}", label, format!("{}", cond)).yellow().to_string()
+            }
             Self::ObjLoad { dest, store, key } => format!("\t{} = {}[{}]", dest, store, key),
             Self::ObjStore { store, key, src } => format!("\t{}[{}] = {}", store, key, src),
             Self::Binop { dest, lhs, op, rhs } => format!("\t{} = {} {} {}", dest, lhs, op, rhs),
@@ -165,7 +163,7 @@ impl fmt::Display for IRFunc {
         }
 
         for stmt in self.code.iter() {
-            write!(f, "{:12}{}\n", format!("({}, {})", stmt.span.0, stmt.span.1).bright_black(), stmt.val)?;
+            write!(f, "{}{}\n", format!("({:04x}, {:04x})", stmt.span.0, stmt.span.1).bright_black(), stmt.val)?;
         }
 
         if self.id == 0 {
@@ -242,7 +240,7 @@ impl IRGenerator {
                 Stmt::Assign { dest, src } => {
                     match dest.val {
                         Expr::Value(value) => {
-                            if let IRValue::Var(dest) = self.generate_value(value) {
+                            if let IRValue::Var(dest) = self.generate_value(value, dest.span) {
                                 let src = self.generate_expr(*src);
                                 let load = IRCode::Load { dest, src: src.val };
                                 let func = self.func_stack.last_mut().unwrap();
@@ -405,7 +403,7 @@ impl IRGenerator {
 
         match expr {
             Expr::Value(value) => {
-                Span::new(self.generate_value(value), span)
+                Span::new(self.generate_value(value, span), span)
             }
             Expr::Binop { lhs, op, rhs } => {
                 let lhs = self.generate_expr(*lhs).val;
@@ -460,7 +458,7 @@ impl IRGenerator {
         }
     }
 
-    fn generate_value(&mut self, value: Value) -> IRValue {
+    fn generate_value(&mut self, value: Value, span: (usize, usize)) -> IRValue {
         match value {
             Value::Null       => IRValue::Null,
             Value::Int(i)     => IRValue::Int(i),
@@ -481,7 +479,7 @@ impl IRGenerator {
                 let obj_load = IRCode::NewList { dest, items };
                 let func = self.func_stack.last_mut().unwrap();
 
-                func.code.push(Span::new(obj_load, (0, 0)));
+                func.code.push(Span::new(obj_load, span));
 
                 IRValue::Var(dest)
             }
@@ -499,7 +497,7 @@ impl IRGenerator {
                 let obj_load = IRCode::NewMap { dest, items };
                 let func = self.func_stack.last_mut().unwrap();
 
-                func.code.push(Span::new(obj_load, (0, 0)));
+                func.code.push(Span::new(obj_load, span));
 
                 IRValue::Var(dest)
             }
@@ -524,7 +522,7 @@ impl IRGenerator {
 
                 let mut func = self.func_stack.pop().unwrap();
                 let end_return = IRCode::Return { dest: IRValue::Null };
-                func.code.push(Span::new(end_return, (0, 0)));
+                func.code.push(Span::new(end_return, span));
                 let src = IRValue::Func(func.id);
                 self.funcs.insert(func.id, func);
 
@@ -532,7 +530,7 @@ impl IRGenerator {
                 let load = IRCode::Load { dest, src };
                 let func = self.func_stack.last_mut().unwrap();
 
-                func.code.push(Span::new(load, (0, 0)));
+                func.code.push(Span::new(load, span));
 
                 IRValue::Var(dest)
             }
