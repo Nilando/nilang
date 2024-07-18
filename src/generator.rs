@@ -1,6 +1,7 @@
 use super::parser::{Stmt, Expr, Span, Value};
 use super::lexer::Op;
 
+use colored::Colorize;
 use std::collections::HashMap;
 use std::fmt;
 
@@ -13,11 +14,13 @@ pub enum IRVar {
 
 impl fmt::Display for IRVar {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::Temp(i)   => write!(f, "T{}", i),
-            Self::Ident(i)  => write!(f, "ID({})", i),
-            Self::Global(i) => write!(f, "G{}", i),
-        }
+        let s = match self {
+            IRVar::Temp(i)   => format!("T{}", i).truecolor(160, 160, 160),
+            IRVar::Ident(i)  => format!("ID({})", i).cyan(),
+            IRVar::Global(i) => format!("G{}", i).red(),
+        };
+
+        write!(f, "{}", s)
     }
 }
 #[derive(Debug)]
@@ -33,15 +36,23 @@ pub enum IRValue {
 
 impl fmt::Display for IRValue {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::String(s) => write!(f, "\"{}\"", s),
-            Self::Int(i)    => write!(f, "{}", i),
-            Self::Bool(b)   => write!(f, "{}", b),
-            Self::Float(n)  => write!(f, "{}", n),
-            Self::Var(v)    => write!(f, "{}", v),
-            Self::Null      => write!(f, "null"),
-            Self::Func(i)   => write!(f, "fn({})", i),
-        }
+        let s = match self {
+            Self::String(s) => format!("\"{}\"", s).bright_green(),
+            Self::Int(i)    => format!("{}", i).truecolor(255, 150, 40),
+            Self::Bool(b)   => format!("{}", b).truecolor(255, 150, 40),
+            Self::Float(n)  => format!("{}", n).truecolor(255, 150, 40),
+            Self::Var(v)    => {
+                match v {
+                    IRVar::Temp(i)   => format!("T{}", i).truecolor(160, 160, 160),
+                    IRVar::Ident(i)  => format!("ID({})", i).cyan(),
+                    IRVar::Global(i) => format!("G{}", i).red(),
+                }
+            }
+            Self::Null      => format!("null").truecolor(255, 150, 40),
+            Self::Func(i)   => format!("fn({})", i).red(),
+        };
+
+        write!(f, "{}", s)
     }
 }
 
@@ -98,11 +109,15 @@ pub enum IRCode {
 impl fmt::Display for IRCode {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let s: String = match self {
-            Self::Label { id }        => format!("LABEL {}\t\t", id),
-            Self::Jump { label }      => format!("\tJump {}", label),
-            Self::Jnt { cond, label } => format!("\tJump {} unless {}", label, cond),
+            Self::Label { id }        => format!("LABEL {}\t\t", id).purple().to_string(),
+            Self::Jump { label }      => format!("\tJump {}", label).purple().to_string(),
+            Self::Jnt { cond, label } => {
+                let jump = format!("\tJNT {}", label).purple().to_string();
+                let unless = format!(" {}", cond);
+                format!("{jump}{unless}")
+            }
             Self::Load { dest, src }  => format!("\t{} = {}", dest, src),
-            Self::Return { dest }     => format!("\treturn {}", dest),
+            Self::Return { dest }     => format!("\t{} {}", "return".red(), dest),
             Self::ObjLoad { dest, store, key } => format!("\t{} = {}[{}]", dest, store, key),
             Self::ObjStore { store, key, src } => format!("\t{}[{}] = {}", store, key, src),
             Self::Binop { dest, lhs, op, rhs } => format!("\t{} = {} {} {}", dest, lhs, op, rhs),
@@ -118,45 +133,45 @@ impl fmt::Display for IRCode {
             Self::NewList { dest, items } => {
                 let mut s = format!("\t{} = [\n", dest);
                 for item in items.iter() {
-                    s.push_str(&format!("\t\t{},\n", item));
+                    s.push_str(&format!("\t\t\t{},\n", item));
                 }
-                s.push_str(&format!("\t]"));
+                s.push_str(&format!("\t\t]"));
                 s
             }
             Self::NewMap { dest, items } => {
                 let mut s = format!("\t{} = {{\n", dest);
                 for item in items.iter() {
-                    s.push_str(&format!("\t\t{}: {},\n", item.0, item.1));
+                    s.push_str(&format!("\t\t\t{}: {},\n", item.0, item.1));
                 }
-                s.push_str(&format!("\t}}"));
+                s.push_str(&format!("\t\t}}"));
                 s
             }
         };
 
-        write!(f, "{s:50}")
+        write!(f, "{}", s)
     }
 }
 
 impl fmt::Display for IRFunc {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if self.id == 0 {
-            write!(f, "======= MAIN START =======\n")?;
+            write!(f, "{}", "======= MAIN START =======\n".red())?
         } else {
-            write!(f, "======= FUNC {} params ( ", self.id)?;
+            write!(f, "{} {}", format!("======= FUNC {}", self.id).red(), "params ( ")?;
             for i in self.params.iter() {
-                write!(f, "{}, ", i)?;
+                write!(f, "{}", format!("{}, ", i))?;
             }
-            write!(f, ") =======\n")?;
+            write!(f, "{} {}", ")", "=======\n".red())?;
         }
 
         for stmt in self.code.iter() {
-            write!(f, "{}({}, {})\n", stmt.val, stmt.span.0, stmt.span.1)?;
+            write!(f, "{:12}{}\n", format!("({}, {})", stmt.span.0, stmt.span.1).bright_black(), stmt.val)?;
         }
 
         if self.id == 0 {
-            write!(f, "======= MAIN END =======\n")
+            write!(f, "{}", "======= MAIN END =======\n".red())
         } else {
-            write!(f, "======= FUNC {} END =======\n", self.id)
+            write!(f, "{}", format!("======= FUNC {} END =======\n", self.id).red())
         }
     }
 }
@@ -165,6 +180,7 @@ impl fmt::Display for IRFunc {
 pub struct IRFunc {
     id: usize,
     code: Vec<Span<IRCode>>,
+    //code: Vec<Option<Span>, Option<Label>, IRCode>>,
     params: Vec<usize>,
     label_counter: usize,
     label_stack: Vec<usize>

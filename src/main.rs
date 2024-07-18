@@ -122,8 +122,18 @@ fn run_repl() {
 
     loop {
         match parser.parse_repl() {
-            Ok(stmt) => println!("{:#?}", stmt),
-            Err(_) => {
+            Ok(stmt) => {
+                println!("{:#?}", stmt);
+                let mut generator = IRGenerator::new();
+                generator.gen_program(vec![stmt]);
+
+                // generator.display(symbol_map);
+                for func in generator.funcs.iter() {
+                    println!("{}", func.1);
+                }
+            }
+            Err(err) => {
+                println!("{:?}", err);
                 todo!()
             }
         }

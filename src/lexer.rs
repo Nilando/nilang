@@ -184,7 +184,6 @@ impl<'a> Lexer<'a> {
         self.file_name.is_none()
     }
 
-
     fn parse_buffer(&mut self) {
         let mut chars = 
         if self.repl_mode() {

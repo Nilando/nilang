@@ -31,6 +31,7 @@ dumb_fn = fn (a, b) {
         return 1;
       }
     }
+
     a = 0;
     return "test";
   }

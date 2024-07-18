@@ -24,6 +24,7 @@ pub struct Span<T> {
 pub enum SyntaxError {
     Expected(char),
     Unexpected(Token),
+    Error(String),
 }
 
 pub struct Parser<T: Lex> {
@@ -138,17 +139,6 @@ impl<T: Lex> Parser<T> {
         }
     }
 
-    pub fn display_errors(&mut self) {
-        // if in repl mode
-        // simply walk through the buffer line by line
-        // and
-        //
-        //
-
-        
-        todo!()
-    }
-
     pub fn parse_repl(&mut self) -> Result<Stmt, Span<SyntaxError>> {
         let stmt = self.parse_stmt()?;
         let token = self.lexer.peek();
@@ -256,7 +246,15 @@ impl<T: Lex> Parser<T> {
 
                 // TODO assert src is either an access, ident, or index
                 match expr.val {
-                    _ => {}
+                    Expr::Access { .. } | Expr::Index { .. } => {}
+                    Expr::Value(ref val) => {
+                        match val {
+                            Value::Ident(_) | Value::Global(_) => {
+                            }
+                            _ => return Err(Span::new(SyntaxError::Error("Expected lvalue".to_string()), expr.span)),
+                        }
+                    }
+                    _ => return Err(Span::new(SyntaxError::Error("Expected lvalue".to_string()), expr.span)),
                 }
 
                 Ok(Stmt::Assign {
@@ -390,7 +388,7 @@ impl<T: Lex> Parser<T> {
             Token::Int(i)                  => Span::new(Expr::Value(Value::Int(i)     ), token.span),
             Token::Float(f)                => Span::new(Expr::Value(Value::Float(f)   ), token.span),
             Token::Ident(id)               => Span::new(Expr::Value(Value::Ident(id)  ), token.span),
-            Token::Global(id)              => Span::new(Expr::Value(Value::Global(id)  ), token.span),
+            Token::Global(id)              => Span::new(Expr::Value(Value::Global(id) ), token.span),
             Token::String(s)               => Span::new(Expr::Value(Value::String(s)  ), token.span),
             Token::KeyWord(KeyWord::Null)  => Span::new(Expr::Value(Value::Null       ), token.span),
             Token::KeyWord(KeyWord::False) => Span::new(Expr::Value(Value::Bool(false)), token.span),
