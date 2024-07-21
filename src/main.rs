@@ -33,80 +33,37 @@ fn main() {
 
 fn run_file(file_name: String) {
     let mut symbol_map = HashMap::new();
-    let lexer = Lexer::new(&mut symbol_map, Some(file_name.clone()));
+    let mut lexer = Lexer::new(symbol_map, Some(file_name.clone()));
     let mut parser = Parser::new(lexer);
 
-    match parser.parse_program() {
-        Ok(stmts) => {
-            println!("{:#?}", stmts);
-
-            let mut generator = IRGenerator::new();
-            generator.gen_program(stmts);
-
-            for (_id, func) in generator.funcs.iter() {
-                func.display(&symbol_map);
-            }
-            // let vm = VM::new();
-            //
-            // match vm.run() {
-            //  Ok() => {}
-            //  Err(_) => {
-            //      // we get back a span
-            //      // how do we display the error?
-            //  }
-            // }
+    let stmts = match parser.parse_program() {
+        Ok(stmts) => stmts,
+        Err(errs) => {
+            display_errors(file_name, errs);
+            return;
         }
-        Err(mut errs) => {
-            errs.sort_by(|b, a| a.span.0.partial_cmp(&b.span.0).unwrap());
+    };
 
-            let mut err = errs.pop().unwrap();
-            let file = File::open(file_name.clone()).expect("unable to read file");
-            let mut reader = BufReader::new(file);
-            let mut line_number = 1;
-            let mut bytes_read = 0;
-            let mut line = String::new();
-            let mut line_bytes = reader.read_line(&mut line).expect("failed reading file");
+    println!("{:#?}", stmts);
 
-            loop {
-                if err.span.0 < bytes_read + line_bytes &&  err.span.0 >= bytes_read {
-                    println!("{} {} line {}", "SYNTAX ERROR:".red(), file_name, line_number);
-                    println!("");
+    let mut generator = IRGenerator::new();
+    generator.gen_program(stmts);
 
-                    print!("{}", line);
-                    let start = err.span.0 - bytes_read;
-                    let end = err.span.1 - bytes_read;
+    lexer = parser.get_lexer();
+    symbol_map =  lexer.get_symbol_map();
 
-                    for i in 0..end {
-                        if start <= i  {
-                            print!("{}", "^".red());
-                        } else {
-                            print!(" ")
-                        }
-                    }
-
-                    println!("");
-                    println!("{:?}", err.val);
-
-
-                    if let Some(e) = errs.pop() {
-                        err = e;
-                        continue;
-                    } else {
-                        break;
-                    }
-                }
-
-                line.clear();
-                bytes_read += line_bytes;
-                line_bytes = reader.read_line(&mut line).expect("failed reading file");
-                line_number += 1;
-
-                if line_bytes == 0 {
-                    panic!("Invalid Error Span");
-                }
-            }
-        }
+    for (_id, func) in generator.funcs.iter() {
+        func.display(&symbol_map);
     }
+    // let vm = VM::new();
+    //
+    // match vm.run() {
+    //  Ok() => {}
+    //  Err(_) => {
+    //      // we get back a span
+    //      // how do we display the error?
+    //  }
+    // }
 }
 
 fn run_repl() {
@@ -117,25 +74,82 @@ fn run_repl() {
     println!("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
 
     let mut symbol_map = HashMap::new();
-    let lexer = Lexer::new(&mut symbol_map, None);
+    let mut lexer = Lexer::new(symbol_map, None);
     let mut parser = Parser::new(lexer);
 
     loop {
-        match parser.parse_repl() {
-            Ok(stmt) => {
-                println!("{:#?}", stmt);
-                let mut generator = IRGenerator::new();
-                generator.gen_program(vec![stmt]);
-
-                // generator.display(symbol_map);
-                for (_id, func) in generator.funcs.iter() {
-                    //func.display(&symbol_map);
-                }
-            }
+        let stmt = match parser.parse_repl() {
+            Ok(stmt) => stmt,
             Err(err) => {
                 println!("{:?}", err);
                 todo!()
             }
+        };
+
+        println!("{:#?}", stmt);
+
+        let mut generator = IRGenerator::new();
+        generator.gen_program(vec![stmt]);
+
+        lexer = parser.get_lexer();
+        symbol_map =  lexer.get_symbol_map();
+
+        for (_id, func) in generator.funcs.iter() {
+            func.display(&symbol_map);
+        }
+
+        lexer = Lexer::new(symbol_map, None);
+        parser = Parser::new(lexer);
+    }
+}
+
+fn display_errors(file_name: String, mut errs: Vec<Span<SyntaxError>>) {
+    errs.sort_by(|b, a| a.span.0.partial_cmp(&b.span.0).unwrap());
+
+    let mut err = errs.pop().unwrap();
+    let file = File::open(file_name.clone()).expect("unable to read file");
+    let mut reader = BufReader::new(file);
+    let mut line_number = 1;
+    let mut bytes_read = 0;
+    let mut line = String::new();
+    let mut line_bytes = reader.read_line(&mut line).expect("failed reading file");
+
+    loop {
+        if err.span.0 < bytes_read + line_bytes &&  err.span.0 >= bytes_read {
+            println!("{} {} line {}", "SYNTAX ERROR:".red(), file_name, line_number);
+            println!("");
+
+            print!("{}", line);
+            let start = err.span.0 - bytes_read;
+            let end = err.span.1 - bytes_read;
+
+            for i in 0..end {
+                if start <= i  {
+                    print!("{}", "^".red());
+                } else {
+                    print!(" ")
+                }
+            }
+
+            println!("");
+            println!("{:?}", err.val);
+
+
+            if let Some(e) = errs.pop() {
+                err = e;
+                continue;
+            } else {
+                break;
+            }
+        }
+
+        line.clear();
+        bytes_read += line_bytes;
+        line_bytes = reader.read_line(&mut line).expect("failed reading file");
+        line_number += 1;
+
+        if line_bytes == 0 {
+            panic!("Invalid Error Span");
         }
     }
 }

@@ -103,6 +103,10 @@ impl<T: Lex> Parser<T> {
         }
     }
 
+    pub fn get_lexer(self) -> T {
+        self.lexer
+    }
+
     pub fn parse_program(&mut self) -> Result<Vec<Stmt>, Vec<Span<SyntaxError>>> {
         let mut stmts = vec![];
 

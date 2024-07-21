@@ -9,7 +9,7 @@ pub trait Lex {
     fn parse_next_line(&mut self);
 }
 
-impl<'a> Lex for Lexer<'a> {
+impl Lex for Lexer {
     fn get_token(&mut self) -> SpannedToken {
         if self.eof {
             return self.end_token();
@@ -148,8 +148,8 @@ pub enum Token {
     KeyWord(KeyWord),
 }
 
-pub struct Lexer<'a> {
-    symbol_map: &'a mut HashMap<String, usize>,
+pub struct Lexer {
+    symbol_map: HashMap<String, usize>,
     tokens: VecDeque<SpannedToken>,
     pos: usize,
     eof: bool,
@@ -158,8 +158,8 @@ pub struct Lexer<'a> {
     pub buffer: String,
 }
 
-impl<'a> Lexer<'a> {
-    pub fn new(symbol_map: &'a mut HashMap<String, usize>, file_name: Option<String>) -> Self {
+impl Lexer {
+    pub fn new(symbol_map: HashMap<String, usize>, file_name: Option<String>) -> Self {
         let reader: Box<dyn BufRead> = 
         if let Some(ref file_name) = file_name {
             let file = File::open(file_name.clone()).expect("unable to read file");
@@ -179,6 +179,10 @@ impl<'a> Lexer<'a> {
             eof: false,
             file_name,
         }
+    }
+
+    pub fn get_symbol_map(self) -> HashMap<String, usize> {
+        self.symbol_map
     }
 
     pub fn repl_mode(&self) -> bool {
