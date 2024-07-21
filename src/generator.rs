@@ -3,13 +3,6 @@ use super::lexer::Op;
 
 use std::collections::HashMap;
 
-#[derive(Debug, Copy, Clone)]
-pub enum IRVar {
-    Temp(usize),
-    Ident(usize),
-    Global(usize)
-}
-
 impl IRValue {
     fn display(&self, symbol_map: &HashMap<String, usize>) -> String {
         match self {
@@ -100,6 +93,14 @@ impl IRFunc {
         }
     }
 }
+
+#[derive(Debug, Copy, Clone)]
+pub enum IRVar {
+    Temp(usize),
+    Ident(usize),
+    Global(usize)
+}
+
 
 #[derive(Debug)]
 pub enum IRValue {
@@ -198,16 +199,11 @@ impl IRGenerator {
             label_stack: vec![],
             label_counter: 0
         };
-
         self.func_counter += 1;
         self.func_stack.push(func);
-        
-        self.generate(stmts);
 
-        let mut func = self.func_stack.pop().unwrap();
-        let end_return = IRCode::Return { dest: IRValue::Null };
-        func.code.push(Span::new(end_return, (0, 0)));
-        self.funcs.insert(func.id, func);
+        self.generate(stmts);
+        self.pop_func();
     }
 
     pub fn generate(&mut self, stmts: Vec<Stmt>) {
@@ -219,18 +215,16 @@ impl IRGenerator {
                 }
                 Stmt::Return(expr) => {
                     let var = self.generate_expr(*expr);
-                    let ret = IRCode::Return { dest: var.val };
-                    let func = self.func_stack.last_mut().unwrap();
+                    let instr = IRCode::Return { dest: var.val };
 
-                    func.code.push(Span::new(ret, var.span));
+                    self.push_instr(instr, var.span);
                     self.temp_counter = 0;
                 }
                 Stmt::Log(expr) => {
                     let var = self.generate_expr(*expr);
-                    let ret = IRCode::Log { dest: var.val };
-                    let func = self.func_stack.last_mut().unwrap();
+                    let instr = IRCode::Log { dest: var.val };
 
-                    func.code.push(Span::new(ret, var.span));
+                    self.push_instr(instr, var.span);
                     self.temp_counter = 0;
                 }
                 Stmt::Assign { dest, src } => {
@@ -238,10 +232,9 @@ impl IRGenerator {
                         Expr::Value(value) => {
                             if let IRValue::Var(dest) = self.generate_value(value, dest.span) {
                                 let src = self.generate_expr(*src);
-                                let load = IRCode::Load { dest, src: src.val };
-                                let func = self.func_stack.last_mut().unwrap();
+                                let instr = IRCode::Load { dest, src: src.val };
 
-                                func.code.push(Span::new(load, src.span));
+                                self.push_instr(instr, src.span);
                                 self.temp_counter = 0;
                             }
                         }
@@ -250,10 +243,9 @@ impl IRGenerator {
                             let store = self.generate_expr(*store).val;
                             let key = IRValue::Var(IRVar::Ident(key));
                             let src = self.generate_expr(*src).val;
-                            let store = IRCode::ObjStore { store, key, src};
-                            let func = self.func_stack.last_mut().unwrap();
+                            let instr = IRCode::ObjStore { store, key, src};
 
-                            func.code.push(Span::new(store, span));
+                            self.push_instr(instr, span);
                             self.temp_counter = 0;
                         }
                         Expr::Index { store, key } => {
@@ -261,10 +253,9 @@ impl IRGenerator {
                             let store = self.generate_expr(*store).val;
                             let key = self.generate_expr(*key).val;
                             let src = self.generate_expr(*src).val;
-                            let store = IRCode::ObjStore { store, key, src};
-                            let func = self.func_stack.last_mut().unwrap();
+                            let instr = IRCode::ObjStore { store, key, src};
 
-                            func.code.push(Span::new(store, span));
+                            self.push_instr(instr, span);
                             self.temp_counter = 0;
                         }
                         _ => panic!("GENERATOR ERROR: assigning to non lvalue"),
@@ -338,9 +329,8 @@ impl IRGenerator {
                 let rhs = self.generate_expr(*rhs).val;
                 let dest = self.get_temp();
                 let binop = IRCode::Binop { dest, lhs, rhs, op: op.clone() };
-                let func = self.func_stack.last_mut().unwrap();
 
-                func.code.push(Span::new(binop, span));
+                self.push_instr(binop, span);
 
                 Span::new(IRValue::Var(dest), span)
             }
@@ -349,9 +339,8 @@ impl IRGenerator {
                 let key = IRValue::Var(IRVar::Ident(key));
                 let dest = self.get_temp();
                 let obj_load = IRCode::ObjLoad { dest, store, key};
-                let func = self.func_stack.last_mut().unwrap();
 
-                func.code.push(Span::new(obj_load, span));
+                self.push_instr(obj_load, span);
 
                 Span::new(IRValue::Var(dest), span)
             }
@@ -360,9 +349,8 @@ impl IRGenerator {
                 let key = self.generate_expr(*key).val;
                 let dest = self.get_temp();
                 let obj_load = IRCode::ObjLoad { dest, store, key};
-                let func = self.func_stack.last_mut().unwrap();
 
-                func.code.push(Span::new(obj_load, span));
+                self.push_instr(obj_load, span);
 
                 Span::new(IRValue::Var(dest), span)
             }
@@ -374,10 +362,9 @@ impl IRGenerator {
                 } else {
                     self.generate_expr(*input.unwrap()).val
                 };
-                let call = IRCode::Call { dest, src, input };
-                let func = self.func_stack.last_mut().unwrap();
+                let instr = IRCode::Call { dest, src, input };
 
-                func.code.push(Span::new(call, span));
+                self.push_instr(instr, span);
 
                 Span::new(IRValue::Var(dest), span)
             }
@@ -396,68 +383,70 @@ impl IRGenerator {
             Value::List(list) => {
                 let dest = self.get_temp();
                 let mut items = vec![];
-
                 for expr in list.into_iter() {
                     let item = self.generate_expr(expr);
                     items.push(item.val);
                 }
+                let instr = IRCode::NewList { dest, items };
 
-                let obj_load = IRCode::NewList { dest, items };
-                let func = self.func_stack.last_mut().unwrap();
-
-                func.code.push(Span::new(obj_load, span));
+                self.push_instr(instr, span);
 
                 IRValue::Var(dest)
             }
             Value::Map(map) => {
                 let dest = self.get_temp();
                 let mut items = vec![];
-
                 for entry in map.into_iter() {
                     let (key, val) = entry;
                     let key = self.generate_expr(key).val;
                     let val = self.generate_expr(val).val;
                     items.push((key, val));
                 }
+                let instr = IRCode::NewMap { dest, items };
 
-                let obj_load = IRCode::NewMap { dest, items };
-                let func = self.func_stack.last_mut().unwrap();
-
-                func.code.push(Span::new(obj_load, span));
+                self.push_instr(instr, span);
 
                 IRValue::Var(dest)
             }
             Value::Func { stmts } => {
                 let temp_counter = self.temp_counter;
                 self.temp_counter = 0;
-
-                let func = IRFunc {
-                    id: self.func_counter,
-                    code: vec![],
-                    label_stack: vec![],
-                    label_counter: 0,
-                };
-
-                self.func_counter += 1;
-                self.func_stack.push(func);
+                self.push_new_func();
                 self.generate(stmts);
                 self.temp_counter = temp_counter;
 
-                let mut func = self.func_stack.pop().unwrap();
-                let end_return = IRCode::Return { dest: IRValue::Null };
-                func.code.push(Span::new(end_return, span));
-                let src = IRValue::Func(func.id);
-                self.funcs.insert(func.id, func);
-
+                let func_val = self.pop_func();
                 let dest = self.get_temp();
-                let load = IRCode::Load { dest, src };
-                let func = self.func_stack.last_mut().unwrap();
+                let load = IRCode::Load { dest, src: func_val };
 
-                func.code.push(Span::new(load, span));
+                self.push_instr(load, span);
 
                 IRValue::Var(dest)
             }
         }
+    }
+
+    fn pop_func(&mut self) -> IRValue {
+        let mut func = self.func_stack.pop().unwrap();
+        let end_return = IRCode::Return { dest: IRValue::Null };
+        let func_val = IRValue::Func(func.id);
+
+        func.code.push(Span::new(end_return, (0, 0)));
+        self.funcs.insert(func.id, func);
+
+        func_val
+    }
+
+    fn push_new_func(&mut self) {
+        let func = IRFunc {
+            id: self.func_counter,
+            code: vec![],
+            label_stack: vec![],
+            label_counter: 0,
+        };
+
+        self.func_counter += 1;
+        self.func_stack.push(func);
     }
 
     fn push_label(&mut self, label: usize) {
