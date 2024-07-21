@@ -38,13 +38,13 @@ fn run_file(file_name: String) {
 
     match parser.parse_program() {
         Ok(stmts) => {
-            //println!("{:#?}", stmts);
+            println!("{:#?}", stmts);
 
             let mut generator = IRGenerator::new();
             generator.gen_program(stmts);
 
-            for func in generator.funcs.iter() {
-                println!("{}", func.1);
+            for (_id, func) in generator.funcs.iter() {
+                func.display(&symbol_map);
             }
             // let vm = VM::new();
             //
@@ -128,8 +128,8 @@ fn run_repl() {
                 generator.gen_program(vec![stmt]);
 
                 // generator.display(symbol_map);
-                for func in generator.funcs.iter() {
-                    println!("{}", func.1);
+                for (_id, func) in generator.funcs.iter() {
+                    //func.display(&symbol_map);
                 }
             }
             Err(err) => {

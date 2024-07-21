@@ -1,6 +1,6 @@
 lexer = { 
-  parse_line: fn() {
-    line = input();
+  parse_line: fn {
+    line = arg();
 
     i = 0;
     while i != line.len {
@@ -20,7 +20,7 @@ msg = "hello world!";
 chars = msg.to_list();
 blah = ads + asdf - asdf / asdf * asdfasdf == "testset" + ( true == false );
 
-dumb_fn = fn (a, b) {
+dumb_fn = fn {
   while a == b {
     if blah == ( true  + 69) {
       if true { 
@@ -36,3 +36,14 @@ dumb_fn = fn (a, b) {
     return "test";
   }
 };
+
+fibonizer = fn { 
+  if @.n == 0 { return 0; }
+  if (@.n == 1) || (@.n == 2) {
+    return 1;
+  }
+
+  return @.self(@.n - 1) + @.self(@.n - 2); 
+};
+
+log fibonizer(10);

@@ -1,10 +1,8 @@
 TODO:
   GENERATOR:
-    - dry up the generator
-    - make spans be option
+    - convert variables to locations
+      - get reg function
+      - add load global and store global instructions
 
   PARSER:
-    - dry up code
-    - ensure assignments are only to lvalues
     - ensure calls only happen on functions or lvalues
-    - return warnings?

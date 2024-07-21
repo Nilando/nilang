@@ -1,5 +1,5 @@
 use std::io::BufRead;
-use std::fs::{File, read_to_string};
+use std::fs::File;
 use std::io::{Write, BufReader, stdin, stdout};
 use std::collections::{VecDeque, HashMap};
 
@@ -92,17 +92,21 @@ pub enum Op {
     Divide,
     Equal,
     NotEqual,
+    Or,
+    And,
 }
 
 use std::fmt;
 impl fmt::Display for Op {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::Plus => write!(f, "+"),
-            Self::Minus => write!(f, "-"),
+            Self::Plus     => write!(f, "+"),
+            Self::Minus    => write!(f, "-"),
             Self::Multiply => write!(f, "*"),
-            Self::Divide => write!(f, "/"),
-            Self::Equal => write!(f, "=="),
+            Self::Divide   => write!(f, "/"),
+            Self::And      => write!(f, "&&"),
+            Self::Or       => write!(f, "||"),
+            Self::Equal    => write!(f, "=="),
             Self::NotEqual => write!(f, "!="),
         }
     }
@@ -127,7 +131,8 @@ pub enum KeyWord {
     Return,
     Null,
     False,
-    True
+    True,
+    Log
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -174,10 +179,6 @@ impl<'a> Lexer<'a> {
             eof: false,
             file_name,
         }
-    }
-
-    pub fn is_eof(&self) -> bool {
-        self.eof
     }
 
     pub fn repl_mode(&self) -> bool {
@@ -266,7 +267,6 @@ impl<'a> Lexer<'a> {
                 }
 
                 '@' => {
-                    chars.next().unwrap();
                     let mut str = String::from(c);
 
                     while let Some((_, p)) = chars.peek() {
@@ -280,9 +280,14 @@ impl<'a> Lexer<'a> {
                         str.push(c);
                     }
 
-                    let id = self.symbol_map.len();
-                    self.symbol_map.insert(str, id);
-                    Token::Global(id)
+                    match self.symbol_map.get(&str) {
+                        Some(id) => Token::Global(*id),
+                        None => {
+                            let id = self.symbol_map.len();
+                            self.symbol_map.insert(str, id);
+                            Token::Global(id)
+                        }
+                    }
                 }
 
                 c if c.is_alphabetic() => {
@@ -310,8 +315,7 @@ impl<'a> Lexer<'a> {
                         "null"     => Token::KeyWord(KeyWord::Null    ),
                         "false"    => Token::KeyWord(KeyWord::False   ),
                         "true"     => Token::KeyWord(KeyWord::True    ),
-                        //"log"      => Token::KeyWord(KeyWord::Log     ),
-                        //"draw"     => Token::KeyWord(KeyWord::Draw    ),
+                        "log"      => Token::KeyWord(KeyWord::Log     ),
                         _ => {
                             match self.symbol_map.get(&str) {
                                 Some(id) => Token::Ident(*id),
@@ -336,6 +340,22 @@ impl<'a> Lexer<'a> {
                     if let Some((_, '=')) = chars.peek() {
                         chars.next();
                         Token::Op(Op::NotEqual)
+                    } else {
+                        Token::Error(LexError::Unknown)
+                    }
+                }
+                '|' => {
+                    if let Some((_, '|')) = chars.peek() {
+                        chars.next();
+                        Token::Op(Op::Or)
+                    } else {
+                        Token::Error(LexError::Unknown)
+                    }
+                }
+                '&' => {
+                    if let Some((_, '&')) = chars.peek() {
+                        chars.next();
+                        Token::Op(Op::Or)
                     } else {
                         Token::Error(LexError::Unknown)
                     }

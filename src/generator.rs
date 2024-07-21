@@ -1,9 +1,7 @@
 use super::parser::{Stmt, Expr, Span, Value};
 use super::lexer::Op;
 
-use colored::Colorize;
 use std::collections::HashMap;
-use std::fmt;
 
 #[derive(Debug, Copy, Clone)]
 pub enum IRVar {
@@ -12,17 +10,97 @@ pub enum IRVar {
     Global(usize)
 }
 
-impl fmt::Display for IRVar {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let s = match self {
-            IRVar::Temp(i)   => format!("T{}", i).truecolor(160, 160, 160),
-            IRVar::Ident(i)  => format!("ID({})", i).cyan(),
-            IRVar::Global(i) => format!("G{}", i).red(),
-        };
-
-        write!(f, "{}", s)
+impl IRValue {
+    fn display(&self, symbol_map: &HashMap<String, usize>) -> String {
+        match self {
+            Self::String(s) => format!("\"{}\"", s),
+            Self::Int(i)    => format!("{}", i),
+            Self::Bool(b)   => format!("{}", b),
+            Self::Float(n)  => format!("{}", n),
+            Self::Null      => format!("null"),
+            Self::Func(i)   => format!("fn({})", i),
+            Self::Var(v)    => v.display(symbol_map),
+        }
     }
 }
+
+impl IRVar {
+    fn display(&self, symbol_map: &HashMap<String, usize>) -> String {
+        match self {
+            IRVar::Temp(i)   => format!("T{}", i),
+            IRVar::Ident(i)  => {
+                for (k, v) in symbol_map.iter() {
+                    if v == i {
+                        return format!("{}", k);
+                    }
+                }
+                panic!("unreachable")
+            }
+            IRVar::Global(i)  => {
+                for (k, v) in symbol_map.iter() {
+                    if v == i {
+                        return format!("{}", k);
+                    }
+                }
+                panic!("unreachable")
+            }
+        }
+    }
+}
+
+impl IRCode {
+    pub fn display(&self, symbol_map: &HashMap<String, usize>) -> String {
+        match self {
+            Self::Load { dest, src }  => format!("\t{} = {}"  , dest.display(symbol_map), src.display(symbol_map)),
+            Self::Return { dest }     => format!("\treturn {}", dest.display(symbol_map)),
+            Self::Log { dest }     => format!("\tlog {}"      ,dest.display(symbol_map)),
+            Self::Label { id }        => format!("LABEL {}"   , id),
+            Self::Jump { label }      => format!("\tJump {}"  , label),
+            Self::Jnt { cond, label } => format!("\tJNT {} {}", label, format!("{}", cond.display(symbol_map))),
+            Self::ObjLoad { dest, store, key } => format!("\t{} = {}[{}]"  , dest.display(symbol_map) , store.display(symbol_map), key.display(symbol_map)),
+            Self::ObjStore { store, key, src } => format!("\t{}[{}] = {}"  , store.display(symbol_map), key.display(symbol_map)  , src.display(symbol_map)),
+            Self::Call { dest, src, input }    => format!("\t{} = {}({})"  , dest.display(symbol_map) , src.display(symbol_map)  , input.display(symbol_map)),
+            Self::Binop { dest, lhs, op, rhs } => format!("\t{} = {} {} {}", dest.display(symbol_map) , lhs.display(symbol_map)  , op, rhs.display(symbol_map)),
+            Self::NewList { dest, items } => {
+                let mut body = String::new();
+                for item in items.iter() {
+                    body.push_str(&format!("\t\t\t\t{},\n", item.display(symbol_map)));
+                }
+
+                format!("\t{} = [\n{}\t\t\t]", dest.display(symbol_map), body)
+            }
+            Self::NewMap { dest, items } => {
+                let mut body = String::new();
+                for (key, value) in items.iter() {
+                    body.push_str(&format!("\t\t\t\t{}: {},\n", key.display(symbol_map), value.display(symbol_map)));
+                }
+
+                format!("\t{} = {{\n{}\t\t\t}}", dest.display(symbol_map), body)
+            }
+        }
+    }
+}
+
+impl IRFunc {
+    pub fn display(&self, symbol_map: &HashMap<String, usize>) {
+        if self.id == 0 {
+            println!("======= MAIN START =======");
+        } else {
+            println!("======= FUNC {} =======", self.id);
+        }
+
+        for (i, stmt) in self.code.iter().enumerate() {
+            println!("{}\t{}", format!("{:04x} {:04x} {:04x}", i, stmt.span.0, stmt.span.1), stmt.val.display(symbol_map));
+        }
+
+        if self.id == 0 {
+            println!("======= MAIN END =======\n");
+        } else {
+            println!("======= FUNC {} END =======\n", self.id);
+        }
+    }
+}
+
 #[derive(Debug)]
 pub enum IRValue {
     Var(IRVar),
@@ -32,28 +110,6 @@ pub enum IRValue {
     Bool(bool),
     Func(usize),
     Null,
-}
-
-impl fmt::Display for IRValue {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let s = match self {
-            Self::String(s) => format!("\"{}\"", s).bright_green(),
-            Self::Int(i)    => format!("{}", i).truecolor(255, 150, 40),
-            Self::Bool(b)   => format!("{}", b).truecolor(255, 150, 40),
-            Self::Float(n)  => format!("{}", n).truecolor(255, 150, 40),
-            Self::Var(v)    => {
-                match v {
-                    IRVar::Temp(i)   => format!("T{}", i).truecolor(160, 160, 160),
-                    IRVar::Ident(i)  => format!("ID({})", i).cyan(),
-                    IRVar::Global(i) => format!("G{}", i).red(),
-                }
-            }
-            Self::Null      => format!("null").truecolor(255, 150, 40),
-            Self::Func(i)   => format!("fn({})", i).red(),
-        };
-
-        write!(f, "{}", s)
-    }
 }
 
 #[derive(Debug)]
@@ -77,9 +133,12 @@ pub enum IRCode {
     Call {
         dest: IRVar,
         src: IRValue,
-        args: Vec<IRValue>,
+        input: IRValue,
     },
     Return {
+        dest: IRValue,
+    },
+    Log {
         dest: IRValue,
     },
     Load {
@@ -88,7 +147,7 @@ pub enum IRCode {
     },
     Jnt {
         label: usize,
-        cond: IRVar,
+        cond: IRValue,
     },
     Jump {
         label: usize,
@@ -106,80 +165,10 @@ pub enum IRCode {
     }
 }
 
-impl fmt::Display for IRCode {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let s: String = match self {
-            Self::Load { dest, src }  => format!("\t{} = {}", dest, src),
-            Self::Return { dest }     => format!("\t{} {}", "return".red(), dest),
-            Self::Label { id }        => format!("\tLABEL {}", id).yellow().to_string(),
-            Self::Jump { label }      => format!("\tJump {}", label).yellow().to_string(),
-            Self::Jnt { cond, label } => {
-                format!("\tJNT {} {}", label, format!("{}", cond)).yellow().to_string()
-            }
-            Self::ObjLoad { dest, store, key } => format!("\t{} = {}[{}]", dest, store, key),
-            Self::ObjStore { store, key, src } => format!("\t{}[{}] = {}", store, key, src),
-            Self::Binop { dest, lhs, op, rhs } => format!("\t{} = {} {} {}", dest, lhs, op, rhs),
-            Self::Call { dest, src, args } => {
-                let mut s = format!("\t{} = {}(", dest, src);
-                for arg in args.iter() {
-                    s.push_str(&format!(" {}, ", arg));
-                }
-
-                s.push_str(&format!(")"));
-                s
-            }
-            Self::NewList { dest, items } => {
-                let mut s = format!("\t{} = [\n", dest);
-                for item in items.iter() {
-                    s.push_str(&format!("\t\t\t{},\n", item));
-                }
-                s.push_str(&format!("\t\t]"));
-                s
-            }
-            Self::NewMap { dest, items } => {
-                let mut s = format!("\t{} = {{\n", dest);
-                for item in items.iter() {
-                    s.push_str(&format!("\t\t\t{}: {},\n", item.0, item.1));
-                }
-                s.push_str(&format!("\t\t}}"));
-                s
-            }
-        };
-
-        write!(f, "{}", s)
-    }
-}
-
-impl fmt::Display for IRFunc {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if self.id == 0 {
-            write!(f, "{}", "======= MAIN START =======\n".red())?
-        } else {
-            write!(f, "{} {}", format!("======= FUNC {}", self.id).red(), "params ( ")?;
-            for i in self.params.iter() {
-                write!(f, "{}", format!("{}, ", i))?;
-            }
-            write!(f, "{} {}", ")", "=======\n".red())?;
-        }
-
-        for stmt in self.code.iter() {
-            write!(f, "{}{}\n", format!("({:04x}, {:04x})", stmt.span.0, stmt.span.1).bright_black(), stmt.val)?;
-        }
-
-        if self.id == 0 {
-            write!(f, "{}", "======= MAIN END =======\n".red())
-        } else {
-            write!(f, "{}", format!("======= FUNC {} END =======\n", self.id).red())
-        }
-    }
-}
-
 #[derive(Debug)]
 pub struct IRFunc {
     id: usize,
     code: Vec<Span<IRCode>>,
-    //code: Vec<Option<Span>, Option<Label>, IRCode>>,
-    params: Vec<usize>,
     label_counter: usize,
     label_stack: Vec<usize>
 }
@@ -205,7 +194,6 @@ impl IRGenerator {
     pub fn gen_program(&mut self, stmts: Vec<Stmt>) {
         let func = IRFunc {
             id: self.func_counter,
-            params: vec![],
             code: vec![],
             label_stack: vec![],
             label_counter: 0
@@ -237,6 +225,14 @@ impl IRGenerator {
                     func.code.push(Span::new(ret, var.span));
                     self.temp_counter = 0;
                 }
+                Stmt::Log(expr) => {
+                    let var = self.generate_expr(*expr);
+                    let ret = IRCode::Log { dest: var.val };
+                    let func = self.func_stack.last_mut().unwrap();
+
+                    func.code.push(Span::new(ret, var.span));
+                    self.temp_counter = 0;
+                }
                 Stmt::Assign { dest, src } => {
                     match dest.val {
                         Expr::Value(value) => {
@@ -244,6 +240,7 @@ impl IRGenerator {
                                 let src = self.generate_expr(*src);
                                 let load = IRCode::Load { dest, src: src.val };
                                 let func = self.func_stack.last_mut().unwrap();
+
                                 func.code.push(Span::new(load, src.span));
                                 self.temp_counter = 0;
                             }
@@ -275,109 +272,40 @@ impl IRGenerator {
 
                 }
                 Stmt::While { cond, stmts } => {
-                    // TODO: check the type of condition, and generate a better type of branch instruction
-                    let func = self.func_stack.last_mut().unwrap();
+                    let label_start = self.get_new_label();
+                    let label_end = self.get_new_label();
+                    let cond = self.generate_expr(*cond);
 
-                    let label_start = func.label_counter;
-                    func.label_counter += 1;
-                    let label_end = func.label_counter;
-                    func.label_counter += 1;
-                    let label = IRCode::Label { id: label_start };
-
-                    func.code.push(Span::new(label, (0, 0)));
-
-                    let spanned_val = self.generate_expr(*cond);
-                    let val = if let IRValue::Var(v) = spanned_val.val {
-                        v
-                    } else {
-                        let temp = self.get_temp();
-                        let ret = IRCode::Load { dest: temp, src: spanned_val.val };
-                        let func = self.func_stack.last_mut().unwrap();
-
-                        func.code.push(Span::new(ret, spanned_val.span));
-                        temp
-                    };
-
-                    let ret = IRCode::Jnt { cond: val, label: label_end };
-                    let func = self.func_stack.last_mut().unwrap();
-                    func.code.push(Span::new(ret, spanned_val.span));
+                    self.push_instr(IRCode::Label { id: label_start }, (0, 0));
+                    self.push_instr(IRCode::Jnt { cond: cond.val, label: label_end }, cond.span);
                     self.temp_counter = 0;
-
-                    // push onto the loop stack
-                    func.label_stack.push(label_start);
-
+                    self.push_label(label_start);
                     self.generate(stmts);
-
-                    let func = self.func_stack.last_mut().unwrap();
-                    let jmp = IRCode::Jump { label: label_start };
-                    func.code.push(Span::new(jmp, (0, 0)));
-                    let label = IRCode::Label { id: label_end };
-                    func.code.push(Span::new(label, (0, 0)));
-                    func.label_stack.pop();
+                    self.push_instr(IRCode::Jump { label: label_start }, (0, 0));
+                    self.push_instr(IRCode::Label { id: label_end }, (0, 0));
+                    self.pop_label();
                 }
                 Stmt::If { cond, stmts } => {
-                    let spanned_val = self.generate_expr(*cond);
-                    let val = if let IRValue::Var(v) = spanned_val.val {
-                        v
-                    } else {
-                        let temp = self.get_temp();
-                        let ret = IRCode::Load { dest: temp, src: spanned_val.val };
-                        let func = self.func_stack.last_mut().unwrap();
+                    let cond = self.generate_expr(*cond);
+                    let label = self.get_new_label();
 
-                        func.code.push(Span::new(ret, spanned_val.span));
-                        temp
-                    };
-
-
-                    let func = self.func_stack.last_mut().unwrap();
-                    let ret = IRCode::Jnt { cond: val, label: func.label_counter };
-                    func.code.push(Span::new(ret, spanned_val.span));
+                    self.push_instr(IRCode::Jnt { cond: cond.val, label }, cond.span);
                     self.temp_counter = 0;
-
                     self.generate(stmts);
-
-                    let func = self.func_stack.last_mut().unwrap();
-                    let label = IRCode::Label { id: func.label_counter };
-                    func.label_counter += 1;
-                    func.code.push(Span::new(label, (0, 0)));
+                    self.push_instr(IRCode::Label { id: label }, (0, 0));
                 }
                 Stmt::IfElse { cond, stmts, else_stmts } => {
-                    let spanned_val = self.generate_expr(*cond);
-                    let val = if let IRValue::Var(v) = spanned_val.val {
-                        v
-                    } else {
-                        let temp = self.get_temp();
-                        let func = self.func_stack.last_mut().unwrap();
-                        let ret = IRCode::Load { dest: temp, src: spanned_val.val };
+                    let cond = self.generate_expr(*cond);
+                    let else_start = self.get_new_label();
+                    let else_end = self.get_new_label();
 
-                        func.code.push(Span::new(ret, spanned_val.span));
-                        temp
-                    };
-
-                    let func = self.func_stack.last_mut().unwrap();
-                    let ret = IRCode::Jnt { cond: val, label: func.label_counter };
-                    func.code.push(Span::new(ret, spanned_val.span));
+                    self.push_instr(IRCode::Jnt { cond: cond.val, label: else_start }, cond.span);
                     self.temp_counter = 0;
-
                     self.generate(stmts);
-
-                    let func = self.func_stack.last_mut().unwrap();
-                    let label = IRCode::Label { id: func.label_counter };
-                    func.label_counter += 1;
-                    func.code.push(Span::new(label, (0, 0)));
-
-                    let func = self.func_stack.last_mut().unwrap();
-                    let jmp = IRCode::Jump { label: func.label_counter };
-                    func.code.push(Span::new(jmp, spanned_val.span));
-
-
+                    self.push_instr(IRCode::Jump { label: else_end }, (0, 0));
+                    self.push_instr(IRCode::Label { id: else_start }, (0, 0));
                     self.generate(else_stmts);
-
-                    let func = self.func_stack.last_mut().unwrap();
-                    let label = IRCode::Label { id: func.label_counter };
-                    func.label_counter += 1;
-                    func.code.push(Span::new(label, (0, 0)));
-
+                    self.push_instr(IRCode::Label { id: else_end }, (0, 0));
                 }
                 Stmt::Continue => {
                     let func = self.func_stack.last_mut().unwrap();
@@ -438,17 +366,15 @@ impl IRGenerator {
 
                 Span::new(IRValue::Var(dest), span)
             }
-            Expr::Call { calle, args } => {
+            Expr::Call { calle, input } => {
                 let dest = self.get_temp();
                 let src = self.generate_expr(*calle).val;
-                let mut items = vec![];
-
-                for expr in args.into_iter() {
-                    let item = self.generate_expr(expr);
-                    items.push(item.val);
-                }
-
-                let call = IRCode::Call { dest, src, args: items };
+                let input = if input.is_none() {
+                    IRValue::Null
+                } else {
+                    self.generate_expr(*input.unwrap()).val
+                };
+                let call = IRCode::Call { dest, src, input };
                 let func = self.func_stack.last_mut().unwrap();
 
                 func.code.push(Span::new(call, span));
@@ -501,13 +427,12 @@ impl IRGenerator {
 
                 IRValue::Var(dest)
             }
-            Value::Func { params, stmts } => {
+            Value::Func { stmts } => {
                 let temp_counter = self.temp_counter;
                 self.temp_counter = 0;
 
                 let func = IRFunc {
                     id: self.func_counter,
-                    params,
                     code: vec![],
                     label_stack: vec![],
                     label_counter: 0,
@@ -515,9 +440,7 @@ impl IRGenerator {
 
                 self.func_counter += 1;
                 self.func_stack.push(func);
-                
                 self.generate(stmts);
-
                 self.temp_counter = temp_counter;
 
                 let mut func = self.func_stack.pop().unwrap();
@@ -535,6 +458,30 @@ impl IRGenerator {
                 IRValue::Var(dest)
             }
         }
+    }
+
+    fn push_label(&mut self, label: usize) {
+        self.get_func().label_stack.push(label);
+    }
+
+    fn pop_label(&mut self) {
+        self.get_func().label_stack.pop();
+    }
+
+    fn push_instr(&mut self, instr: IRCode, span: (usize, usize)) {
+        self.get_func().code.push(Span::new(instr, span));
+    }
+
+    fn get_func(&mut self) -> &mut IRFunc {
+        self.func_stack.last_mut().unwrap()
+    }
+
+    fn get_new_label(&mut self) -> usize {
+        let func = self.get_func();
+        let label_id = func.label_counter;
+
+        func.label_counter += 1;
+        label_id
     }
 
     fn get_temp(&mut self) -> IRVar {
