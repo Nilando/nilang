@@ -2,7 +2,9 @@ TODO:
   GENERATOR:
     - write down the liveness data
 
-    - give code to VM
+    - get blocks
+    ir func -> vec<blocks> -> CODE
+    - give blocks? to VM
 
     - add in global loads & stores
     - remove dead code?

@@ -1,12 +1,9 @@
-use crate::lexer::{Op, Lex, Token, Ctrl, KeyWord, SpannedToken};
 use super::error::SyntaxError;
+use crate::lexer::{Ctrl, KeyWord, Lexer, Op, SpannedToken, Token};
 
 impl<T> Span<T> {
     pub fn new(val: T, span: (usize, usize)) -> Self {
-        Self {
-            val,
-            span,
-        }
+        Self { val, span }
     }
 }
 
@@ -18,13 +15,13 @@ enum Context {
 #[derive(Debug)]
 pub struct Span<T> {
     pub val: T,
-    pub span: (usize, usize)
+    pub span: (usize, usize),
 }
 
-pub struct Parser<T: Lex> {
-    pub lexer: T,
+pub struct Parser {
+    pub lexer: Lexer,
     context: Vec<Context>,
-    errs: Vec<Span<SyntaxError>>
+    errs: Vec<Span<SyntaxError>>,
 }
 
 #[derive(Debug)]
@@ -38,9 +35,7 @@ pub enum Value {
     Bool(bool),
     List(Vec<Span<Expr>>),
     Map(Vec<(Span<Expr>, Span<Expr>)>),
-    Func {
-        stmts: Vec<Stmt>
-    },
+    Func { stmts: Vec<Stmt> },
 }
 
 #[derive(Debug)]
@@ -61,12 +56,9 @@ pub enum Expr {
     },
     Call {
         calle: Box<Span<Expr>>,
-        input: Option<Box<Span<Expr>>>
-    }
+        input: Option<Box<Span<Expr>>>,
+    },
 }
-
-
-// Expr::parse(state) => Result<Expr, SyntaxError>
 
 #[derive(Debug)]
 pub enum Stmt {
@@ -75,27 +67,27 @@ pub enum Stmt {
     Log(Box<Span<Expr>>),
     Assign {
         dest: Box<Span<Expr>>,
-        src: Box<Span<Expr>>
+        src: Box<Span<Expr>>,
     },
     While {
         cond: Box<Span<Expr>>,
-        stmts: Vec<Stmt>
+        stmts: Vec<Stmt>,
     },
     If {
         cond: Box<Span<Expr>>,
-        stmts: Vec<Stmt>
+        stmts: Vec<Stmt>,
     },
     IfElse {
         cond: Box<Span<Expr>>,
         stmts: Vec<Stmt>,
-        else_stmts: Vec<Stmt>
+        else_stmts: Vec<Stmt>,
     },
     Continue,
     Break,
 }
 
-impl<T: Lex> Parser<T> {
-    pub fn new(lexer: T) -> Self {
+impl Parser {
+    pub fn new(lexer: Lexer) -> Self {
         Self {
             lexer,
             context: vec![],
@@ -103,7 +95,7 @@ impl<T: Lex> Parser<T> {
         }
     }
 
-    pub fn get_lexer(self) -> T {
+    pub fn get_lexer(self) -> Lexer {
         self.lexer
     }
 
@@ -118,8 +110,7 @@ impl<T: Lex> Parser<T> {
 
                     loop {
                         match self.lexer.get_token().token {
-                            Token::Ctrl(Ctrl::SemiColon) | 
-                            Token::Ctrl(Ctrl::End) => break,
+                            Token::Ctrl(Ctrl::SemiColon) | Token::Ctrl(Ctrl::End) => break,
                             _ => {}
                         }
                     }
@@ -157,7 +148,8 @@ impl<T: Lex> Parser<T> {
 
         let mut stmts = vec![];
         loop {
-            if let Token::Ctrl(Ctrl::RightCurly) | Token::Ctrl(Ctrl::End) = self.lexer.peek().token {
+            if let Token::Ctrl(Ctrl::RightCurly) | Token::Ctrl(Ctrl::End) = self.lexer.peek().token
+            {
                 break;
             }
 
@@ -168,8 +160,7 @@ impl<T: Lex> Parser<T> {
 
                     loop {
                         match self.lexer.get_token().token {
-                            Token::Ctrl(Ctrl::SemiColon) | 
-                            Token::Ctrl(Ctrl::End) => break,
+                            Token::Ctrl(Ctrl::SemiColon) | Token::Ctrl(Ctrl::End) => break,
                             _ => {}
                         }
                     }
@@ -191,10 +182,14 @@ impl<T: Lex> Parser<T> {
 
                 if self.peek(Token::KeyWord(KeyWord::Else)).is_some() {
                     let else_stmts = self.parse_block()?;
-                    return Ok(Stmt::IfElse { cond, stmts, else_stmts })
+                    return Ok(Stmt::IfElse {
+                        cond,
+                        stmts,
+                        else_stmts,
+                    });
                 }
 
-                return Ok(Stmt::If { cond, stmts })
+                return Ok(Stmt::If { cond, stmts });
             }
             Token::KeyWord(KeyWord::While) => {
                 let _ = self.lexer.get_token();
@@ -203,7 +198,7 @@ impl<T: Lex> Parser<T> {
                 let stmts = self.parse_block()?;
                 self.context.pop();
 
-                return Ok(Stmt::While { cond, stmts })
+                return Ok(Stmt::While { cond, stmts });
             }
             Token::KeyWord(KeyWord::Return) => {
                 let _ = self.lexer.get_token();
@@ -253,25 +248,30 @@ impl<T: Lex> Parser<T> {
 
                 match expr.val {
                     Expr::Access { .. } | Expr::Index { .. } => {}
-                    Expr::Value(ref val) => {
-                        match val {
-                            Value::Ident(_) | Value::Global(_) => {
-                            }
-                            _ => return Err(Span::new(SyntaxError::Error("Expected lvalue".to_string()), expr.span)),
+                    Expr::Value(ref val) => match val {
+                        Value::Ident(_) | Value::Global(_) => {}
+                        _ => {
+                            return Err(Span::new(
+                                SyntaxError::Error("Expected lvalue".to_string()),
+                                expr.span,
+                            ))
                         }
+                    },
+                    _ => {
+                        return Err(Span::new(
+                            SyntaxError::Error("Expected lvalue".to_string()),
+                            expr.span,
+                        ))
                     }
-                    _ => return Err(Span::new(SyntaxError::Error("Expected lvalue".to_string()), expr.span)),
                 }
 
                 Ok(Stmt::Assign {
                     dest: Box::new(expr),
-                    src: Box::new(src)
+                    src: Box::new(src),
                 })
             }
             Token::Ctrl(Ctrl::SemiColon) => Ok(Stmt::Expr(Box::new(expr))),
-            _ => {
-                Err(Span::new(SyntaxError::Unexpected(token.token), token.span))
-            }
+            _ => Err(Span::new(SyntaxError::Unexpected(token.token), token.span)),
         }
     }
 
@@ -286,13 +286,13 @@ impl<T: Lex> Parser<T> {
                     let new_span = (lhs.span.0, rhs.span.1);
 
                     lhs = Span::new(
-                            Expr::Binop {
-                                lhs: Box::new(lhs),
-                                op,
-                                rhs: Box::new(rhs),
-                            },
-                            new_span
-                        );
+                        Expr::Binop {
+                            lhs: Box::new(lhs),
+                            op,
+                            rhs: Box::new(rhs),
+                        },
+                        new_span,
+                    );
                 }
                 Token::Ctrl(Ctrl::Period) => {
                     let _ = self.lexer.get_token();
@@ -300,13 +300,12 @@ impl<T: Lex> Parser<T> {
 
                     if let Token::Ident(id) = next.token {
                         lhs = Span::new(
-                                Expr::Access {
-                                    store: Box::new(lhs),
-                                    key: id
-                                },
-                                next.span
-                            );
-
+                            Expr::Access {
+                                store: Box::new(lhs),
+                                key: id,
+                            },
+                            next.span,
+                        );
                     } else {
                         return Err(Span::new(SyntaxError::Unexpected(next.token), next.span));
                     }
@@ -320,68 +319,68 @@ impl<T: Lex> Parser<T> {
                         // TODO: assert lhs is either a fn, ident, global, access, or index
 
                         lhs = Span::new(
-                                Expr::Call {
-                                    calle: Box::new(lhs),
-                                    input: None,
-                                },
-                                span
-                            );
+                            Expr::Call {
+                                calle: Box::new(lhs),
+                                input: None,
+                            },
+                            span,
+                        );
                     } else {
                         let input = self.parse_expr()?;
                         let span = (lhs.span.0, input.span.1);
                         self.expect(Token::Ctrl(Ctrl::RightParen), ')')?;
 
-                                lhs = Span::new(
-                                        Expr::Call {
-                                            calle: Box::new(lhs),
-                                            input: Some(Box::new(input))
-                                        },
-                                        span
-                                    );
+                        lhs = Span::new(
+                            Expr::Call {
+                                calle: Box::new(lhs),
+                                input: Some(Box::new(input)),
+                            },
+                            span,
+                        );
                     }
                 }
                 Token::Ctrl(Ctrl::LeftBracket) => {
                     let _ = self.lexer.get_token();
                     let key = self.parse_expr()?;
-                    let span = ( key.span.0 - 1, key.span.1 + 1);
+                    let span = (key.span.0 - 1, key.span.1 + 1);
                     self.expect(Token::Ctrl(Ctrl::RightBracket), ']')?;
 
                     lhs = Span::new(
-                            Expr::Index {
-                                store: Box::new(lhs),
-                                key: Box::new(key)
-                            },
-                            span
-                        );
+                        Expr::Index {
+                            store: Box::new(lhs),
+                            key: Box::new(key),
+                        },
+                        span,
+                    );
                 }
-                _ => return Ok(lhs)
+                _ => return Ok(lhs),
             }
         }
     }
 
     fn parse_expr_atom(&mut self) -> Result<Span<Expr>, Span<SyntaxError>> {
         let token = self.lexer.get_token();
-        
+
         let atom = match token.token {
-            Token::Int(i)                  => Span::new(Expr::Value(Value::Int(i)     ), token.span),
-            Token::Float(f)                => Span::new(Expr::Value(Value::Float(f)   ), token.span),
-            Token::Ident(id)               => Span::new(Expr::Value(Value::Ident(id)  ), token.span),
-            Token::Global(id)              => Span::new(Expr::Value(Value::Global(id) ), token.span),
-            Token::String(s)               => Span::new(Expr::Value(Value::String(s)  ), token.span),
-            Token::KeyWord(KeyWord::Null)  => Span::new(Expr::Value(Value::Null       ), token.span),
-            Token::KeyWord(KeyWord::False) => Span::new(Expr::Value(Value::Bool(false)), token.span),
-            Token::KeyWord(KeyWord::True)  => Span::new(Expr::Value(Value::Bool(true) ), token.span),
-            Token::KeyWord(KeyWord::Fn)  => {
+            Token::Int(i) => Span::new(Expr::Value(Value::Int(i)), token.span),
+            Token::Float(f) => Span::new(Expr::Value(Value::Float(f)), token.span),
+            Token::Ident(id) => Span::new(Expr::Value(Value::Ident(id)), token.span),
+            Token::Global(id) => Span::new(Expr::Value(Value::Global(id)), token.span),
+            Token::String(s) => Span::new(Expr::Value(Value::String(s)), token.span),
+            Token::KeyWord(KeyWord::Null) => Span::new(Expr::Value(Value::Null), token.span),
+            Token::KeyWord(KeyWord::False) => {
+                Span::new(Expr::Value(Value::Bool(false)), token.span)
+            }
+            Token::KeyWord(KeyWord::True) => Span::new(Expr::Value(Value::Bool(true)), token.span),
+            Token::KeyWord(KeyWord::Fn) => {
                 let span = token.span;
                 self.context.push(Context::Func);
                 let stmts = self.parse_block()?;
                 self.context.pop();
 
-                Span::new(Expr::Value(Value::Func {
-                    stmts
-                }), span)
-            } 
-            Token::Ctrl(Ctrl::LeftCurly)  => {
+                Span::new(Expr::Value(Value::Func { stmts }), span)
+            }
+            Token::Ctrl(Ctrl::LeftCurly) => {
                 let mut entries = vec![];
                 let mut span = token.span;
                 if let Some(next) = self.peek(Token::Ctrl(Ctrl::RightCurly)) {
@@ -405,14 +404,19 @@ impl<T: Lex> Parser<T> {
                                     break;
                                 }
                             }
-                            _ => return Err(Span::new(SyntaxError::Unexpected(next.token), next.span)),
+                            _ => {
+                                return Err(Span::new(
+                                    SyntaxError::Unexpected(next.token),
+                                    next.span,
+                                ))
+                            }
                         }
                     }
                 }
 
                 Span::new(Expr::Value(Value::Map(entries)), span)
             }
-            Token::Ctrl(Ctrl::LeftBracket)  => {
+            Token::Ctrl(Ctrl::LeftBracket) => {
                 let mut items = vec![];
                 let mut span = token.span;
 
@@ -434,7 +438,12 @@ impl<T: Lex> Parser<T> {
                                     break;
                                 }
                             }
-                            _ => return Err(Span::new(SyntaxError::Unexpected(next.token), next.span)),
+                            _ => {
+                                return Err(Span::new(
+                                    SyntaxError::Unexpected(next.token),
+                                    next.span,
+                                ))
+                            }
                         }
                     }
                 }
@@ -453,7 +462,7 @@ impl<T: Lex> Parser<T> {
 
         Ok(atom)
     }
-    
+
     fn peek(&mut self, token: Token) -> Option<SpannedToken> {
         if token == self.lexer.peek().token {
             Some(self.lexer.get_token())

@@ -1,5 +1,5 @@
-mod parser;
 mod error;
+mod parser;
 
-pub use parser::{Parser, Span, Stmt, Expr, Value};
 pub use error::SyntaxError;
+pub use parser::{Expr, Parser, Span, Stmt, Value};

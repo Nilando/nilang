@@ -1,5 +1,5 @@
-use crate::parser::{Stmt, Expr, Span, Value as RawValue};
 use crate::lexer::Op;
+use crate::parser::{Expr, Span, Stmt, Value as RawValue};
 
 use std::collections::HashMap;
 
@@ -15,19 +15,26 @@ pub enum VarID {
     Global(SymID),
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Var {
     pub(super) id: VarID,
     next_use: Option<usize>,
-    live: bool
+    live: bool,
 }
 
 impl Var {
     pub fn new(id: VarID) -> Self {
-        Self {
-            id,
-            next_use: None,
-            live: true
+        match id {
+            VarID::Temp(_) => Self {
+                id,
+                next_use: None,
+                live: false,
+            },
+            _ => Self {
+                id,
+                next_use: None,
+                live: true,
+            },
         }
     }
 }
@@ -105,96 +112,108 @@ pub struct Func {
 }
 
 impl Func {
-    pub fn compute_liveness(&mut self) {
-        let mut blocks = self.get_blocks();
-        // optimize each block?
-        // each block has liveness info
-        // eliminate dead code
-        // calls should require globals to be stored and loaded
-        // we can generate the actual code including registers for each func
-    }
-
-    fn update_operand_liveness(liveness_data: &mut HashMap<Var, (usize, bool)>, val: &mut Value) {
-    }
-
-    fn update_dest_liveness(liveness_data: &mut HashMap<Var, (usize, bool)>, val: &mut Value) {
-    }
-
-    fn get_blocks(&mut self) -> Vec<Block> {
+    pub fn into_blocks(mut self) -> Vec<Block> {
         let mut blocks = vec![];
-        let mut current_block = Block {
-            label: None,
-            code: vec![],
-            jump: None,
-            continues: true
-        };
-        let mut liveness_data: HashMap<Var, (usize, bool)> = HashMap::new();
+        let mut current_block = Block::new(None, true);
 
         while let Some(mut instr) = self.code.pop() {
             let i = self.code.len();
 
             match instr.val {
-                Instr::Binop { .. }     => {}
-                Instr::Load { .. }      => {}
-                Instr::ObjLoad { .. }   => {}
-                Instr::Log { src }     => {}
-                Instr::NewList { dest } => {}
-                Instr::NewMap { dest }  => {}
-                Instr::ObjStore { obj, key, val } => {}
-                Instr::Call { dest, calle, input } => {
-                    // If we make every call its own block, then
-                    // we need to ensure that the temp the call stores to is live on
-                    // exit
-                    // special case the dest temp so that it is live on exit from the block
-                    // that way the call cannot be removed as dead code
-                }
-                Instr::Jump { label }  => {
-                    blocks.push(current_block);
-                    current_block = Block {
-                        label: None,
-                        code: vec![],
-                        jump: Some(label),
-                        continues: false
-                    };
-                    current_block.code.push(instr);
-                }
-                Instr::Jnt { label, ref mut cond }  => {
-                    blocks.push(current_block);
-                    current_block = Block {
-                        label: None,
-                        code: vec![],
-                        jump: Some(label),
-                        continues: true
-                    };
-
-                    Self::update_operand_liveness(&mut liveness_data, cond);
-
-                    current_block.code.push(instr);
-                }
-                Instr::Return { ref mut src }  => {
-                    blocks.push(current_block);
-                    current_block = Block {
-                        label: None,
-                        code: vec![],
-                        jump: None,
-                        continues: true
-                    };
-
-                    Self::update_operand_liveness(&mut liveness_data, src);
-
-                    current_block.code.push(instr);
-                }
                 Instr::Label { id } => {
                     current_block.label = Some(id);
                     blocks.push(current_block);
-                    current_block = Block {
-                        label: None,
-                        code: vec![],
-                        jump: None,
-                        continues: true
-                    };
+                    current_block = Block::new(None, true);
+                    continue;
+                }
+                Instr::Binop {
+                    ref mut dest,
+                    lhs: ref mut op1,
+                    rhs: ref mut op2,
+                    ..
+                }
+                | Instr::ObjLoad {
+                    ref mut dest,
+                    obj: ref mut op1,
+                    key: ref mut op2,
+                } => {
+                    current_block.update_dest_liveness(dest);
+                    current_block.update_operand_liveness(op1, i);
+                    current_block.update_operand_liveness(op2, i);
+                }
+                Instr::Load {
+                    ref mut dest,
+                    ref mut src,
+                } => {
+                    current_block.update_dest_liveness(dest);
+                    current_block.update_operand_liveness(src, i);
+                }
+                Instr::Log { ref mut src } => {
+                    current_block.update_operand_liveness(src, i);
+                }
+                Instr::NewList { ref mut dest } | Instr::NewMap { ref mut dest } => {
+                    current_block.update_dest_liveness(dest);
+                }
+                Instr::ObjStore {
+                    ref mut obj,
+                    ref mut key,
+                    ref mut val,
+                } => {
+                    current_block.update_operand_liveness(obj, i);
+                    current_block.update_operand_liveness(key, i);
+                    current_block.update_operand_liveness(val, i);
+                }
+                Instr::Call {
+                    ref mut dest,
+                    ref mut calle,
+                    ref mut input,
+                } => {
+                    if !current_block.code.is_empty() {
+                        blocks.push(current_block);
+                    }
+
+                    current_block = Block::new(None, true);
+                    current_block.update_operand_liveness(calle, i);
+                    current_block.update_operand_liveness(input, i);
+
+                    // TODO: maybe here special case the dest to be live on exit
+                    // even if it is a temp
+
+                    current_block.code.push(instr);
+
+                    blocks.push(current_block);
+                    current_block = Block::new(None, true);
+
+                    continue;
+                }
+                Instr::Jump { label } => {
+                    if !current_block.code.is_empty() {
+                        blocks.push(current_block);
+                    }
+
+                    current_block = Block::new(Some(label), false);
+                }
+                Instr::Jnt { label, .. } => {
+                    if !current_block.code.is_empty() {
+                        blocks.push(current_block);
+                    }
+
+                    current_block = Block::new(Some(label), true);
+                }
+                Instr::Return { ref mut src } => {
+                    if !current_block.code.is_empty() {
+                        blocks.push(current_block);
+                    }
+
+                    current_block = Block::new(None, false);
+
+                    if let Value::Var(var) = src {
+                        current_block.return_var = Some(var.id);
+                    }
                 }
             }
+
+            current_block.code.push(instr);
         }
 
         blocks
@@ -202,11 +221,45 @@ impl Func {
 }
 
 #[derive(Debug)]
-struct Block {
+pub struct Block {
     label: Option<usize>,
     code: Vec<Span<Instr>>,
     jump: Option<usize>,
     continues: bool,
+    liveness: HashMap<Var, (Option<usize>, bool)>,
+    return_var: Option<VarID>,
+}
+
+impl Block {
+    fn new(jump: Option<LabelID>, continues: bool) -> Self {
+        Self {
+            label: None,
+            code: vec![],
+            return_var: None,
+            liveness: HashMap::new(),
+            jump,
+            continues,
+        }
+    }
+
+    fn update_operand_liveness(&mut self, val: &mut Value, i: usize) {
+        if let Value::Var(var) = val {
+            self.attach_liveness(var);
+            self.liveness.insert(*var, (Some(i), true));
+        }
+    }
+
+    fn update_dest_liveness(&mut self, var: &mut Var) {
+        self.attach_liveness(var);
+        self.liveness.insert(*var, (None, false));
+    }
+
+    fn attach_liveness(&mut self, var: &mut Var) {
+        if let Some((next_use, live)) = self.liveness.get(&var) {
+            var.next_use = *next_use;
+            var.live = *live;
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -214,7 +267,7 @@ pub struct Generator {
     func_stack: Vec<Func>,
     func_counter: usize,
     temp_counter: usize,
-    pub funcs: HashMap<usize, Func>
+    pub funcs: HashMap<usize, Func>,
 }
 
 impl Generator {
@@ -231,6 +284,8 @@ impl Generator {
         self.push_new_func();
         self.generate(stmts);
         self.pop_func();
+
+        // convert each function into blocks
     }
 
     pub fn generate(&mut self, stmts: Vec<Stmt>) {
@@ -253,48 +308,51 @@ impl Generator {
                     self.push_instr(instr, var.span);
                     self.temp_counter = 0;
                 }
-                Stmt::Assign { dest, src } => {
-                    match dest.val {
-                        Expr::Value(value) => {
-                            if let Value::Var(dest) = self.generate_value(value, dest.span) {
-                                let src = self.generate_expr(*src);
-                                let instr = Instr::Load { dest, src: src.val };
+                Stmt::Assign { dest, src } => match dest.val {
+                    Expr::Value(value) => {
+                        if let Value::Var(dest) = self.generate_value(value, dest.span) {
+                            let src = self.generate_expr(*src);
+                            let instr = Instr::Load { dest, src: src.val };
 
-                                self.push_instr(instr, src.span);
-                                self.temp_counter = 0;
-                            }
-                        }
-                        Expr::Access { store, key } => {
-                            let span = store.span;
-                            let obj = self.generate_expr(*store).val;
-                            let key = Value::Var(Var::new(VarID::Local(key)));
-                            let val = self.generate_expr(*src).val;
-                            let instr = Instr::ObjStore { obj, key, val};
-
-                            self.push_instr(instr, span);
+                            self.push_instr(instr, src.span);
                             self.temp_counter = 0;
                         }
-                        Expr::Index { store, key } => {
-                            let span = store.span;
-                            let obj = self.generate_expr(*store).val;
-                            let key = self.generate_expr(*key).val;
-                            let val = self.generate_expr(*src).val;
-                            let instr = Instr::ObjStore { obj, key, val};
-
-                            self.push_instr(instr, span);
-                            self.temp_counter = 0;
-                        }
-                        _ => panic!("GENERATOR ERROR: assigning to non lvalue"),
                     }
+                    Expr::Access { store, key } => {
+                        let span = store.span;
+                        let obj = self.generate_expr(*store).val;
+                        let key = Value::Var(Var::new(VarID::Local(key)));
+                        let val = self.generate_expr(*src).val;
+                        let instr = Instr::ObjStore { obj, key, val };
 
-                }
+                        self.push_instr(instr, span);
+                        self.temp_counter = 0;
+                    }
+                    Expr::Index { store, key } => {
+                        let span = store.span;
+                        let obj = self.generate_expr(*store).val;
+                        let key = self.generate_expr(*key).val;
+                        let val = self.generate_expr(*src).val;
+                        let instr = Instr::ObjStore { obj, key, val };
+
+                        self.push_instr(instr, span);
+                        self.temp_counter = 0;
+                    }
+                    _ => panic!("GENERATOR ERROR: assigning to non lvalue"),
+                },
                 Stmt::While { cond, stmts } => {
                     let label_start = self.get_new_label();
                     let label_end = self.get_new_label();
                     let cond = self.generate_expr(*cond);
 
                     self.push_instr(Instr::Label { id: label_start }, (0, 0));
-                    self.push_instr(Instr::Jnt { cond: cond.val, label: label_end }, cond.span);
+                    self.push_instr(
+                        Instr::Jnt {
+                            cond: cond.val,
+                            label: label_end,
+                        },
+                        cond.span,
+                    );
                     self.temp_counter = 0;
                     self.push_label(label_start);
                     self.generate(stmts);
@@ -306,17 +364,33 @@ impl Generator {
                     let cond = self.generate_expr(*cond);
                     let label = self.get_new_label();
 
-                    self.push_instr(Instr::Jnt { cond: cond.val, label }, cond.span);
+                    self.push_instr(
+                        Instr::Jnt {
+                            cond: cond.val,
+                            label,
+                        },
+                        cond.span,
+                    );
                     self.temp_counter = 0;
                     self.generate(stmts);
                     self.push_instr(Instr::Label { id: label }, (0, 0));
                 }
-                Stmt::IfElse { cond, stmts, else_stmts } => {
+                Stmt::IfElse {
+                    cond,
+                    stmts,
+                    else_stmts,
+                } => {
                     let cond = self.generate_expr(*cond);
                     let else_start = self.get_new_label();
                     let else_end = self.get_new_label();
 
-                    self.push_instr(Instr::Jnt { cond: cond.val, label: else_start }, cond.span);
+                    self.push_instr(
+                        Instr::Jnt {
+                            cond: cond.val,
+                            label: else_start,
+                        },
+                        cond.span,
+                    );
                     self.temp_counter = 0;
                     self.generate(stmts);
                     self.push_instr(Instr::Jump { label: else_end }, (0, 0));
@@ -347,14 +421,17 @@ impl Generator {
         let span = spanned_expr.span;
 
         match expr {
-            Expr::Value(value) => {
-                Span::new(self.generate_value(value, span), span)
-            }
+            Expr::Value(value) => Span::new(self.generate_value(value, span), span),
             Expr::Binop { lhs, op, rhs } => {
                 let lhs = self.generate_expr(*lhs).val;
                 let rhs = self.generate_expr(*rhs).val;
                 let dest = self.get_temp();
-                let binop = Instr::Binop { dest, lhs, rhs, op: op.clone() };
+                let binop = Instr::Binop {
+                    dest,
+                    lhs,
+                    rhs,
+                    op: op.clone(),
+                };
 
                 self.push_instr(binop, span);
 
@@ -364,7 +441,7 @@ impl Generator {
                 let obj = self.generate_expr(*store).val;
                 let key = Value::Var(Var::new(VarID::Local(key)));
                 let dest = self.get_temp();
-                let obj_load = Instr::ObjLoad { dest, obj, key};
+                let obj_load = Instr::ObjLoad { dest, obj, key };
 
                 self.push_instr(obj_load, span);
 
@@ -374,7 +451,7 @@ impl Generator {
                 let obj = self.generate_expr(*store).val;
                 let key = self.generate_expr(*key).val;
                 let dest = self.get_temp();
-                let obj_load = Instr::ObjLoad { dest, obj, key};
+                let obj_load = Instr::ObjLoad { dest, obj, key };
 
                 self.push_instr(obj_load, span);
 
@@ -399,13 +476,13 @@ impl Generator {
 
     fn generate_value(&mut self, value: RawValue, span: (usize, usize)) -> Value {
         match value {
-            RawValue::Null       => Value::Null,
-            RawValue::Int(i)     => Value::Int(i),
-            RawValue::Float(f)   => Value::Float(f),
-            RawValue::Ident(id)  => Value::Var(Var::new(VarID::Local(id))),
+            RawValue::Null => Value::Null,
+            RawValue::Int(i) => Value::Int(i),
+            RawValue::Float(f) => Value::Float(f),
+            RawValue::Ident(id) => Value::Var(Var::new(VarID::Local(id))),
             RawValue::Global(id) => Value::Var(Var::new(VarID::Global(id))),
-            RawValue::Bool(b)    => Value::Bool(b),
-            RawValue::String(s)  => Value::String(s.clone()),
+            RawValue::Bool(b) => Value::Bool(b),
+            RawValue::String(s) => Value::String(s.clone()),
             RawValue::List(list) => {
                 let dest = self.get_temp();
                 let instr = Instr::NewList { dest };
@@ -414,7 +491,11 @@ impl Generator {
 
                 for (i, expr) in list.into_iter().enumerate() {
                     let item = self.generate_expr(expr);
-                    let instr = Instr::ObjStore { obj: Value::Var(dest), key: Value::Int(i as isize), val: item.val };
+                    let instr = Instr::ObjStore {
+                        obj: Value::Var(dest),
+                        key: Value::Int(i as isize),
+                        val: item.val,
+                    };
                     self.push_instr(instr, span);
                 }
 
@@ -429,7 +510,11 @@ impl Generator {
                 for (key, val) in map.into_iter() {
                     let key = self.generate_expr(key).val;
                     let val = self.generate_expr(val).val;
-                    let instr = Instr::ObjStore { obj: Value::Var(dest), key, val };
+                    let instr = Instr::ObjStore {
+                        obj: Value::Var(dest),
+                        key,
+                        val,
+                    };
 
                     self.push_instr(instr, span);
                 }
@@ -447,7 +532,10 @@ impl Generator {
 
                 let func_val = self.pop_func();
                 let dest = self.get_temp();
-                let load = Instr::Load { dest, src: func_val };
+                let load = Instr::Load {
+                    dest,
+                    src: func_val,
+                };
 
                 self.push_instr(load, span);
 

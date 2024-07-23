@@ -1,18 +1,18 @@
+mod bytecode;
 mod generator;
-mod parser;
 mod lexer;
+mod parser;
 
-
-use colored::Colorize;
-use std::fs::{File, read_to_string};
-use std::io::BufRead;
-use std::io::{Write, BufReader, stdin, stdout};
-use lexer::Lexer;
-use parser::{Parser, SyntaxError, Span};
-use generator::Generator;
 use chrono::{DateTime, Local};
 use clap::Parser as CliParser;
+use colored::Colorize;
+use generator::Generator;
+use lexer::Lexer;
+use parser::{Parser, Span, SyntaxError};
 use std::collections::HashMap;
+use std::fs::{read_to_string, File};
+use std::io::BufRead;
+use std::io::{stdin, stdout, BufReader, Write};
 
 #[derive(CliParser, Debug)]
 #[command(version, about, long_about = None)]
@@ -39,24 +39,18 @@ fn run_file(file_name: String) {
     let stmts = match parser.parse_program() {
         Ok(stmts) => stmts,
         Err(errs) => {
-            display_errors(file_name, errs);
+            display_syntax_errors(file_name, errs);
             return;
         }
     };
 
-    println!("{:#?}", stmts);
+    //println!("{:#?}", stmts);
 
     let mut generator = Generator::new();
     generator.gen_program(stmts);
+    //let vm = VM::new();
+    //vm.load
 
-    lexer = parser.get_lexer();
-    symbol_map =  lexer.get_symbol_map();
-
-    for (_id, func) in generator.funcs.iter_mut() {
-        func.display(&symbol_map);
-    }
-    // let vm = VM::new();
-    //
     // match vm.run() {
     //  Ok() => {}
     //  Err(_) => {
@@ -86,24 +80,14 @@ fn run_repl() {
             }
         };
 
-        println!("{:#?}", stmt);
+        // println!("{:#?}", stmt);
 
         let mut generator = Generator::new();
         generator.gen_program(vec![stmt]);
-
-        lexer = parser.get_lexer();
-        symbol_map =  lexer.get_symbol_map();
-
-        for (_id, func) in generator.funcs.iter_mut() {
-            func.display(&symbol_map);
-        }
-
-        lexer = Lexer::new(symbol_map, None);
-        parser = Parser::new(lexer);
     }
 }
 
-fn display_errors(file_name: String, mut errs: Vec<Span<SyntaxError>>) {
+fn display_syntax_errors(file_name: String, mut errs: Vec<Span<SyntaxError>>) {
     errs.sort_by(|b, a| a.span.0.partial_cmp(&b.span.0).unwrap());
 
     let mut err = errs.pop().unwrap();
@@ -115,8 +99,13 @@ fn display_errors(file_name: String, mut errs: Vec<Span<SyntaxError>>) {
     let mut line_bytes = reader.read_line(&mut line).expect("failed reading file");
 
     loop {
-        if err.span.0 < bytes_read + line_bytes &&  err.span.0 >= bytes_read {
-            println!("{} {} line {}", "SYNTAX ERROR:".red(), file_name, line_number);
+        if err.span.0 < bytes_read + line_bytes && err.span.0 >= bytes_read {
+            println!(
+                "{} {} line {}",
+                "SYNTAX ERROR:".red(),
+                file_name,
+                line_number
+            );
             println!("");
 
             print!("{}", line);
@@ -124,7 +113,7 @@ fn display_errors(file_name: String, mut errs: Vec<Span<SyntaxError>>) {
             let end = err.span.1 - bytes_read;
 
             for i in 0..end {
-                if start <= i  {
+                if start <= i {
                     print!("{}", "^".red());
                 } else {
                     print!(" ")
@@ -133,7 +122,6 @@ fn display_errors(file_name: String, mut errs: Vec<Span<SyntaxError>>) {
 
             println!("");
             println!("{:?}", err.val);
-
 
             if let Some(e) = errs.pop() {
                 err = e;
