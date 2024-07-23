@@ -1,5 +1,12 @@
 TODO:
   GENERATOR:
+    - write down the liveness data
+
+    - give code to VM
+
+    - add in global loads & stores
+    - remove dead code?
+
     - convert variables to locations
       - get reg function
       - add load global and store global instructions

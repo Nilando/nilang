@@ -1,4 +1,4 @@
 mod display;
 mod generator;
 
-pub use generator::IRGenerator;
+pub use generator::Generator;

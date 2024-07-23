@@ -9,7 +9,7 @@ use std::io::BufRead;
 use std::io::{Write, BufReader, stdin, stdout};
 use lexer::Lexer;
 use parser::{Parser, SyntaxError, Span};
-use generator::IRGenerator;
+use generator::Generator;
 use chrono::{DateTime, Local};
 use clap::Parser as CliParser;
 use std::collections::HashMap;
@@ -46,13 +46,13 @@ fn run_file(file_name: String) {
 
     println!("{:#?}", stmts);
 
-    let mut generator = IRGenerator::new();
+    let mut generator = Generator::new();
     generator.gen_program(stmts);
 
     lexer = parser.get_lexer();
     symbol_map =  lexer.get_symbol_map();
 
-    for (_id, func) in generator.funcs.iter() {
+    for (_id, func) in generator.funcs.iter_mut() {
         func.display(&symbol_map);
     }
     // let vm = VM::new();
@@ -88,13 +88,13 @@ fn run_repl() {
 
         println!("{:#?}", stmt);
 
-        let mut generator = IRGenerator::new();
+        let mut generator = Generator::new();
         generator.gen_program(vec![stmt]);
 
         lexer = parser.get_lexer();
         symbol_map =  lexer.get_symbol_map();
 
-        for (_id, func) in generator.funcs.iter() {
+        for (_id, func) in generator.funcs.iter_mut() {
             func.display(&symbol_map);
         }
 

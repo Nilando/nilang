@@ -1,18 +1,40 @@
-use crate::parser::{Stmt, Expr, Span, Value};
+use crate::parser::{Stmt, Expr, Span, Value as RawValue};
 use crate::lexer::Op;
 
 use std::collections::HashMap;
 
+type TempID = usize;
+type SymID = usize;
+type FuncID = usize;
+type LabelID = usize;
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum VarID {
+    Temp(TempID),
+    Local(SymID),
+    Global(SymID),
+}
+
 #[derive(Debug, Copy, Clone)]
-pub enum IRVar {
-    Temp(usize),
-    Ident(usize),
-    Global(usize)
+pub struct Var {
+    pub(super) id: VarID,
+    next_use: Option<usize>,
+    live: bool
+}
+
+impl Var {
+    pub fn new(id: VarID) -> Self {
+        Self {
+            id,
+            next_use: None,
+            live: true
+        }
+    }
 }
 
 #[derive(Debug)]
-pub enum IRValue {
-    Var(IRVar),
+pub enum Value {
+    Var(Var),
     String(String),
     Float(f64),
     Int(isize),
@@ -22,75 +44,180 @@ pub enum IRValue {
 }
 
 #[derive(Debug)]
-pub enum IRCode {
+pub enum Instr {
     Binop {
-        dest: IRVar,
-        lhs: IRValue,
+        dest: Var,
         op: Op,
-        rhs: IRValue,
+        lhs: Value,
+        rhs: Value,
     },
     ObjStore {
-        store: IRValue,
-        key: IRValue,
-        src: IRValue,
+        obj: Value,
+        key: Value,
+        val: Value,
     },
     ObjLoad {
-        dest: IRVar,
-        store: IRValue,
-        key: IRValue,
-    },
-    Call {
-        dest: IRVar,
-        src: IRValue,
-        input: IRValue,
-    },
-    Return {
-        dest: IRValue,
-    },
-    Log {
-        dest: IRValue,
-    },
-    Load {
-        dest: IRVar,
-        src: IRValue,
-    },
-    Jnt {
-        label: usize,
-        cond: IRValue,
-    },
-    Jump {
-        label: usize,
-    },
-    Label {
-        id: usize,
+        dest: Var,
+        obj: Value,
+        key: Value,
     },
     NewList {
-        dest: IRVar,
-        items: Vec<IRValue>,
+        dest: Var,
     },
     NewMap {
-        dest: IRVar,
-        items: Vec<(IRValue, IRValue)>,
+        dest: Var,
+    },
+    Log {
+        src: Value,
+    },
+    Load {
+        dest: Var,
+        src: Value,
+    },
+
+    // Control Flow Codes Below
+    Call {
+        dest: Var,
+        calle: Value,
+        input: Value,
+    },
+    Jump {
+        label: LabelID,
+    },
+    Return {
+        src: Value,
+    },
+    Jnt {
+        label: LabelID,
+        cond: Value,
+    },
+    Label {
+        id: LabelID,
+    },
+}
+
+#[derive(Debug)]
+pub struct Func {
+    pub(super) id: FuncID,
+    pub(super) code: Vec<Span<Instr>>,
+    label_counter: LabelID,
+    label_stack: Vec<LabelID>,
+}
+
+impl Func {
+    pub fn compute_liveness(&mut self) {
+        let mut blocks = self.get_blocks();
+        // optimize each block?
+        // each block has liveness info
+        // eliminate dead code
+        // calls should require globals to be stored and loaded
+        // we can generate the actual code including registers for each func
+    }
+
+    fn update_operand_liveness(liveness_data: &mut HashMap<Var, (usize, bool)>, val: &mut Value) {
+    }
+
+    fn update_dest_liveness(liveness_data: &mut HashMap<Var, (usize, bool)>, val: &mut Value) {
+    }
+
+    fn get_blocks(&mut self) -> Vec<Block> {
+        let mut blocks = vec![];
+        let mut current_block = Block {
+            label: None,
+            code: vec![],
+            jump: None,
+            continues: true
+        };
+        let mut liveness_data: HashMap<Var, (usize, bool)> = HashMap::new();
+
+        while let Some(mut instr) = self.code.pop() {
+            let i = self.code.len();
+
+            match instr.val {
+                Instr::Binop { .. }     => {}
+                Instr::Load { .. }      => {}
+                Instr::ObjLoad { .. }   => {}
+                Instr::Log { src }     => {}
+                Instr::NewList { dest } => {}
+                Instr::NewMap { dest }  => {}
+                Instr::ObjStore { obj, key, val } => {}
+                Instr::Call { dest, calle, input } => {
+                    // If we make every call its own block, then
+                    // we need to ensure that the temp the call stores to is live on
+                    // exit
+                    // special case the dest temp so that it is live on exit from the block
+                    // that way the call cannot be removed as dead code
+                }
+                Instr::Jump { label }  => {
+                    blocks.push(current_block);
+                    current_block = Block {
+                        label: None,
+                        code: vec![],
+                        jump: Some(label),
+                        continues: false
+                    };
+                    current_block.code.push(instr);
+                }
+                Instr::Jnt { label, ref mut cond }  => {
+                    blocks.push(current_block);
+                    current_block = Block {
+                        label: None,
+                        code: vec![],
+                        jump: Some(label),
+                        continues: true
+                    };
+
+                    Self::update_operand_liveness(&mut liveness_data, cond);
+
+                    current_block.code.push(instr);
+                }
+                Instr::Return { ref mut src }  => {
+                    blocks.push(current_block);
+                    current_block = Block {
+                        label: None,
+                        code: vec![],
+                        jump: None,
+                        continues: true
+                    };
+
+                    Self::update_operand_liveness(&mut liveness_data, src);
+
+                    current_block.code.push(instr);
+                }
+                Instr::Label { id } => {
+                    current_block.label = Some(id);
+                    blocks.push(current_block);
+                    current_block = Block {
+                        label: None,
+                        code: vec![],
+                        jump: None,
+                        continues: true
+                    };
+                }
+            }
+        }
+
+        blocks
     }
 }
 
 #[derive(Debug)]
-pub struct IRFunc {
-    pub(super) id: usize,
-    pub(super) code: Vec<Span<IRCode>>,
-    label_counter: usize,
-    label_stack: Vec<usize>
+struct Block {
+    label: Option<usize>,
+    code: Vec<Span<Instr>>,
+    jump: Option<usize>,
+    continues: bool,
 }
 
 #[derive(Debug)]
-pub struct IRGenerator {
-    func_stack: Vec<IRFunc>,
+pub struct Generator {
+    func_stack: Vec<Func>,
     func_counter: usize,
     temp_counter: usize,
-    pub funcs: HashMap<usize, IRFunc>
+    pub funcs: HashMap<usize, Func>
 }
 
-impl IRGenerator {
+impl Generator {
     pub fn new() -> Self {
         Self {
             func_stack: vec![],
@@ -115,14 +242,13 @@ impl IRGenerator {
                 }
                 Stmt::Return(expr) => {
                     let var = self.generate_expr(*expr);
-                    let instr = IRCode::Return { dest: var.val };
 
-                    self.push_instr(instr, var.span);
+                    self.push_instr(Instr::Return { src: var.val }, var.span);
                     self.temp_counter = 0;
                 }
                 Stmt::Log(expr) => {
                     let var = self.generate_expr(*expr);
-                    let instr = IRCode::Log { dest: var.val };
+                    let instr = Instr::Log { src: var.val };
 
                     self.push_instr(instr, var.span);
                     self.temp_counter = 0;
@@ -130,9 +256,9 @@ impl IRGenerator {
                 Stmt::Assign { dest, src } => {
                     match dest.val {
                         Expr::Value(value) => {
-                            if let IRValue::Var(dest) = self.generate_value(value, dest.span) {
+                            if let Value::Var(dest) = self.generate_value(value, dest.span) {
                                 let src = self.generate_expr(*src);
-                                let instr = IRCode::Load { dest, src: src.val };
+                                let instr = Instr::Load { dest, src: src.val };
 
                                 self.push_instr(instr, src.span);
                                 self.temp_counter = 0;
@@ -140,20 +266,20 @@ impl IRGenerator {
                         }
                         Expr::Access { store, key } => {
                             let span = store.span;
-                            let store = self.generate_expr(*store).val;
-                            let key = IRValue::Var(IRVar::Ident(key));
-                            let src = self.generate_expr(*src).val;
-                            let instr = IRCode::ObjStore { store, key, src};
+                            let obj = self.generate_expr(*store).val;
+                            let key = Value::Var(Var::new(VarID::Local(key)));
+                            let val = self.generate_expr(*src).val;
+                            let instr = Instr::ObjStore { obj, key, val};
 
                             self.push_instr(instr, span);
                             self.temp_counter = 0;
                         }
                         Expr::Index { store, key } => {
                             let span = store.span;
-                            let store = self.generate_expr(*store).val;
+                            let obj = self.generate_expr(*store).val;
                             let key = self.generate_expr(*key).val;
-                            let src = self.generate_expr(*src).val;
-                            let instr = IRCode::ObjStore { store, key, src};
+                            let val = self.generate_expr(*src).val;
+                            let instr = Instr::ObjStore { obj, key, val};
 
                             self.push_instr(instr, span);
                             self.temp_counter = 0;
@@ -167,48 +293,48 @@ impl IRGenerator {
                     let label_end = self.get_new_label();
                     let cond = self.generate_expr(*cond);
 
-                    self.push_instr(IRCode::Label { id: label_start }, (0, 0));
-                    self.push_instr(IRCode::Jnt { cond: cond.val, label: label_end }, cond.span);
+                    self.push_instr(Instr::Label { id: label_start }, (0, 0));
+                    self.push_instr(Instr::Jnt { cond: cond.val, label: label_end }, cond.span);
                     self.temp_counter = 0;
                     self.push_label(label_start);
                     self.generate(stmts);
-                    self.push_instr(IRCode::Jump { label: label_start }, (0, 0));
-                    self.push_instr(IRCode::Label { id: label_end }, (0, 0));
+                    self.push_instr(Instr::Jump { label: label_start }, (0, 0));
+                    self.push_instr(Instr::Label { id: label_end }, (0, 0));
                     self.pop_label();
                 }
                 Stmt::If { cond, stmts } => {
                     let cond = self.generate_expr(*cond);
                     let label = self.get_new_label();
 
-                    self.push_instr(IRCode::Jnt { cond: cond.val, label }, cond.span);
+                    self.push_instr(Instr::Jnt { cond: cond.val, label }, cond.span);
                     self.temp_counter = 0;
                     self.generate(stmts);
-                    self.push_instr(IRCode::Label { id: label }, (0, 0));
+                    self.push_instr(Instr::Label { id: label }, (0, 0));
                 }
                 Stmt::IfElse { cond, stmts, else_stmts } => {
                     let cond = self.generate_expr(*cond);
                     let else_start = self.get_new_label();
                     let else_end = self.get_new_label();
 
-                    self.push_instr(IRCode::Jnt { cond: cond.val, label: else_start }, cond.span);
+                    self.push_instr(Instr::Jnt { cond: cond.val, label: else_start }, cond.span);
                     self.temp_counter = 0;
                     self.generate(stmts);
-                    self.push_instr(IRCode::Jump { label: else_end }, (0, 0));
-                    self.push_instr(IRCode::Label { id: else_start }, (0, 0));
+                    self.push_instr(Instr::Jump { label: else_end }, (0, 0));
+                    self.push_instr(Instr::Label { id: else_start }, (0, 0));
                     self.generate(else_stmts);
-                    self.push_instr(IRCode::Label { id: else_end }, (0, 0));
+                    self.push_instr(Instr::Label { id: else_end }, (0, 0));
                 }
                 Stmt::Continue => {
                     let func = self.func_stack.last_mut().unwrap();
                     let label = *func.label_stack.last().unwrap();
-                    let jmp = IRCode::Jump { label };
+                    let jmp = Instr::Jump { label };
 
                     func.code.push(Span::new(jmp, (0, 0)));
                 }
                 Stmt::Break => {
                     let func = self.func_stack.last_mut().unwrap();
                     let label = 1 + *func.label_stack.last().unwrap();
-                    let jmp = IRCode::Jump { label };
+                    let jmp = Instr::Jump { label };
 
                     func.code.push(Span::new(jmp, (0, 0)));
                 }
@@ -216,7 +342,7 @@ impl IRGenerator {
         }
     }
 
-    fn generate_expr(&mut self, spanned_expr: Span<Expr>) -> Span<IRValue> {
+    fn generate_expr(&mut self, spanned_expr: Span<Expr>) -> Span<Value> {
         let expr = spanned_expr.val;
         let span = spanned_expr.span;
 
@@ -228,108 +354,112 @@ impl IRGenerator {
                 let lhs = self.generate_expr(*lhs).val;
                 let rhs = self.generate_expr(*rhs).val;
                 let dest = self.get_temp();
-                let binop = IRCode::Binop { dest, lhs, rhs, op: op.clone() };
+                let binop = Instr::Binop { dest, lhs, rhs, op: op.clone() };
 
                 self.push_instr(binop, span);
 
-                Span::new(IRValue::Var(dest), span)
+                Span::new(Value::Var(dest), span)
             }
             Expr::Access { store, key } => {
-                let store = self.generate_expr(*store).val;
-                let key = IRValue::Var(IRVar::Ident(key));
+                let obj = self.generate_expr(*store).val;
+                let key = Value::Var(Var::new(VarID::Local(key)));
                 let dest = self.get_temp();
-                let obj_load = IRCode::ObjLoad { dest, store, key};
+                let obj_load = Instr::ObjLoad { dest, obj, key};
 
                 self.push_instr(obj_load, span);
 
-                Span::new(IRValue::Var(dest), span)
+                Span::new(Value::Var(dest), span)
             }
             Expr::Index { store, key } => {
-                let store = self.generate_expr(*store).val;
+                let obj = self.generate_expr(*store).val;
                 let key = self.generate_expr(*key).val;
                 let dest = self.get_temp();
-                let obj_load = IRCode::ObjLoad { dest, store, key};
+                let obj_load = Instr::ObjLoad { dest, obj, key};
 
                 self.push_instr(obj_load, span);
 
-                Span::new(IRValue::Var(dest), span)
+                Span::new(Value::Var(dest), span)
             }
             Expr::Call { calle, input } => {
                 let dest = self.get_temp();
-                let src = self.generate_expr(*calle).val;
+                let calle = self.generate_expr(*calle).val;
                 let input = if input.is_none() {
-                    IRValue::Null
+                    Value::Null
                 } else {
                     self.generate_expr(*input.unwrap()).val
                 };
-                let instr = IRCode::Call { dest, src, input };
+                let instr = Instr::Call { dest, calle, input };
 
                 self.push_instr(instr, span);
 
-                Span::new(IRValue::Var(dest), span)
+                Span::new(Value::Var(dest), span)
             }
         }
     }
 
-    fn generate_value(&mut self, value: Value, span: (usize, usize)) -> IRValue {
+    fn generate_value(&mut self, value: RawValue, span: (usize, usize)) -> Value {
         match value {
-            Value::Null       => IRValue::Null,
-            Value::Int(i)     => IRValue::Int(i),
-            Value::Float(f)   => IRValue::Float(f),
-            Value::Ident(id)  => IRValue::Var(IRVar::Ident(id)),
-            Value::Global(id) => IRValue::Var(IRVar::Global(id)),
-            Value::Bool(b)    => IRValue::Bool(b),
-            Value::String(s)  => IRValue::String(s.clone()),
-            Value::List(list) => {
+            RawValue::Null       => Value::Null,
+            RawValue::Int(i)     => Value::Int(i),
+            RawValue::Float(f)   => Value::Float(f),
+            RawValue::Ident(id)  => Value::Var(Var::new(VarID::Local(id))),
+            RawValue::Global(id) => Value::Var(Var::new(VarID::Global(id))),
+            RawValue::Bool(b)    => Value::Bool(b),
+            RawValue::String(s)  => Value::String(s.clone()),
+            RawValue::List(list) => {
                 let dest = self.get_temp();
-                let mut items = vec![];
-                for expr in list.into_iter() {
-                    let item = self.generate_expr(expr);
-                    items.push(item.val);
-                }
-                let instr = IRCode::NewList { dest, items };
+                let instr = Instr::NewList { dest };
 
                 self.push_instr(instr, span);
 
-                IRValue::Var(dest)
+                for (i, expr) in list.into_iter().enumerate() {
+                    let item = self.generate_expr(expr);
+                    let instr = Instr::ObjStore { obj: Value::Var(dest), key: Value::Int(i as isize), val: item.val };
+                    self.push_instr(instr, span);
+                }
+
+                Value::Var(dest)
             }
-            Value::Map(map) => {
+            RawValue::Map(map) => {
                 let dest = self.get_temp();
-                let mut items = vec![];
-                for entry in map.into_iter() {
-                    let (key, val) = entry;
+                let instr = Instr::NewMap { dest };
+
+                self.push_instr(instr, span);
+
+                for (key, val) in map.into_iter() {
                     let key = self.generate_expr(key).val;
                     let val = self.generate_expr(val).val;
-                    items.push((key, val));
+                    let instr = Instr::ObjStore { obj: Value::Var(dest), key, val };
+
+                    self.push_instr(instr, span);
                 }
-                let instr = IRCode::NewMap { dest, items };
 
-                self.push_instr(instr, span);
-
-                IRValue::Var(dest)
+                Value::Var(dest)
             }
-            Value::Func { stmts } => {
+            RawValue::Func { stmts } => {
                 let temp_counter = self.temp_counter;
                 self.temp_counter = 0;
+
                 self.push_new_func();
                 self.generate(stmts);
+
                 self.temp_counter = temp_counter;
 
                 let func_val = self.pop_func();
                 let dest = self.get_temp();
-                let load = IRCode::Load { dest, src: func_val };
+                let load = Instr::Load { dest, src: func_val };
 
                 self.push_instr(load, span);
 
-                IRValue::Var(dest)
+                Value::Var(dest)
             }
         }
     }
 
-    fn pop_func(&mut self) -> IRValue {
+    fn pop_func(&mut self) -> Value {
         let mut func = self.func_stack.pop().unwrap();
-        let end_return = IRCode::Return { dest: IRValue::Null };
-        let func_val = IRValue::Func(func.id);
+        let end_return = Instr::Return { src: Value::Null };
+        let func_val = Value::Func(func.id);
 
         func.code.push(Span::new(end_return, (0, 0)));
         self.funcs.insert(func.id, func);
@@ -338,7 +468,7 @@ impl IRGenerator {
     }
 
     fn push_new_func(&mut self) {
-        let func = IRFunc {
+        let func = Func {
             id: self.func_counter,
             code: vec![],
             label_stack: vec![],
@@ -357,11 +487,11 @@ impl IRGenerator {
         self.get_func().label_stack.pop();
     }
 
-    fn push_instr(&mut self, instr: IRCode, span: (usize, usize)) {
+    fn push_instr(&mut self, instr: Instr, span: (usize, usize)) {
         self.get_func().code.push(Span::new(instr, span));
     }
 
-    fn get_func(&mut self) -> &mut IRFunc {
+    fn get_func(&mut self) -> &mut Func {
         self.func_stack.last_mut().unwrap()
     }
 
@@ -373,8 +503,8 @@ impl IRGenerator {
         label_id
     }
 
-    fn get_temp(&mut self) -> IRVar {
-        let temp = IRVar::Temp(self.temp_counter);
+    fn get_temp(&mut self) -> Var {
+        let temp = Var::new(VarID::Temp(self.temp_counter));
 
         self.temp_counter += 1;
         temp
