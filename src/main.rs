@@ -1,4 +1,5 @@
 mod bytecode;
+mod vm;
 mod generator;
 mod lexer;
 mod parser;
@@ -13,6 +14,7 @@ use std::collections::HashMap;
 use std::fs::{read_to_string, File};
 use std::io::BufRead;
 use std::io::{stdin, stdout, BufReader, Write};
+use vm::VM;
 
 #[derive(CliParser, Debug)]
 #[command(version, about, long_about = None)]
@@ -33,11 +35,11 @@ fn main() {
 
 fn run_file(file_name: String) {
     let mut symbol_map = HashMap::new();
-    let mut lexer = Lexer::new(symbol_map, Some(file_name.clone()));
+    let mut lexer = Lexer::new(&mut symbol_map, Some(file_name.clone()));
     let mut parser = Parser::new(lexer);
 
-    let stmts = match parser.parse_program() {
-        Ok(stmts) => stmts,
+    let ast = match parser.build_ast() {
+        Ok(ast) => ast,
         Err(errs) => {
             display_syntax_errors(file_name, errs);
             return;
@@ -47,12 +49,14 @@ fn run_file(file_name: String) {
     //println!("{:#?}", stmts);
 
     let mut generator = Generator::new();
-    generator.gen_program(stmts);
-    //let vm = VM::new();
-    //vm.load
+    let program = generator.gen_program(ast);
+    let vm = VM::new();
+
+    // vm.load_symbols(symbol_map);
+    vm.load_program(program);
 
     // match vm.run() {
-    //  Ok() => {}
+    //  Ok(val) => { print val? }
     //  Err(_) => {
     //      // we get back a span
     //      // how do we display the error?
@@ -68,22 +72,23 @@ fn run_repl() {
     println!("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
 
     let mut symbol_map = HashMap::new();
-    let mut lexer = Lexer::new(symbol_map, None);
+    let mut lexer = Lexer::new(&mut symbol_map, None);
     let mut parser = Parser::new(lexer);
 
     loop {
-        let stmt = match parser.parse_repl() {
-            Ok(stmt) => stmt,
+        let ast = match parser.parse_repl() {
+            Ok(ast) => ast,
             Err(err) => {
                 println!("{:?}", err);
-                todo!()
+                //todo!()
+                continue;
             }
         };
 
         // println!("{:#?}", stmt);
 
         let mut generator = Generator::new();
-        generator.gen_program(vec![stmt]);
+        generator.gen_program(ast);
     }
 }
 

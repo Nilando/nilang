@@ -18,14 +18,18 @@ pub struct Span<T> {
     pub span: (usize, usize),
 }
 
-pub struct Parser {
-    pub lexer: Lexer,
+pub struct AST {
+    pub stmts: Vec<Stmt>
+}
+
+pub struct Parser<'a> {
+    pub lexer: Lexer<'a>,
     context: Vec<Context>,
     errs: Vec<Span<SyntaxError>>,
 }
 
 #[derive(Debug)]
-pub enum Value {
+pub enum ParsedValue {
     Null,
     Float(f64),
     Int(isize),
@@ -40,7 +44,7 @@ pub enum Value {
 
 #[derive(Debug)]
 pub enum Expr {
-    Value(Value),
+    Value(ParsedValue),
     Binop {
         lhs: Box<Span<Expr>>,
         op: Op,
@@ -86,8 +90,8 @@ pub enum Stmt {
     Break,
 }
 
-impl Parser {
-    pub fn new(lexer: Lexer) -> Self {
+impl<'a> Parser<'a> {
+    pub fn new(lexer: Lexer<'a>) -> Self {
         Self {
             lexer,
             context: vec![],
@@ -95,11 +99,11 @@ impl Parser {
         }
     }
 
-    pub fn get_lexer(self) -> Lexer {
+    pub fn get_lexer(self) -> Lexer<'a> {
         self.lexer
     }
 
-    pub fn parse_program(&mut self) -> Result<Vec<Stmt>, Vec<Span<SyntaxError>>> {
+    pub fn build_ast(&mut self) -> Result<AST, Vec<Span<SyntaxError>>> {
         let mut stmts = vec![];
 
         loop {
@@ -123,7 +127,7 @@ impl Parser {
         }
 
         if self.errs.is_empty() {
-            Ok(stmts)
+            Ok(AST { stmts })
         } else {
             let mut errs = vec![];
             std::mem::swap(&mut errs, &mut self.errs);
@@ -131,7 +135,7 @@ impl Parser {
         }
     }
 
-    pub fn parse_repl(&mut self) -> Result<Stmt, Span<SyntaxError>> {
+    pub fn parse_repl(&mut self) -> Result<AST, Span<SyntaxError>> {
         let stmt = self.parse_stmt()?;
         let token = self.lexer.peek();
 
@@ -140,7 +144,7 @@ impl Parser {
             _ => return Err(Span::new(SyntaxError::Unexpected(token.token), token.span)),
         }
 
-        Ok(stmt)
+        Ok(AST { stmts: vec![stmt] } )
     }
 
     pub fn parse_block(&mut self) -> Result<Vec<Stmt>, Span<SyntaxError>> {
@@ -249,7 +253,7 @@ impl Parser {
                 match expr.val {
                     Expr::Access { .. } | Expr::Index { .. } => {}
                     Expr::Value(ref val) => match val {
-                        Value::Ident(_) | Value::Global(_) => {}
+                        ParsedValue::Ident(_) | ParsedValue::Global(_) => {}
                         _ => {
                             return Err(Span::new(
                                 SyntaxError::Error("Expected lvalue".to_string()),
@@ -362,23 +366,23 @@ impl Parser {
         let token = self.lexer.get_token();
 
         let atom = match token.token {
-            Token::Int(i) => Span::new(Expr::Value(Value::Int(i)), token.span),
-            Token::Float(f) => Span::new(Expr::Value(Value::Float(f)), token.span),
-            Token::Ident(id) => Span::new(Expr::Value(Value::Ident(id)), token.span),
-            Token::Global(id) => Span::new(Expr::Value(Value::Global(id)), token.span),
-            Token::String(s) => Span::new(Expr::Value(Value::String(s)), token.span),
-            Token::KeyWord(KeyWord::Null) => Span::new(Expr::Value(Value::Null), token.span),
+            Token::Int(i) => Span::new(Expr::Value(ParsedValue::Int(i)), token.span),
+            Token::Float(f) => Span::new(Expr::Value(ParsedValue::Float(f)), token.span),
+            Token::Ident(id) => Span::new(Expr::Value(ParsedValue::Ident(id)), token.span),
+            Token::Global(id) => Span::new(Expr::Value(ParsedValue::Global(id)), token.span),
+            Token::String(s) => Span::new(Expr::Value(ParsedValue::String(s)), token.span),
+            Token::KeyWord(KeyWord::Null) => Span::new(Expr::Value(ParsedValue::Null), token.span),
             Token::KeyWord(KeyWord::False) => {
-                Span::new(Expr::Value(Value::Bool(false)), token.span)
+                Span::new(Expr::Value(ParsedValue::Bool(false)), token.span)
             }
-            Token::KeyWord(KeyWord::True) => Span::new(Expr::Value(Value::Bool(true)), token.span),
+            Token::KeyWord(KeyWord::True) => Span::new(Expr::Value(ParsedValue::Bool(true)), token.span),
             Token::KeyWord(KeyWord::Fn) => {
                 let span = token.span;
                 self.context.push(Context::Func);
                 let stmts = self.parse_block()?;
                 self.context.pop();
 
-                Span::new(Expr::Value(Value::Func { stmts }), span)
+                Span::new(Expr::Value(ParsedValue::Func { stmts }), span)
             }
             Token::Ctrl(Ctrl::LeftCurly) => {
                 let mut entries = vec![];
@@ -414,7 +418,7 @@ impl Parser {
                     }
                 }
 
-                Span::new(Expr::Value(Value::Map(entries)), span)
+                Span::new(Expr::Value(ParsedValue::Map(entries)), span)
             }
             Token::Ctrl(Ctrl::LeftBracket) => {
                 let mut items = vec![];
@@ -448,7 +452,7 @@ impl Parser {
                     }
                 }
 
-                Span::new(Expr::Value(Value::List(items)), span)
+                Span::new(Expr::Value(ParsedValue::List(items)), span)
             }
             Token::Ctrl(Ctrl::LeftParen) => {
                 let expr = self.parse_expr()?;

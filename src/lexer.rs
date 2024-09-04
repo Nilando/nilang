@@ -89,8 +89,8 @@ pub enum Token {
     KeyWord(KeyWord),
 }
 
-pub struct Lexer {
-    symbol_map: HashMap<String, usize>,
+pub struct Lexer<'a> {
+    symbol_map: &'a mut HashMap<String, usize>,
     tokens: VecDeque<SpannedToken>,
     pos: usize,
     eof: bool,
@@ -99,8 +99,8 @@ pub struct Lexer {
     pub buffer: String,
 }
 
-impl Lexer {
-    pub fn new(symbol_map: HashMap<String, usize>, file_name: Option<String>) -> Self {
+impl<'a> Lexer<'a> {
+    pub fn new(symbol_map: &'a mut HashMap<String, usize>, file_name: Option<String>) -> Self {
         let reader: Box<dyn BufRead> = if let Some(ref file_name) = file_name {
             let file = File::open(file_name.clone()).expect("unable to read file");
             Box::new(BufReader::new(file))
@@ -168,10 +168,6 @@ impl Lexer {
                 span: (self.pos, self.pos),
             }),
         }
-    }
-
-    pub fn get_symbol_map(self) -> HashMap<String, usize> {
-        self.symbol_map
     }
 
     pub fn repl_mode(&self) -> bool {
@@ -304,15 +300,15 @@ impl Lexer {
                     match str.as_str() {
                         "fn" => Token::KeyWord(KeyWord::Fn),
                         "if" => Token::KeyWord(KeyWord::If),
+                        "log" => Token::KeyWord(KeyWord::Log),
                         "else" => Token::KeyWord(KeyWord::Else),
+                        "null" => Token::KeyWord(KeyWord::Null),
+                        "true" => Token::KeyWord(KeyWord::True),
                         "while" => Token::KeyWord(KeyWord::While),
                         "break" => Token::KeyWord(KeyWord::Break),
-                        "continue" => Token::KeyWord(KeyWord::Continue),
-                        "return" => Token::KeyWord(KeyWord::Return),
-                        "null" => Token::KeyWord(KeyWord::Null),
                         "false" => Token::KeyWord(KeyWord::False),
-                        "true" => Token::KeyWord(KeyWord::True),
-                        "log" => Token::KeyWord(KeyWord::Log),
+                        "return" => Token::KeyWord(KeyWord::Return),
+                        "continue" => Token::KeyWord(KeyWord::Continue),
                         _ => match self.symbol_map.get(&str) {
                             Some(id) => Token::Ident(*id),
                             None => {

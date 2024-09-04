@@ -1,7 +1,10 @@
-use super::generator::{Func, Instr, Value, Var, VarID};
+use super::generator::{Var, VarID};
+use super::raw_value::RawValue;
+use super::ir::IR;
+use super::ir_func::IRFunc;
 use std::collections::HashMap;
 
-impl Value {
+impl RawValue {
     fn display(&self, symbol_map: &HashMap<String, usize>) -> String {
         match self {
             Self::String(s) => format!("\"{}\"", s),
@@ -39,7 +42,7 @@ impl Var {
     }
 }
 
-impl Instr {
+impl IR {
     pub fn display(&self, symbol_map: &HashMap<String, usize>) -> String {
         match self {
             Self::Load { dest, src } => format!(
@@ -87,7 +90,7 @@ impl Instr {
     }
 }
 
-impl Func {
+impl IRFunc {
     pub fn display(&self, symbol_map: &HashMap<String, usize>) {
         if self.id == 0 {
             println!("======= MAIN START =======");
