@@ -1,8 +1,8 @@
 mod bytecode;
-mod vm;
 mod generator;
 mod lexer;
 mod parser;
+mod vm;
 
 use chrono::{DateTime, Local};
 use clap::Parser as CliParser;

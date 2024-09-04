@@ -1,6 +1,6 @@
-use crate::lexer::Op;
+use super::generator::{LabelID, Var};
 use super::raw_value::RawValue;
-use super::generator::{Var, LabelID};
+use crate::lexer::Op;
 
 #[derive(Debug)]
 pub enum IR {

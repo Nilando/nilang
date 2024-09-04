@@ -1,9 +1,9 @@
-use crate::parser::AST;
-use crate::parser::{Expr, Span, Stmt, ParsedValue};
-use crate::bytecode::ByteCode;
-use super::raw_value::RawValue;
 use super::ir::IR;
 use super::ir_func::IRFunc;
+use super::raw_value::RawValue;
+use crate::bytecode::ByteCode;
+use crate::parser::AST;
+use crate::parser::{Expr, ParsedValue, Span, Stmt};
 
 use std::collections::HashMap;
 
@@ -46,7 +46,7 @@ impl Var {
 struct RawFunc {
     id: FuncID,
     code: Vec<ByteCode>,
-    locals: Vec<RawValue>
+    locals: Vec<RawValue>,
 }
 
 impl RawFunc {
@@ -60,11 +60,7 @@ impl RawFunc {
             block.compile(&mut code, &mut locals);
         }
 
-        Self {
-            id,
-            code,
-            locals
-        }
+        Self { id, code, locals }
     }
 }
 
@@ -357,11 +353,12 @@ impl Generator {
 
     fn pop_func(&mut self) -> RawValue {
         let mut func = self.func_stack.pop().unwrap();
-        let end_return = IR::Return { src: RawValue::Null };
+        let end_return = IR::Return {
+            src: RawValue::Null,
+        };
         let func_val = RawValue::Func(func.id);
 
         func.code.push(Span::new(end_return, (0, 0)));
-
 
         self.funcs.insert(func.id, RawFunc::new(func));
 

@@ -1,8 +1,8 @@
+use super::block::Block;
 use super::generator::{FuncID, LabelID};
 use super::ir::IR;
-use super::block::Block;
-use crate::parser::Span;
 use super::raw_value::RawValue;
+use crate::parser::Span;
 
 #[derive(Debug)]
 pub struct IRFunc {

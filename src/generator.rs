@@ -1,9 +1,9 @@
+mod block;
 mod display;
 mod generator;
-mod raw_value;
 mod ir;
 mod ir_func;
-mod block;
+mod raw_value;
 
 pub use generator::Generator;
 pub use generator::Program;

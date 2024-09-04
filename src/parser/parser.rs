@@ -19,7 +19,7 @@ pub struct Span<T> {
 }
 
 pub struct AST {
-    pub stmts: Vec<Stmt>
+    pub stmts: Vec<Stmt>,
 }
 
 pub struct Parser<'a> {
@@ -144,7 +144,7 @@ impl<'a> Parser<'a> {
             _ => return Err(Span::new(SyntaxError::Unexpected(token.token), token.span)),
         }
 
-        Ok(AST { stmts: vec![stmt] } )
+        Ok(AST { stmts: vec![stmt] })
     }
 
     pub fn parse_block(&mut self) -> Result<Vec<Stmt>, Span<SyntaxError>> {
@@ -375,7 +375,9 @@ impl<'a> Parser<'a> {
             Token::KeyWord(KeyWord::False) => {
                 Span::new(Expr::Value(ParsedValue::Bool(false)), token.span)
             }
-            Token::KeyWord(KeyWord::True) => Span::new(Expr::Value(ParsedValue::Bool(true)), token.span),
+            Token::KeyWord(KeyWord::True) => {
+                Span::new(Expr::Value(ParsedValue::Bool(true)), token.span)
+            }
             Token::KeyWord(KeyWord::Fn) => {
                 let span = token.span;
                 self.context.push(Context::Func);

@@ -1,9 +1,9 @@
-use std::collections::HashMap;
-use crate::bytecode::ByteCode;
-use crate::parser::{Expr, Span, Stmt, ParsedValue};
-use super::generator::{Var, VarID, LabelID};
+use super::generator::{LabelID, Var, VarID};
 use super::ir::IR;
 use super::raw_value::RawValue;
+use crate::bytecode::ByteCode;
+use crate::parser::{Expr, ParsedValue, Span, Stmt};
+use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct Block {
@@ -26,7 +26,7 @@ impl Block {
             continues,
         }
     }
-    
+
     pub fn set_label(&mut self, label: Option<LabelID>) {
         self.label = label;
     }

@@ -1,7 +1,7 @@
 use super::generator::{Var, VarID};
-use super::raw_value::RawValue;
 use super::ir::IR;
 use super::ir_func::IRFunc;
+use super::raw_value::RawValue;
 use std::collections::HashMap;
 
 impl RawValue {

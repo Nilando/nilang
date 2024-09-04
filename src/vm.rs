@@ -1,13 +1,13 @@
-use sandpit::{Arena, Root, Gc, Trace, TraceVec, Mutator};
 use super::bytecode::ByteCode;
-use std::cell::Cell;
 use crate::generator::Program;
+use sandpit::{Arena, Gc, Mutator, Root, Trace, TraceVec};
+use std::cell::Cell;
 
 #[derive(Trace)]
 struct Context<'gc> {
     // globals: Globals<'gc>,
     // symbol_table: SymTable<'gc>,
-    stack: Stack<'gc>
+    stack: Stack<'gc>,
 }
 
 impl<'gc> Context<'gc> {
@@ -28,7 +28,7 @@ impl<'gc> Stack<'gc> {
     pub fn new<M: Mutator<'gc>>(m: &'gc M) -> Self {
         Self {
             call_stack: TraceVec::new(m),
-            registers: TraceVec::new(m)
+            registers: TraceVec::new(m),
         }
     }
 }
@@ -67,13 +67,13 @@ struct InstrStream<'gc> {
 }
 
 pub struct VM {
-    arena: Arena<Root![Context<'_>]>
+    arena: Arena<Root![Context<'_>]>,
 }
 
 impl VM {
     pub fn new() -> Self {
         Self {
-            arena: Arena::new(|m| Context::new(m))
+            arena: Arena::new(|m| Context::new(m)),
         }
     }
 
@@ -92,7 +92,7 @@ impl VM {
             // this will go through all the functions in program
             // and allocate functions for them and then backpatch funcID's
             // with function pointers
-            
+
             // finally a stack frame for main will be set up
             // and the vm will be in a ready state
         });
@@ -106,5 +106,5 @@ pub struct Func<'gc> {
     pub(super) id: FuncID,
     locals: TraceVec<'gc, Value<'gc>>,
     code: TraceVec<'gc, ByteCode>,
-    debug: TraceVec<'gc, (usize, usize)>
+    debug: TraceVec<'gc, (usize, usize)>,
 }
