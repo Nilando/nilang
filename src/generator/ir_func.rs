@@ -1,7 +1,7 @@
 use super::generator::{FuncID, LabelID};
 use super::ir::IR;
 use super::block::Block;
-use crate::parser::{Expr, Span, Stmt, ParsedValue};
+use crate::parser::Span;
 use super::raw_value::RawValue;
 
 #[derive(Debug)]

@@ -91,134 +91,138 @@ impl Generator {
 
     pub fn gen_program(mut self, ast: AST) -> Program {
         self.push_new_func();
-        self.generate(ast.stmts);
+        self.gen_stmts(ast.stmts);
         self.pop_func();
 
         Program { funcs: self.funcs }
     }
 
-    fn generate(&mut self, stmts: Vec<Stmt>) {
+    fn gen_stmts(&mut self, stmts: Vec<Stmt>) {
         for stmt in stmts.into_iter() {
-            match stmt {
-                Stmt::Expr(expr) => {
-                    self.generate_expr(*expr);
-                    self.temp_counter = 0;
-                }
-                Stmt::Return(expr) => {
-                    let var = self.generate_expr(*expr);
+            self.gen_stmt(stmt);
+        }
+    }
 
-                    self.push_ir(IR::Return { src: var.val }, var.span);
-                    self.temp_counter = 0;
-                }
-                Stmt::Log(expr) => {
-                    let var = self.generate_expr(*expr);
-                    let ir = IR::Log { src: var.val };
+    fn gen_stmt(&mut self, stmt: Stmt) {
+        match stmt {
+            Stmt::Expr(expr) => {
+                self.generate_expr(*expr);
+                self.temp_counter = 0;
+            }
+            Stmt::Return(expr) => {
+                let var = self.generate_expr(*expr);
 
-                    self.push_ir(ir, var.span);
-                    self.temp_counter = 0;
-                }
-                Stmt::Assign { dest, src } => match dest.val {
-                    Expr::Value(value) => {
-                        if let RawValue::Var(dest) = self.generate_value(value, dest.span) {
-                            let src = self.generate_expr(*src);
-                            let ir = IR::Load { dest, src: src.val };
+                self.push_ir(IR::Return { src: var.val }, var.span);
+                self.temp_counter = 0;
+            }
+            Stmt::Log(expr) => {
+                let var = self.generate_expr(*expr);
+                let ir = IR::Log { src: var.val };
 
-                            self.push_ir(ir, src.span);
-                            self.temp_counter = 0;
-                        }
-                    }
-                    Expr::Access { store, key } => {
-                        let span = store.span;
-                        let obj = self.generate_expr(*store).val;
-                        let key = RawValue::Var(Var::new(VarID::Local(key)));
-                        let val = self.generate_expr(*src).val;
-                        let ir = IR::ObjStore { obj, key, val };
+                self.push_ir(ir, var.span);
+                self.temp_counter = 0;
+            }
+            Stmt::Assign { dest, src } => match dest.val {
+                Expr::Value(value) => {
+                    if let RawValue::Var(dest) = self.generate_value(value, dest.span) {
+                        let src = self.generate_expr(*src);
+                        let ir = IR::Load { dest, src: src.val };
 
-                        self.push_ir(ir, span);
+                        self.push_ir(ir, src.span);
                         self.temp_counter = 0;
                     }
-                    Expr::Index { store, key } => {
-                        let span = store.span;
-                        let obj = self.generate_expr(*store).val;
-                        let key = self.generate_expr(*key).val;
-                        let val = self.generate_expr(*src).val;
-                        let ir = IR::ObjStore { obj, key, val };
+                }
+                Expr::Access { store, key } => {
+                    let span = store.span;
+                    let obj = self.generate_expr(*store).val;
+                    let key = RawValue::Var(Var::new(VarID::Local(key)));
+                    let val = self.generate_expr(*src).val;
+                    let ir = IR::ObjStore { obj, key, val };
 
-                        self.push_ir(ir, span);
-                        self.temp_counter = 0;
-                    }
-                    _ => panic!("GENERATOR ERROR: assigning to non lvalue"),
-                },
-                Stmt::While { cond, stmts } => {
-                    let label_start = self.gen_label();
-                    let label_end = self.gen_label();
-                    let cond = self.generate_expr(*cond);
-
-                    self.push_ir(IR::Label { id: label_start }, (0, 0));
-                    self.push_ir(
-                        IR::Jnt {
-                            cond: cond.val,
-                            label: label_end,
-                        },
-                        cond.span,
-                    );
+                    self.push_ir(ir, span);
                     self.temp_counter = 0;
-                    self.push_label(label_start);
-                    self.generate(stmts);
-                    self.push_ir(IR::Jump { label: label_start }, (0, 0));
-                    self.push_ir(IR::Label { id: label_end }, (0, 0));
-                    self.pop_label();
                 }
-                Stmt::If { cond, stmts } => {
-                    let cond = self.generate_expr(*cond);
-                    let label = self.gen_label();
+                Expr::Index { store, key } => {
+                    let span = store.span;
+                    let obj = self.generate_expr(*store).val;
+                    let key = self.generate_expr(*key).val;
+                    let val = self.generate_expr(*src).val;
+                    let ir = IR::ObjStore { obj, key, val };
 
-                    self.push_ir(
-                        IR::Jnt {
-                            cond: cond.val,
-                            label,
-                        },
-                        cond.span,
-                    );
+                    self.push_ir(ir, span);
                     self.temp_counter = 0;
-                    self.generate(stmts);
-                    self.push_ir(IR::Label { id: label }, (0, 0));
                 }
-                Stmt::IfElse {
-                    cond,
-                    stmts,
-                    else_stmts,
-                } => {
-                    let cond = self.generate_expr(*cond);
-                    let else_start = self.gen_label();
-                    let else_end = self.gen_label();
+                _ => panic!("GENERATOR ERROR: assigning to non lvalue"),
+            },
+            Stmt::While { cond, stmts } => {
+                let label_start = self.gen_label();
+                let label_end = self.gen_label();
+                let cond = self.generate_expr(*cond);
 
-                    self.push_ir(
-                        IR::Jnt {
-                            cond: cond.val,
-                            label: else_start,
-                        },
-                        cond.span,
-                    );
-                    self.temp_counter = 0;
-                    self.generate(stmts);
-                    self.push_ir(IR::Jump { label: else_end }, (0, 0));
-                    self.push_ir(IR::Label { id: else_start }, (0, 0));
-                    self.generate(else_stmts);
-                    self.push_ir(IR::Label { id: else_end }, (0, 0));
-                }
-                Stmt::Continue => {
-                    let label = self.top_label();
-                    let jmp = IR::Jump { label };
+                self.push_ir(IR::Label { id: label_start }, (0, 0));
+                self.push_ir(
+                    IR::Jnt {
+                        cond: cond.val,
+                        label: label_end,
+                    },
+                    cond.span,
+                );
+                self.temp_counter = 0;
+                self.push_label(label_start);
+                self.gen_stmts(stmts);
+                self.push_ir(IR::Jump { label: label_start }, (0, 0));
+                self.push_ir(IR::Label { id: label_end }, (0, 0));
+                self.pop_label();
+            }
+            Stmt::If { cond, stmts } => {
+                let cond = self.generate_expr(*cond);
+                let label = self.gen_label();
 
-                    self.push_ir(jmp, (0, 0));
-                }
-                Stmt::Break => {
-                    let label = self.top_label();
-                    let jmp = IR::Jump { label };
+                self.push_ir(
+                    IR::Jnt {
+                        cond: cond.val,
+                        label,
+                    },
+                    cond.span,
+                );
+                self.temp_counter = 0;
+                self.gen_stmts(stmts);
+                self.push_ir(IR::Label { id: label }, (0, 0));
+            }
+            Stmt::IfElse {
+                cond,
+                stmts,
+                else_stmts,
+            } => {
+                let cond = self.generate_expr(*cond);
+                let else_start = self.gen_label();
+                let else_end = self.gen_label();
 
-                    self.push_ir(jmp, (0, 0));
-                }
+                self.push_ir(
+                    IR::Jnt {
+                        cond: cond.val,
+                        label: else_start,
+                    },
+                    cond.span,
+                );
+                self.temp_counter = 0;
+                self.gen_stmts(stmts);
+                self.push_ir(IR::Jump { label: else_end }, (0, 0));
+                self.push_ir(IR::Label { id: else_start }, (0, 0));
+                self.gen_stmts(else_stmts);
+                self.push_ir(IR::Label { id: else_end }, (0, 0));
+            }
+            Stmt::Continue => {
+                let label = self.top_label();
+                let jmp = IR::Jump { label };
+
+                self.push_ir(jmp, (0, 0));
+            }
+            Stmt::Break => {
+                let label = self.top_label();
+                let jmp = IR::Jump { label };
+
+                self.push_ir(jmp, (0, 0));
             }
         }
     }
@@ -333,7 +337,7 @@ impl Generator {
                 self.temp_counter = 0;
 
                 self.push_new_func();
-                self.generate(stmts);
+                self.gen_stmts(stmts);
 
                 self.temp_counter = temp_counter;
 

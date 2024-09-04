@@ -8,7 +8,6 @@ struct Context<'gc> {
     // globals: Globals<'gc>,
     // symbol_table: SymTable<'gc>,
     stack: Stack<'gc>
-    // program: Program<'gc>
 }
 
 impl<'gc> Context<'gc> {
