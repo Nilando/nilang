@@ -1,7 +1,6 @@
 use super::generator::{LabelID, Var, VarID};
 use super::ir::IR;
 use super::raw_value::RawValue;
-use crate::bytecode::ByteCode;
 use crate::parser::{Expr, ParsedValue, Span, Stmt};
 use std::collections::HashMap;
 
@@ -43,6 +42,10 @@ impl Block {
         self.code.is_empty()
     }
 
+    pub fn as_code(self) -> Vec<Span<IR>> {
+        self.code
+    }
+
     pub fn update_operand_liveness(&mut self, val: &mut RawValue, i: usize) {
         if let RawValue::Var(var) = val {
             self.attach_liveness(var);
@@ -60,9 +63,5 @@ impl Block {
             var.next_use = *next_use;
             var.live = *live;
         }
-    }
-
-    pub fn compile(&self, code: &mut Vec<ByteCode>, locals: &mut Vec<RawValue>) {
-        todo!()
     }
 }

@@ -1,16 +1,18 @@
 use super::ir::IR;
-use super::ir_func::IRFunc;
+use super::ir_func::FuncCompiler;
 use super::raw_value::RawValue;
+
 use crate::bytecode::ByteCode;
 use crate::parser::AST;
 use crate::parser::{Expr, ParsedValue, Span, Stmt};
 
 use std::collections::HashMap;
 
-pub type TempID = usize;
-pub type SymID = usize;
+pub type TempID = u16;
+pub type SymID = u16;
 pub type FuncID = usize;
 pub type LabelID = usize;
+pub type LocalID = u16;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum VarID {
@@ -43,43 +45,77 @@ impl Var {
     }
 }
 
-struct RawFunc {
+pub struct RawFunc {
     id: FuncID,
     code: Vec<ByteCode>,
-    locals: Vec<RawValue>,
+    locals: HashMap<LocalID, RawValue>,
 }
 
 impl RawFunc {
-    pub fn new(func: IRFunc) -> Self {
-        let id = func.id;
-        let mut locals = vec![];
-        let mut code = vec![];
-        let blocks = func.into_blocks();
-
-        for block in blocks.iter() {
-            block.compile(&mut code, &mut locals);
+    pub fn new(id: FuncID, code: Vec<ByteCode>, locals: HashMap<LocalID, RawValue>) -> Self {
+        Self {
+            id, 
+            code,
+            locals
         }
-
-        Self { id, code, locals }
     }
 }
 
 pub struct Program {
-    funcs: HashMap<usize, RawFunc>,
+    funcs: Vec<RawFunc>,
+}
+
+// helps with keeping track of label info
+// pretty much it
+struct FuncGenerator {
+    id: FuncID,
+    code: Vec<Span<IR>>,
+    label_counter: usize,
+    label_stack: Vec<LabelID>
+}
+
+impl FuncGenerator {
+    pub fn new(id: usize) -> Self {
+        Self {
+            id,
+            code: vec![],
+            label_stack: vec![],
+            label_counter: 0,
+        }
+    }
+
+    pub fn push_label(&mut self, label: LabelID) {
+        self.label_stack.push(label)
+    }
+
+    pub fn pop_label(&mut self) {
+        self.label_stack.pop();
+    }
+
+    pub fn top_label(&self) -> LabelID {
+        *self.label_stack.last().unwrap()
+    }
+
+    pub fn gen_label(&mut self) -> LabelID {
+        let label_id = self.label_counter;
+
+        self.label_counter += 1;
+        label_id
+    }
 }
 
 pub struct Generator {
-    func_stack: Vec<IRFunc>,
-    func_counter: usize,
-    temp_counter: usize,
-    funcs: HashMap<usize, RawFunc>,
+    func_stack: Vec<FuncGenerator>,
+    temp_counter: u16,
+    funcs: Vec<RawFunc>,
+    func_counter: FuncID,
 }
 
 impl Generator {
     pub fn new() -> Self {
         Self {
             func_stack: vec![],
-            funcs: HashMap::new(),
+            funcs: vec![],
             temp_counter: 0,
             func_counter: 0,
         }
@@ -356,20 +392,23 @@ impl Generator {
         let end_return = IR::Return {
             src: RawValue::Null,
         };
-        let func_val = RawValue::Func(func.id);
+        let func_id = self.funcs.len();
+        let func_val = RawValue::Func(func_id);
 
         func.code.push(Span::new(end_return, (0, 0)));
 
-        self.funcs.insert(func.id, RawFunc::new(func));
+        let compiler = FuncCompiler::new();
+        let raw_func = compiler.compile(func_id, func.code);
+
+        self.funcs.push(raw_func);
 
         func_val
     }
 
     fn push_new_func(&mut self) {
-        let func = IRFunc::new(self.func_counter);
+        let id = self.get_func_id();
 
-        self.func_counter += 1;
-        self.func_stack.push(func);
+        self.func_stack.push(FuncGenerator::new(id));
     }
 
     fn push_label(&mut self, label: usize) {
@@ -388,8 +427,14 @@ impl Generator {
         self.func_stack.last().unwrap().top_label()
     }
 
-    fn get_func(&mut self) -> &mut IRFunc {
+    fn get_func(&mut self) -> &mut FuncGenerator {
         self.func_stack.last_mut().unwrap()
+    }
+
+    fn get_func_id(&mut self) -> usize {
+        let id = self.func_counter;
+        self.func_counter += 1;
+        id
     }
 
     fn gen_label(&mut self) -> usize {

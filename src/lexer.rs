@@ -80,8 +80,8 @@ pub enum KeyWord {
 pub enum Token {
     Ctrl(Ctrl),
     Op(Op),
-    Ident(usize),
-    Global(usize),
+    Ident(u16),
+    Global(u16),
     Float(f64),
     Int(isize),
     String(String),
@@ -90,7 +90,7 @@ pub enum Token {
 }
 
 pub struct Lexer<'a> {
-    symbol_map: &'a mut HashMap<String, usize>,
+    symbol_map: &'a mut HashMap<String, u16>,
     tokens: VecDeque<SpannedToken>,
     pos: usize,
     eof: bool,
@@ -100,7 +100,7 @@ pub struct Lexer<'a> {
 }
 
 impl<'a> Lexer<'a> {
-    pub fn new(symbol_map: &'a mut HashMap<String, usize>, file_name: Option<String>) -> Self {
+    pub fn new(symbol_map: &'a mut HashMap<String, u16>, file_name: Option<String>) -> Self {
         let reader: Box<dyn BufRead> = if let Some(ref file_name) = file_name {
             let file = File::open(file_name.clone()).expect("unable to read file");
             Box::new(BufReader::new(file))
@@ -276,7 +276,7 @@ impl<'a> Lexer<'a> {
                     match self.symbol_map.get(&str) {
                         Some(id) => Token::Global(*id),
                         None => {
-                            let id = self.symbol_map.len();
+                            let id = self.symbol_map.len() as u16;
                             self.symbol_map.insert(str, id);
                             Token::Global(id)
                         }
@@ -312,7 +312,7 @@ impl<'a> Lexer<'a> {
                         _ => match self.symbol_map.get(&str) {
                             Some(id) => Token::Ident(*id),
                             None => {
-                                let id = self.symbol_map.len();
+                                let id = self.symbol_map.len() as u16;
                                 self.symbol_map.insert(str, id);
                                 Token::Ident(id)
                             }

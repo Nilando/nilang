@@ -46,10 +46,11 @@ fn run_file(file_name: String) {
         }
     };
 
-    //println!("{:#?}", stmts);
 
     let mut generator = Generator::new();
     let program = generator.gen_program(ast);
+    // let optimizer = Optimizer::new();
+    // optimizer.optimize(program);
     let vm = VM::new();
 
     // vm.load_symbols(symbol_map);

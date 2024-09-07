@@ -3,8 +3,8 @@ pub type Reg = u8;
 
 pub type JumpOffset = u16;
 pub type LocalID = u16;
+pub type FuncID = usize;
 pub type SymID = u16;
-pub type FuncID = u16;
 
 pub enum Value {
     Sym(usize),
@@ -36,15 +36,15 @@ pub enum ByteCode {
     LoadObj { dest: Reg, obj: Reg, key: Reg },
     StoreObj { obj: Reg, key: Reg, val: Reg },
 
-    LoadGlobal { dest: Reg, sym: Reg },
-    StoreGlobal { dest: Reg, sym: Reg },
+    LoadGlobal { dest: Reg, sym: SymID },
+    StoreGlobal { dest: Reg, sym: SymID },
 
     Log { src: Reg },
 
     Jnt { cond: Reg, offset: JumpOffset },
     Jump { offset: JumpOffset },
 
-    Load { dest: Reg, src: Reg },
+    Copy { dest: Reg, src: Reg },
     LoadConst { dest: Reg, const_id: LocalID },
     LoadSym { dest: Reg, src: SymID },
     LoadInt { dest: Reg, src: i16 },
@@ -52,6 +52,7 @@ pub enum ByteCode {
     LoadNull { dest: Reg },
     LoadMap { dest: Reg, cap: u16 },
     LoadList { dest: Reg, cap: u16 },
+    Noop
 }
 
 // Location<GlobalStore, Reg>

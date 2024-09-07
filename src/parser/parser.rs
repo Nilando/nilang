@@ -1,6 +1,8 @@
 use super::error::SyntaxError;
 use crate::lexer::{Ctrl, KeyWord, Lexer, Op, SpannedToken, Token};
 
+type SymID = u16;
+
 impl<T> Span<T> {
     pub fn new(val: T, span: (usize, usize)) -> Self {
         Self { val, span }
@@ -33,8 +35,8 @@ pub enum ParsedValue {
     Null,
     Float(f64),
     Int(isize),
-    Ident(usize),
-    Global(usize),
+    Ident(u16),
+    Global(u16),
     String(String),
     Bool(bool),
     List(Vec<Span<Expr>>),
@@ -52,7 +54,7 @@ pub enum Expr {
     },
     Access {
         store: Box<Span<Expr>>,
-        key: usize,
+        key: SymID,
     },
     Index {
         store: Box<Span<Expr>>,

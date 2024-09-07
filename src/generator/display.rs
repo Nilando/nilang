@@ -1,6 +1,6 @@
 use super::generator::{Var, VarID};
 use super::ir::IR;
-use super::ir_func::IRFunc;
+use super::ir_func::FuncCompiler;
 use super::raw_value::RawValue;
 use std::collections::HashMap;
 
@@ -90,6 +90,7 @@ impl IR {
     }
 }
 
+/*
 impl IRFunc {
     pub fn display(&self, symbol_map: &HashMap<String, usize>) {
         if self.id == 0 {
@@ -113,3 +114,4 @@ impl IRFunc {
         }
     }
 }
+*/
