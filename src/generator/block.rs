@@ -1,16 +1,13 @@
-use super::generator::{LabelID, Var, VarID};
-use super::ir::IR;
-use super::raw_value::RawValue;
-use crate::parser::{Expr, ParsedValue, Span, Stmt};
+use super::ir::{IR, LabelID, Var, VarID};
+use crate::parser::Span;
 use std::collections::HashMap;
 
-#[derive(Debug)]
 pub struct Block {
     label: Option<usize>,
     code: Vec<Span<IR>>,
     jump: Option<usize>,
     continues: bool,
-    liveness: HashMap<Var, (Option<usize>, bool)>,
+    liveness: HashMap<VarID, (Option<usize>, bool)>,
     return_var: Option<VarID>,
 }
 
@@ -46,20 +43,18 @@ impl Block {
         self.code
     }
 
-    pub fn update_operand_liveness(&mut self, val: &mut RawValue, i: usize) {
-        if let RawValue::Var(var) = val {
-            self.attach_liveness(var);
-            self.liveness.insert(*var, (Some(i), true));
-        }
+    pub fn update_operand_liveness(&mut self, var: &mut Var, i: usize) {
+        self.attach_liveness(var);
+        self.liveness.insert(var.id, (Some(i), true));
     }
 
     pub fn update_dest_liveness(&mut self, var: &mut Var) {
         self.attach_liveness(var);
-        self.liveness.insert(*var, (None, false));
+        self.liveness.insert(var.id, (None, false));
     }
 
     pub fn attach_liveness(&mut self, var: &mut Var) {
-        if let Some((next_use, live)) = self.liveness.get(&var) {
+        if let Some((next_use, live)) = self.liveness.get(&var.id) {
             var.next_use = *next_use;
             var.live = *live;
         }

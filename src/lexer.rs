@@ -25,7 +25,7 @@ pub enum Ctrl {
     Period,
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub enum Op {
     Plus,
     Minus,

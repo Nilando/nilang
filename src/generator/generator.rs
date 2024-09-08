@@ -1,68 +1,35 @@
-use super::ir::IR;
-use super::ir_func::FuncCompiler;
-use super::raw_value::RawValue;
+use super::ir::{IR, IRConst, Var, VarID, LocalID, FuncID, LabelID};
+use super::compiler::FuncCompiler;
 
-use crate::bytecode::ByteCode;
 use crate::parser::AST;
 use crate::parser::{Expr, ParsedValue, Span, Stmt};
+use crate::bytecode::ByteCode;
 
 use std::collections::HashMap;
 
-pub type TempID = u16;
-pub type SymID = u16;
-pub type FuncID = usize;
-pub type LabelID = usize;
-pub type LocalID = u16;
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub enum VarID {
-    Temp(TempID),
-    Local(SymID),
-    Global(SymID),
+pub struct Program {
+    funcs: Vec<RawFunc>,
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub struct Var {
-    pub(super) id: VarID,
-    pub(super) next_use: Option<usize>,
-    pub(super) live: bool,
-}
-
-impl Var {
-    pub fn new(id: VarID) -> Self {
-        match id {
-            VarID::Temp(_) => Self {
-                id,
-                next_use: None,
-                live: false,
-            },
-            _ => Self {
-                id,
-                next_use: None,
-                live: true,
-            },
-        }
-    }
-}
-
+// a function that is almost ready to be run by a vm
+// the only transformation is that FuncIDs stored in the locals tables need to 
+// be converted to actual function pointers, which can only happen once 
+// the function is allocated within an arena
 pub struct RawFunc {
     id: FuncID,
     code: Vec<ByteCode>,
-    locals: HashMap<LocalID, RawValue>,
+    locals: HashMap<LocalID, IRConst>,
 }
 
 impl RawFunc {
-    pub fn new(id: FuncID, code: Vec<ByteCode>, locals: HashMap<LocalID, RawValue>) -> Self {
+    pub fn new(id: FuncID, code: Vec<ByteCode>, locals: HashMap<LocalID, IRConst>) -> Self {
         Self {
             id, 
             code,
             locals
         }
     }
-}
-
-pub struct Program {
-    funcs: Vec<RawFunc>,
 }
 
 // helps with keeping track of label info
@@ -104,6 +71,9 @@ impl FuncGenerator {
     }
 }
 
+// responsible for converting an AST into ByteCode
+// first the generator creates IR code then internally passes IR code to a
+// a compiler struct which converts IR into bytecode
 pub struct Generator {
     func_stack: Vec<FuncGenerator>,
     temp_counter: u16,
@@ -156,18 +126,17 @@ impl Generator {
             }
             Stmt::Assign { dest, src } => match dest.val {
                 Expr::Value(value) => {
-                    if let RawValue::Var(dest) = self.generate_value(value, dest.span) {
-                        let src = self.generate_expr(*src);
-                        let ir = IR::Load { dest, src: src.val };
+                    let dest = self.generate_value(value, dest.span);
+                    let src = self.generate_expr(*src);
+                    let ir = IR::Copy { dest, src: src.val };
 
-                        self.push_ir(ir, src.span);
-                        self.temp_counter = 0;
-                    }
+                    self.push_ir(ir, src.span);
+                    self.temp_counter = 0;
                 }
                 Expr::Access { store, key } => {
                     let span = store.span;
                     let obj = self.generate_expr(*store).val;
-                    let key = RawValue::Var(Var::new(VarID::Local(key)));
+                    let key = Var::new(VarID::Local(key));
                     let val = self.generate_expr(*src).val;
                     let ir = IR::ObjStore { obj, key, val };
 
@@ -259,7 +228,7 @@ impl Generator {
         }
     }
 
-    fn generate_expr(&mut self, spanned_expr: Span<Expr>) -> Span<RawValue> {
+    fn generate_expr(&mut self, spanned_expr: Span<Expr>) -> Span<Var> {
         let expr = spanned_expr.val;
         let span = spanned_expr.span;
 
@@ -273,22 +242,22 @@ impl Generator {
                     dest,
                     lhs,
                     rhs,
-                    op: op.clone(),
+                    op,
                 };
 
                 self.push_ir(binop, span);
 
-                Span::new(RawValue::Var(dest), span)
+                Span::new(dest, span)
             }
             Expr::Access { store, key } => {
                 let obj = self.generate_expr(*store).val;
-                let key = RawValue::Var(Var::new(VarID::Local(key)));
+                let key = Var::new(VarID::Local(key));
                 let dest = self.get_temp();
                 let obj_load = IR::ObjLoad { dest, obj, key };
 
                 self.push_ir(obj_load, span);
 
-                Span::new(RawValue::Var(dest), span)
+                Span::new(dest, span)
             }
             Expr::Index { store, key } => {
                 let obj = self.generate_expr(*store).val;
@@ -298,13 +267,13 @@ impl Generator {
 
                 self.push_ir(obj_load, span);
 
-                Span::new(RawValue::Var(dest), span)
+                Span::new(dest, span)
             }
             Expr::Call { calle, input } => {
                 let dest = self.get_temp();
                 let calle = self.generate_expr(*calle).val;
                 let input = if input.is_none() {
-                    RawValue::Null
+                    todo!()
                 } else {
                     self.generate_expr(*input.unwrap()).val
                 };
@@ -312,20 +281,28 @@ impl Generator {
 
                 self.push_ir(ir, span);
 
-                Span::new(RawValue::Var(dest), span)
+                Span::new(dest, span)
             }
         }
     }
 
-    fn generate_value(&mut self, value: ParsedValue, span: (usize, usize)) -> RawValue {
+    fn generate_const(&mut self, ir_const: IRConst, span: (usize, usize)) -> Var {
+        let dest = self.get_temp();
+
+        self.push_ir(IR::LoadConst { dest, src: ir_const }, span);
+
+        dest
+    }
+
+    fn generate_value(&mut self, value: ParsedValue, span: (usize, usize)) -> Var {
         match value {
-            ParsedValue::Null => RawValue::Null,
-            ParsedValue::Int(i) => RawValue::Int(i),
-            ParsedValue::Float(f) => RawValue::Float(f),
-            ParsedValue::Ident(id) => RawValue::Var(Var::new(VarID::Local(id))),
-            ParsedValue::Global(id) => RawValue::Var(Var::new(VarID::Global(id))),
-            ParsedValue::Bool(b) => RawValue::Bool(b),
-            ParsedValue::String(s) => RawValue::String(s.clone()),
+            ParsedValue::Ident(id) => Var::new(VarID::Local(id)),
+            ParsedValue::Global(id) => Var::new(VarID::Global(id)),
+            ParsedValue::Null => self.generate_const(IRConst::Null, span),
+            ParsedValue::Int(i) => self.generate_const(IRConst::Int(i), span),
+            ParsedValue::Float(f) => self.generate_const(IRConst::Float(f), span),
+            ParsedValue::Bool(b) => self.generate_const(IRConst::Bool(b), span),
+            ParsedValue::String(b) => self.generate_const(IRConst::String(b), span),
             ParsedValue::List(list) => {
                 let dest = self.get_temp();
                 let ir = IR::NewList { dest };
@@ -333,16 +310,17 @@ impl Generator {
                 self.push_ir(ir, span);
 
                 for (i, expr) in list.into_iter().enumerate() {
+                    let key = self.generate_const(IRConst::Int(i as isize), span);
                     let item = self.generate_expr(expr);
                     let ir = IR::ObjStore {
-                        obj: RawValue::Var(dest),
-                        key: RawValue::Int(i as isize),
+                        obj: dest,
+                        key,
                         val: item.val,
                     };
                     self.push_ir(ir, span);
                 }
 
-                RawValue::Var(dest)
+                return dest;
             }
             ParsedValue::Map(map) => {
                 let dest = self.get_temp();
@@ -354,7 +332,7 @@ impl Generator {
                     let key = self.generate_expr(key).val;
                     let val = self.generate_expr(val).val;
                     let ir = IR::ObjStore {
-                        obj: RawValue::Var(dest),
+                        obj: dest,
                         key,
                         val,
                     };
@@ -362,7 +340,7 @@ impl Generator {
                     self.push_ir(ir, span);
                 }
 
-                RawValue::Var(dest)
+                return dest;
             }
             ParsedValue::Func { stmts } => {
                 let temp_counter = self.temp_counter;
@@ -375,25 +353,28 @@ impl Generator {
 
                 let func_val = self.pop_func();
                 let dest = self.get_temp();
-                let load = IR::Load {
+                let load = IR::Copy {
                     dest,
                     src: func_val,
                 };
 
                 self.push_ir(load, span);
 
-                RawValue::Var(dest)
+                return dest;
             }
         }
     }
 
-    fn pop_func(&mut self) -> RawValue {
+    fn pop_func(&mut self) -> Var {
         let mut func = self.func_stack.pop().unwrap();
+
+        let null = self.generate_const(IRConst::Null, (0,0));
+
         let end_return = IR::Return {
-            src: RawValue::Null,
+            src: null,
         };
+
         let func_id = self.funcs.len();
-        let func_val = RawValue::Func(func_id);
 
         func.code.push(Span::new(end_return, (0, 0)));
 
@@ -402,7 +383,7 @@ impl Generator {
 
         self.funcs.push(raw_func);
 
-        func_val
+        self.generate_const(IRConst::Func(func_id), (0,0))
     }
 
     fn push_new_func(&mut self) {

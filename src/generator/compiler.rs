@@ -1,26 +1,23 @@
 use super::block::Block;
-use super::generator::{RawFunc, Var, VarID, FuncID, LabelID, LocalID};
-use super::ir::IR;
-use super::raw_value::RawValue;
+use super::generator::RawFunc;
+use super::ir::{IR, IRConst, Var, VarID, FuncID, LabelID, LocalID};
 use std::collections::HashMap;
 
 use crate::lexer::Op;
 use crate::bytecode::{ByteCode, Reg};
 use crate::parser::Span;
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 enum Location {
     Reg(Reg),
     GlobalStore,
 }
 
-type ImmID = usize;
-
 pub struct FuncCompiler {
     code: Vec<ByteCode>,
-    locals: HashMap<LocalID, RawValue>,
+    locals: HashMap<LocalID, IRConst>,
     var_data: HashMap<VarID, Vec<Location>>,
-    reg_data: [Vec<VarID>; 256],
-    locked_regs: Vec<Reg>,
+    reg_data: [Vec<Var>; 256],
     label_positions: HashMap<LabelID, usize>,
     label_backpatches: HashMap<LabelID, Vec<usize>>
 }
@@ -32,7 +29,6 @@ impl FuncCompiler {
             locals: HashMap::new(),
             var_data: HashMap::new(),
             reg_data: [const { vec![] }; 256],
-            locked_regs: vec![],
             label_positions: HashMap::new(),
             label_backpatches: HashMap::new()
         }
@@ -45,15 +41,15 @@ impl FuncCompiler {
             for ir in block.as_code().into_iter() {
                 match ir.val {
                     IR::Binop { dest, op, lhs, rhs } => {
-                        let op_reg1 = self.load_value(lhs);
-                        let op_reg2 = self.load_value(rhs);
+                        let op_reg1 = self.load_var(lhs);
+                        let op_reg2 = self.load_var(rhs);
                         let dest_reg = self.get_dest_reg(dest);
 
                         self.push_binop(dest_reg, op_reg1, op_reg2, op);
                     }
                     IR::ObjLoad { obj, key, dest } => {
-                        let obj = self.load_value(obj);
-                        let key = self.load_value(key);
+                        let obj = self.load_var(obj);
+                        let key = self.load_var(key);
                         let dest = self.get_dest_reg(dest);
 
                         self.code.push(ByteCode::LoadObj { obj, key, dest });
@@ -71,19 +67,19 @@ impl FuncCompiler {
                         self.code.push(ByteCode::LoadMap { dest, cap: 8 });
                     }
                     IR::Log { src } => {
-                        let src = self.load_value(src);
+                        let src = self.load_var(src);
 
                         self.code.push(ByteCode::Log { src });
                     }
                     IR::ObjStore { obj, key, val } => {
-                        let obj = self.load_value(obj);
-                        let key = self.load_value(key);
-                        let val = self.load_value(val);
+                        let obj = self.load_var(obj);
+                        let key = self.load_var(key);
+                        let val = self.load_var(val);
 
                         self.code.push(ByteCode::StoreObj { obj, key, val });
                     }
-                    IR::Load { dest, src } => {
-                        let src = self.load_value(src);
+                    IR::Copy { dest, src } => {
+                        let src = self.load_var(src);
                         // update reg_data at src to hold dest too
                         // update var_data so that its only location is src
                     }
@@ -127,7 +123,7 @@ impl FuncCompiler {
             VarID::Global(id) => {
                 self.code.push(ByteCode::LoadGlobal { dest: reg, sym: id });
                 self.var_data.insert(var.id, vec![Location::GlobalStore, Location::Reg(reg)]);
-                self.reg_data[reg as usize] = vec![var.id];
+                self.reg_data[reg as usize] = vec![var];
             }
             VarID::Temp(_) | VarID::Local(_) => {
                 self.code.push(ByteCode::LoadNull { dest: reg });
@@ -137,14 +133,10 @@ impl FuncCompiler {
         reg
     }
 
-    // we need this raw value to live inside a register! no exceptions!
-    // this should lock the register for the current instruction
-    fn load_value(&mut self, val: RawValue) -> Reg {
-        match val {
-            RawValue::Var(var) => {
-                self.load_var(var)
-            }
-            RawValue::Int(i) => {
+    // should handle creating a local ID if one is needed?
+    fn load_const(&mut self, ir_const: IRConst) -> Reg {
+        match ir_const {
+            IRConst::Int(i) => {
                 // if i fits in a i16 create a load int instr
                 // else create a local and then create a load local instr
                 let reg = self.get_reg();
@@ -156,31 +148,31 @@ impl FuncCompiler {
                 // a = t1 + b;
                 todo!()
             }
-            RawValue::Float(i) => {
+            IRConst::Float(i) => {
                 // if i fits in a i16 create a load int instr
                 // else create a local and then create a load local instr
                 todo!()
             }
-            RawValue::Bool(src) => {
+            IRConst::Bool(src) => {
                 let dest = self.get_reg();
 
                 self.code.push( ByteCode::LoadBool { dest, src });
 
                 dest
             }
-            RawValue::Func(func_id) => {
+            IRConst::Func(func_id) => {
                 // create a local value with the func id
                 // create a local load instr
                 todo!()
             }
-            RawValue::Null => {
+            IRConst::Null => {
                 let dest = self.get_reg();
 
                 self.code.push( ByteCode::LoadNull { dest });
 
                 dest
             }
-            RawValue::String(str) => {
+            IRConst::String(str) => {
                 // create a local value with the string
                 // create a local load instr
                 todo!()
@@ -189,9 +181,48 @@ impl FuncCompiler {
     }
 
     fn get_reg(&mut self) -> Reg {
-        // first look for an empty register
+        for (reg, reg_vars) in self.reg_data.iter().enumerate() {
+            // first look for an empty register
+            if reg_vars.is_empty() {
+                return reg as u8;
+            }
 
-        // 
+            // look for a register when for every value in the register
+            // the address descriptor for that value shows it being somewhere else
+            let mut flag = false;
+
+            for var in reg_vars.iter() { 
+                flag = false;
+                match self.var_data.get(&var.id) {
+                    Some(var_locations) => {
+                        if var_locations.len() < 2 {
+                            break
+                        }
+                    }
+                    None => break,
+                }
+                flag = true;
+            }
+
+            // flag being true means every value in this register is stored at 
+            // least in one other location
+            if flag {
+                return reg as u8;
+            }
+            
+           
+            // if every value in the register has no next use we can use this register
+            // and is not live
+            for var in reg_vars.iter() { 
+                if var.next_use.is_some() {
+
+                }
+            }
+        }
+
+        // TODO: unable to find a register! 
+        // means function has too many local variables, or an expression was
+        // too long
         todo!()
     }
 
@@ -229,7 +260,7 @@ impl FuncCompiler {
                     current_block.update_operand_liveness(op1, i);
                     current_block.update_operand_liveness(op2, i);
                 }
-                IR::Load {
+                IR::Copy {
                     ref mut dest,
                     ref mut src,
                 } => {
@@ -261,6 +292,7 @@ impl FuncCompiler {
                     }
 
                     current_block = Block::new(None, true);
+                    current_block.update_dest_liveness(dest); // TODO: SHOULD THIS BE HERE???
                     current_block.update_operand_liveness(calle, i);
                     current_block.update_operand_liveness(input, i);
 
@@ -295,9 +327,10 @@ impl FuncCompiler {
 
                     current_block = Block::new(None, false);
 
-                    if let RawValue::Var(var) = src {
-                        current_block.set_return(var.id);
-                    }
+                    current_block.set_return(src.id);
+                }
+                IR::LoadConst { ref mut dest, .. } => {
+                    current_block.update_dest_liveness(dest);
                 }
             }
 
