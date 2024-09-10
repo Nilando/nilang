@@ -61,163 +61,166 @@ impl FuncCompiler {
         }
     }
 
-    pub fn compile(mut self, id: FuncID, ir_code: Vec<Span<IR>>) -> RawFunc {
+    pub fn compile_instr(&mut self, ir: Span<IR>) {
+        match ir.val {
+            IR::Binop { dest, op, lhs, rhs } => {
+                let lhs_reg = self.load_var(lhs);
+                let rhs_reg = self.load_var(rhs);
+                let dest_reg = self.assign_var(dest);
+
+                self.push_binop(dest_reg, lhs_reg, rhs_reg, op);
+            }
+            IR::ObjLoad { dest, obj, key } => {
+                let obj = self.load_var(obj);
+                let key = self.load_var(key);
+                let dest = self.assign_var(dest);
+
+                self.code.push(ByteCode::LoadObj { dest, obj, key });
+            }
+            IR::NewList { dest } => {
+                let dest = self.assign_var(dest);
+
+                self.code.push(ByteCode::LoadList { dest });
+            }
+            IR::NewMap { dest } => {
+                let dest = self.assign_var(dest);
+
+                self.code.push(ByteCode::LoadMap { dest });
+            }
+            IR::Log { src } => {
+                let src = self.load_var(src);
+
+                self.code.push(ByteCode::Log { src });
+            }
+            IR::ObjStore { obj, key, val } => {
+                let obj = self.load_var(obj);
+                let key = self.load_var(key);
+                let val = self.load_var(val);
+
+                self.code.push(ByteCode::StoreObj { obj, key, val });
+            }
+            IR::Copy { dest, src } => {
+                // this is a weird one, 
+                // we only need to load src...
+                // for dest we just update its var/reg data
+                let reg = self.load_var(src);
+                let var_data = VarData::new(dest, vec![Location::Reg(reg)]);
+
+                self.reg_data[reg as usize].push(dest.id);
+                self.var_data.insert(dest.id, var_data);
+            }
+            IR::LoadConst { dest, src } => {
+                let dest = self.assign_var(dest);
+
+                self.load_const(dest, src);
+            }
+            IR::Jnt { label, cond } => {
+                let cond = self.load_var(cond);
+
+                match self.label_positions.get(&label) {
+                    None => {
+                        let jump_instr_pos = self.code.len();
+
+                        match self.label_backpatches.get_mut(&jump_instr_pos) {
+                            None => { self.label_backpatches.insert(label, vec![jump_instr_pos]); }
+                            Some(back_patches) => { back_patches.push(jump_instr_pos); }
+                        }
+
+                        self.code.push(ByteCode::Jnt { offset: 0, cond });
+                    }
+                    Some(label_pos) => {
+                        let jump_instr_pos = self.code.len();
+                        let offset: i16 = (label_pos - jump_instr_pos).try_into().expect("GENERATOR ERROR: JUMP OFFSET EXCEEDED MAXIMUM");
+
+                        self.code.push(ByteCode::Jnt { offset, cond });
+                    }
+                }
+            }
+            IR::Jump { label } => {
+                match self.label_positions.get(&label) {
+                    None => {
+                        let jump_instr_pos = self.code.len();
+
+                        match self.label_backpatches.get_mut(&jump_instr_pos) {
+                            None => { self.label_backpatches.insert(label, vec![jump_instr_pos]); }
+                            Some(back_patches) => { back_patches.push(jump_instr_pos); }
+                        }
+
+                        self.code.push(ByteCode::Jump { offset: 0 });
+                    }
+                    Some(label_pos) => {
+                        let jump_instr_pos = self.code.len();
+                        let offset: i16 = (label_pos - jump_instr_pos).try_into().expect("GENERATOR ERROR: JUMP OFFSET EXCEEDED MAXIMUM");
+
+                        self.code.push(ByteCode::Jump { offset });
+                    }
+                }
+            }
+            IR::Label { id } => {
+                let label_idx = self.code.len();
+
+                self.label_positions.insert(id, label_idx);
+            }
+            IR::Call { dest, calle, input } => {
+                // calle just needs to be loaded doesn't really matter where
+                let calle_reg = self.load_var(calle);
+
+                // the input reg needs to be loaded into the call site
+                // but since the return value will wipe the input
+                let call_site = self.load_call_site(input);
+
+                // load what we need before storing globals
+                self.store_globals();
+
+                self.assign_var_to_reg(dest, call_site);
+                
+                self.code.push(ByteCode::Call { call_site, func: calle_reg });
+            }
+            IR::Return { src } => {
+                // reg 0 is special cased,
+                // don't update any var data!
+                if self.reg_data[0].contains(&src.id) {
+                   // do nothing 
+                } else {
+                    let mut load_flag = true;
+                    if let Some(var_data) = self.var_data.get(&src.id) {
+                         for loc in var_data.locations.iter() {
+                             if let Location::Reg(src) = loc {
+                                load_flag = false;
+                                self.code.push(ByteCode::Copy { dest: 0, src: *src  } );
+                                break;
+                             }
+                         }
+                    }
+
+                    if load_flag {
+                        match src.id {
+                            VarID::Global(id) => {
+                                // load global into reg 0
+                                self.code.push(ByteCode::LoadGlobal { dest: 0, sym: id  } )
+                            }
+                            _ => {
+                                // load null into reg 0
+                                self.code.push(ByteCode::LoadNull { dest: 0 } )
+                            }
+                        }
+                    }
+                }
+
+                self.store_globals();
+
+                self.code.push(ByteCode::Return);
+            }
+        }
+    }
+
+    pub fn compile_func(mut self, id: FuncID, ir_code: Vec<Span<IR>>) -> RawFunc {
         let blocks = self.create_blocks(ir_code);
 
         for block in blocks.into_iter() {
             for ir in block.as_code().into_iter() {
-                match ir.val {
-                    IR::Binop { dest, op, lhs, rhs } => {
-                        let lhs_reg = self.load_var(lhs);
-                        let rhs_reg = self.load_var(rhs);
-                        let dest_reg = self.assign_var(dest);
-
-                        self.push_binop(dest_reg, lhs_reg, rhs_reg, op);
-                    }
-                    IR::ObjLoad { dest, obj, key } => {
-                        let obj = self.load_var(obj);
-                        let key = self.load_var(key);
-                        let dest = self.assign_var(dest);
-
-                        self.code.push(ByteCode::LoadObj { dest, obj, key });
-                    }
-                    IR::NewList { dest } => {
-                        let dest = self.assign_var(dest);
-
-                        self.code.push(ByteCode::LoadList { dest });
-                    }
-                    IR::NewMap { dest } => {
-                        let dest = self.assign_var(dest);
-
-                        self.code.push(ByteCode::LoadMap { dest });
-                    }
-                    IR::Log { src } => {
-                        let src = self.load_var(src);
-
-                        self.code.push(ByteCode::Log { src });
-                    }
-                    IR::ObjStore { obj, key, val } => {
-                        let obj = self.load_var(obj);
-                        let key = self.load_var(key);
-                        let val = self.load_var(val);
-
-                        self.code.push(ByteCode::StoreObj { obj, key, val });
-                    }
-                    IR::Copy { dest, src } => {
-                        // this is a weird one, 
-                        // we only need to load src...
-                        // for dest we just update its var/reg data
-                        let reg = self.load_var(src);
-                        let var_data = VarData::new(dest, vec![Location::Reg(reg)]);
-
-                        self.reg_data[reg as usize].push(dest.id);
-                        self.var_data.insert(dest.id, var_data);
-                    }
-                    IR::LoadConst { dest, src } => {
-                        let dest = self.assign_var(dest);
-
-                        self.load_const(dest, src);
-                    }
-                    IR::Jnt { label, cond } => {
-                        let cond = self.load_var(cond);
-
-                        match self.label_positions.get(&label) {
-                            None => {
-                                let jump_instr_pos = self.code.len();
-
-                                match self.label_backpatches.get_mut(&jump_instr_pos) {
-                                    None => { self.label_backpatches.insert(label, vec![jump_instr_pos]); }
-                                    Some(back_patches) => { back_patches.push(jump_instr_pos); }
-                                }
-
-                                self.code.push(ByteCode::Jnt { offset: 0, cond });
-                            }
-                            Some(label_pos) => {
-                                let jump_instr_pos = self.code.len();
-                                let offset: i16 = (label_pos - jump_instr_pos).try_into().expect("GENERATOR ERROR: JUMP OFFSET EXCEEDED MAXIMUM");
-
-                                self.code.push(ByteCode::Jnt { offset, cond });
-                            }
-                        }
-                    }
-                    IR::Jump { label } => {
-                        match self.label_positions.get(&label) {
-                            None => {
-                                let jump_instr_pos = self.code.len();
-
-                                match self.label_backpatches.get_mut(&jump_instr_pos) {
-                                    None => { self.label_backpatches.insert(label, vec![jump_instr_pos]); }
-                                    Some(back_patches) => { back_patches.push(jump_instr_pos); }
-                                }
-
-                                self.code.push(ByteCode::Jump { offset: 0 });
-                            }
-                            Some(label_pos) => {
-                                let jump_instr_pos = self.code.len();
-                                let offset: i16 = (label_pos - jump_instr_pos).try_into().expect("GENERATOR ERROR: JUMP OFFSET EXCEEDED MAXIMUM");
-
-                                self.code.push(ByteCode::Jump { offset });
-                            }
-                        }
-                    }
-                    IR::Label { id } => {
-                        let label_idx = self.code.len();
-
-                        self.label_positions.insert(id, label_idx);
-                    }
-                    IR::Call { dest, calle, input } => {
-                        // calle just needs to be loaded doesn't really matter where
-                        let calle_reg = self.load_var(calle);
-
-                        // the input reg needs to be loaded into the call site
-                        // but since the return value will wipe the input
-                        let call_site = self.load_call_site(input);
-
-                        // load what we need before storing globals
-                        self.store_globals();
-
-                        self.assign_var_to_reg(dest, call_site);
-                        
-                        self.code.push(ByteCode::Call { call_site, func: calle_reg });
-                    }
-                    IR::Return { src } => {
-                        // reg 0 is special cased,
-                        // don't update any var data!
-                        if self.reg_data[0].contains(&src.id) {
-                           // do nothing 
-                        } else {
-                            let mut load_flag = true;
-                            if let Some(var_data) = self.var_data.get(&src.id) {
-                                 for loc in var_data.locations.iter() {
-                                     if let Location::Reg(src) = loc {
-                                        load_flag = false;
-                                        self.code.push(ByteCode::Copy { dest: 0, src: *src  } );
-                                        break;
-                                     }
-                                 }
-                            }
-
-                            if load_flag {
-                                match src.id {
-                                    VarID::Global(id) => {
-                                        // load global into reg 0
-                                        self.code.push(ByteCode::LoadGlobal { dest: 0, sym: id  } )
-                                    }
-                                    _ => {
-                                        // load null into reg 0
-                                        self.code.push(ByteCode::LoadNull { dest: 0 } )
-                                    }
-                                }
-                            }
-                        }
-
-                        self.store_globals();
-
-                        self.code.push(ByteCode::Return);
-                    }
-                }
-
                 self.loaded_regs.clear();
+                self.compile_instr(ir);
             }
         }
 

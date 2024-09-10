@@ -374,7 +374,7 @@ impl Generator {
 
         func.code.push(Span::new(end_return, (0, 0)));
 
-        let raw_func = compiler.compile(func_id, func.code);
+        let raw_func = compiler.compile_func(func_id, func.code);
 
         self.funcs.push(raw_func);
         self.generate_const(IRConst::Func(func_id), (0,0))
