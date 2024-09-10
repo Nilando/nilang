@@ -29,6 +29,10 @@ pub enum ByteCode {
     Or { dest: Reg, op1: Reg, op2: Reg },
     Equal { dest: Reg, op1: Reg, op2: Reg },
     NotEqual { dest: Reg, op1: Reg, op2: Reg },
+    Lt { dest: Reg, op1: Reg, op2: Reg },
+    Lte { dest: Reg, op1: Reg, op2: Reg },
+    Gt { dest: Reg, op1: Reg, op2: Reg },
+    Gte { dest: Reg, op1: Reg, op2: Reg },
 
     Call { call_site: Reg, func: Reg },
     Return,

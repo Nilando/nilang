@@ -1,10 +1,24 @@
 fibonizer = fn { 
-  if @.n == 0 { return 0; }
-  if (@.n == 1) || (@.n == 2) {
+  x = 1;
+  y = 1;
+  n = 3;
+
+  if @ == 0 {
+    return 0;
+  }
+
+  if @ < 3 {
     return 1;
   }
 
-  return @.self(@.n - 1) + @.self(@.n - 2); 
+  while n < @ {
+    n = n + 1;
+    next = x + y;
+    x = y;
+    y = next;
+  }
+
+  return x + y;
 };
 
-log fibonizer({n: 420, self: fibonizer});
+log fibonizer(69);

@@ -36,6 +36,10 @@ pub enum Op {
     NotEqual,
     Or,
     And,
+    Lt,
+    Lte,
+    Gt,
+    Gte,
 }
 
 use std::fmt;
@@ -50,6 +54,10 @@ impl fmt::Display for Op {
             Self::Or => write!(f, "||"),
             Self::Equal => write!(f, "=="),
             Self::NotEqual => write!(f, "!="),
+            Self::Lt => write!(f, "<"),
+            Self::Lte => write!(f, "<="),
+            Self::Gt => write!(f, ">"),
+            Self::Gte => write!(f, ">="),
         }
     }
 }
@@ -344,6 +352,22 @@ impl<'a> Lexer<'a> {
                         Token::Op(Op::And)
                     } else {
                         Token::Error(LexError::Unknown)
+                    }
+                }
+                '<' => {
+                    if let Some((_, '=')) = chars.peek() {
+                        chars.next();
+                        Token::Op(Op::Lte)
+                    } else {
+                        Token::Op(Op::Lt)
+                    }
+                }
+                '>' => {
+                    if let Some((_, '=')) = chars.peek() {
+                        chars.next();
+                        Token::Op(Op::Gte)
+                    } else {
+                        Token::Op(Op::Gt)
                     }
                 }
 

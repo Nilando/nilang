@@ -150,7 +150,7 @@ impl FuncCompiler {
                     }
                     Some(label_pos) => {
                         let jump_instr_pos = self.code.len();
-                        let offset: i16 = (label_pos - jump_instr_pos).try_into().expect("GENERATOR ERROR: JUMP OFFSET EXCEEDED MAXIMUM");
+                        let offset: i16 = (*label_pos as isize - (jump_instr_pos as isize)).try_into().expect("GENERATOR ERROR: JUMP OFFSET EXCEEDED MAXIMUM");
 
                         self.code.push(ByteCode::Jump { offset });
                     }
@@ -289,6 +289,10 @@ impl FuncCompiler {
                 Op::NotEqual => ByteCode::NotEqual { dest, op1, op2 },
                 Op::Or => ByteCode::Or { dest, op1, op2 },
                 Op::And => ByteCode::And { dest, op1, op2 },
+                Op::Lt => ByteCode::Lt { dest, op1, op2 },
+                Op::Lte => ByteCode::Lte { dest, op1, op2 },
+                Op::Gt => ByteCode::Gt { dest, op1, op2 },
+                Op::Gte => ByteCode::Gte { dest, op1, op2 },
             };
 
         self.code.push(bytecode);
