@@ -1,5 +1,66 @@
 TODO:
-  Convert IRCode to ByteCode
-    - what happens between blocks ???
-    - handle generating return and call 
-    - special case '@' var to live in reg 0
+  Load Program into VM
+
+==== FUNC ===
+[
+    LoadSym { dest: 1, sym_id: 2, },
+    LoadObj { dest: 2, obj: 0, key: 1, },
+    LoadInt { dest: 3, val: 0, },
+    Equal { dest: 4, op1: 2, op2: 3, },
+    Jnt { cond: 4, offset: 4, },
+    LoadInt { dest: 5, val: 0, },
+    Copy { dest: 0, src: 5, },
+    Return,
+    LoadSym { dest: 1, sym_id: 2, },
+    LoadObj { dest: 5, obj: 0, key: 1, },
+    LoadInt { dest: 2, val: 1, },
+    Equal { dest: 3, op1: 5, op2: 2, },
+    LoadSym { dest: 4, sym_id: 2, },
+    LoadObj { dest: 6, obj: 0, key: 4, },
+    LoadInt { dest: 7, val: 2, },
+    Equal { dest: 8, op1: 6, op2: 7, },
+    Or { dest: 9, op1: 3, op2: 8, },
+    Jnt { cond: 9, offset: 4, },
+    LoadInt { dest: 10, val: 1, },
+    Copy { dest: 0, src: 10, },
+    Return,
+    LoadSym { dest: 1, sym_id: 3, },
+    LoadObj { dest: 5, obj: 0, key: 1, },
+    LoadSym { dest: 2, sym_id: 2, },
+    LoadObj { dest: 3, obj: 0, key: 2, },
+    LoadInt { dest: 4, val: 1, },
+    Sub { dest: 6, op1: 3, op2: 4, },
+    Copy { dest: 11, src: 6, },
+    Call { call_site: 11, func: 5, },
+    LoadSym { dest: 7, sym_id: 3, },
+    LoadObj { dest: 9, obj: 0, key: 7, },
+    LoadSym { dest: 10, sym_id: 2, },
+    LoadObj { dest: 12, obj: 0, key: 10, },
+    LoadInt { dest: 13, val: 2, },
+    Sub { dest: 14, op1: 12, op2: 13, },
+    Copy { dest: 15, src: 14, },
+    Call { call_site: 15, func: 9, },
+    Add { dest: 8, op1: 11, op2: 15, },
+    Copy { dest: 0, src: 8, },
+    Return,
+    LoadNull { dest: 16, },
+    Copy { dest: 0, src: 16, },
+    Return,
+]
+
+==== FUNC ===
+[
+    LoadLocal { dest: 1, local_id: 1, },
+    LoadMap { dest: 2, },
+    LoadInt { dest: 3, val: 420, },
+    LoadNull { dest: 4, },
+    StoreObj { obj: 2, key: 4, val: 3, },
+    LoadNull { dest: 4, },
+    StoreObj { obj: 2, key: 4, val: 1, },
+    Copy { dest: 4, src: 2, },
+    Call { call_site: 4, func: 1, },
+    Log { src: 4, },
+    LoadNull { dest: 5, },
+    Copy { dest: 0, src: 5, },
+    Return,
+]

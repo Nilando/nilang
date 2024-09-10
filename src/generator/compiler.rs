@@ -121,7 +121,7 @@ impl FuncCompiler {
                     None => {
                         let jump_instr_pos = self.code.len();
 
-                        match self.label_backpatches.get_mut(&jump_instr_pos) {
+                        match self.label_backpatches.get_mut(&label) {
                             None => { self.label_backpatches.insert(label, vec![jump_instr_pos]); }
                             Some(back_patches) => { back_patches.push(jump_instr_pos); }
                         }
@@ -141,7 +141,7 @@ impl FuncCompiler {
                     None => {
                         let jump_instr_pos = self.code.len();
 
-                        match self.label_backpatches.get_mut(&jump_instr_pos) {
+                        match self.label_backpatches.get_mut(&label) {
                             None => { self.label_backpatches.insert(label, vec![jump_instr_pos]); }
                             Some(back_patches) => { back_patches.push(jump_instr_pos); }
                         }
@@ -217,8 +217,9 @@ impl FuncCompiler {
     pub fn compile_func(mut self, id: FuncID, ir_code: Vec<Span<IR>>) -> RawFunc {
         let blocks = self.create_blocks(ir_code);
 
-        for block in blocks.into_iter() {
-            for ir in block.as_code().into_iter() {
+        for block in blocks.into_iter().rev() {
+
+            for ir in block.as_code().into_iter().rev() {
                 self.loaded_regs.clear();
                 self.compile_instr(ir);
             }
@@ -426,8 +427,8 @@ impl FuncCompiler {
         match ir_const {
             IRConst::Int(i) => {
                 match TryInto::<i16>::try_into(i) {
-                    Ok(src) => {
-                        self.code.push(ByteCode::LoadInt { dest, src });
+                    Ok(val) => {
+                        self.code.push(ByteCode::LoadInt { dest, val });
                     }
                     Err(_) => {
                         let local_id = self.push_local(ir_const);
@@ -435,8 +436,8 @@ impl FuncCompiler {
                     }
                 }
             }
-            IRConst::Bool(src) => self.code.push(ByteCode::LoadBool { dest, src }),
-            IRConst::Sym(src) => self.code.push(ByteCode::LoadSym { dest, src }),
+            IRConst::Bool(val) => self.code.push(ByteCode::LoadBool { dest, val }),
+            IRConst::Sym(sym_id) => self.code.push(ByteCode::LoadSym { dest, sym_id }),
             IRConst::Null => self.code.push(ByteCode::LoadNull { dest }),
             IRConst::Func(_) 
             | IRConst::String(_)
@@ -503,7 +504,6 @@ impl FuncCompiler {
                     current_block.set_label(Some(id));
                     blocks.push(current_block);
                     current_block = Block::new(None, true);
-                    continue;
                 }
                 IR::Binop {
                     ref mut dest,
@@ -551,9 +551,9 @@ impl FuncCompiler {
                     // TODO: I THINK THIS LOGIC IS WRONG
                     if !current_block.is_empty() {
                         blocks.push(current_block);
-                        current_block = Block::new(None, true);
                     }
 
+                    current_block = Block::new(None, true);
                     current_block.update_dest_liveness(dest); // TODO: SHOULD THIS BE HERE???
                     current_block.update_operand_liveness(calle, i);
                     current_block.update_operand_liveness(input, i);
@@ -598,6 +598,10 @@ impl FuncCompiler {
             }
 
             current_block.push(ir);
+        }
+
+        if !current_block.is_empty() {
+            blocks.push(current_block);
         }
 
         blocks

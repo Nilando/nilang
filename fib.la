@@ -7,4 +7,4 @@ fibonizer = fn {
   return @.self(@.n - 1) + @.self(@.n - 2); 
 };
 
-log fibonizer(10);
+log fibonizer({n: 420, self: fibonizer});

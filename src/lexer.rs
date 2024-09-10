@@ -275,7 +275,11 @@ impl<'a> Lexer<'a> {
                     }
 
                     let id = self.symbol_map.get_id(&str);
-                    Token::Global(id)
+                    if str == "@" {
+                        Token::Ident(id)
+                    } else {
+                        Token::Global(id)
+                    }
                 }
 
                 c if c.is_alphabetic() => {

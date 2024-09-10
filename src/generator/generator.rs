@@ -5,6 +5,7 @@ use crate::parser::AST;
 use crate::parser::{Expr, ParsedValue, Span, Stmt};
 use crate::bytecode::ByteCode;
 
+#[derive(Debug)]
 pub struct Program {
     funcs: Vec<RawFunc>,
 }
@@ -13,6 +14,7 @@ pub struct Program {
 // the only transformation is that FuncIDs stored in the locals tables need to 
 // be converted to actual function pointers, which can only happen once 
 // the function is allocated within an arena
+#[derive(Debug)]
 pub struct RawFunc {
     id: FuncID,
     code: Vec<ByteCode>,
@@ -251,7 +253,8 @@ impl Generator {
             }
             Expr::Access { store, key } => {
                 let obj = self.generate_expr(*store).val;
-                let key = IRVar::new(VarID::Local(key));
+                let key = self.generate_const(IRConst::Sym(key), span);
+                // first generate a load sym
                 let dest = self.get_temp();
                 let obj_load = IR::ObjLoad { dest, obj, key };
 
@@ -351,7 +354,7 @@ impl Generator {
 
                 self.temp_counter = temp_counter;
 
-                let func_val = self.pop_func();
+                let func_val = self.pop_func().unwrap();
                 let dest = self.get_temp();
                 let load = IR::Copy {
                     dest,
@@ -365,9 +368,10 @@ impl Generator {
         }
     }
 
-    fn pop_func(&mut self) -> IRVar {
-        let mut func = self.func_stack.pop().unwrap();
+    fn pop_func(&mut self) -> Option<IRVar> {
         let null = self.generate_const(IRConst::Null, (0,0));
+
+        let mut func = self.func_stack.pop().unwrap();
         let end_return = IR::Return { src: null, };
         let func_id = self.funcs.len();
         let compiler = FuncCompiler::new();
@@ -377,7 +381,11 @@ impl Generator {
         let raw_func = compiler.compile_func(func_id, func.code);
 
         self.funcs.push(raw_func);
-        self.generate_const(IRConst::Func(func_id), (0,0))
+        if self.func_stack.is_empty() {
+            None
+        } else {
+            Some(self.generate_const(IRConst::Func(func_id), (0,0)))
+        }
     }
 
     fn push_new_func(&mut self) {

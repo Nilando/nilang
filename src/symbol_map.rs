@@ -3,9 +3,15 @@ use sandpit::TraceLeaf;
 
 const MAX_SYM_ID: usize = 0xFFFFFF;
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug, TraceLeaf, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq, TraceLeaf, Hash)]
 pub struct SymID {
     bytes: [u8; 3]
+}
+
+impl std::fmt::Debug for SymID {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", u32::from(*self))
+    }
 }
 
 impl From<usize> for SymID {

@@ -13,6 +13,7 @@ pub enum VarID {
     Global(SymID),
 }
 
+#[derive(Debug)]
 pub enum IRConst {
     String(String),
     Float(f64),
@@ -28,6 +29,13 @@ pub struct IRVar {
     pub id: VarID,
     pub next_use: Option<usize>,
     pub live: bool,
+}
+
+
+impl std::fmt::Debug for IRVar {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self.id)
+    }
 }
 
 impl IRVar {
@@ -67,6 +75,7 @@ impl LiveVar {
     }
 }
 
+#[derive(Debug)]
 pub enum IR {
     Binop {
         dest: IRVar,

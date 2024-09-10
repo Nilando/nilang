@@ -18,7 +18,7 @@ pub enum Value {
     // Func(Gc<'gc, Func>),
 }
 
-#[derive(TraceLeaf)]
+#[derive(TraceLeaf, Debug)]
 pub enum ByteCode {
     Add { dest: Reg, op1: Reg, op2: Reg },
     Sub { dest: Reg, op1: Reg, op2: Reg },
@@ -46,9 +46,9 @@ pub enum ByteCode {
 
     Copy { dest: Reg, src: Reg },
     LoadLocal { dest: Reg, local_id: LocalID },
-    LoadSym { dest: Reg, src: SymID },
-    LoadInt { dest: Reg, src: i16 },
-    LoadBool { dest: Reg, src: bool },
+    LoadSym { dest: Reg, sym_id: SymID },
+    LoadInt { dest: Reg, val: i16 },
+    LoadBool { dest: Reg, val: bool },
     LoadNull { dest: Reg },
     LoadMap { dest: Reg },
     LoadList { dest: Reg },

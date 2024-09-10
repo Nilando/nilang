@@ -49,8 +49,10 @@ fn run_file(file_name: String) {
     };
 
 
-    let mut generator = Generator::new();
+    let generator = Generator::new();
     let program = generator.gen_program(ast);
+
+    println!("{program:?}");
     // let optimizer = Optimizer::new();
     // optimizer.optimize(program);
     let vm = VM::new();
