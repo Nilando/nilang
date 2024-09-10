@@ -30,8 +30,8 @@ pub enum ByteCode {
     Equal { dest: Reg, op1: Reg, op2: Reg },
     NotEqual { dest: Reg, op1: Reg, op2: Reg },
 
-    Call { site: Reg, fun: Reg },
-    Return { src: Reg },
+    Call { call_site: Reg, func: Reg },
+    Return,
 
     LoadObj { dest: Reg, obj: Reg, key: Reg },
     StoreObj { obj: Reg, key: Reg, val: Reg },
@@ -54,6 +54,3 @@ pub enum ByteCode {
     LoadList { dest: Reg },
     Noop
 }
-
-// Location<GlobalStore, Reg>
-// map of register to Vec<VarIDs>

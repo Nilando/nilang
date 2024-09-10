@@ -166,19 +166,21 @@ impl FuncCompiler {
                         self.label_positions.insert(id, label_idx);
                     }
                     IR::Call { dest, calle, input } => {
+                        // calle just needs to be loaded doesn't really matter where
+                        let calle_reg = self.load_var(calle);
+
+                        // the input reg needs to be loaded into the call site
+                        // but since the return value will wipe the input
+                        let call_site = self.load_call_site(input);
+
+                        // load what we need before storing globals
                         self.store_globals();
 
-                        // we need to assign the dest var
-                        // into a reg where no higher regs have values
-                        //
-                        // copy input into that same reg, make sure that it is not
-                        // the only place the value lives! can be the only place the value lives
-                        // iff 
-                        // the calle needs to be loaded into a lower reg
+                        self.assign_var_to_reg(dest, call_site);
+                        
+                        self.code.push(ByteCode::Call { call_site, func: calle_reg });
                     }
                     IR::Return { src } => {
-                        self.store_globals();
-                        
                         // reg 0 is special cased,
                         // don't update any var data!
                         if self.reg_data[0].contains(&src.id) {
@@ -208,6 +210,10 @@ impl FuncCompiler {
                                 }
                             }
                         }
+
+                        self.store_globals();
+
+                        self.code.push(ByteCode::Return);
                     }
                 }
 
@@ -284,6 +290,49 @@ impl FuncCompiler {
         self.code.push(bytecode);
     }
 
+    fn load_call_site(&mut self, var: IRVar) -> Reg {
+        let callsite = self.find_callsite();
+
+        match self.var_data.get(&var.id) {
+            Some(var_data) => {
+                if var_data.locations.len() == 0 {
+                    self.code.push(ByteCode::LoadNull { dest: callsite });
+                    return callsite;
+                } else if var_data.locations.len() == 1 {
+                    if let VarID::Global(sym) = var.id {
+                        if let Location::GlobalStore = var_data.locations[0] {
+                            self.code.push(ByteCode::LoadGlobal { dest: callsite, sym });
+                            return callsite;
+                        }
+                    }
+                }
+
+                for loc in var_data.locations.iter() {
+                    if let Location::Reg(src) = loc {
+                        self.code.push(ByteCode::Copy { dest: callsite, src: *src });
+                        break;
+                    }
+                }
+            }
+
+            None => self.code.push(ByteCode::LoadNull { dest: callsite }),
+        }
+        
+        callsite
+    }
+
+    fn find_callsite(&self) -> Reg {
+        // TODO: make a fallback where if the final reg is used
+        // we attempt to make space for a callsite
+        for (reg, reg_vars) in self.reg_data.iter().enumerate().rev() {
+            if !reg_vars.is_empty() {
+                return (reg + 1).try_into().expect("GENERATOR ERROR: UNABLE TO ALLOCATE CALLSITE");
+            }
+        }
+
+        panic!("GENERATOR ERROR: UNABLE TO ALLOCATE CALLSITE")
+    }
+
     fn load_var(&mut self, var: IRVar) -> Reg {
         match self.var_data.get_mut(&var.id) {
             None => {
@@ -327,9 +376,7 @@ impl FuncCompiler {
         reg
     }
 
-    fn assign_var(&mut self, var: IRVar) -> Reg {
-        let dest_reg = self.get_reg();
-
+    fn assign_var_to_reg(&mut self, var: IRVar, dest_reg: Reg) {
         // clear this reg from all other vars locations
         for var_id in self.reg_data[dest_reg as usize].iter() {
             if *var_id == var.id { continue; }
@@ -362,6 +409,12 @@ impl FuncCompiler {
 
         // set the reg so that its only var is the one just loaded
         self.reg_data[dest_reg as usize] = vec![var.id];
+    }
+
+    fn assign_var(&mut self, var: IRVar) -> Reg {
+        let dest_reg = self.get_reg();
+
+        self.assign_var_to_reg(var, dest_reg);
 
         dest_reg
     }
