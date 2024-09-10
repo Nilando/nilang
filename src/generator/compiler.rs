@@ -18,6 +18,7 @@ pub struct FuncCompiler {
     label_backpatches: HashMap<LabelID, Vec<usize>>,
 }
 
+#[derive(PartialEq)]
 enum Location {
     Reg(Reg),
     GlobalStore,
@@ -220,24 +221,31 @@ impl FuncCompiler {
     }
 
     fn store_globals(&mut self) {
-        for (var_id, var_data) in self.var_data.iter() {
-            if let VarID::Global(global_id) = var_id {
-                let mut store_flag = true;
-
+        for (var_id, var_data) in self.var_data.iter_mut() {
+            if let VarID::Global(sym) = var_id {
+                let mut reg = None;
+                let mut needs_store = true;
+                // remove this var id from all regs it was stored in
+                
                 for loc in var_data.locations.iter() {
-                    if let Location::GlobalStore = loc {
-                        store_flag = false;
-
-                        break;
+                    if let Location::Reg(r) = loc {
+                        reg = Some(*r);
+                        self.reg_data[*r as usize].retain(|id| {
+                            id != var_id
+                        });
+                    } else {
+                        needs_store = false;
                     }
                 }
 
-                if store_flag {
-                    // TODO: 
-                    // we need to store this global!
-                    // update it so that its only location is globalstore
-                    // remove its value from all registers
+                var_data.locations = vec![Location::GlobalStore];
 
+                // only generate a store instr if the value is stored in a reg,
+                // and also is not found in the global store
+                if needs_store {
+                    if let Some(dest) = reg {
+                        self.code.push(ByteCode::StoreGlobal { dest, sym: *sym } );
+                    }
                 }
             }
         }
