@@ -1,36 +1,62 @@
 use super::block::Block;
 use super::generator::RawFunc;
-use super::ir::{IR, IRConst, Var, VarID, FuncID, LabelID, LocalID};
+use super::ir::{IR, IRVar, IRConst, VarID, FuncID, LabelID, LocalID};
 use std::collections::HashMap;
 
 use crate::lexer::Op;
 use crate::bytecode::{ByteCode, Reg};
 use crate::parser::Span;
+use crate::symbol_map::INPUT_SYM_ID;
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub struct FuncCompiler {
+    code: Vec<ByteCode>,
+    locals: Vec<IRConst>,
+    var_data: HashMap<VarID, VarData>,
+    reg_data: [Vec<VarID>; 256],
+    loaded_regs: Vec<Reg>,
+    label_positions: HashMap<LabelID, usize>,
+    label_backpatches: HashMap<LabelID, Vec<usize>>,
+}
+
 enum Location {
     Reg(Reg),
     GlobalStore,
 }
 
-pub struct FuncCompiler {
-    code: Vec<ByteCode>,
-    locals: HashMap<LocalID, IRConst>,
-    var_data: HashMap<VarID, Vec<Location>>,
-    reg_data: [Vec<Var>; 256],
-    label_positions: HashMap<LabelID, usize>,
-    label_backpatches: HashMap<LabelID, Vec<usize>>
+struct VarData {
+    next_use: Option<usize>,
+    live: bool,
+    locations: Vec<Location>,
+}
+
+impl VarData {
+    pub fn new(ir_var: IRVar, locations: Vec<Location>) -> Self { 
+        Self {
+            live: ir_var.live,
+            next_use: ir_var.next_use,
+            locations,
+        } 
+    }
 }
 
 impl FuncCompiler {
     pub fn new() -> Self {
+        let mut reg_data = [const { vec![] }; 256];
+        let mut var_data = HashMap::new();
+
+        // input var always starts in reg 0
+        let input_var_id = VarID::Local(INPUT_SYM_ID);
+        reg_data[0].push(input_var_id);
+        var_data.insert(input_var_id, VarData::new(IRVar::new(input_var_id), vec![Location::Reg(0)]));
+
         Self {
             code: vec![],
-            locals: HashMap::new(),
-            var_data: HashMap::new(),
-            reg_data: [const { vec![] }; 256],
+            locals: vec![],
+            var_data,
+            reg_data,
             label_positions: HashMap::new(),
-            label_backpatches: HashMap::new()
+            label_backpatches: HashMap::new(),
+            loaded_regs: vec![]
         }
     }
 
@@ -41,30 +67,28 @@ impl FuncCompiler {
             for ir in block.as_code().into_iter() {
                 match ir.val {
                     IR::Binop { dest, op, lhs, rhs } => {
-                        let op_reg1 = self.load_var(lhs);
-                        let op_reg2 = self.load_var(rhs);
-                        let dest_reg = self.get_dest_reg(dest);
+                        let lhs_reg = self.load_var(lhs);
+                        let rhs_reg = self.load_var(rhs);
+                        let dest_reg = self.assign_var(dest);
 
-                        self.push_binop(dest_reg, op_reg1, op_reg2, op);
+                        self.push_binop(dest_reg, lhs_reg, rhs_reg, op);
                     }
-                    IR::ObjLoad { obj, key, dest } => {
+                    IR::ObjLoad { dest, obj, key } => {
                         let obj = self.load_var(obj);
                         let key = self.load_var(key);
-                        let dest = self.get_dest_reg(dest);
+                        let dest = self.assign_var(dest);
 
-                        self.code.push(ByteCode::LoadObj { obj, key, dest });
+                        self.code.push(ByteCode::LoadObj { dest, obj, key });
                     }
                     IR::NewList { dest } => {
-                        let dest = self.get_dest_reg(dest);
-                        // TODO: dynamically pick cap! or maybe load lists in an entirely different
-                        // way
-                        self.code.push(ByteCode::LoadList { dest, cap: 8 });
+                        let dest = self.assign_var(dest);
+
+                        self.code.push(ByteCode::LoadList { dest });
                     }
                     IR::NewMap { dest } => {
-                        let dest = self.get_dest_reg(dest);
-                        // TODO: dynamically pick cap! or maybe load lists in an entirely different
-                        // way
-                        self.code.push(ByteCode::LoadMap { dest, cap: 8 });
+                        let dest = self.assign_var(dest);
+
+                        self.code.push(ByteCode::LoadMap { dest });
                     }
                     IR::Log { src } => {
                         let src = self.load_var(src);
@@ -79,17 +103,161 @@ impl FuncCompiler {
                         self.code.push(ByteCode::StoreObj { obj, key, val });
                     }
                     IR::Copy { dest, src } => {
-                        let src = self.load_var(src);
-                        // update reg_data at src to hold dest too
-                        // update var_data so that its only location is src
+                        // this is a weird one, 
+                        // we only need to load src...
+                        // for dest we just update its var/reg data
+                        let reg = self.load_var(src);
+                        let var_data = VarData::new(dest, vec![Location::Reg(reg)]);
+
+                        self.reg_data[reg as usize].push(dest.id);
+                        self.var_data.insert(dest.id, var_data);
                     }
-                    // call jump return Jnt Label
-                    _ => todo!() 
+                    IR::LoadConst { dest, src } => {
+                        let dest = self.assign_var(dest);
+
+                        self.load_const(dest, src);
+                    }
+                    IR::Jnt { label, cond } => {
+                        let cond = self.load_var(cond);
+
+                        match self.label_positions.get(&label) {
+                            None => {
+                                let jump_instr_pos = self.code.len();
+
+                                match self.label_backpatches.get_mut(&jump_instr_pos) {
+                                    None => { self.label_backpatches.insert(label, vec![jump_instr_pos]); }
+                                    Some(back_patches) => { back_patches.push(jump_instr_pos); }
+                                }
+
+                                self.code.push(ByteCode::Jnt { offset: 0, cond });
+                            }
+                            Some(label_pos) => {
+                                let jump_instr_pos = self.code.len();
+                                let offset: i16 = (label_pos - jump_instr_pos).try_into().expect("GENERATOR ERROR: JUMP OFFSET EXCEEDED MAXIMUM");
+
+                                self.code.push(ByteCode::Jnt { offset, cond });
+                            }
+                        }
+                    }
+                    IR::Jump { label } => {
+                        match self.label_positions.get(&label) {
+                            None => {
+                                let jump_instr_pos = self.code.len();
+
+                                match self.label_backpatches.get_mut(&jump_instr_pos) {
+                                    None => { self.label_backpatches.insert(label, vec![jump_instr_pos]); }
+                                    Some(back_patches) => { back_patches.push(jump_instr_pos); }
+                                }
+
+                                self.code.push(ByteCode::Jump { offset: 0 });
+                            }
+                            Some(label_pos) => {
+                                let jump_instr_pos = self.code.len();
+                                let offset: i16 = (label_pos - jump_instr_pos).try_into().expect("GENERATOR ERROR: JUMP OFFSET EXCEEDED MAXIMUM");
+
+                                self.code.push(ByteCode::Jump { offset });
+                            }
+                        }
+                    }
+                    IR::Label { id } => {
+                        let label_idx = self.code.len();
+
+                        self.label_positions.insert(id, label_idx);
+                    }
+                    IR::Call { dest, calle, input } => {
+                        self.store_globals();
+
+                        // we need to assign the dest var
+                        // into a reg where no higher regs have values
+                        //
+                        // copy input into that same reg, make sure that it is not
+                        // the only place the value lives! can be the only place the value lives
+                        // iff 
+                        // the calle needs to be loaded into a lower reg
+                    }
+                    IR::Return { src } => {
+                        self.store_globals();
+                        
+                        // reg 0 is special cased,
+                        // don't update any var data!
+                        if self.reg_data[0].contains(&src.id) {
+                           // do nothing 
+                        } else {
+                            let mut load_flag = true;
+                            if let Some(var_data) = self.var_data.get(&src.id) {
+                                 for loc in var_data.locations.iter() {
+                                     if let Location::Reg(src) = loc {
+                                        load_flag = false;
+                                        self.code.push(ByteCode::Copy { dest: 0, src: *src  } );
+                                        break;
+                                     }
+                                 }
+                            }
+
+                            if load_flag {
+                                match src.id {
+                                    VarID::Global(id) => {
+                                        // load global into reg 0
+                                        self.code.push(ByteCode::LoadGlobal { dest: 0, sym: id  } )
+                                    }
+                                    _ => {
+                                        // load null into reg 0
+                                        self.code.push(ByteCode::LoadNull { dest: 0 } )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
+
+                self.loaded_regs.clear();
             }
         }
 
+        self.backpatch_labels();
+
         RawFunc::new(id, self.code, self.locals)
+    }
+
+    fn store_globals(&mut self) {
+        for (var_id, var_data) in self.var_data.iter() {
+            if let VarID::Global(global_id) = var_id {
+                let mut store_flag = true;
+
+                for loc in var_data.locations.iter() {
+                    if let Location::GlobalStore = loc {
+                        store_flag = false;
+
+                        break;
+                    }
+                }
+
+                if store_flag {
+                    // TODO: 
+                    // we need to store this global!
+                    // update it so that its only location is globalstore
+                    // remove its value from all registers
+
+                }
+            }
+        }
+    }
+
+    fn backpatch_labels(&mut self) {
+        for (label_id, backpatches) in self.label_backpatches.iter() {
+            let label_pos = self.label_positions.get(&label_id).unwrap();
+
+            for jump_pos in backpatches.iter() {
+                let jump_instr = &mut self.code[*jump_pos];
+                let new_offset: i16 = (label_pos - jump_pos).try_into().expect("GENERATOR ERROR: JUMP OFFSET EXCEEDED MAXIMUM");
+
+                match jump_instr {
+                    ByteCode::Jnt { ref mut offset, .. } 
+                    | ByteCode::Jump { ref mut offset } => *offset = new_offset,
+                    _ => panic!("GENERATOR ERROR: BAD LABEL BACKPATCH")
+                }
+            } 
+        }
     }
 
     fn push_binop(&mut self, dest: Reg, op1: Reg, op2: Reg, op: Op) {
@@ -108,127 +276,155 @@ impl FuncCompiler {
         self.code.push(bytecode);
     }
 
-    fn load_var(&mut self, var: Var) -> Reg {
-        if let Some(locations) = self.var_data.get(&var.id) {
-            for loc in locations.iter() {
-                if let Location::Reg(reg) = loc {
-                    return *reg;
+    fn load_var(&mut self, var: IRVar) -> Reg {
+        match self.var_data.get_mut(&var.id) {
+            None => {
+                let var_data = VarData::new(var, vec![]);
+                self.var_data.insert(var.id, var_data);
+            }
+            Some(var_data) => {
+                var_data.live = var.live;
+                var_data.next_use = var.next_use;
+
+                for loc in var_data.locations.iter() {
+                    if let Location::Reg(reg) = loc {
+                        return *reg;
+                    }
                 }
             }
         }
 
+        // var wasn't loaded in a reg, if global create a load instr
+        // if local, load null
         let reg = self.get_reg();
 
         match var.id {
             VarID::Global(id) => {
                 self.code.push(ByteCode::LoadGlobal { dest: reg, sym: id });
-                self.var_data.insert(var.id, vec![Location::GlobalStore, Location::Reg(reg)]);
-                self.reg_data[reg as usize] = vec![var];
+                self.reg_data[reg as usize] = vec![var.id];
+
+                let locations = &mut self.var_data.get_mut(&var.id).unwrap().locations;
+
+                if locations.is_empty() {
+                    locations.push(Location::GlobalStore);
+                }
+
+                locations.push(Location::Reg(reg));
             }
             VarID::Temp(_) | VarID::Local(_) => {
                 self.code.push(ByteCode::LoadNull { dest: reg });
             }
-        };
+        }
 
         reg
     }
 
-    // should handle creating a local ID if one is needed?
-    fn load_const(&mut self, ir_const: IRConst) -> Reg {
-        match ir_const {
-            IRConst::Int(i) => {
-                // if i fits in a i16 create a load int instr
-                // else create a local and then create a load local instr
-                let reg = self.get_reg();
-                // could we update reg data so that reg holds a temp?
-                // then after every instruction wipe the temps?
-                //
-                //
-                // t1 = 1 + 2;
-                // a = t1 + b;
-                todo!()
-            }
-            IRConst::Float(i) => {
-                // if i fits in a i16 create a load int instr
-                // else create a local and then create a load local instr
-                todo!()
-            }
-            IRConst::Bool(src) => {
-                let dest = self.get_reg();
+    fn assign_var(&mut self, var: IRVar) -> Reg {
+        let dest_reg = self.get_reg();
 
-                self.code.push( ByteCode::LoadBool { dest, src });
+        // clear this reg from all other vars locations
+        for var_id in self.reg_data[dest_reg as usize].iter() {
+            if *var_id == var.id { continue; }
 
-                dest
-            }
-            IRConst::Func(func_id) => {
-                // create a local value with the func id
-                // create a local load instr
-                todo!()
-            }
-            IRConst::Null => {
-                let dest = self.get_reg();
-
-                self.code.push( ByteCode::LoadNull { dest });
-
-                dest
-            }
-            IRConst::String(str) => {
-                // create a local value with the string
-                // create a local load instr
-                todo!()
+            if let Some(var_data) = self.var_data.get_mut(&var_id) {
+                var_data.locations.retain(|reg| {
+                    if let Location::Reg(reg) = reg {
+                        *reg != dest_reg
+                    } else {
+                        true
+                    }
+                });
             }
         }
+
+        // remove this var id from all regs it was stored in
+        if let Some(var_data) = self.var_data.get_mut(&var.id) {
+            for loc in var_data.locations.iter() {
+                if let Location::Reg(reg) = loc {
+                    self.reg_data[*reg as usize].retain(|var_id| {
+                        *var_id != var.id
+                    });
+                }
+            }
+        }
+
+        // set this var so that its only location is here
+        let var_data = VarData::new(var, vec![Location::Reg(dest_reg)]);
+        self.var_data.insert(var.id, var_data);
+
+        // set the reg so that its only var is the one just loaded
+        self.reg_data[dest_reg as usize] = vec![var.id];
+
+        dest_reg
+    }
+
+    fn load_const(&mut self, dest: Reg, ir_const: IRConst) {
+        match ir_const {
+            IRConst::Int(i) => {
+                match TryInto::<i16>::try_into(i) {
+                    Ok(src) => {
+                        self.code.push(ByteCode::LoadInt { dest, src });
+                    }
+                    Err(_) => {
+                        let local_id = self.push_local(ir_const);
+                        self.code.push(ByteCode::LoadLocal { dest, local_id });
+                    }
+                }
+            }
+            IRConst::Bool(src) => self.code.push(ByteCode::LoadBool { dest, src }),
+            IRConst::Sym(src) => self.code.push(ByteCode::LoadSym { dest, src }),
+            IRConst::Null => self.code.push(ByteCode::LoadNull { dest }),
+            IRConst::Func(_) 
+            | IRConst::String(_)
+            | IRConst::Float(_) => {
+                let local_id = self.push_local(ir_const);
+                self.code.push(ByteCode::LoadLocal { dest, local_id });
+            }
+        }
+    }
+
+    fn push_local(&mut self, ir_const: IRConst) -> LocalID {
+        self.locals.push(ir_const);
+        self.locals.len().try_into().expect("GENERATOR ERROR: TOO MANY LOCALS IN FUNC")
     }
 
     fn get_reg(&mut self) -> Reg {
         for (reg, reg_vars) in self.reg_data.iter().enumerate() {
+            let reg = reg as u8;
+
             // first look for an empty register
             if reg_vars.is_empty() {
-                return reg as u8;
+                self.loaded_regs.push(reg);
+                return reg;
             }
 
-            // look for a register when for every value in the register
-            // the address descriptor for that value shows it being somewhere else
-            let mut flag = false;
+            // don't use loaded registers!
+            // they may contain a value that has no next use, and is not live
+            // but we still may not use 
+            if self.loaded_regs.contains(&reg) {
+                continue;
+            }
 
+            // register is 'usable' if every val stored in the reg
+            // is stored somewhere else, or the value is not live and has no next use
+            let mut usable_reg = true;
             for var in reg_vars.iter() { 
-                flag = false;
-                match self.var_data.get(&var.id) {
-                    Some(var_locations) => {
-                        if var_locations.len() < 2 {
-                            break
-                        }
-                    }
-                    None => break,
+                let var_data = self.var_data.get(&var).unwrap();
+
+                if var_data.locations.len() < 2 || var_data.next_use.is_some() || var_data.live { 
+                    usable_reg = false;
+                    break;
                 }
-                flag = true;
             }
 
-            // flag being true means every value in this register is stored at 
-            // least in one other location
-            if flag {
-                return reg as u8;
-            }
-            
-           
-            // if every value in the register has no next use we can use this register
-            // and is not live
-            for var in reg_vars.iter() { 
-                if var.next_use.is_some() {
-
-                }
+            if usable_reg {
+                self.loaded_regs.push(reg);
+                return reg;
             }
         }
 
-        // TODO: unable to find a register! 
-        // means function has too many local variables, or an expression was
-        // too long
-        todo!()
-    }
-
-    fn get_dest_reg(&mut self, val: Var) -> Reg {
-        // update reg_data so that val isn't stored in any registers
-        todo!()
+        // TODO: return a generator error?
+        panic!("GENERATOR UNABLE TO ALLOCATE REGISTER")
     }
 
     fn create_blocks(&self, mut ir_code: Vec<Span<IR>>) -> Vec<Block> {
@@ -287,14 +483,17 @@ impl FuncCompiler {
                     ref mut calle,
                     ref mut input,
                 } => {
+
+                    // TODO: I THINK THIS LOGIC IS WRONG
                     if !current_block.is_empty() {
                         blocks.push(current_block);
+                        current_block = Block::new(None, true);
                     }
 
-                    current_block = Block::new(None, true);
                     current_block.update_dest_liveness(dest); // TODO: SHOULD THIS BE HERE???
                     current_block.update_operand_liveness(calle, i);
                     current_block.update_operand_liveness(input, i);
+
 
                     // TODO: maybe here special case the dest to be live on exit
                     // even if it is a temp

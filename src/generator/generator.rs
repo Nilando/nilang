@@ -1,12 +1,9 @@
-use super::ir::{IR, IRConst, Var, VarID, LocalID, FuncID, LabelID};
+use super::ir::{IR, IRConst, IRVar, VarID, FuncID, LabelID};
 use super::compiler::FuncCompiler;
 
 use crate::parser::AST;
 use crate::parser::{Expr, ParsedValue, Span, Stmt};
 use crate::bytecode::ByteCode;
-
-use std::collections::HashMap;
-
 
 pub struct Program {
     funcs: Vec<RawFunc>,
@@ -19,11 +16,11 @@ pub struct Program {
 pub struct RawFunc {
     id: FuncID,
     code: Vec<ByteCode>,
-    locals: HashMap<LocalID, IRConst>,
+    locals: Vec<IRConst>,
 }
 
 impl RawFunc {
-    pub fn new(id: FuncID, code: Vec<ByteCode>, locals: HashMap<LocalID, IRConst>) -> Self {
+    pub fn new(id: FuncID, code: Vec<ByteCode>, locals: Vec<IRConst>) -> Self {
         Self {
             id, 
             code,
@@ -136,7 +133,10 @@ impl Generator {
                 Expr::Access { store, key } => {
                     let span = store.span;
                     let obj = self.generate_expr(*store).val;
-                    let key = Var::new(VarID::Local(key));
+                    // TODO! this is wrong :(
+                    // here we need to generate an instruction to load 
+                    // a symbol into the key var
+                    let key = IRVar::new(VarID::Local(key));
                     let val = self.generate_expr(*src).val;
                     let ir = IR::ObjStore { obj, key, val };
 
@@ -228,7 +228,7 @@ impl Generator {
         }
     }
 
-    fn generate_expr(&mut self, spanned_expr: Span<Expr>) -> Span<Var> {
+    fn generate_expr(&mut self, spanned_expr: Span<Expr>) -> Span<IRVar> {
         let expr = spanned_expr.val;
         let span = spanned_expr.span;
 
@@ -251,7 +251,7 @@ impl Generator {
             }
             Expr::Access { store, key } => {
                 let obj = self.generate_expr(*store).val;
-                let key = Var::new(VarID::Local(key));
+                let key = IRVar::new(VarID::Local(key));
                 let dest = self.get_temp();
                 let obj_load = IR::ObjLoad { dest, obj, key };
 
@@ -286,7 +286,7 @@ impl Generator {
         }
     }
 
-    fn generate_const(&mut self, ir_const: IRConst, span: (usize, usize)) -> Var {
+    fn generate_const(&mut self, ir_const: IRConst, span: (usize, usize)) -> IRVar {
         let dest = self.get_temp();
 
         self.push_ir(IR::LoadConst { dest, src: ir_const }, span);
@@ -294,10 +294,10 @@ impl Generator {
         dest
     }
 
-    fn generate_value(&mut self, value: ParsedValue, span: (usize, usize)) -> Var {
+    fn generate_value(&mut self, value: ParsedValue, span: (usize, usize)) -> IRVar {
         match value {
-            ParsedValue::Ident(id) => Var::new(VarID::Local(id)),
-            ParsedValue::Global(id) => Var::new(VarID::Global(id)),
+            ParsedValue::Ident(id) => IRVar::new(VarID::Local(id)),
+            ParsedValue::Global(id) => IRVar::new(VarID::Global(id)),
             ParsedValue::Null => self.generate_const(IRConst::Null, span),
             ParsedValue::Int(i) => self.generate_const(IRConst::Int(i), span),
             ParsedValue::Float(f) => self.generate_const(IRConst::Float(f), span),
@@ -365,24 +365,18 @@ impl Generator {
         }
     }
 
-    fn pop_func(&mut self) -> Var {
+    fn pop_func(&mut self) -> IRVar {
         let mut func = self.func_stack.pop().unwrap();
-
         let null = self.generate_const(IRConst::Null, (0,0));
-
-        let end_return = IR::Return {
-            src: null,
-        };
-
+        let end_return = IR::Return { src: null, };
         let func_id = self.funcs.len();
+        let compiler = FuncCompiler::new();
 
         func.code.push(Span::new(end_return, (0, 0)));
 
-        let compiler = FuncCompiler::new();
         let raw_func = compiler.compile(func_id, func.code);
 
         self.funcs.push(raw_func);
-
         self.generate_const(IRConst::Func(func_id), (0,0))
     }
 
@@ -422,8 +416,8 @@ impl Generator {
         self.get_func().gen_label()
     }
 
-    fn get_temp(&mut self) -> Var {
-        let temp = Var::new(VarID::Temp(self.temp_counter));
+    fn get_temp(&mut self) -> IRVar {
+        let temp = IRVar::new(VarID::Temp(self.temp_counter));
 
         self.temp_counter += 1;
         temp

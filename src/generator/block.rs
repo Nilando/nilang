@@ -1,6 +1,8 @@
-use super::ir::{IR, LabelID, Var, VarID};
+use super::ir::{IR, LabelID, VarID, IRVar};
 use crate::parser::Span;
 use std::collections::HashMap;
+use crate::bytecode::{ByteCode, Reg};
+
 
 pub struct Block {
     label: Option<usize>,
@@ -43,17 +45,17 @@ impl Block {
         self.code
     }
 
-    pub fn update_operand_liveness(&mut self, var: &mut Var, i: usize) {
+    pub fn update_operand_liveness(&mut self, var: &mut IRVar, i: usize) {
         self.attach_liveness(var);
         self.liveness.insert(var.id, (Some(i), true));
     }
 
-    pub fn update_dest_liveness(&mut self, var: &mut Var) {
+    pub fn update_dest_liveness(&mut self, var: &mut IRVar) {
         self.attach_liveness(var);
         self.liveness.insert(var.id, (None, false));
     }
 
-    pub fn attach_liveness(&mut self, var: &mut Var) {
+    pub fn attach_liveness(&mut self, var: &mut IRVar) {
         if let Some((next_use, live)) = self.liveness.get(&var.id) {
             var.next_use = *next_use;
             var.live = *live;

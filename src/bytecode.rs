@@ -1,10 +1,10 @@
-use sandpit::{Arena, Gc, Root, Trace, TraceLeaf, TraceVec};
+use sandpit::TraceLeaf;
+use crate::symbol_map::SymID;
 pub type Reg = u8;
 
-pub type JumpOffset = u16;
+pub type JumpOffset = i16;
 pub type LocalID = u16;
 pub type FuncID = usize;
-pub type SymID = u16;
 
 pub enum Value {
     Sym(usize),
@@ -45,13 +45,13 @@ pub enum ByteCode {
     Jump { offset: JumpOffset },
 
     Copy { dest: Reg, src: Reg },
-    LoadConst { dest: Reg, const_id: LocalID },
+    LoadLocal { dest: Reg, local_id: LocalID },
     LoadSym { dest: Reg, src: SymID },
     LoadInt { dest: Reg, src: i16 },
     LoadBool { dest: Reg, src: bool },
     LoadNull { dest: Reg },
-    LoadMap { dest: Reg, cap: u16 },
-    LoadList { dest: Reg, cap: u16 },
+    LoadMap { dest: Reg },
+    LoadList { dest: Reg },
     Noop
 }
 

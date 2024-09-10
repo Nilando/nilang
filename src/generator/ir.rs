@@ -1,7 +1,7 @@
 use crate::lexer::Op;
+use crate::symbol_map::SymID;
 
 pub type TempID = u16;
-pub type SymID = u16;
 pub type FuncID = usize;
 pub type LabelID = usize;
 pub type LocalID = u16;
@@ -13,14 +13,24 @@ pub enum VarID {
     Global(SymID),
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub struct Var {
-    pub(super) id: VarID,
-    pub(super) next_use: Option<usize>,
-    pub(super) live: bool,
+pub enum IRConst {
+    String(String),
+    Float(f64),
+    Int(isize),
+    Bool(bool),
+    Func(FuncID),
+    Sym(SymID),
+    Null,
 }
 
-impl Var {
+#[derive(Copy, Clone)]
+pub struct IRVar {
+    pub id: VarID,
+    pub next_use: Option<usize>,
+    pub live: bool,
+}
+
+impl IRVar {
     pub fn new(id: VarID) -> Self {
         match id {
             VarID::Temp(_) => Self {
@@ -37,65 +47,76 @@ impl Var {
     }
 }
 
-pub enum IRConst {
-    String(String),
-    Float(f64),
-    Int(isize),
-    Bool(bool),
-    Func(FuncID),
-    Null,
+pub struct LiveVar {
+    next_use: Option<usize>,
+    live: bool,
+}
+
+impl LiveVar {
+    pub fn new(id: VarID) -> Self {
+        match id {
+            VarID::Temp(_) => Self {
+                next_use: None,
+                live: false,
+            },
+            _ => Self {
+                next_use: None,
+                live: true,
+            },
+        }
+    }
 }
 
 pub enum IR {
     Binop {
-        dest: Var,
+        dest: IRVar,
         op: Op,
-        lhs: Var,
-        rhs: Var,
+        lhs: IRVar,
+        rhs: IRVar,
     },
     ObjStore {
-        obj: Var,
-        key: Var,
-        val: Var,
+        obj: IRVar,
+        key: IRVar,
+        val: IRVar,
     },
     ObjLoad {
-        dest: Var,
-        obj: Var,
-        key: Var,
+        dest: IRVar,
+        obj: IRVar,
+        key: IRVar,
     },
     NewList {
-        dest: Var,
+        dest: IRVar,
     },
     NewMap {
-        dest: Var,
+        dest: IRVar,
     },
     Log {
-        src: Var,
+        src: IRVar,
     },
     Copy {
-        dest: Var,
-        src: Var,
+        dest: IRVar,
+        src: IRVar,
     },
     LoadConst {
-        dest: Var,
+        dest: IRVar,
         src: IRConst
     },
 
     // Control Flow Codes Below
     Call {
-        dest: Var,
-        calle: Var,
-        input: Var,
+        dest: IRVar,
+        calle: IRVar,
+        input: IRVar,
     },
     Jump {
         label: LabelID,
     },
     Return {
-        src: Var,
+        src: IRVar,
     },
     Jnt {
         label: LabelID,
-        cond: Var,
+        cond: IRVar,
     },
     Label {
         id: LabelID,

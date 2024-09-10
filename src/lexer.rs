@@ -2,6 +2,7 @@ use std::collections::{HashMap, VecDeque};
 use std::fs::File;
 use std::io::BufRead;
 use std::io::{stdin, stdout, BufReader, Write};
+use super::symbol_map::{SymbolMap, SymID};
 
 #[derive(Clone, Debug)]
 pub struct SpannedToken {
@@ -80,8 +81,8 @@ pub enum KeyWord {
 pub enum Token {
     Ctrl(Ctrl),
     Op(Op),
-    Ident(u16),
-    Global(u16),
+    Ident(SymID),
+    Global(SymID),
     Float(f64),
     Int(isize),
     String(String),
@@ -90,7 +91,7 @@ pub enum Token {
 }
 
 pub struct Lexer<'a> {
-    symbol_map: &'a mut HashMap<String, u16>,
+    symbol_map: &'a mut SymbolMap,
     tokens: VecDeque<SpannedToken>,
     pos: usize,
     eof: bool,
@@ -100,7 +101,7 @@ pub struct Lexer<'a> {
 }
 
 impl<'a> Lexer<'a> {
-    pub fn new(symbol_map: &'a mut HashMap<String, u16>, file_name: Option<String>) -> Self {
+    pub fn new(symbol_map: &'a mut SymbolMap, file_name: Option<String>) -> Self {
         let reader: Box<dyn BufRead> = if let Some(ref file_name) = file_name {
             let file = File::open(file_name.clone()).expect("unable to read file");
             Box::new(BufReader::new(file))
@@ -273,14 +274,8 @@ impl<'a> Lexer<'a> {
                         str.push(c);
                     }
 
-                    match self.symbol_map.get(&str) {
-                        Some(id) => Token::Global(*id),
-                        None => {
-                            let id = self.symbol_map.len() as u16;
-                            self.symbol_map.insert(str, id);
-                            Token::Global(id)
-                        }
-                    }
+                    let id = self.symbol_map.get_id(&str);
+                    Token::Global(id)
                 }
 
                 c if c.is_alphabetic() => {
@@ -309,13 +304,9 @@ impl<'a> Lexer<'a> {
                         "false" => Token::KeyWord(KeyWord::False),
                         "return" => Token::KeyWord(KeyWord::Return),
                         "continue" => Token::KeyWord(KeyWord::Continue),
-                        _ => match self.symbol_map.get(&str) {
-                            Some(id) => Token::Ident(*id),
-                            None => {
-                                let id = self.symbol_map.len() as u16;
-                                self.symbol_map.insert(str, id);
-                                Token::Ident(id)
-                            }
+                        _ => {
+                            let id = self.symbol_map.get_id(&str);
+                            Token::Ident(id)
                         },
                     }
                 }

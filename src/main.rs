@@ -3,12 +3,14 @@ mod generator;
 mod lexer;
 mod parser;
 mod vm;
+mod symbol_map;
 
 use chrono::{DateTime, Local};
 use clap::Parser as CliParser;
 use colored::Colorize;
 use generator::Generator;
 use lexer::Lexer;
+use symbol_map::SymbolMap;
 use parser::{Parser, Span, SyntaxError};
 use std::collections::HashMap;
 use std::fs::{read_to_string, File};
@@ -34,7 +36,7 @@ fn main() {
 }
 
 fn run_file(file_name: String) {
-    let mut symbol_map = HashMap::new();
+    let mut symbol_map = SymbolMap::new();
     let mut lexer = Lexer::new(&mut symbol_map, Some(file_name.clone()));
     let mut parser = Parser::new(lexer);
 
@@ -72,7 +74,7 @@ fn run_repl() {
     println!("NVM1 0.0.0 [ {} ]", date);
     println!("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
 
-    let mut symbol_map = HashMap::new();
+    let mut symbol_map = SymbolMap::new();
     let mut lexer = Lexer::new(&mut symbol_map, None);
     let mut parser = Parser::new(lexer);
 

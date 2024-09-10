@@ -1,6 +1,6 @@
 use crate::lexer::{Ctrl, KeyWord, Lexer, Op, SpannedToken, Token};
+use crate::symbol_map::{SymID};
 
-type SymID = u16;
 
 #[derive(Debug)]
 pub enum SyntaxError {
@@ -38,11 +38,11 @@ pub struct Parser<'a> {
 
 #[derive(Debug)]
 pub enum ParsedValue {
-    Ident(u16),
+    Ident(SymID),
+    Global(SymID),
     Null,
     Float(f64),
     Int(isize),
-    Global(u16),
     String(String),
     Bool(bool),
     List(Vec<Span<Expr>>),

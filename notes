@@ -1,17 +1,5 @@
 TODO:
-  GENERATOR:
-    - write down the liveness data
-
-    - get blocks
-    ir func -> vec<blocks> -> CODE
-    - give blocks? to VM
-
-    - add in global loads & stores
-    - remove dead code?
-
-    - convert variables to locations
-      - get reg function
-      - add load global and store global instructions
-
-  PARSER:
-    - ensure calls only happen on functions or lvalues
+  Convert IRCode to ByteCode
+    - what happens between blocks ???
+    - handle generating return and call 
+    - special case '@' var to live in reg 0

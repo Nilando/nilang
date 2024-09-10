@@ -397,7 +397,7 @@ checksum = "dbb5fb1acd8a1a18b3dd5be62d25485eb770e05afb408a9627d14d451bae12da"
 [[package]]
 name = "sandpit"
 version = "0.2.5"
-source = "git+https://github.com/Nilando/sandpit#5970c5de44e99b2d2112d46e49da7fc418335f02"
+source = "git+https://github.com/Nilando/sandpit#324f2da120b4b84fba56d034c82fda40f87e9a6d"
 dependencies = [
  "crossbeam-channel",
  "higher-kinded-types",
@@ -407,7 +407,7 @@ dependencies = [
 [[package]]
 name = "sandpit_derive"
 version = "0.2.5"
-source = "git+https://github.com/Nilando/sandpit#5970c5de44e99b2d2112d46e49da7fc418335f02"
+source = "git+https://github.com/Nilando/sandpit#324f2da120b4b84fba56d034c82fda40f87e9a6d"
 dependencies = [
  "proc-macro2",
  "quote",
