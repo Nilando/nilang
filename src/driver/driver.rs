@@ -21,9 +21,10 @@ impl Driver {
             config: Config::parse()
         }
     }
+
     pub fn run(&self) {
         if let Some(file_name) = &self.config.file {
-            self.run_file(&file_name);
+            self.run_file(file_name);
         } else {
             self.run_repl();
         }
@@ -41,7 +42,6 @@ impl Driver {
                 return;
             }
         };
-
 
         let generator = Generator::new();
         let program = generator.gen_program(ast);
@@ -108,7 +108,7 @@ impl Driver {
                     file_name,
                     line_number
                 );
-                println!("");
+                println!();
 
                 print!("{}", line);
                 let start = err.span.0 - bytes_read;

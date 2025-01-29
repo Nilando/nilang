@@ -166,7 +166,6 @@ impl<'a> Lexer<'a> {
                 if bytes_read == 0 {
                     self.tokens.push_back(self.end_token());
                     self.eof = true;
-                    return;
                 } else {
                     self.parse_buffer();
                     self.pos += bytes_read;
@@ -218,7 +217,7 @@ impl<'a> Lexer<'a> {
                     let mut str = String::new();
                     let mut is_closed = false;
 
-                    while let Some((_, c)) = chars.next() {
+                    for (_, c) in chars.by_ref() {
                         end += 1;
                         if c == '"' {
                             is_closed = true;
@@ -235,12 +234,12 @@ impl<'a> Lexer<'a> {
                     }
                 }
 
-                c if c.is_digit(10) => {
+                c if c.is_ascii_digit() => {
                     let mut str = String::from(c);
                     let mut is_float = false;
 
                     while let Some((_, p)) = chars.peek() {
-                        if *p == '.' || p.is_digit(10) {
+                        if *p == '.' || p.is_ascii_digit() {
                             if *p == '.' {
                                 is_float = true;
                             }

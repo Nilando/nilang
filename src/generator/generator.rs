@@ -296,7 +296,7 @@ impl Generator {
                     self.push_ir(ir, span);
                 }
 
-                return dest;
+                dest
             }
             ParsedValue::Map(map) => {
                 let dest = self.get_temp();
@@ -316,7 +316,7 @@ impl Generator {
                     self.push_ir(ir, span);
                 }
 
-                return dest;
+                dest
             }
             ParsedValue::Func { stmts } => {
                 let temp_counter = self.temp_counter;
@@ -336,7 +336,7 @@ impl Generator {
 
                 self.push_ir(load, span);
 
-                return dest;
+                dest
             }
         }
     }

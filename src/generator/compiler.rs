@@ -302,7 +302,7 @@ impl FuncCompiler {
 
         match self.var_data.get(&var.id) {
             Some(var_data) => {
-                if var_data.locations.len() == 0 {
+                if var_data.locations.is_empty() {
                     self.code.push(ByteCode::LoadNull { dest: callsite });
                     return callsite;
                 } else if var_data.locations.len() == 1 {
