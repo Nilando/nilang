@@ -5,7 +5,7 @@ use clap::Parser as CliParser;
 use colored::Colorize;
 use crate::generator::Generator;
 use crate::symbol_map::SymbolMap;
-use crate::parser::{Parser, Span, SyntaxError, Lexer};
+use crate::parser::{Parser, Spanned, SyntaxError, Lexer};
 use std::fs::File;
 use std::io::BufRead;
 use std::io::BufReader;
@@ -93,7 +93,7 @@ impl Driver {
         }
     }
 
-    fn display_syntax_errors(&self, file_name: &String, mut errs: Vec<Span<SyntaxError>>) {
+    fn display_syntax_errors(&self, file_name: &String, mut errs: Vec<Spanned<SyntaxError>>) {
         errs.sort_by(|b, a| a.span.0.partial_cmp(&b.span.0).unwrap());
 
         let mut err = errs.pop().unwrap();
@@ -127,7 +127,7 @@ impl Driver {
                 }
 
                 println!();
-                println!("{:?}", err.val);
+                println!("{:?}", err.item);
 
                 if let Some(e) = errs.pop() {
                     err = e;

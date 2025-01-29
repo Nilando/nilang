@@ -4,7 +4,7 @@ use std::collections::HashMap;
 
 use crate::parser::Op;
 use crate::vm::{ByteCode, Reg};
-use crate::parser::Span;
+use crate::parser::Spanned;
 use crate::symbol_map::INPUT_SYM_ID;
 
 pub struct FuncCompiler {
@@ -60,8 +60,8 @@ impl FuncCompiler {
         }
     }
 
-    pub fn compile_instr(&mut self, ir: Span<IR>) {
-        match ir.val {
+    pub fn compile_instr(&mut self, ir: Spanned<IR>) {
+        match ir.item {
             IR::Binop { dest, op, lhs, rhs } => {
                 let lhs_reg = self.load_var(lhs);
                 let rhs_reg = self.load_var(rhs);
@@ -213,7 +213,7 @@ impl FuncCompiler {
         }
     }
 
-    pub fn compile_func(mut self, id: FuncID, ir_code: Vec<Span<IR>>) -> IRFunc {
+    pub fn compile_func(mut self, id: FuncID, ir_code: Vec<Spanned<IR>>) -> IRFunc {
         let blocks = self.create_blocks(ir_code);
 
         for block in blocks.into_iter().rev() {
@@ -495,14 +495,14 @@ impl FuncCompiler {
         panic!("GENERATOR UNABLE TO ALLOCATE REGISTER")
     }
 
-    fn create_blocks(&self, mut ir_code: Vec<Span<IR>>) -> Vec<Block> {
+    fn create_blocks(&self, mut ir_code: Vec<Spanned<IR>>) -> Vec<Block> {
         let mut blocks = vec![];
         let mut current_block = Block::new(None, true);
 
         while let Some(mut ir) = ir_code.pop() {
             let i = ir_code.len();
 
-            match ir.val {
+            match ir.item {
                 IR::Label { id } => {
                     current_block.set_label(Some(id));
                     blocks.push(current_block);

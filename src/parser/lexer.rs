@@ -2,12 +2,7 @@ use std::collections::VecDeque;
 use std::io::BufRead;
 use std::io::{BufReader, Write};
 use crate::symbol_map::{SymbolMap, SymID};
-
-#[derive(Clone, Debug)]
-pub struct SpannedToken {
-    pub token: Token,
-    pub span: (usize, usize),
-}
+use super::spanned::Spanned;
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum Ctrl {
@@ -42,6 +37,7 @@ pub enum Op {
 }
 
 use std::fmt;
+
 impl fmt::Display for Op {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
@@ -99,7 +95,7 @@ pub enum Token {
 
 pub struct Lexer<'a> {
     symbol_map: &'a mut SymbolMap,
-    tokens: VecDeque<SpannedToken>,
+    tokens: VecDeque<Spanned<Token>>,
     pos: usize,
     eof: bool,
     reader: Box<dyn BufRead>,
@@ -118,7 +114,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    pub fn get_token(&mut self) -> SpannedToken {
+    pub fn get_token(&mut self) -> Spanned<Token> {
         if self.eof {
             return self.end_token();
         }
@@ -130,16 +126,16 @@ impl<'a> Lexer<'a> {
         self.tokens.pop_front().unwrap()
     }
 
-    pub fn peek(&mut self) -> SpannedToken {
-        if self.eof {
-            return self.end_token();
+    pub fn peek(&mut self) -> &Spanned<Token> {
+        if self.eof && self.tokens.is_empty() {
+            self.tokens.push_front(self.end_token());
         }
 
         while self.tokens.is_empty() {
             self.parse_next_line();
         }
 
-        self.tokens[0].clone()
+        &self.tokens[0]
     }
 
     fn parse_next_line(&mut self) {
@@ -155,10 +151,10 @@ impl<'a> Lexer<'a> {
                     self.pos += bytes_read;
                 }
             }
-            Err(err) => self.tokens.push_back(SpannedToken {
-                token: Token::Error(LexError::InputError(err.kind())),
-                span: (self.pos, self.pos),
-            }),
+            Err(err) => self.tokens.push_back(Spanned::new(
+                Token::Error(LexError::InputError(err.kind())),
+                (self.pos, self.pos),
+            )),
         }
     }
 
@@ -237,30 +233,7 @@ impl<'a> Lexer<'a> {
                         }
                     }
                 }
-
-                '@' => {
-                    let mut str = String::from(c);
-
-                    while let Some((_, p)) = chars.peek() {
-                        if !p.is_alphabetic() && *p != '_' {
-                            break;
-                        }
-
-                        end += 1;
-
-                        let (_, c) = chars.next().unwrap();
-                        str.push(c);
-                    }
-
-                    let id = self.symbol_map.get_id(&str);
-                    if str == "@" {
-                        Token::Ident(id)
-                    } else {
-                        Token::Global(id)
-                    }
-                }
-
-                c if c.is_alphabetic() => {
+                c if c.is_alphabetic() || c == '@' => {
                     let mut str = String::from(c);
 
                     while let Some((_, p)) = chars.peek() {
@@ -288,8 +261,13 @@ impl<'a> Lexer<'a> {
                         "continue" => Token::KeyWord(KeyWord::Continue),
                         _ => {
                             let id = self.symbol_map.get_id(&str);
-                            Token::Ident(id)
-                        },
+
+                            if str.chars().next().unwrap() == '@' && str != "@" {
+                                Token::Global(id)
+                            } else {
+                                Token::Ident(id)
+                            }
+                        }
                     }
                 }
                 '=' => {
@@ -360,20 +338,20 @@ impl<'a> Lexer<'a> {
                 _ => Token::Error(LexError::Unknown),
             };
 
-            let spanned_token = SpannedToken {
+            let spanned_token = Spanned::new (
                 token,
-                span: (start, end),
-            };
+                (start, end),
+            );
 
             self.tokens.push_back(spanned_token);
         }
     }
 
-    fn end_token(&self) -> SpannedToken {
-        SpannedToken {
-            token: Token::Ctrl(Ctrl::End),
-            span: (self.pos, self.pos),
-        }
+    fn end_token(&self) -> Spanned<Token> {
+        Spanned::new (
+            Token::Ctrl(Ctrl::End),
+            (self.pos, self.pos),
+        )
     }
 }
 
@@ -431,7 +409,7 @@ mod tests {
 
         for expected_token in expected_tokens {
             let spanned_token = lexer.get_token();
-            let token = spanned_token.token;
+            let token = spanned_token.item;
 
             assert_eq!(token, expected_token);
         }

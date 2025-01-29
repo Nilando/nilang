@@ -1,10 +1,10 @@
 use super::ir::{IR, LabelID, VarID, IRVar};
-use crate::parser::Span;
+use crate::parser::Spanned;
 use std::collections::HashMap;
 
 pub struct Block {
     label: Option<usize>,
-    code: Vec<Span<IR>>,
+    code: Vec<Spanned<IR>>,
     jump: Option<usize>,
     continues: bool,
     liveness: HashMap<VarID, (Option<usize>, bool)>,
@@ -31,7 +31,7 @@ impl Block {
         self.return_var = Some(var_id);
     }
 
-    pub fn push(&mut self, ir: Span<IR>) {
+    pub fn push(&mut self, ir: Spanned<IR>) {
         self.code.push(ir);
     }
 
@@ -39,7 +39,7 @@ impl Block {
         self.code.is_empty()
     }
 
-    pub fn as_code(self) -> Vec<Span<IR>> {
+    pub fn as_code(self) -> Vec<Spanned<IR>> {
         self.code
     }
 

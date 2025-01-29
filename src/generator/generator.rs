@@ -3,11 +3,11 @@ use super::compiler::FuncCompiler;
 
 use std::collections::HashMap;
 
-use crate::parser::{AST, Expr, ParsedValue, Span, Stmt};
+use crate::parser::{AST, Expr, ParsedValue, Spanned, Stmt};
 
 struct FuncGenerator {
     id: FuncID,
-    code: Vec<Span<IR>>,
+    code: Vec<Spanned<IR>>,
     label_counter: usize,
     label_stack: Vec<LabelID>
 }
@@ -85,34 +85,34 @@ impl Generator {
             Stmt::Return(expr) => {
                 let var = self.generate_expr(*expr);
 
-                self.push_ir(IR::Return { src: var.val }, var.span);
+                self.push_ir(IR::Return { src: var.item }, var.span);
                 self.temp_counter = 0;
             }
             Stmt::Log(expr) => {
                 let var = self.generate_expr(*expr);
-                let ir = IR::Log { src: var.val };
+                let ir = IR::Log { src: var.item };
 
                 self.push_ir(ir, var.span);
                 self.temp_counter = 0;
             }
-            Stmt::Assign { dest, src } => match dest.val {
+            Stmt::Assign { dest, src } => match dest.item {
                 Expr::Value(value) => {
                     let dest = self.generate_value(value, dest.span);
                     let src = self.generate_expr(*src);
-                    let ir = IR::Copy { dest, src: src.val };
+                    let ir = IR::Copy { dest, src: src.item };
 
                     self.push_ir(ir, src.span);
                     self.temp_counter = 0;
                 }
                 Expr::Access { store, key } => {
                     let span = store.span;
-                    let obj = self.generate_expr(*store).val;
+                    let obj = self.generate_expr(*store).item;
 
                     // TODO! this is wrong :(
                     // here we need to generate an instruction to load 
                     // a symbol into the key var
                     let key = IRVar::new(VarID::Local(key));
-                    let val = self.generate_expr(*src).val;
+                    let val = self.generate_expr(*src).item;
                     let ir = IR::ObjStore { obj, key, val };
 
                     self.push_ir(ir, span);
@@ -120,9 +120,9 @@ impl Generator {
                 }
                 Expr::Index { store, key } => {
                     let span = store.span;
-                    let obj = self.generate_expr(*store).val;
-                    let key = self.generate_expr(*key).val;
-                    let val = self.generate_expr(*src).val;
+                    let obj = self.generate_expr(*store).item;
+                    let key = self.generate_expr(*key).item;
+                    let val = self.generate_expr(*src).item;
                     let ir = IR::ObjStore { obj, key, val };
 
                     self.push_ir(ir, span);
@@ -138,7 +138,7 @@ impl Generator {
                 self.push_ir(IR::Label { id: label_start }, (0, 0));
                 self.push_ir(
                     IR::Jnt {
-                        cond: cond.val,
+                        cond: cond.item,
                         label: label_end,
                     },
                     cond.span,
@@ -156,7 +156,7 @@ impl Generator {
 
                 self.push_ir(
                     IR::Jnt {
-                        cond: cond.val,
+                        cond: cond.item,
                         label,
                     },
                     cond.span,
@@ -176,7 +176,7 @@ impl Generator {
 
                 self.push_ir(
                     IR::Jnt {
-                        cond: cond.val,
+                        cond: cond.item,
                         label: else_start,
                     },
                     cond.span,
@@ -203,15 +203,15 @@ impl Generator {
         }
     }
 
-    fn generate_expr(&mut self, spanned_expr: Span<Expr>) -> Span<IRVar> {
-        let expr = spanned_expr.val;
+    fn generate_expr(&mut self, spanned_expr: Spanned<Expr>) -> Spanned<IRVar> {
+        let expr = spanned_expr.item;
         let span = spanned_expr.span;
 
         match expr {
-            Expr::Value(value) => Span::new(self.generate_value(value, span), span),
+            Expr::Value(value) => Spanned::new(self.generate_value(value, span), span),
             Expr::Binop { lhs, op, rhs } => {
-                let lhs = self.generate_expr(*lhs).val;
-                let rhs = self.generate_expr(*rhs).val;
+                let lhs = self.generate_expr(*lhs).item;
+                let rhs = self.generate_expr(*rhs).item;
                 let dest = self.get_temp();
                 let binop = IR::Binop {
                     dest,
@@ -222,10 +222,10 @@ impl Generator {
 
                 self.push_ir(binop, span);
 
-                Span::new(dest, span)
+                Spanned::new(dest, span)
             }
             Expr::Access { store, key } => {
-                let obj = self.generate_expr(*store).val;
+                let obj = self.generate_expr(*store).item;
                 let key = self.generate_const(IRConst::Sym(key), span);
                 // first generate a load sym
                 let dest = self.get_temp();
@@ -233,31 +233,31 @@ impl Generator {
 
                 self.push_ir(obj_load, span);
 
-                Span::new(dest, span)
+                Spanned::new(dest, span)
             }
             Expr::Index { store, key } => {
-                let obj = self.generate_expr(*store).val;
-                let key = self.generate_expr(*key).val;
+                let obj = self.generate_expr(*store).item;
+                let key = self.generate_expr(*key).item;
                 let dest = self.get_temp();
                 let obj_load = IR::ObjLoad { dest, obj, key };
 
                 self.push_ir(obj_load, span);
 
-                Span::new(dest, span)
+                Spanned::new(dest, span)
             }
             Expr::Call { calle, input } => {
                 let dest = self.get_temp();
-                let calle = self.generate_expr(*calle).val;
+                let calle = self.generate_expr(*calle).item;
                 let input = if input.is_none() {
                     todo!()
                 } else {
-                    self.generate_expr(*input.unwrap()).val
+                    self.generate_expr(*input.unwrap()).item
                 };
                 let ir = IR::Call { dest, calle, input };
 
                 self.push_ir(ir, span);
 
-                Span::new(dest, span)
+                Spanned::new(dest, span)
             }
         }
     }
@@ -291,7 +291,7 @@ impl Generator {
                     let ir = IR::ObjStore {
                         obj: dest,
                         key,
-                        val: item.val,
+                        val: item.item,
                     };
                     self.push_ir(ir, span);
                 }
@@ -305,8 +305,8 @@ impl Generator {
                 self.push_ir(ir, span);
 
                 for (key, val) in map.into_iter() {
-                    let key = self.generate_expr(key).val;
-                    let val = self.generate_expr(val).val;
+                    let key = self.generate_expr(key).item;
+                    let val = self.generate_expr(val).item;
                     let ir = IR::ObjStore {
                         obj: dest,
                         key,
@@ -349,7 +349,7 @@ impl Generator {
         let func_id = self.funcs.len();
         let compiler = FuncCompiler::new();
 
-        func.code.push(Span::new(end_return, (0, 0)));
+        func.code.push(Spanned::new(end_return, (0, 0)));
 
         let func = compiler.compile_func(func_id, func.code);
 
@@ -377,7 +377,7 @@ impl Generator {
     }
 
     fn push_ir(&mut self, ir: IR, span: (usize, usize)) {
-        self.get_func().code.push(Span::new(ir, span));
+        self.get_func().code.push(Spanned::new(ir, span));
     }
 
     fn top_label(&self) -> LabelID {
