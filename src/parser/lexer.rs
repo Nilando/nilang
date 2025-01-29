@@ -1,7 +1,6 @@
 use std::collections::VecDeque;
-use std::fs::File;
 use std::io::BufRead;
-use std::io::{stdin, stdout, BufReader, Write};
+use std::io::{BufReader, Write};
 use crate::symbol_map::{SymbolMap, SymID};
 
 #[derive(Clone, Debug)]
@@ -103,21 +102,12 @@ pub struct Lexer<'a> {
     tokens: VecDeque<SpannedToken>,
     pos: usize,
     eof: bool,
-    file_name: Option<String>, // is none then repl mode
     reader: Box<dyn BufRead>,
     pub buffer: String,
 }
 
 impl<'a> Lexer<'a> {
-    pub fn new(symbol_map: &'a mut SymbolMap, file_name: Option<String>) -> Self {
-        let reader: Box<dyn BufRead> = if let Some(ref file_name) = file_name {
-            let file = File::open(file_name.clone()).expect("unable to read file");
-            Box::new(BufReader::new(file))
-        } else {
-            let stdin = stdin();
-            Box::new(BufReader::new(stdin))
-        };
-
+    pub fn new(symbol_map: &'a mut SymbolMap, reader: Box<dyn BufRead>) -> Self {
         Self {
             reader,
             symbol_map,
@@ -125,7 +115,6 @@ impl<'a> Lexer<'a> {
             buffer: String::new(),
             pos: 0,
             eof: false,
-            file_name,
         }
     }
 
@@ -142,7 +131,7 @@ impl<'a> Lexer<'a> {
     }
 
     pub fn peek(&mut self) -> SpannedToken {
-        if self.eof || (self.repl_mode() && self.tokens.is_empty()) {
+        if self.eof {
             return self.end_token();
         }
 
@@ -154,12 +143,7 @@ impl<'a> Lexer<'a> {
     }
 
     fn parse_next_line(&mut self) {
-        if !self.repl_mode() {
-            self.buffer.clear();
-        } else {
-            print!("==> ");
-            stdout().flush().expect("failed to flush stdout");
-        }
+        self.buffer.clear();
 
         match self.reader.read_line(&mut self.buffer) {
             Ok(bytes_read) => {
@@ -178,21 +162,8 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    pub fn repl_mode(&self) -> bool {
-        self.file_name.is_none()
-    }
-
     fn parse_buffer(&mut self) {
-        let mut chars = if self.repl_mode() {
-            self.buffer
-                .split_at(self.pos)
-                .1
-                .chars()
-                .enumerate()
-                .peekable()
-        } else {
-            self.buffer.chars().enumerate().peekable()
-        };
+        let mut chars = self.buffer.chars().enumerate().peekable();
 
         loop {
             let (i, c) = match chars.next() {
@@ -409,6 +380,7 @@ impl<'a> Lexer<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::io::Cursor;
 
     #[test]
     fn test_lexer_simple_input() {
@@ -421,8 +393,47 @@ mod tests {
                 log "y is greater";
             }
         }"#;
+        let mut symbol_map = SymbolMap::new();
+        let expected_tokens = vec![
+            Token::KeyWord(KeyWord::Fn),
+            Token::Ident(symbol_map.get_id("main")),
+            Token::Ctrl(Ctrl::LeftParen),
+            Token::Ctrl(Ctrl::RightParen),
+            Token::Ctrl(Ctrl::LeftCurly),
+            Token::Ident(symbol_map.get_id("x")),
+            Token::Ctrl(Ctrl::Equal),
+            Token::Int(42),
+            Token::Ctrl(Ctrl::SemiColon),
+            Token::Ident(symbol_map.get_id("y")),
+            Token::Ctrl(Ctrl::Equal),
+            Token::Float(3.14),
+            Token::Ctrl(Ctrl::SemiColon),
+            Token::KeyWord(KeyWord::If),
+            Token::Ident(symbol_map.get_id("x")),
+            Token::Op(Op::Gt),
+            Token::Ident(symbol_map.get_id("y")),
+            Token::Ctrl(Ctrl::LeftCurly),
+            Token::KeyWord(KeyWord::Log),
+            Token::String("x is greater".to_string()),
+            Token::Ctrl(Ctrl::SemiColon),
+            Token::Ctrl(Ctrl::RightCurly),
+            Token::KeyWord(KeyWord::Else),
+            Token::Ctrl(Ctrl::LeftCurly),
+            Token::KeyWord(KeyWord::Log),
+            Token::String("y is greater".to_string()),
+            Token::Ctrl(Ctrl::SemiColon),
+            Token::Ctrl(Ctrl::RightCurly),
+            Token::Ctrl(Ctrl::RightCurly),
+            Token::Ctrl(Ctrl::End),
+        ];
 
-        let lexer = Lexer::new(&mut SymbolMap::new(), None);
+        let mut lexer = Lexer::new(&mut symbol_map, Box::new(BufReader::new(Cursor::new(source))));
 
+        for expected_token in expected_tokens {
+            let spanned_token = lexer.get_token();
+            let token = spanned_token.token;
+
+            assert_eq!(token, expected_token);
+        }
     }
 }

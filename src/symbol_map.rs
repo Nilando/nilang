@@ -53,13 +53,13 @@ impl SymbolMap {
         }
     }
 
-    pub fn get_id(&mut self, str: &String) -> SymID {
+    pub fn get_id(&mut self, str: &str) -> SymID {
         match self.map.get(str) {
             Some(id) => *id,
             None => {
                 let id = SymID::from(self.map.len());
 
-                self.map.insert(str.clone(), id);
+                self.map.insert(str.to_string(), id);
                 id
             }
         }

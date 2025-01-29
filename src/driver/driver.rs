@@ -31,8 +31,10 @@ impl Driver {
     }
 
     fn run_file(&self, file_name: &String) {
+        let file = File::open(file_name.clone()).expect("unable to read file");
+        let reader = Box::new(BufReader::new(file));
         let mut symbol_map = SymbolMap::new();
-        let lexer = Lexer::new(&mut symbol_map, Some(file_name.clone()));
+        let lexer = Lexer::new(&mut symbol_map, reader);
         let mut parser = Parser::new(lexer);
 
         let ast = match parser.build_ast() {
@@ -59,6 +61,8 @@ impl Driver {
     }
 
     fn run_repl(&self) {
+        let stdin = std::io::stdin();
+        let reader = Box::new(BufReader::new(stdin));
         let local_time: DateTime<Local> = Local::now();
         let date = local_time.format("%Y-%m-%d %H:%M");
 
@@ -66,7 +70,7 @@ impl Driver {
         println!("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
 
         let mut symbol_map = SymbolMap::new();
-        let lexer = Lexer::new(&mut symbol_map, None);
+        let lexer = Lexer::new(&mut symbol_map, reader);
         let mut parser = Parser::new(lexer);
 
         loop {
