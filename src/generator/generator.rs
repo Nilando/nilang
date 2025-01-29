@@ -1,9 +1,9 @@
-use super::ir::{IR, IRConst, IRVar, VarID, FuncID, LabelID, IRFunc, IRProgram};
+use super::ir::{FuncID, IRConst, IRFunc, IRProgram, IRVar, LabelID, VarID, IR};
 use super::compiler::FuncCompiler;
 
 use std::collections::HashMap;
 
-use crate::parser::{AST, Expr, ParsedValue, Spanned, Stmt};
+use crate::parser::{Expr, Spanned, Value, AST, Stmt};
 
 struct FuncGenerator {
     id: FuncID,
@@ -270,16 +270,16 @@ impl Generator {
         dest
     }
 
-    fn generate_value(&mut self, value: ParsedValue, span: (usize, usize)) -> IRVar {
+    fn generate_value(&mut self, value: Value, span: (usize, usize)) -> IRVar {
         match value {
-            ParsedValue::Ident(id) => IRVar::new(VarID::Local(id)),
-            ParsedValue::Global(id) => IRVar::new(VarID::Global(id)),
-            ParsedValue::Null => self.generate_const(IRConst::Null, span),
-            ParsedValue::Int(i) => self.generate_const(IRConst::Int(i), span),
-            ParsedValue::Float(f) => self.generate_const(IRConst::Float(f), span),
-            ParsedValue::Bool(b) => self.generate_const(IRConst::Bool(b), span),
-            ParsedValue::String(b) => self.generate_const(IRConst::String(b), span),
-            ParsedValue::List(list) => {
+            Value::Ident(id) => IRVar::new(VarID::Local(id)),
+            Value::Global(id) => IRVar::new(VarID::Global(id)),
+            Value::Null => self.generate_const(IRConst::Null, span),
+            Value::Int(i) => self.generate_const(IRConst::Int(i), span),
+            Value::Float(f) => self.generate_const(IRConst::Float(f), span),
+            Value::Bool(b) => self.generate_const(IRConst::Bool(b), span),
+            Value::String(b) => self.generate_const(IRConst::String(b), span),
+            Value::List(list) => {
                 let dest = self.get_temp();
                 let ir = IR::NewList { dest };
 
@@ -298,7 +298,7 @@ impl Generator {
 
                 dest
             }
-            ParsedValue::Map(map) => {
+            Value::Map(map) => {
                 let dest = self.get_temp();
                 let ir = IR::NewMap { dest };
 
@@ -318,7 +318,7 @@ impl Generator {
 
                 dest
             }
-            ParsedValue::Func { stmts } => {
+            Value::Func { stmts } => {
                 let temp_counter = self.temp_counter;
                 self.temp_counter = 0;
 

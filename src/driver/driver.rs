@@ -1,11 +1,11 @@
 use super::config::Config;
 
 use chrono::{DateTime, Local};
-use clap::Parser as CliParser;
+
 use colored::Colorize;
 use crate::generator::Generator;
 use crate::symbol_map::SymbolMap;
-use crate::parser::{Parser, Spanned, SyntaxError, Lexer};
+use crate::parser::{Lexer, Parser, Spanned, SyntaxError};
 use std::fs::File;
 use std::io::BufRead;
 use std::io::BufReader;
@@ -16,9 +16,9 @@ pub struct Driver {
 }
 
 impl Driver {
-    pub fn new() -> Self {
+    pub fn new(config: Config) -> Self {
         Self {
-            config: Config::parse()
+            config
         }
     }
 
