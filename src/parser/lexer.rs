@@ -406,3 +406,24 @@ impl<'a> Lexer<'a> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_lexer_simple_input() {
+        let source = r#"fn main() {
+            x = 42;
+            y = 3.14;
+            if x > y {
+                log "x is greater";
+            } else {
+                log "y is greater";
+            }
+        }"#;
+
+        let mut lexer = Lexer::new(&mut SymbolMap::new(), None);
+
+    }
+}

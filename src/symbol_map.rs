@@ -64,5 +64,4 @@ impl SymbolMap {
             }
         }
     }
-
 }

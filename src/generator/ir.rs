@@ -34,7 +34,6 @@ pub struct IRVar {
     pub live: bool,
 }
 
-
 impl std::fmt::Debug for IRVar {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}", self.id)

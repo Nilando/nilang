@@ -1,5 +1,4 @@
 use super::bytecode::ByteCode;
-use crate::symbol_map::{SymbolMap, SymID};
 use super::gc_vec::GcVec;
 use super::value::Value;
 use sandpit::{Arena, gc::Gc, Mutator, Root, Trace};

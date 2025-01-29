@@ -1,8 +1,6 @@
 use super::ir::{IR, LabelID, VarID, IRVar};
 use crate::parser::Span;
 use std::collections::HashMap;
-use crate::vm::{ByteCode, Reg};
-
 
 pub struct Block {
     label: Option<usize>,
