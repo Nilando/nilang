@@ -1,4 +1,4 @@
-use sandpit::{Arena, gc::Gc, Mutator, Root, Trace};
+use sandpit::{Mutator, Trace};
 use crate::generator::IRProgram;
 use super::program::Program;
 

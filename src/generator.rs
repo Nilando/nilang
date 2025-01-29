@@ -4,4 +4,4 @@ mod ir;
 mod compiler;
 
 pub use generator::Generator;
-pub use ir::{IRConst, IRProgram};
+pub use ir::IRProgram;

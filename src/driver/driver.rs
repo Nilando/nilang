@@ -1,5 +1,4 @@
 use super::config::Config;
-use clap::*;
 
 use chrono::{DateTime, Local};
 use clap::Parser as CliParser;
@@ -32,7 +31,7 @@ impl Driver {
 
     fn run_file(&self, file_name: &String) {
         let mut symbol_map = SymbolMap::new();
-        let mut lexer = Lexer::new(&mut symbol_map, Some(file_name.clone()));
+        let lexer = Lexer::new(&mut symbol_map, Some(file_name.clone()));
         let mut parser = Parser::new(lexer);
 
         let ast = match parser.build_ast() {
@@ -67,7 +66,7 @@ impl Driver {
         println!("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
 
         let mut symbol_map = SymbolMap::new();
-        let mut lexer = Lexer::new(&mut symbol_map, None);
+        let lexer = Lexer::new(&mut symbol_map, None);
         let mut parser = Parser::new(lexer);
 
         loop {
@@ -82,7 +81,7 @@ impl Driver {
 
             // println!("{:#?}", stmt);
 
-            let mut generator = Generator::new();
+            let generator = Generator::new();
             let program = generator.gen_program(ast);
 
             // let mut vm = VM::new(symbol_map.clone(), program);

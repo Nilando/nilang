@@ -1,4 +1,4 @@
-use std::collections::{HashMap, VecDeque};
+use std::collections::VecDeque;
 use std::fs::File;
 use std::io::BufRead;
 use std::io::{stdin, stdout, BufReader, Write};
@@ -423,7 +423,7 @@ mod tests {
             }
         }"#;
 
-        let mut lexer = Lexer::new(&mut SymbolMap::new(), None);
+        let lexer = Lexer::new(&mut SymbolMap::new(), None);
 
     }
 }

@@ -1,6 +1,5 @@
 use crate::symbol_map::SymID;
 use super::bytecode::{FuncID, ByteCode};
-use crate::generator::IRConst;
 use super::gc_vec::GcVec;
 
 use sandpit::{Trace, gc::Gc};

@@ -1,7 +1,7 @@
 use super::bytecode::ByteCode;
 use super::gc_vec::GcVec;
 use super::value::Value;
-use sandpit::{Arena, gc::Gc, Mutator, Root, Trace};
+use sandpit::{gc::Gc, Mutator, Trace};
 use std::cell::Cell;
 
 #[derive(Trace)]

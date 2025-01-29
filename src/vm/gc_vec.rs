@@ -1,4 +1,4 @@
-use sandpit::{Arena, gc::{Gc, GcMut, GcOpt}, Mutator, Root, Trace};
+use sandpit::{gc::GcOpt, Mutator, Trace};
 
 #[derive(Trace)]
 pub struct GcVec<'gc, T: Trace> {

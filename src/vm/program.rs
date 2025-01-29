@@ -1,4 +1,4 @@
-use sandpit::{Arena, gc::Gc, Mutator, Root, Trace};
+use sandpit::{Mutator, Trace};
 use super::gc_vec::GcVec;
 use crate::generator::IRProgram;
 
