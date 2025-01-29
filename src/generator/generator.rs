@@ -1,38 +1,10 @@
-use super::ir::{IR, IRConst, IRVar, VarID, FuncID, LabelID};
+use super::ir::{IR, IRConst, IRVar, VarID, FuncID, LabelID, IRFunc, IRProgram};
 use super::compiler::FuncCompiler;
 
-use crate::parser::AST;
-use crate::parser::{Expr, ParsedValue, Span, Stmt};
-use crate::bytecode::ByteCode;
+use std::collections::HashMap;
 
-#[derive(Debug)]
-pub struct Program {
-    funcs: Vec<RawFunc>,
-}
+use crate::parser::{AST, Expr, ParsedValue, Span, Stmt};
 
-// a function that is almost ready to be run by a vm
-// the only transformation is that FuncIDs stored in the locals tables need to 
-// be converted to actual function pointers, which can only happen once 
-// the function is allocated within an arena
-#[derive(Debug)]
-pub struct RawFunc {
-    id: FuncID,
-    code: Vec<ByteCode>,
-    locals: Vec<IRConst>,
-}
-
-impl RawFunc {
-    pub fn new(id: FuncID, code: Vec<ByteCode>, locals: Vec<IRConst>) -> Self {
-        Self {
-            id, 
-            code,
-            locals
-        }
-    }
-}
-
-// helps with keeping track of label info
-// pretty much it
 struct FuncGenerator {
     id: FuncID,
     code: Vec<Span<IR>>,
@@ -76,7 +48,7 @@ impl FuncGenerator {
 pub struct Generator {
     func_stack: Vec<FuncGenerator>,
     temp_counter: u16,
-    funcs: Vec<RawFunc>,
+    funcs: HashMap<FuncID, IRFunc>,
     func_counter: FuncID,
 }
 
@@ -84,18 +56,18 @@ impl Generator {
     pub fn new() -> Self {
         Self {
             func_stack: vec![],
-            funcs: vec![],
+            funcs: HashMap::new(),
             temp_counter: 0,
             func_counter: 0,
         }
     }
 
-    pub fn gen_program(mut self, ast: AST) -> Program {
+    pub fn gen_program(mut self, ast: AST) -> IRProgram {
         self.push_new_func();
         self.gen_stmts(ast.stmts);
         self.pop_func();
 
-        Program { funcs: self.funcs }
+        IRProgram::new(self.funcs)
     }
 
     fn gen_stmts(&mut self, stmts: Vec<Stmt>) {
@@ -135,6 +107,7 @@ impl Generator {
                 Expr::Access { store, key } => {
                     let span = store.span;
                     let obj = self.generate_expr(*store).val;
+
                     // TODO! this is wrong :(
                     // here we need to generate an instruction to load 
                     // a symbol into the key var
@@ -378,9 +351,10 @@ impl Generator {
 
         func.code.push(Span::new(end_return, (0, 0)));
 
-        let raw_func = compiler.compile_func(func_id, func.code);
+        let func = compiler.compile_func(func_id, func.code);
 
-        self.funcs.push(raw_func);
+        self.funcs.insert(func_id, func);
+
         if self.func_stack.is_empty() {
             None
         } else {

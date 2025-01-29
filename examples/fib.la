@@ -1,4 +1,4 @@
-fibonizer = fn { 
+fibonacci = fn { 
   x = 1;
   y = 1;
   n = 3;
@@ -21,4 +21,4 @@ fibonizer = fn {
   return x + y;
 };
 
-log fibonizer(69);
+log fibonacci(69);

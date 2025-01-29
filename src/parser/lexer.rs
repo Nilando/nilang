@@ -2,7 +2,7 @@ use std::collections::{HashMap, VecDeque};
 use std::fs::File;
 use std::io::BufRead;
 use std::io::{stdin, stdout, BufReader, Write};
-use super::symbol_map::{SymbolMap, SymID};
+use crate::symbol_map::{SymbolMap, SymID};
 
 #[derive(Clone, Debug)]
 pub struct SpannedToken {

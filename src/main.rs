@@ -1,6 +1,4 @@
-mod bytecode;
 mod generator;
-mod lexer;
 mod parser;
 mod vm;
 mod symbol_map;
@@ -9,13 +7,11 @@ use chrono::{DateTime, Local};
 use clap::Parser as CliParser;
 use colored::Colorize;
 use generator::Generator;
-use lexer::Lexer;
 use symbol_map::SymbolMap;
-use parser::{Parser, Span, SyntaxError};
-use std::collections::HashMap;
-use std::fs::{read_to_string, File};
+use parser::{Parser, Span, SyntaxError, Lexer};
+use std::fs::File;
 use std::io::BufRead;
-use std::io::{stdin, stdout, BufReader, Write};
+use std::io::BufReader;
 use vm::VM;
 
 #[derive(CliParser, Debug)]
@@ -51,29 +47,24 @@ fn run_file(file_name: String) {
 
     let generator = Generator::new();
     let program = generator.gen_program(ast);
+    let mut vm = VM::new(symbol_map, program);
 
-    println!("{program:?}");
-    // let optimizer = Optimizer::new();
-    // optimizer.optimize(program);
-    let vm = VM::new();
-
-    // vm.load_symbols(symbol_map);
-    vm.load_program(program);
-
-    // match vm.run() {
-    //  Ok(val) => { print val? }
-    //  Err(_) => {
-    //      // we get back a span
-    //      // how do we display the error?
-    //  }
-    // }
+    match vm.run() {
+      Ok(val) => { 
+          // print val? 
+      }
+      Err(_) => {
+          // we get back a span
+          // how do we display the error?
+      }
+    }
 }
 
 fn run_repl() {
     let local_time: DateTime<Local> = Local::now();
     let date = local_time.format("%Y-%m-%d %H:%M");
 
-    println!("NVM1 0.0.0 [ {} ]", date);
+    println!("Nilang 0.0.0 [ {} ]", date);
     println!("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
 
     let mut symbol_map = SymbolMap::new();
@@ -93,7 +84,10 @@ fn run_repl() {
         // println!("{:#?}", stmt);
 
         let mut generator = Generator::new();
-        generator.gen_program(ast);
+        let program = generator.gen_program(ast);
+
+        // let mut vm = VM::new(symbol_map.clone(), program);
+        // vm.run()
     }
 }
 

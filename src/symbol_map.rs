@@ -39,12 +39,14 @@ pub struct SymbolMap {
 }
 
 pub const INPUT_SYM_ID: SymID = SymID { bytes: [0, 0, 0] };
+pub const SELF_SYM_ID: SymID = SymID { bytes: [1, 0, 0] };
 
 impl SymbolMap {
     pub fn new() -> Self {
         let mut map = HashMap::new();
 
-        map.insert("@".to_string(), SymID::from(0));
+        map.insert("@".to_string(), INPUT_SYM_ID);
+        map.insert("self".to_string(), INPUT_SYM_ID);
 
         Self {
             map,

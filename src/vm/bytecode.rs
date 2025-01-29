@@ -6,18 +6,6 @@ pub type JumpOffset = i16;
 pub type LocalID = u16;
 pub type FuncID = usize;
 
-pub enum Value {
-    Sym(usize),
-    Int(isize),
-    Float(f64),
-    Bool(bool),
-    Null,
-    // String(Gc<String>),
-    // List(Gc<List>),
-    // Map(Gc<Map),
-    // Func(Gc<'gc, Func>),
-}
-
 #[derive(TraceLeaf, Debug)]
 pub enum ByteCode {
     Add { dest: Reg, op1: Reg, op2: Reg },

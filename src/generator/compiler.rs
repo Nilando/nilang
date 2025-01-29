@@ -1,10 +1,9 @@
 use super::block::Block;
-use super::generator::RawFunc;
-use super::ir::{IR, IRVar, IRConst, VarID, FuncID, LabelID, LocalID};
+use super::ir::{IR, IRVar, IRConst, VarID, FuncID, LabelID, LocalID, IRFunc};
 use std::collections::HashMap;
 
-use crate::lexer::Op;
-use crate::bytecode::{ByteCode, Reg};
+use crate::parser::Op;
+use crate::vm::{ByteCode, Reg};
 use crate::parser::Span;
 use crate::symbol_map::INPUT_SYM_ID;
 
@@ -214,7 +213,7 @@ impl FuncCompiler {
         }
     }
 
-    pub fn compile_func(mut self, id: FuncID, ir_code: Vec<Span<IR>>) -> RawFunc {
+    pub fn compile_func(mut self, id: FuncID, ir_code: Vec<Span<IR>>) -> IRFunc {
         let blocks = self.create_blocks(ir_code);
 
         for block in blocks.into_iter().rev() {
@@ -227,7 +226,7 @@ impl FuncCompiler {
 
         self.backpatch_labels();
 
-        RawFunc::new(id, self.code, self.locals)
+        IRFunc::new(id, self.code, self.locals)
     }
 
     fn store_globals(&mut self) {

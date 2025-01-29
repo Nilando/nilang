@@ -1,4 +1,7 @@
-use crate::lexer::Op;
+use std::collections::HashMap;
+
+use crate::vm::ByteCode;
+use crate::parser::Op;
 use crate::symbol_map::SymID;
 
 pub type TempID = u16;
@@ -130,4 +133,34 @@ pub enum IR {
     Label {
         id: LabelID,
     },
+}
+
+#[derive(Debug)]
+pub struct IRFunc {
+    id: FuncID,
+    code: Vec<ByteCode>,
+    locals: Vec<IRConst>,
+}
+
+impl IRFunc {
+    pub fn new(id: FuncID, code: Vec<ByteCode>, locals: Vec<IRConst>) -> Self {
+        Self {
+            id, 
+            code,
+            locals
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct IRProgram {
+    funcs: HashMap<FuncID, IRFunc>,
+}
+
+impl IRProgram {
+    pub fn new(funcs: HashMap<FuncID, IRFunc>) -> Self {
+        Self {
+            funcs
+        }
+    }
 }
