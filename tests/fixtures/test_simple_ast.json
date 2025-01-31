@@ -1,0 +1,58 @@
+{
+  "stmts": [
+    {
+      "Assign": {
+        "dest": {
+          "item": {
+            "Value": {
+              "Ident": {
+                "bytes": [
+                  2,
+                  0,
+                  0
+                ]
+              }
+            }
+          },
+          "span": [
+            0,
+            1
+          ]
+        },
+        "src": {
+          "item": {
+            "Binop": {
+              "lhs": {
+                "item": {
+                  "Value": {
+                    "Int": 1
+                  }
+                },
+                "span": [
+                  4,
+                  5
+                ]
+              },
+              "op": "Plus",
+              "rhs": {
+                "item": {
+                  "Value": {
+                    "Int": 1
+                  }
+                },
+                "span": [
+                  8,
+                  9
+                ]
+              }
+            }
+          },
+          "span": [
+            4,
+            9
+          ]
+        }
+      }
+    }
+  ]
+}

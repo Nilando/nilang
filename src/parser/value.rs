@@ -2,7 +2,9 @@ use crate::parser::{Expr, Spanned};
 use crate::parser::stmt::Stmt;
 use crate::symbol_map::SymID;
 
-#[derive(Debug)]
+use serde::Serialize;
+
+#[derive(Debug, Serialize)]
 pub enum Value {
     Ident(SymID),
     Global(SymID),

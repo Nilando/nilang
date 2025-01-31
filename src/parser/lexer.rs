@@ -3,8 +3,9 @@ use std::io::BufRead;
 use std::io::{BufReader, Write};
 use crate::symbol_map::{SymbolMap, SymID};
 use super::spanned::Spanned;
+use serde::Serialize;
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Serialize)]
 pub enum Ctrl {
     LeftParen,
     RightParen,
@@ -20,7 +21,7 @@ pub enum Ctrl {
     Period,
 }
 
-#[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug, Serialize)]
 pub enum Op {
     Plus,
     Minus,
@@ -57,15 +58,15 @@ impl fmt::Display for Op {
     }
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Serialize)]
 pub enum LexError {
     Unknown,
     UnclosedString,
-    InputError(std::io::ErrorKind),
+    InputError(String),
     InvalidNumber,
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Serialize)]
 pub enum KeyWord {
     Fn,
     If,
@@ -80,7 +81,7 @@ pub enum KeyWord {
     Log,
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Serialize)]
 pub enum Token {
     Ctrl(Ctrl),
     Op(Op),
@@ -98,12 +99,12 @@ pub struct Lexer<'a> {
     tokens: VecDeque<Spanned<Token>>,
     pos: usize,
     eof: bool,
-    reader: Box<dyn BufRead>,
+    reader: Box<dyn BufRead + 'a>,
     pub buffer: String,
 }
 
 impl<'a> Lexer<'a> {
-    pub fn new(symbol_map: &'a mut SymbolMap, reader: Box<dyn BufRead>) -> Self {
+    pub fn new(symbol_map: &'a mut SymbolMap, reader: Box<dyn BufRead + 'a>) -> Self {
         Self {
             reader,
             symbol_map,
@@ -152,7 +153,7 @@ impl<'a> Lexer<'a> {
                 }
             }
             Err(err) => self.tokens.push_back(Spanned::new(
-                Token::Error(LexError::InputError(err.kind())),
+                Token::Error(LexError::InputError(err.kind().to_string())),
                 (self.pos, self.pos),
             )),
         }

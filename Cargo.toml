@@ -1,12 +1,12 @@
 [package]
-name = "nvm1"
+name = "nlang"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-ariadne = "0.4.1"
 chrono = "0.4.38"
-chumsky = { git = "https://github.com/zesterer/chumsky", features = ["label"]}
 clap = { version = "4.5.8", features = ["derive"] }
 sandpit = "0.3.0"
 colored = "2.1.0"
+serde = { version = "1.0.217", features = ["derive"] }
+serde_json = "1.0.138"

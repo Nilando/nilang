@@ -1,6 +1,7 @@
 use crate::parser::{Expr, Spanned};
+use serde::Serialize;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub enum Stmt {
     Expr(Box<Spanned<Expr>>),
     Return(Box<Spanned<Expr>>),

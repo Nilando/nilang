@@ -7,9 +7,9 @@ use crate::generator::Generator;
 use crate::symbol_map::SymbolMap;
 use crate::parser::{Lexer, Parser, Spanned, SyntaxError};
 use std::fs::File;
-use std::io::BufRead;
-use std::io::BufReader;
+use std::io::{BufRead, BufReader, Cursor, Write};
 use crate::vm::VM;
+use serde_json::to_string_pretty;
 
 pub struct Driver {
     config: Config
@@ -24,29 +24,61 @@ impl Driver {
 
     pub fn run(&self) {
         if let Some(file_name) = &self.config.file {
-            self.run_file(file_name);
+            let file = File::open(file_name.clone()).expect("Unable to read file.");
+            let reader = Box::new(BufReader::new(file));
+
+            self.read_input(reader);
+        } else if self.config.stdin {
+            let stdin = std::io::stdin();
+            let reader = Box::new(BufReader::new(stdin));
+
+            self.read_input(reader);
+        } else if let Some(inline) = &self.config.inline {
+            let reader = Box::new(BufReader::new(Cursor::new(inline)));
+
+            self.read_input(reader);
         } else {
             self.run_repl();
         }
     }
 
-    fn run_file(&self, file_name: &String) {
-        let file = File::open(file_name.clone()).expect("unable to read file");
-        let reader = Box::new(BufReader::new(file));
+    fn read_input(&self, reader: Box<impl BufRead>) {
         let mut symbol_map = SymbolMap::new();
-        let lexer = Lexer::new(&mut symbol_map, reader);
-        let mut parser = Parser::new(lexer);
 
-        let ast = match parser.build_ast() {
-            Ok(ast) => ast,
-            Err(errs) => {
-                self.display_syntax_errors(file_name, errs);
-                return;
+        let ast = {
+            let lexer = Lexer::new(&mut symbol_map, reader);
+            let mut parser = Parser::new(lexer);
+
+            match parser.build_ast() {
+                Ok(ast) => ast,
+                Err(_) => {
+                    todo!("handle errors")
+                }
             }
         };
 
+        if let Some(ref output_path) = self.config.ast_output_path {
+            match to_string_pretty(&ast) {
+                Ok(json) => {
+                    if output_path.to_str() == Some("stdout") {
+                        println!("{}", json);
+                    } else {
+                        let mut file = File::create(output_path).expect("Unable to create file.");
+                        file.write_all(json.as_bytes()).expect("Unable to write to file.");
+                    }
+                },
+                Err(e) => eprintln!("Failed to serialize AST: {}", e),
+            };
+        }
+
         let generator = Generator::new();
+
         let program = generator.gen_program(ast);
+
+        if self.config.dry_run {
+            return;
+        }
+
         let mut vm = VM::new(symbol_map, program);
 
         match vm.run() {
@@ -65,8 +97,9 @@ impl Driver {
         let reader = Box::new(BufReader::new(stdin));
         let local_time: DateTime<Local> = Local::now();
         let date = local_time.format("%Y-%m-%d %H:%M");
+        let version = env!("CARGO_PKG_VERSION");
 
-        println!("Nilang 0.0.0 [ {} ]", date);
+        println!("N-lang {} [ {} ]", version, date);
         println!("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
 
         let mut symbol_map = SymbolMap::new();

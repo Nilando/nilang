@@ -1,7 +1,8 @@
 use crate::parser::{Op, Spanned, Value};
 use crate::symbol_map::SymID;
+use serde::Serialize;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub enum Expr {
     Value(Value),
     Binop {

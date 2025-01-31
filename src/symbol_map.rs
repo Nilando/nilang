@@ -2,8 +2,9 @@ use std::collections::HashMap;
 use sandpit::TraceLeaf;
 
 const MAX_SYM_ID: usize = 0xFFFFFF;
+use serde::Serialize;
 
-#[derive(Copy, Clone, PartialEq, Eq, TraceLeaf, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq, TraceLeaf, Hash, Serialize)]
 pub struct SymID {
     bytes: [u8; 3]
 }

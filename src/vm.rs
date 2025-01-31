@@ -1,4 +1,4 @@
-mod context;
+mod executor;
 mod vm;
 mod global_store;
 mod stack;
@@ -9,5 +9,5 @@ mod value;
 mod bytecode;
 mod list;
 
-pub use vm::Executor as VM;
+pub use vm::Mutator as VM;
 pub use bytecode::{ByteCode, Reg};
