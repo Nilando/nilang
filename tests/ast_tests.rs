@@ -1,4 +1,4 @@
-use nlang::{Driver, Config};
+use nilang::{Driver, Config};
 use std::thread;
 
 fn get_test_name() -> String {
