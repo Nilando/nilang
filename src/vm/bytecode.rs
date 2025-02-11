@@ -1,12 +1,13 @@
 use sandpit::TraceLeaf;
 use crate::symbol_map::SymID;
-pub type Reg = u8;
+use serde::Serialize;
 
+pub type Reg = u8;
 pub type JumpOffset = i16;
 pub type LocalID = u16;
 pub type FuncID = usize;
 
-#[derive(TraceLeaf, Debug)]
+#[derive(Serialize, TraceLeaf, Debug)]
 pub enum ByteCode {
     Add { dest: Reg, op1: Reg, op2: Reg },
     Sub { dest: Reg, op1: Reg, op2: Reg },
@@ -44,5 +45,5 @@ pub enum ByteCode {
     LoadNull { dest: Reg },
     LoadMap { dest: Reg },
     LoadList { dest: Reg },
-    Noop
+    _Noop
 }

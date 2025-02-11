@@ -5,8 +5,8 @@ use std::collections::HashMap;
 pub struct Block {
     label: Option<usize>,
     code: Vec<Spanned<IR>>,
-    jump: Option<usize>,
-    continues: bool,
+    _jump: Option<usize>,
+    _continues: bool,
     liveness: HashMap<VarID, (Option<usize>, bool)>,
     return_var: Option<VarID>,
 }
@@ -18,8 +18,8 @@ impl Block {
             code: vec![],
             return_var: None,
             liveness: HashMap::new(),
-            jump,
-            continues,
+            _jump: jump,
+            _continues: continues,
         }
     }
 

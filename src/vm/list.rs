@@ -1,4 +1,4 @@
-use sandpit::{Mutator, Trace};
+use sandpit::Trace;
 use super::value::Value;
 use super::gc_vec::GcVec;
 
@@ -7,6 +7,7 @@ pub struct List<'gc> {
     inner: GcVec<'gc, Value<'gc>>
 }
 
+/*
 impl<'gc> List<'gc> {
     pub fn new(mu: &'gc Mutator) -> Self {
         Self {
@@ -14,3 +15,4 @@ impl<'gc> List<'gc> {
         }
     }
 }
+*/

@@ -1,4 +1,4 @@
-use sandpit::{gc::GcOpt, Mutator, Trace};
+use sandpit::{gc::GcOpt, Trace};
 
 #[derive(Trace)]
 pub struct GcVec<'gc, T: Trace> {
@@ -6,6 +6,7 @@ pub struct GcVec<'gc, T: Trace> {
     items: GcOpt<'gc, GcOpt<'gc, [T]>>
 }
 
+/*
 impl<'gc, T: Trace> GcVec<'gc, T> {
     pub fn new(mu: &'gc Mutator) -> Self {
         Self {
@@ -13,3 +14,4 @@ impl<'gc, T: Trace> GcVec<'gc, T> {
         }
     }
 }
+*/

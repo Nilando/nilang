@@ -7,7 +7,7 @@ pub struct GlobalStore<'gc> {
 }
 
 impl<'gc> GlobalStore<'gc> {
-    pub fn new(m: &'gc Mutator) -> Self {
+    pub fn new(_m: &'gc Mutator) -> Self {
         todo!()
     }
 }

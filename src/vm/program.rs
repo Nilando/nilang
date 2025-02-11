@@ -10,7 +10,7 @@ pub struct Program<'gc> {
 }
 
 impl<'gc> Program<'gc> {
-    pub fn new(ir_program: IRProgram, m: &'gc Mutator) -> Self {
+    pub fn new(_ir_program: IRProgram, _m: &'gc Mutator) -> Self {
         todo!()
     }
 }

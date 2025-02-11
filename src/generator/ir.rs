@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use serde::Serialize;
 
 use crate::vm::ByteCode;
 use crate::parser::Op;
@@ -16,7 +17,7 @@ pub enum VarID {
     Global(SymID),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub enum IRConst {
     String(String),
     Float(f64),
@@ -57,6 +58,7 @@ impl IRVar {
     }
 }
 
+/*
 pub struct LiveVar {
     next_use: Option<usize>,
     live: bool,
@@ -76,6 +78,7 @@ impl LiveVar {
         }
     }
 }
+*/
 
 #[derive(Debug)]
 pub enum IR {
@@ -134,7 +137,7 @@ pub enum IR {
     },
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct IRFunc {
     id: FuncID,
     code: Vec<ByteCode>,
@@ -151,7 +154,7 @@ impl IRFunc {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct IRProgram {
     funcs: HashMap<FuncID, IRFunc>,
 }

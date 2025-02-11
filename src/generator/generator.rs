@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use crate::parser::{Expr, Spanned, Value, AST, Stmt};
 
 struct FuncGenerator {
-    id: FuncID,
+    _id: FuncID,
     code: Vec<Spanned<IR>>,
     label_counter: usize,
     label_stack: Vec<LabelID>
@@ -15,7 +15,7 @@ struct FuncGenerator {
 impl FuncGenerator {
     pub fn new(id: usize) -> Self {
         Self {
-            id,
+            _id: id,
             code: vec![],
             label_stack: vec![],
             label_counter: 0,

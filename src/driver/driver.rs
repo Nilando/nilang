@@ -1,4 +1,6 @@
 use super::config::Config;
+use crate::parser::AST;
+use crate::generator::IRProgram;
 
 use chrono::{DateTime, Local};
 
@@ -44,36 +46,13 @@ impl Driver {
 
     fn read_input(&self, reader: Box<impl BufRead>) {
         let mut symbol_map = SymbolMap::new();
+        let ast = self.parse_ast(&mut symbol_map, reader);
 
-        let ast = {
-            let lexer = Lexer::new(&mut symbol_map, reader);
-            let mut parser = Parser::new(lexer);
-
-            match parser.build_ast() {
-                Ok(ast) => ast,
-                Err(_) => {
-                    todo!("handle syntax errors")
-                }
-            }
-        };
-
-        if let Some(ref output_path) = self.config.ast_output_path {
-            match to_string_pretty(&ast) {
-                Ok(json) => {
-                    if output_path.to_str() == Some("stdout") {
-                        println!("{}", json);
-                    } else {
-                        let mut file = File::create(output_path).expect("Unable to create file.");
-                        file.write_all(json.as_bytes()).expect("Unable to write to file.");
-                    }
-                },
-                Err(e) => eprintln!("Failed to serialize AST: {}", e),
-            };
+        if self.config.dry_run && self.config.bytecode_output_path.is_none() {
+            return;
         }
 
-        let generator = Generator::new();
-
-        let program = generator.gen_program(ast);
+        let program = self.generate_program(ast);
 
         if self.config.dry_run {
             return;
@@ -82,7 +61,7 @@ impl Driver {
         let mut vm = VM::new(symbol_map, program);
 
         match vm.run() {
-            Ok(val) => {
+            Ok(_val) => {
                 // print val?
             }
             Err(_) => {
@@ -119,14 +98,14 @@ impl Driver {
             // println!("{:#?}", stmt);
 
             let generator = Generator::new();
-            let program = generator.gen_program(ast);
+            let _program = generator.gen_program(ast);
 
             // let mut vm = VM::new(symbol_map.clone(), program);
             // vm.run()
         }
     }
 
-    fn display_syntax_errors(&self, file_name: &String, mut errs: Vec<Spanned<SyntaxError>>) {
+    fn _display_syntax_errors(&self, file_name: &String, mut errs: Vec<Spanned<SyntaxError>>) {
         errs.sort_by(|b, a| a.span.0.partial_cmp(&b.span.0).unwrap());
 
         let mut err = errs.pop().unwrap();
@@ -179,5 +158,66 @@ impl Driver {
                 panic!("Invalid Error Span");
             }
         }
+    }
+
+    fn output_bytecode(&self, program: &IRProgram) {
+        let output_path = self.config.bytecode_output_path.as_ref().unwrap();
+
+        match to_string_pretty(&program) {
+            Ok(json) => {
+                if output_path.to_str() == Some("stdout") {
+                    println!("{}", json);
+                } else {
+                    let mut file = File::create(output_path).expect("Unable to create file.");
+                    file.write_all(json.as_bytes()).expect("Unable to write to file.");
+                }
+            },
+            Err(e) => eprintln!("Failed to serialize AST: {}", e),
+        };
+    }
+
+    fn output_ast(&self, ast: &AST) {
+        let output_path = self.config.ast_output_path.as_ref().unwrap();
+
+        match to_string_pretty(&ast) {
+            Ok(json) => {
+                if output_path.to_str() == Some("stdout") {
+                    println!("{}", json);
+                } else {
+                    let mut file = File::create(output_path).expect("Unable to create file.");
+                    file.write_all(json.as_bytes()).expect("Unable to write to file.");
+                }
+            },
+            Err(e) => eprintln!("Failed to serialize AST: {}", e),
+        };
+    }
+
+    fn parse_ast(&self, symbol_map: &mut SymbolMap, reader: Box<impl BufRead>) -> AST {
+        let lexer = Lexer::new(symbol_map, reader);
+        let mut parser = Parser::new(lexer);
+
+        match parser.build_ast() {
+            Ok(ast) => {
+                if self.config.ast_output_path.is_some() {
+                    self.output_ast(&ast);
+                }
+
+                ast
+            }
+            Err(_) => {
+                todo!("handle syntax errors")
+            }
+        }
+    }
+    
+    fn generate_program(&self, ast: AST) -> IRProgram {
+        let generator = Generator::new();
+        let program = generator.gen_program(ast);
+
+        if self.config.bytecode_output_path.is_some() {
+            self.output_bytecode(&program);
+        }
+
+        program
     }
 }

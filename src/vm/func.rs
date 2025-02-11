@@ -1,4 +1,4 @@
-use crate::symbol_map::SymID;
+// use crate::symbol_map::SymID;
 use super::bytecode::{FuncID, ByteCode};
 use super::gc_vec::GcVec;
 
@@ -16,10 +16,13 @@ pub enum Const<'gc> {
     // TODO: add list and map as constants
     //String(GcString<'gc>),
     
-    Func(Gc<'gc, Func<'gc>>),
+
+    _Func(Gc<'gc, Func<'gc>>),
+    /*
     Float(f64),
     Int(isize),
     Bool(bool),
     Sym(SymID),
     Null,
+    */
 }
