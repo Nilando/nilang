@@ -6,11 +6,7 @@
           "item": {
             "Value": {
               "Ident": {
-                "bytes": [
-                  2,
-                  0,
-                  0
-                ]
+                "value": 2
               }
             }
           },
@@ -32,11 +28,7 @@
                             "item": {
                               "Value": {
                                 "Ident": {
-                                  "bytes": [
-                                    0,
-                                    0,
-                                    0
-                                  ]
+                                  "value": 0
                                 }
                               }
                             },
@@ -50,11 +42,7 @@
                             "item": {
                               "Value": {
                                 "Ident": {
-                                  "bytes": [
-                                    0,
-                                    0,
-                                    0
-                                  ]
+                                  "value": 0
                                 }
                               }
                             },
