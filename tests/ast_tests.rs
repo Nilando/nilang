@@ -8,12 +8,10 @@ fn get_test_name() -> String {
         .to_string()
 }
 
-#[test]
-fn test_simple_ast() {
+fn test_ast_helper(program: &str) {
     let project_path = std::env!("CARGO_MANIFEST_DIR");
     let test_name = get_test_name();
-    let program = "a = 1 + 1;";
-    let expected_file = format!("{}/tests/fixtures/{}.json", project_path, test_name);
+    let expected_file = format!("{}/tests/fixtures/ast/{}.json", project_path, test_name);
     let output_file = format!("{}/target/test_outputs/{}.json", project_path, test_name);
     let args = vec!["nlang", "-a", &output_file, "-i", program, "--dry-run"];
     let config = Config::try_from(args).unwrap();
@@ -30,4 +28,9 @@ fn test_simple_ast() {
         generated_content, expected_content,
         "Generated AST does not match fixture"
     );
+}
+
+#[test]
+fn test_simple_ast() {
+    test_ast_helper("a = 1 + 1;");
 }

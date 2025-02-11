@@ -52,7 +52,7 @@ impl Driver {
             match parser.build_ast() {
                 Ok(ast) => ast,
                 Err(_) => {
-                    todo!("handle errors")
+                    todo!("handle syntax errors")
                 }
             }
         };
