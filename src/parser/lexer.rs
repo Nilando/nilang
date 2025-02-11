@@ -1,6 +1,5 @@
 use std::collections::VecDeque;
 use std::io::BufRead;
-use std::io::{BufReader, Write};
 use crate::symbol_map::{SymbolMap, SymID};
 use super::spanned::Spanned;
 use serde::Serialize;
@@ -360,6 +359,7 @@ impl<'a> Lexer<'a> {
 mod tests {
     use super::*;
     use std::io::Cursor;
+    use std::io::BufReader;
 
     #[test]
     fn test_lexer_simple_input() {

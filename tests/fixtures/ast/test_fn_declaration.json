@@ -1,0 +1,86 @@
+{
+  "stmts": [
+    {
+      "Assign": {
+        "dest": {
+          "item": {
+            "Value": {
+              "Ident": {
+                "bytes": [
+                  2,
+                  0,
+                  0
+                ]
+              }
+            }
+          },
+          "span": [
+            0,
+            1
+          ]
+        },
+        "src": {
+          "item": {
+            "Value": {
+              "Func": {
+                "stmts": [
+                  {
+                    "Return": {
+                      "item": {
+                        "Binop": {
+                          "lhs": {
+                            "item": {
+                              "Value": {
+                                "Ident": {
+                                  "bytes": [
+                                    0,
+                                    0,
+                                    0
+                                  ]
+                                }
+                              }
+                            },
+                            "span": [
+                              16,
+                              17
+                            ]
+                          },
+                          "op": "Plus",
+                          "rhs": {
+                            "item": {
+                              "Value": {
+                                "Ident": {
+                                  "bytes": [
+                                    0,
+                                    0,
+                                    0
+                                  ]
+                                }
+                              }
+                            },
+                            "span": [
+                              20,
+                              21
+                            ]
+                          }
+                        }
+                      },
+                      "span": [
+                        16,
+                        21
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "span": [
+            4,
+            6
+          ]
+        }
+      }
+    }
+  ]
+}

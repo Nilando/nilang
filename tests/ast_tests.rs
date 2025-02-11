@@ -34,3 +34,8 @@ fn test_ast_helper(program: &str) {
 fn test_simple_ast() {
     test_ast_helper("a = 1 + 1;");
 }
+
+#[test]
+fn test_fn_declaration() {
+    test_ast_helper("a = fn { return @ + @; };");
+}
