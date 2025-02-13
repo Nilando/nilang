@@ -1,4 +1,5 @@
 use std::fs::File;
+use std::path::Path;
 use std::process::Command;
 
 fn integration_test_runner(program_name: &str, expected_status: bool) {
@@ -18,6 +19,12 @@ fn integration_test_runner(program_name: &str, expected_status: bool) {
     let expected_error = format!("{}/tests/fixtures/expected_error/{}.txt", project_root, program_name);
     let generated_error = format!("{}/tests/fixtures/generated_error/{}.txt", project_root, program_name);
     let program = format!("{}/tests/programs/{}.nl", project_root, program_name);
+
+    std::fs::create_dir_all(Path::new(&generated_ast).parent().unwrap()).expect("failed to create dir");
+    std::fs::create_dir_all(Path::new(&generated_bytecode).parent().unwrap()).expect("failed to create dir");
+    std::fs::create_dir_all(Path::new(&generated_output).parent().unwrap()).expect("failed to create dir");
+    std::fs::create_dir_all(Path::new(&generated_error).parent().unwrap()).expect("failed to create dir");
+
     let generated_output_file = File::create(&generated_output).expect("Failed to create file");
     let generated_error_file = File::create(&generated_error).expect("Failed to create file");
     let args = ["-a", &generated_ast, "-b", &generated_bytecode, &program];

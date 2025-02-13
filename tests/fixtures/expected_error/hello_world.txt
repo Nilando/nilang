@@ -1,4 +1,3 @@
-/home/lando/Dev/nilang/tests/programs/hello_world.nl
 thread 'main' panicked at src/vm/stack.rs:15:9:
 not yet implemented
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
