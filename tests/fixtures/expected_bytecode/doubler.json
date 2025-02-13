@@ -1,0 +1,117 @@
+{
+  "funcs": {
+    "1": {
+      "id": 1,
+      "code": [
+        {
+          "LoadLocal": {
+            "dest": 1,
+            "local_id": 1
+          }
+        },
+        {
+          "LoadInt": {
+            "dest": 2,
+            "val": 2
+          }
+        },
+        {
+          "LoadInt": {
+            "dest": 3,
+            "val": 1024
+          }
+        },
+        {
+          "Lte": {
+            "dest": 4,
+            "op1": 2,
+            "op2": 3
+          }
+        },
+        {
+          "Jnt": {
+            "cond": 4,
+            "offset": 5
+          }
+        },
+        {
+          "Print": {
+            "src": 2
+          }
+        },
+        {
+          "Copy": {
+            "dest": 5,
+            "src": 2
+          }
+        },
+        {
+          "Call": {
+            "call_site": 5,
+            "func": 1
+          }
+        },
+        {
+          "Jump": {
+            "offset": -4
+          }
+        },
+        {
+          "LoadNull": {
+            "dest": 3
+          }
+        },
+        {
+          "Copy": {
+            "dest": 0,
+            "src": 3
+          }
+        },
+        "Return"
+      ],
+      "locals": [
+        {
+          "Func": 0
+        }
+      ]
+    },
+    "0": {
+      "id": 0,
+      "code": [
+        {
+          "LoadInt": {
+            "dest": 1,
+            "val": 2
+          }
+        },
+        {
+          "Mul": {
+            "dest": 2,
+            "op1": 0,
+            "op2": 1
+          }
+        },
+        {
+          "Copy": {
+            "dest": 0,
+            "src": 2
+          }
+        },
+        "Return",
+        {
+          "LoadNull": {
+            "dest": 3
+          }
+        },
+        {
+          "Copy": {
+            "dest": 0,
+            "src": 3
+          }
+        },
+        "Return"
+      ],
+      "locals": []
+    }
+  }
+}

@@ -78,3 +78,8 @@ fn update_integration_test(program_name: &str, expected_status: bool) {
 fn test_hello_world() {
     integration_test_runner("hello_world", false);
 }
+
+#[test]
+fn test_doubler() {
+    integration_test_runner("doubler", false);
+}

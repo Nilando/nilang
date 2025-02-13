@@ -1,0 +1,209 @@
+{
+  "stmts": [
+    {
+      "Assign": {
+        "dest": {
+          "item": {
+            "Value": {
+              "Ident": {
+                "value": 2
+              }
+            }
+          },
+          "span": [
+            0,
+            7
+          ]
+        },
+        "src": {
+          "item": {
+            "Value": {
+              "Func": {
+                "stmts": [
+                  {
+                    "Return": {
+                      "item": {
+                        "Binop": {
+                          "lhs": {
+                            "item": {
+                              "Value": {
+                                "Ident": {
+                                  "value": 0
+                                }
+                              }
+                            },
+                            "span": [
+                              22,
+                              23
+                            ]
+                          },
+                          "op": "Multiply",
+                          "rhs": {
+                            "item": {
+                              "Value": {
+                                "Int": 2
+                              }
+                            },
+                            "span": [
+                              26,
+                              27
+                            ]
+                          }
+                        }
+                      },
+                      "span": [
+                        22,
+                        27
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "span": [
+            10,
+            12
+          ]
+        }
+      }
+    },
+    {
+      "Assign": {
+        "dest": {
+          "item": {
+            "Value": {
+              "Ident": {
+                "value": 3
+              }
+            }
+          },
+          "span": [
+            32,
+            33
+          ]
+        },
+        "src": {
+          "item": {
+            "Value": {
+              "Int": 2
+            }
+          },
+          "span": [
+            36,
+            37
+          ]
+        }
+      }
+    },
+    {
+      "While": {
+        "cond": {
+          "item": {
+            "Binop": {
+              "lhs": {
+                "item": {
+                  "Value": {
+                    "Ident": {
+                      "value": 3
+                    }
+                  }
+                },
+                "span": [
+                  46,
+                  47
+                ]
+              },
+              "op": "Lte",
+              "rhs": {
+                "item": {
+                  "Value": {
+                    "Int": 1024
+                  }
+                },
+                "span": [
+                  51,
+                  55
+                ]
+              }
+            }
+          },
+          "span": [
+            46,
+            55
+          ]
+        },
+        "stmts": [
+          {
+            "Print": {
+              "item": {
+                "Value": {
+                  "Ident": {
+                    "value": 3
+                  }
+                }
+              },
+              "span": [
+                66,
+                67
+              ]
+            }
+          },
+          {
+            "Assign": {
+              "dest": {
+                "item": {
+                  "Value": {
+                    "Ident": {
+                      "value": 3
+                    }
+                  }
+                },
+                "span": [
+                  73,
+                  74
+                ]
+              },
+              "src": {
+                "item": {
+                  "Call": {
+                    "calle": {
+                      "item": {
+                        "Value": {
+                          "Ident": {
+                            "value": 2
+                          }
+                        }
+                      },
+                      "span": [
+                        77,
+                        84
+                      ]
+                    },
+                    "input": {
+                      "item": {
+                        "Value": {
+                          "Ident": {
+                            "value": 3
+                          }
+                        }
+                      },
+                      "span": [
+                        85,
+                        86
+                      ]
+                    }
+                  }
+                },
+                "span": [
+                  77,
+                  86
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
