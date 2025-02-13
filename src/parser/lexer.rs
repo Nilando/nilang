@@ -77,7 +77,7 @@ pub enum KeyWord {
     Null,
     False,
     True,
-    Log,
+    Print,
 }
 
 #[derive(Clone, PartialEq, Debug, Serialize)]
@@ -250,7 +250,7 @@ impl<'a> Lexer<'a> {
                     match str.as_str() {
                         "fn" => Token::KeyWord(KeyWord::Fn),
                         "if" => Token::KeyWord(KeyWord::If),
-                        "log" => Token::KeyWord(KeyWord::Log),
+                        "print" => Token::KeyWord(KeyWord::Print),
                         "else" => Token::KeyWord(KeyWord::Else),
                         "null" => Token::KeyWord(KeyWord::Null),
                         "true" => Token::KeyWord(KeyWord::True),
@@ -367,9 +367,9 @@ mod tests {
             x = 42;
             y = 3.14;
             if x > y {
-                log "x is greater";
+                print("x is greater");
             } else {
-                log "y is greater";
+                print("y is greater");
             }
         }"#;
         let mut symbol_map = SymbolMap::new();
@@ -392,14 +392,18 @@ mod tests {
             Token::Op(Op::Gt),
             Token::Ident(symbol_map.get_id("y")),
             Token::Ctrl(Ctrl::LeftCurly),
-            Token::KeyWord(KeyWord::Log),
+            Token::KeyWord(KeyWord::Print),
+            Token::Ctrl(Ctrl::LeftParen),
             Token::String("x is greater".to_string()),
+            Token::Ctrl(Ctrl::RightParen),
             Token::Ctrl(Ctrl::SemiColon),
             Token::Ctrl(Ctrl::RightCurly),
             Token::KeyWord(KeyWord::Else),
             Token::Ctrl(Ctrl::LeftCurly),
-            Token::KeyWord(KeyWord::Log),
+            Token::KeyWord(KeyWord::Print),
+            Token::Ctrl(Ctrl::LeftParen),
             Token::String("y is greater".to_string()),
+            Token::Ctrl(Ctrl::RightParen),
             Token::Ctrl(Ctrl::SemiColon),
             Token::Ctrl(Ctrl::RightCurly),
             Token::Ctrl(Ctrl::RightCurly),

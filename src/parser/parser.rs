@@ -130,12 +130,12 @@ impl<'a> Parser<'a> {
                 self.expect(Token::Ctrl(Ctrl::SemiColon), ';')?;
                 return Ok(Stmt::Return(expr));
             }
-            Token::KeyWord(KeyWord::Log) => {
+            Token::KeyWord(KeyWord::Print) => {
                 let _ = self.lexer.get_token();
                 let expr = Box::new(self.parse_expr()?);
 
                 self.expect(Token::Ctrl(Ctrl::SemiColon), ';')?;
-                return Ok(Stmt::Log(expr));
+                return Ok(Stmt::Print(expr));
             }
             Token::KeyWord(KeyWord::Continue) | Token::KeyWord(KeyWord::Break)=> {
                 let token = self.lexer.get_token();

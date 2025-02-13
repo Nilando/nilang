@@ -10,31 +10,19 @@
           }
         },
         {
+          "Print": {
+            "src": 1
+          }
+        },
+        {
           "LoadNull": {
             "dest": 2
           }
         },
         {
           "Copy": {
-            "dest": 2,
-            "src": 1
-          }
-        },
-        {
-          "Call": {
-            "call_site": 2,
-            "func": 2
-          }
-        },
-        {
-          "LoadNull": {
-            "dest": 3
-          }
-        },
-        {
-          "Copy": {
             "dest": 0,
-            "src": 3
+            "src": 2
           }
         },
         "Return"

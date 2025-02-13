@@ -88,9 +88,9 @@ impl Generator {
                 self.push_ir(IR::Return { src: var.item }, var.span);
                 self.temp_counter = 0;
             }
-            Stmt::Log(expr) => {
+            Stmt::Print(expr) => {
                 let var = self.generate_expr(*expr);
-                let ir = IR::Log { src: var.item };
+                let ir = IR::Print { src: var.item };
 
                 self.push_ir(ir, var.span);
                 self.temp_counter = 0;

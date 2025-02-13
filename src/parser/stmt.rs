@@ -5,7 +5,7 @@ use serde::Serialize;
 pub enum Stmt {
     Expr(Box<Spanned<Expr>>),
     Return(Box<Spanned<Expr>>),
-    Log(Box<Spanned<Expr>>),
+    Print(Box<Spanned<Expr>>),
     Assign {
         dest: Box<Spanned<Expr>>,
         src: Box<Spanned<Expr>>,

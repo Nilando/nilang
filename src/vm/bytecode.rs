@@ -32,7 +32,7 @@ pub enum ByteCode {
     LoadGlobal { dest: Reg, sym: SymID },
     StoreGlobal { dest: Reg, sym: SymID },
 
-    Log { src: Reg },
+    Print { src: Reg },
 
     Jnt { cond: Reg, offset: JumpOffset },
     Jump { offset: JumpOffset },

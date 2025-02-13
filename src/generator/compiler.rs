@@ -86,10 +86,10 @@ impl FuncCompiler {
 
                 self.code.push(ByteCode::LoadMap { dest });
             }
-            IR::Log { src } => {
+            IR::Print { src } => {
                 let src = self.load_var(src);
 
-                self.code.push(ByteCode::Log { src });
+                self.code.push(ByteCode::Print { src });
             }
             IR::ObjStore { obj, key, val } => {
                 let obj = self.load_var(obj);
@@ -530,7 +530,7 @@ impl FuncCompiler {
                     current_block.update_dest_liveness(dest);
                     current_block.update_operand_liveness(src, i);
                 }
-                IR::Log { ref mut src } => {
+                IR::Print { ref mut src } => {
                     current_block.update_operand_liveness(src, i);
                 }
                 IR::NewList { ref mut dest } | IR::NewMap { ref mut dest } => {

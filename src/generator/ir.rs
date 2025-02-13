@@ -104,7 +104,7 @@ pub enum IR {
     NewMap {
         dest: IRVar,
     },
-    Log {
+    Print {
         src: IRVar,
     },
     Copy {
