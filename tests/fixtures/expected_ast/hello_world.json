@@ -1,0 +1,40 @@
+{
+  "stmts": [
+    {
+      "Expr": {
+        "item": {
+          "Call": {
+            "calle": {
+              "item": {
+                "Value": {
+                  "Ident": {
+                    "value": 2
+                  }
+                }
+              },
+              "span": [
+                0,
+                5
+              ]
+            },
+            "input": {
+              "item": {
+                "Value": {
+                  "String": "hello world"
+                }
+              },
+              "span": [
+                6,
+                19
+              ]
+            }
+          }
+        },
+        "span": [
+          0,
+          19
+        ]
+      }
+    }
+  ]
+}
