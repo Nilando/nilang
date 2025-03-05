@@ -229,36 +229,29 @@ impl<'a> Parser<'a> {
                     }
                 }
                 Token::Ctrl(Ctrl::LeftParen) => {
-                    todo!()
-                        /*
+                    let mut args = vec![];
                     let _ = self.lexer.get_token();
-                    if let Token::Ctrl(Ctrl::RightParen) = self.lexer.peek().item {
-                        let rp = self.lexer.get_token();
-                        let span = (lhs.span.0, rp.span.1);
 
-                        // TODO: assert lhs is either a fn, ident, global, access, or index
+                    loop {
+                        if let Token::Ctrl(Ctrl::RightParen) = self.lexer.peek().item {
+                            let rp = self.lexer.get_token();
+                            let span = (lhs.span.0, rp.span.1);
 
-                        lhs = Spanned::new(
-                            Expr::Call {
-                                calle: Box::new(lhs),
-                                input: None,
-                            },
-                            span,
-                        );
-                    } else {
-                        let input = self.parse_expr()?;
-                        let span = (lhs.span.0, input.span.1);
-                        self.expect(Token::Ctrl(Ctrl::RightParen), ')')?;
+                            lhs = Spanned::new(
+                                Expr::Call {
+                                    calle: Box::new(lhs),
+                                    args,
+                                },
+                                span,
+                            );
 
-                        lhs = Spanned::new(
-                            Expr::Call {
-                                calle: Box::new(lhs),
-                                input: Some(Box::new(input)),
-                            },
-                            span,
-                        );
+                            break;
+                        } else {
+                            let arg = self.parse_expr()?;
+
+                            args.push(Box::new(arg));
+                        }
                     }
-                    */
                 }
                 Token::Ctrl(Ctrl::LeftBracket) => {
                     let _ = self.lexer.get_token();
@@ -298,8 +291,8 @@ impl<'a> Parser<'a> {
             Token::KeyWord(KeyWord::Fn) => {
                 let span;
                 let parsing_loop = self.parsing_loop;
-                self.parsing_loop = false;
 
+                self.parsing_loop = false;
                 self.expect(Token::Ctrl(Ctrl::LeftParen), '(')?;
 
                 let mut inputs = vec![];
