@@ -1,28 +1,30 @@
-// use crate::symbol_map::SymID;
+use crate::symbol_map::SymID;
 use super::bytecode::{FuncID, ByteCode};
-use super::gc_vec::GcVec;
 
-use sandpit::{Trace, gc::Gc};
+use sandpit::{Trace, Gc};
 
 #[derive(Trace)]
 pub struct Func<'gc> {
     id: FuncID,
-    code: GcVec<'gc, ByteCode>,
-    locals: GcVec<'gc, Const<'gc>>,
+    code: Gc<'gc, [ByteCode]>,
+    pub locals: Gc<'gc, [Local<'gc>]>,
 }
 
-#[derive(Trace)]
-pub enum Const<'gc> {
-    // TODO: add list and map as constants
-    //String(GcString<'gc>),
-    
+impl<'gc> Func<'gc> {
+    pub fn new(id: FuncID, code: Gc<'gc, [ByteCode]>, locals: Gc<'gc, [Local<'gc>]>) -> Self {
+        Self {
+            id,
+            code,
+            locals
+        }
+    }
+}
 
-    _Func(Gc<'gc, Func<'gc>>),
-    /*
-    Float(f64),
-    Int(isize),
-    Bool(bool),
+// values that are constant but don't fit into the bytecode
+#[derive(Trace)]
+pub enum Local<'gc> {
+    Func { gc: Gc<'gc, Func<'gc>> },
+    Num(f64),
     Sym(SymID),
-    Null,
-    */
+    // String (VMStr<'gc>)
 }

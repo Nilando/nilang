@@ -1,5 +1,6 @@
+use crate::symbol_map::SymID;
 use super::block::Block;
-use super::ir::{IR, IRVar, IRConst, VarID, FuncID, LabelID, LocalID, IRFunc};
+use super::ir::{IR, IRVar, IRConst, VarID, FuncID, LabelID, LocalID, IRFunc, IRLocal};
 use std::collections::HashMap;
 
 use crate::parser::Op;
@@ -9,7 +10,7 @@ use crate::symbol_map::INPUT_SYM_ID;
 
 pub struct FuncCompiler {
     code: Vec<ByteCode>,
-    locals: Vec<IRConst>,
+    locals: Vec<IRLocal>,
     var_data: HashMap<VarID, VarData>,
     reg_data: [Vec<VarID>; 256],
     loaded_regs: Vec<Reg>,
@@ -160,7 +161,9 @@ impl FuncCompiler {
 
                 self.label_positions.insert(id, label_idx);
             }
-            IR::Call { dest, calle, input } => {
+            IR::Call { dest, calle, args } => {
+                todo!()
+                    /*
                 // calle just needs to be loaded doesn't really matter where
                 let calle_reg = self.load_var(calle);
 
@@ -174,6 +177,7 @@ impl FuncCompiler {
                 self.assign_var_to_reg(dest, call_site);
                 
                 self.code.push(ByteCode::Call { call_site, func: calle_reg });
+                */
             }
             IR::Return { src } => {
                 // reg 0 is special cased,
@@ -196,7 +200,8 @@ impl FuncCompiler {
                         match src.id {
                             VarID::Global(id) => {
                                 // load global into reg 0
-                                self.code.push(ByteCode::LoadGlobal { dest: 0, sym: id  } )
+                                todo!("small sym support");
+                                // self.code.push(ByteCode::LoadGlobal { dest: 0, sym: id  } )
                             }
                             _ => {
                                 // load null into reg 0
@@ -252,9 +257,12 @@ impl FuncCompiler {
                 // only generate a store instr if the value is stored in a reg,
                 // and also is not found in the global store
                 if needs_store {
+                    todo!("add small sym support")
+                        /*
                     if let Some(dest) = reg {
                         self.code.push(ByteCode::StoreGlobal { dest, sym: *sym } );
                     }
+                    */
                 }
             }
         }
@@ -298,6 +306,8 @@ impl FuncCompiler {
     }
 
     fn load_call_site(&mut self, var: IRVar) -> Reg {
+        todo!("this needs to be completely rewritten now that func can have multiple args")
+            /*
         let callsite = self.find_callsite();
 
         match self.var_data.get(&var.id) {
@@ -326,6 +336,7 @@ impl FuncCompiler {
         }
         
         callsite
+        */
     }
 
     fn find_callsite(&self) -> Reg {
@@ -364,6 +375,9 @@ impl FuncCompiler {
 
         match var.id {
             VarID::Global(id) => {
+                todo!()
+                /*
+                let reg = self.get_reg();
                 self.code.push(ByteCode::LoadGlobal { dest: reg, sym: id });
                 self.reg_data[reg as usize] = vec![var.id];
 
@@ -374,6 +388,7 @@ impl FuncCompiler {
                 }
 
                 locations.push(Location::Reg(reg));
+                */
             }
             VarID::Temp(_) | VarID::Local(_) => {
                 self.code.push(ByteCode::LoadNull { dest: reg });
@@ -434,24 +449,39 @@ impl FuncCompiler {
                         self.code.push(ByteCode::LoadInt { dest, val });
                     }
                     Err(_) => {
-                        let local_id = self.push_local(ir_const);
-                        self.code.push(ByteCode::LoadLocal { dest, local_id });
+                        todo!("convert IRConst to IRLocal");
+                        //let local_id = self.push_local(ir_const);
+                        //self.code.push(ByteCode::LoadLocal { dest, local_id });
                     }
                 }
             }
             IRConst::Bool(val) => self.code.push(ByteCode::LoadBool { dest, val }),
-            IRConst::Sym(sym_id) => self.code.push(ByteCode::LoadSym { dest, sym_id }),
+            IRConst::Sym(sym_id) => {
+                /*
+                match TryInto::<i16>::try_into(i) {
+                    Ok(val) => {
+                        self.code.push(ByteCode::LoadInt { dest, val });
+                    }
+                    Err(_) => {
+                        let local_id = self.push_local(ir_const);
+                        self.code.push(ByteCode::LoadLocal { dest, local_id });
+                    }
+                }
+                self.code.push(ByteCode::LoadSym { dest, sym_id })
+                */
+            }
             IRConst::Null => self.code.push(ByteCode::LoadNull { dest }),
             IRConst::Func(_) 
             | IRConst::String(_)
             | IRConst::Float(_) => {
-                let local_id = self.push_local(ir_const);
-                self.code.push(ByteCode::LoadLocal { dest, local_id });
+                todo!("convert IRConst to IRLocal");
+                // let local_id = self.push_local(IRLocal::new(ir_const));
+                // self.code.push(ByteCode::LoadLocal { dest, local_id });
             }
         }
     }
 
-    fn push_local(&mut self, ir_const: IRConst) -> LocalID {
+    fn push_local(&mut self, ir_const: IRLocal) -> LocalID {
         self.locals.push(ir_const);
         self.locals.len().try_into().expect("GENERATOR ERROR: TOO MANY LOCALS IN FUNC")
     }
@@ -548,9 +578,10 @@ impl FuncCompiler {
                 IR::Call {
                     ref mut dest,
                     ref mut calle,
-                    ref mut input,
+                    ref mut args,
                 } => {
-
+                    todo!();
+                    /*
                     // TODO: I THINK THIS LOGIC IS WRONG
                     if !current_block.is_empty() {
                         blocks.push(current_block);
@@ -571,6 +602,7 @@ impl FuncCompiler {
                     current_block = Block::new(None, true);
 
                     continue;
+                    */
                 }
                 IR::Jump { label } => {
                     if !current_block.is_empty() {

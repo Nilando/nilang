@@ -168,18 +168,18 @@ checksum = "06ea2b9bc92be3c2baa9334a323ebca2d6f074ff852cd1d7b11064035cd3868f"
 
 [[package]]
 name = "crossbeam-channel"
-version = "0.5.13"
+version = "0.5.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "33480d6946193aa8033910124896ca395333cae7e2d1113d1fef6c3272217df2"
+checksum = "06ba6d68e24814cb8de6bb986db8222d3a027d15872cabc0d18817bc3c0e4471"
 dependencies = [
  "crossbeam-utils",
 ]
 
 [[package]]
 name = "crossbeam-utils"
-version = "0.8.20"
+version = "0.8.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "22ec99545bb0ed0ea7bb9b8e1e9122ea386ff8a48c0922e43f36d45ab09e0e80"
+checksum = "d0a5c400df2834b80a4c3327b3aad3a4c4cd4de0629063962b03235697506a28"
 
 [[package]]
 name = "heck"
@@ -284,9 +284,9 @@ dependencies = [
 
 [[package]]
 name = "nimix"
-version = "0.1.0"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9b4652fe18b55a6c8f055478793862c00a30535fc81ed11b8fef96a4a96b5e6a"
+checksum = "d56961b106692bf2613074a405ed25b0978fd4738936851a23259580df62cd8c"
 
 [[package]]
 name = "num-traits"
@@ -330,8 +330,7 @@ checksum = "6ea1a2d0a644769cc99faa24c3ad26b379b786fe7c36fd3c546254801650e6dd"
 [[package]]
 name = "sandpit"
 version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9f7ef5c5a1913b8626bf1981990f1dbc894c08d49f3951ff2435198c20b353a8"
+source = "git+https://github.com/Nilando/sandpit?branch=develop#7e468bfbd2c0baa77a6d67cc69c623911d53b48e"
 dependencies = [
  "crossbeam-channel",
  "higher-kinded-types",
@@ -342,8 +341,7 @@ dependencies = [
 [[package]]
 name = "sandpit_derive"
 version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "26364893472e73b64180ff2a9954ad732f37d054559eba1424a734f9ba191326"
+source = "git+https://github.com/Nilando/sandpit?branch=develop#7e468bfbd2c0baa77a6d67cc69c623911d53b48e"
 dependencies = [
  "proc-macro2",
  "quote",

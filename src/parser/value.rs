@@ -15,5 +15,5 @@ pub enum Value {
     Bool(bool),
     List(Vec<Spanned<Expr>>),
     Map(Vec<(Spanned<Expr>, Spanned<Expr>)>),
-    Func { stmts: Vec<Stmt> },
+    Func { inputs: Spanned<Vec<SymID>>, stmts: Vec<Stmt> },
 }

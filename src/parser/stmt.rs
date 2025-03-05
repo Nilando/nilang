@@ -4,8 +4,7 @@ use serde::Serialize;
 #[derive(Debug, Serialize)]
 pub enum Stmt {
     Expr(Box<Spanned<Expr>>),
-    Return(Box<Spanned<Expr>>),
-    Print(Box<Spanned<Expr>>),
+    Return(Option<Box<Spanned<Expr>>>),
     Assign {
         dest: Box<Spanned<Expr>>,
         src: Box<Spanned<Expr>>,

@@ -7,15 +7,17 @@ use crate::parser::{Expr, Spanned, Value, AST, Stmt};
 
 struct FuncGenerator {
     _id: FuncID,
+    arity: u8,
     code: Vec<Spanned<IR>>,
     label_counter: usize,
     label_stack: Vec<LabelID>
 }
 
 impl FuncGenerator {
-    pub fn new(id: usize) -> Self {
+    pub fn new(id: usize, arity: u8) -> Self {
         Self {
             _id: id,
+            arity,
             code: vec![],
             label_stack: vec![],
             label_counter: 0,
@@ -42,7 +44,6 @@ impl FuncGenerator {
     }
 }
 
-// responsible for converting an AST into ByteCode
 // first the generator creates IR code then internally passes IR code to a
 // a compiler struct which converts IR into bytecode
 pub struct Generator {
@@ -63,7 +64,7 @@ impl Generator {
     }
 
     pub fn gen_program(mut self, ast: AST) -> IRProgram {
-        self.push_new_func();
+        self.push_new_func(0);
         self.gen_stmts(ast.stmts);
         self.pop_func();
 
@@ -83,11 +84,16 @@ impl Generator {
                 self.temp_counter = 0;
             }
             Stmt::Return(expr) => {
-                let var = self.generate_expr(*expr);
+                let var = if let Some(expr) = expr {
+                    self.generate_expr(*expr)
+                } else {
+                    todo!()
+                };
 
                 self.push_ir(IR::Return { src: var.item }, var.span);
                 self.temp_counter = 0;
             }
+            /*
             Stmt::Print(expr) => {
                 let var = self.generate_expr(*expr);
                 let ir = IR::Print { src: var.item };
@@ -95,6 +101,7 @@ impl Generator {
                 self.push_ir(ir, var.span);
                 self.temp_counter = 0;
             }
+            */
             Stmt::Assign { dest, src } => match dest.item {
                 Expr::Value(value) => {
                     let dest = self.generate_value(value, dest.span);
@@ -245,15 +252,18 @@ impl Generator {
 
                 Spanned::new(dest, span)
             }
-            Expr::Call { calle, input } => {
+            Expr::Call { calle, args } => {
                 let dest = self.get_temp();
                 let calle = self.generate_expr(*calle).item;
-                let input = if input.is_none() {
+                let mut ir_args = vec![]; 
+                let input = if args.is_empty() {
                     todo!()
                 } else {
-                    self.generate_expr(*input.unwrap()).item
+                    for arg in args.into_iter() {
+                        ir_args.push(self.generate_expr(*arg).item);
+                    }
                 };
-                let ir = IR::Call { dest, calle, input };
+                let ir = IR::Call { dest, calle, args: ir_args };
 
                 self.push_ir(ir, span);
 
@@ -318,11 +328,11 @@ impl Generator {
 
                 dest
             }
-            Value::Func { stmts } => {
+            Value::Func { inputs, stmts } => {
                 let temp_counter = self.temp_counter;
                 self.temp_counter = 0;
 
-                self.push_new_func();
+                self.push_new_func(inputs.item.len() as u8);
                 self.gen_stmts(stmts);
 
                 self.temp_counter = temp_counter;
@@ -362,10 +372,10 @@ impl Generator {
         }
     }
 
-    fn push_new_func(&mut self) {
+    fn push_new_func(&mut self, arity: u8) {
         let id = self.get_func_id();
 
-        self.func_stack.push(FuncGenerator::new(id));
+        self.func_stack.push(FuncGenerator::new(id, arity));
     }
 
     fn push_label(&mut self, label: usize) {

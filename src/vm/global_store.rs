@@ -1,4 +1,4 @@
-use sandpit::{gc::Gc, Mutator, Trace};
+use sandpit::{Gc, Mutator, Trace};
 
 #[derive(Trace)]
 pub struct GlobalStore<'gc> {

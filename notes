@@ -1,0 +1,19 @@
+TODO:
+- update parser to accept multi arg calls and funcs
+- update the generator to correctly build the IR for func calls
+- update the compiler to correctly build the byte code for both calling, 
+  and handling input that was passed into the func
+- refactor the lexer to be a function
+
+- parsers need a major refactor
+  - the code is hard to read and very imperative
+  - could be much more declarative
+  - look into adding parser combinators
+  - consider getting rid of the parser struct and move to a more functional approach
+
+- change lexer from struct to a function
+- make bytecode actually readable
+- add unit tests
+- symbols have been changed to be usize, they need to be changed to u32 to be able to be in a tagged pointer
+- display syntax errors
+- fix the repl

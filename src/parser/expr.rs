@@ -20,6 +20,6 @@ pub enum Expr {
     },
     Call {
         calle: Box<Spanned<Expr>>,
-        input: Option<Box<Spanned<Expr>>>,
+        args: Vec<Box<Spanned<Expr>>>,
     },
 }

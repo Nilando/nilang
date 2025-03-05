@@ -1,16 +1,17 @@
 use super::config::Config;
-use crate::parser::AST;
-use crate::generator::IRProgram;
 
 use chrono::{DateTime, Local};
-
 use colored::Colorize;
+
+use crate::parser::AST;
+use crate::generator::IRProgram;
 use crate::generator::Generator;
 use crate::symbol_map::SymbolMap;
 use crate::parser::{Lexer, Parser, Spanned, SyntaxError};
+
 use std::fs::File;
 use std::io::{BufRead, BufReader, Cursor, Write};
-use crate::vm::VM;
+//use crate::vm::VM;
 use serde_json::to_string_pretty;
 
 pub struct Driver {
@@ -58,8 +59,10 @@ impl Driver {
             return;
         }
 
-        let mut vm = VM::new(symbol_map, program);
+        // right now we can't create a VM (mutator)
+        // let mut vm = VM::new(symbol_map, program);
 
+        /*
         match vm.run() {
             Ok(_val) => {
                 // print val?
@@ -69,6 +72,7 @@ impl Driver {
                 // how do we display the error?
             }
         }
+        */
     }
 
     fn run_repl(&self) {
@@ -78,7 +82,7 @@ impl Driver {
         let date = local_time.format("%Y-%m-%d %H:%M");
         let version = env!("CARGO_PKG_VERSION");
 
-        println!("N-lang {} [ {} ]", version, date);
+        println!("NiLang {} [ {} ]", version, date);
         println!("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
 
         let mut symbol_map = SymbolMap::new();
@@ -90,8 +94,7 @@ impl Driver {
                 Ok(ast) => ast,
                 Err(err) => {
                     println!("{:?}", err);
-                    //todo!()
-                    continue;
+                    todo!();
                 }
             };
 

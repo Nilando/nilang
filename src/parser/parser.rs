@@ -125,17 +125,16 @@ impl<'a> Parser<'a> {
             }
             Token::KeyWord(KeyWord::Return) => {
                 let _ = self.lexer.get_token();
-                let expr = Box::new(self.parse_expr()?);
+                if let Some(_) = self.peek(Token::Ctrl(Ctrl::SemiColon)) {
+                    let _ = self.lexer.get_token();
 
-                self.expect(Token::Ctrl(Ctrl::SemiColon), ';')?;
-                return Ok(Stmt::Return(expr));
-            }
-            Token::KeyWord(KeyWord::Print) => {
-                let _ = self.lexer.get_token();
-                let expr = Box::new(self.parse_expr()?);
+                    return Ok(Stmt::Return(None));
+                } else {
+                    let expr = Box::new(self.parse_expr()?);
 
-                self.expect(Token::Ctrl(Ctrl::SemiColon), ';')?;
-                return Ok(Stmt::Print(expr));
+                    self.expect(Token::Ctrl(Ctrl::SemiColon), ';')?;
+                    return Ok(Stmt::Return(Some(expr)));
+                }
             }
             Token::KeyWord(KeyWord::Continue) | Token::KeyWord(KeyWord::Break)=> {
                 let token = self.lexer.get_token();
@@ -230,6 +229,8 @@ impl<'a> Parser<'a> {
                     }
                 }
                 Token::Ctrl(Ctrl::LeftParen) => {
+                    todo!()
+                        /*
                     let _ = self.lexer.get_token();
                     if let Token::Ctrl(Ctrl::RightParen) = self.lexer.peek().item {
                         let rp = self.lexer.get_token();
@@ -257,6 +258,7 @@ impl<'a> Parser<'a> {
                             span,
                         );
                     }
+                    */
                 }
                 Token::Ctrl(Ctrl::LeftBracket) => {
                     let _ = self.lexer.get_token();
@@ -294,13 +296,32 @@ impl<'a> Parser<'a> {
                 Spanned::new(Expr::Value(Value::Bool(true)), token.span)
             }
             Token::KeyWord(KeyWord::Fn) => {
-                let span = token.span;
+                let span;
                 let parsing_loop = self.parsing_loop;
                 self.parsing_loop = false;
+
+                self.expect(Token::Ctrl(Ctrl::LeftParen), '(')?;
+
+                let mut inputs = vec![];
+                loop {
+                    if let Some(next) = self.peek(Token::Ctrl(Ctrl::RightParen)) {
+                        span = (token.span.0, next.span.1);
+                        self.lexer.get_token();
+
+                        break;
+                    } else {
+                        let next = self.lexer.get_token();
+
+                        if let Token::Ident(sym_id) = next.item {
+                            inputs.push(sym_id);
+                        }
+                    }
+                }
+
                 let stmts = self.parse_block()?;
                 self.parsing_loop = parsing_loop;
 
-                Spanned::new(Expr::Value(Value::Func { stmts }), span)
+                Spanned::new(Expr::Value(Value::Func { inputs: Spanned::new(inputs, span), stmts }), span)
             }
             Token::Ctrl(Ctrl::LeftCurly) => {
                 let mut entries = vec![];

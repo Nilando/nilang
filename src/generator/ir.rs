@@ -18,6 +18,14 @@ pub enum VarID {
 }
 
 #[derive(Debug, Serialize)]
+pub enum IRLocal {
+    Func(FuncID),
+    Num(f64),
+    Sym(SymID),
+    String(String),
+}
+
+#[derive(Debug, Serialize)]
 pub enum IRConst {
     String(String),
     Float(f64),
@@ -120,7 +128,7 @@ pub enum IR {
     Call {
         dest: IRVar,
         calle: IRVar,
-        input: IRVar,
+        args: Vec<IRVar>,
     },
     Jump {
         label: LabelID,
@@ -140,12 +148,12 @@ pub enum IR {
 #[derive(Debug, Serialize)]
 pub struct IRFunc {
     id: FuncID,
-    code: Vec<ByteCode>,
-    locals: Vec<IRConst>,
+    pub code: Vec<ByteCode>,
+    locals: Vec<IRLocal>,
 }
 
 impl IRFunc {
-    pub fn new(id: FuncID, code: Vec<ByteCode>, locals: Vec<IRConst>) -> Self {
+    pub fn new(id: FuncID, code: Vec<ByteCode>, locals: Vec<IRLocal>) -> Self {
         Self {
             id, 
             code,
@@ -156,7 +164,7 @@ impl IRFunc {
 
 #[derive(Debug, Serialize)]
 pub struct IRProgram {
-    funcs: HashMap<FuncID, IRFunc>,
+    pub funcs: HashMap<FuncID, IRFunc>,
 }
 
 impl IRProgram {

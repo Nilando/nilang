@@ -1,5 +1,5 @@
-use crate::parser::stmt::Stmt;
 use serde::Serialize;
+use super::stmt::Stmt;
 
 #[derive(Serialize)]
 pub struct AST {
