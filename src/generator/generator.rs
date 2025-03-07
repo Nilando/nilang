@@ -207,6 +207,9 @@ impl Generator {
 
                 self.push_ir(jmp, (0, 0));
             }
+            Stmt::FuncDecl { ident, inputs, stmts } => {
+                todo!()
+            }
         }
     }
 
@@ -215,6 +218,12 @@ impl Generator {
         let span = spanned_expr.span;
 
         match expr {
+            Expr::Read => {
+                todo!()
+            }
+            Expr::Print { arg } => {
+                todo!()
+            }
             Expr::Value(value) => Spanned::new(self.generate_value(value, span), span),
             Expr::Binop { lhs, op, rhs } => {
                 let lhs = self.generate_expr(*lhs).item;
@@ -255,14 +264,12 @@ impl Generator {
             Expr::Call { calle, args } => {
                 let dest = self.get_temp();
                 let calle = self.generate_expr(*calle).item;
-                let mut ir_args = vec![]; 
-                let input = if args.is_empty() {
-                    todo!()
-                } else {
-                    for arg in args.into_iter() {
-                        ir_args.push(self.generate_expr(*arg).item);
-                    }
-                };
+                let mut ir_args = vec![];
+
+                for arg in args.into_iter() {
+                    ir_args.push(self.generate_expr(*arg).item);
+                }
+
                 let ir = IR::Call { dest, calle, args: ir_args };
 
                 self.push_ir(ir, span);

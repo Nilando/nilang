@@ -163,7 +163,22 @@ impl FuncCompiler {
             }
             IR::Call { dest, calle, args } => {
                 todo!()
-                    /*
+                /*
+                 * First find a callsite that is args.len() regs long
+                 *
+                 * if any vars live in a reg past the begining of the callsite
+                 *  update them so that they don't live there
+                 *
+                 * upload the args into the callsite 
+                 *
+                 * store the globals
+                 *
+                 * set the IRVAR to live in the dest reg
+                 *
+                 * push the call bytecode
+                 */
+
+                /*
                 // calle just needs to be loaded doesn't really matter where
                 let calle_reg = self.load_var(calle);
 
@@ -174,9 +189,7 @@ impl FuncCompiler {
                 // load what we need before storing globals
                 self.store_globals();
 
-                self.assign_var_to_reg(dest, call_site);
-                
-                self.code.push(ByteCode::Call { call_site, func: calle_reg });
+                self.assign_var_to_reg(call_site, func, arg_count);
                 */
             }
             IR::Return { src } => {

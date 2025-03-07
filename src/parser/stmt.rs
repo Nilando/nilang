@@ -1,4 +1,5 @@
 use crate::parser::{Expr, Spanned};
+use crate::symbol_map::SymID;
 use serde::Serialize;
 
 #[derive(Debug, Serialize)]
@@ -8,6 +9,11 @@ pub enum Stmt {
     Assign {
         dest: Box<Spanned<Expr>>,
         src: Box<Spanned<Expr>>,
+    },
+    FuncDecl {
+        ident: SymID,
+        inputs: Spanned<Vec<SymID>>,
+        stmts: Vec<Stmt>,
     },
     While {
         cond: Box<Spanned<Expr>>,

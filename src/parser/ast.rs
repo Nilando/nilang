@@ -5,3 +5,12 @@ use super::stmt::Stmt;
 pub struct AST {
     pub stmts: Vec<Stmt>,
 }
+
+
+// STMTS
+// ARE MADE OF STMTS AND EXPRS
+//
+// EXPRS
+// ARE MODE OF EXPRS AND VALUES
+//
+// VALUES

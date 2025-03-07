@@ -126,8 +126,6 @@ impl<'a> Parser<'a> {
             Token::KeyWord(KeyWord::Return) => {
                 let _ = self.lexer.get_token();
                 if let Some(_) = self.peek(Token::Ctrl(Ctrl::SemiColon)) {
-                    let _ = self.lexer.get_token();
-
                     return Ok(Stmt::Return(None));
                 } else {
                     let expr = Box::new(self.parse_expr()?);
@@ -151,6 +149,49 @@ impl<'a> Parser<'a> {
                 } else {
                     return Err(Spanned::new(SyntaxError::Unexpected(token.item), token.span));
                 }
+            }
+            Token::KeyWord(KeyWord::Fn) => {
+                let ident_token = self.lexer.get_token();
+                let span;
+
+                let ident;
+                if let Token::Ident(sym_id) = ident_token.item {
+                    ident = sym_id;
+                } else {
+                    return Err(Spanned::new(
+                        SyntaxError::Unexpected(ident_token.item),
+                        ident_token.span,
+                    ))
+                }
+
+                self.expect(Token::Ctrl(Ctrl::LeftParen), '(')?;
+
+                let mut inputs = vec![];
+                loop {
+                    if let Some(next) = self.peek(Token::Ctrl(Ctrl::RightParen)) {
+                        span = (ident_token.span.0, next.span.1);
+
+                        break;
+                    } else {
+                        let next = self.lexer.get_token();
+
+                        if let Token::Ident(sym_id) = next.item {
+                            inputs.push(sym_id);
+                        } else {
+                            return Err(Spanned::new(
+                                SyntaxError::Unexpected(next.item),
+                                next.span,
+                            ))
+                        }
+                    }
+                }
+
+                let parsing_loop = self.parsing_loop;
+                self.parsing_loop = false;
+                let stmts = self.parse_block()?;
+                self.parsing_loop = parsing_loop;
+
+                return Ok(Stmt::FuncDecl { ident, inputs: Spanned::new(inputs, span), stmts});
             }
             _ => {}
         }
@@ -232,10 +273,10 @@ impl<'a> Parser<'a> {
                     let mut args = vec![];
                     let _ = self.lexer.get_token();
 
+                    let mut expr_flag = false;
                     loop {
-                        if let Token::Ctrl(Ctrl::RightParen) = self.lexer.peek().item {
-                            let rp = self.lexer.get_token();
-                            let span = (lhs.span.0, rp.span.1);
+                        if let Some(token) = self.peek(Token::Ctrl(Ctrl::RightParen)) {
+                            let span = (lhs.span.0, token.span.1);
 
                             lhs = Spanned::new(
                                 Expr::Call {
@@ -244,13 +285,17 @@ impl<'a> Parser<'a> {
                                 },
                                 span,
                             );
-
                             break;
-                        } else {
-                            let arg = self.parse_expr()?;
-
-                            args.push(Box::new(arg));
                         }
+
+                        if expr_flag {
+                            self.expect(Token::Ctrl(Ctrl::Comma), ',')?;
+                        }
+
+                        let arg = self.parse_expr()?;
+                        args.push(Box::new(arg));
+
+                        expr_flag = true;
                     }
                 }
                 Token::Ctrl(Ctrl::LeftBracket) => {
@@ -281,6 +326,13 @@ impl<'a> Parser<'a> {
             Token::Ident(id) => Spanned::new(Expr::Value(Value::Ident(id)), token.span),
             Token::Global(id) => Spanned::new(Expr::Value(Value::Global(id)), token.span),
             Token::String(s) => Spanned::new(Expr::Value(Value::String(s)), token.span),
+            Token::KeyWord(KeyWord::Print) => {
+                let arg = Box::new(self.parse_expr()?);
+                let span = arg.span;
+
+                Spanned::new(Expr::Print { arg }, span)
+            }
+            Token::KeyWord(KeyWord::Read) => Spanned::new(Expr::Read, token.span),
             Token::KeyWord(KeyWord::Null) => Spanned::new(Expr::Value(Value::Null), token.span),
             Token::KeyWord(KeyWord::False) => {
                 Spanned::new(Expr::Value(Value::Bool(false)), token.span)
@@ -290,16 +342,12 @@ impl<'a> Parser<'a> {
             }
             Token::KeyWord(KeyWord::Fn) => {
                 let span;
-                let parsing_loop = self.parsing_loop;
-
-                self.parsing_loop = false;
                 self.expect(Token::Ctrl(Ctrl::LeftParen), '(')?;
 
                 let mut inputs = vec![];
                 loop {
                     if let Some(next) = self.peek(Token::Ctrl(Ctrl::RightParen)) {
                         span = (token.span.0, next.span.1);
-                        self.lexer.get_token();
 
                         break;
                     } else {
@@ -307,10 +355,17 @@ impl<'a> Parser<'a> {
 
                         if let Token::Ident(sym_id) = next.item {
                             inputs.push(sym_id);
+                        } else {
+                            return Err(Spanned::new(
+                                SyntaxError::Unexpected(next.item),
+                                next.span,
+                            ))
                         }
                     }
                 }
 
+                let parsing_loop = self.parsing_loop;
+                self.parsing_loop = false;
                 let stmts = self.parse_block()?;
                 self.parsing_loop = parsing_loop;
 
@@ -370,7 +425,7 @@ impl<'a> Parser<'a> {
                         match next.item {
                             Token::Ctrl(Ctrl::RightBracket) => break,
                             Token::Ctrl(Ctrl::Comma) => {
-                                if self.peek(Token::Ctrl(Ctrl::RightCurly)).is_some() {
+                                if self.peek(Token::Ctrl(Ctrl::RightBracket)).is_some() {
                                     break;
                                 }
                             }
@@ -415,5 +470,107 @@ impl<'a> Parser<'a> {
         } else {
             Ok(())
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Cursor;
+    use std::io::BufReader;
+    use crate::symbol_map::{SymbolMap, SymID};
+    use crate::parser::Lexer;
+
+    fn str_to_ast(source: &str) -> Result<AST, Vec<Spanned<SyntaxError>>> {
+        let mut symbol_map = SymbolMap::new();
+        let lexer = Lexer::new(&mut symbol_map, Box::new(BufReader::new(Cursor::new(source))));
+        let mut parser = Parser::new(lexer);
+
+        parser.build_ast()
+    }
+
+    #[test]
+    fn no_syntax_errors() {
+        str_to_ast(r#"
+            test = fn() {
+                x = 42;
+                y = 3.14;
+                if x > y {
+                    print("x is greater");
+                } else {
+                    print("y is greater");
+                }
+            };
+        "#).unwrap();
+    }
+
+    #[test]
+    fn parse_value_expr() {
+        let mut ast = str_to_ast("1;").unwrap();
+
+        assert!(ast.stmts.len() == 1);
+
+        if let Stmt::Expr(expr) = ast.stmts.pop().unwrap() {
+            if let Expr::Value(Value::Int(i)) = expr.item {
+                assert!(i == 1);
+                return;
+            }
+        }
+
+        assert!(false);
+    }
+
+    #[test]
+    fn parse_map_examples() {
+        str_to_ast(r#"
+            {};
+            { potato: {} };
+            a = {};
+            b = { a: 1, b: 2, c: 3 };
+            c = {
+                a: {},
+                b: {
+                    a: {}
+                },
+                c: {
+                    a: {},
+                    b: {
+                        a: {}
+                    }
+                }
+            };
+        "#).unwrap();
+    }
+
+    #[test]
+    fn parse_list_examples() {
+        str_to_ast(r#"
+            [];
+            mylist = [1, a, null, true, false, 420.69, 0.0, "test", test(), 1 + 1, fn() { print("hi"); }, [], {a: 0, b: [], c: ""}, [[[[]]]], [1, 2, 3]];
+            a = [];
+            b = [1, 2, 3];
+            [val,];
+            nested_list = [[a, b, c], [1, 2, 3], []];
+        "#).unwrap();
+    }
+
+    #[test]
+    fn parse_stmt_examples() {
+        str_to_ast(r#"
+            expr_stmt(1, 2, 3);
+            //assignment = 1 + 1;
+
+            //fn func_decl() {
+                //return return_stmt;
+            //}
+
+            while while_stmt {
+                if true {
+                    continue;
+                } else {
+                    break;
+                }
+            }
+        "#).unwrap();
     }
 }

@@ -22,4 +22,8 @@ pub enum Expr {
         calle: Box<Spanned<Expr>>,
         args: Vec<Box<Spanned<Expr>>>,
     },
+    Print {
+        arg: Box<Spanned<Expr>>,
+    },
+    Read,
 }

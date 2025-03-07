@@ -78,6 +78,7 @@ pub enum KeyWord {
     False,
     True,
     Print,
+    Read,
 }
 
 #[derive(Clone, PartialEq, Debug, Serialize)]
@@ -237,7 +238,7 @@ impl<'a> Lexer<'a> {
                     let mut str = String::from(c);
 
                     while let Some((_, p)) = chars.peek() {
-                        if !p.is_alphabetic() && *p != '_' {
+                        if !p.is_alphanumeric() && *p != '_' {
                             break;
                         }
 
@@ -247,24 +248,29 @@ impl<'a> Lexer<'a> {
                         str.push(c);
                     }
 
-                    match str.as_str() {
-                        "fn" => Token::KeyWord(KeyWord::Fn),
-                        "if" => Token::KeyWord(KeyWord::If),
-                        "print" => Token::KeyWord(KeyWord::Print),
-                        "else" => Token::KeyWord(KeyWord::Else),
-                        "null" => Token::KeyWord(KeyWord::Null),
-                        "true" => Token::KeyWord(KeyWord::True),
-                        "while" => Token::KeyWord(KeyWord::While),
-                        "break" => Token::KeyWord(KeyWord::Break),
-                        "false" => Token::KeyWord(KeyWord::False),
-                        "return" => Token::KeyWord(KeyWord::Return),
-                        "continue" => Token::KeyWord(KeyWord::Continue),
-                        _ => {
-                            let id = self.symbol_map.get_id(&str);
+                    let first_char = str.chars().next().unwrap();
 
-                            if str.chars().next().unwrap() == '@' && str != "@" {
-                                Token::Global(id)
-                            } else {
+                    if first_char == '@' {
+                        let id = self.symbol_map.get_id(&str);
+
+                        Token::Global(id)
+                    } else {
+                        match str.as_str() {
+                            "fn" => Token::KeyWord(KeyWord::Fn),
+                            "if" => Token::KeyWord(KeyWord::If),
+                            "print" => Token::KeyWord(KeyWord::Print),
+                            "read" => Token::KeyWord(KeyWord::Read),
+                            "else" => Token::KeyWord(KeyWord::Else),
+                            "null" => Token::KeyWord(KeyWord::Null),
+                            "true" => Token::KeyWord(KeyWord::True),
+                            "while" => Token::KeyWord(KeyWord::While),
+                            "break" => Token::KeyWord(KeyWord::Break),
+                            "false" => Token::KeyWord(KeyWord::False),
+                            "return" => Token::KeyWord(KeyWord::Return),
+                            "continue" => Token::KeyWord(KeyWord::Continue),
+                            _ => {
+                                let id = self.symbol_map.get_id(&str);
+
                                 Token::Ident(id)
                             }
                         }
@@ -329,7 +335,6 @@ impl<'a> Lexer<'a> {
                 ';' => Token::Ctrl(Ctrl::SemiColon),
                 ',' => Token::Ctrl(Ctrl::Comma),
                 '.' => Token::Ctrl(Ctrl::Period),
-
                 '+' => Token::Op(Op::Plus),
                 '-' => Token::Op(Op::Minus),
                 '*' => Token::Op(Op::Multiply),
@@ -361,8 +366,21 @@ mod tests {
     use std::io::Cursor;
     use std::io::BufReader;
 
+    fn assert_src_tokens(source: &str, tokens: Vec<Token>, mut symbol_map: SymbolMap) {
+        let mut lexer = Lexer::new(&mut symbol_map, Box::new(BufReader::new(Cursor::new(source))));
+
+        for expected_token in tokens {
+            let spanned_token = lexer.get_token();
+            let token = spanned_token.item;
+
+            assert_eq!(token, expected_token);
+        }
+    }
+
     #[test]
-    fn test_lexer_simple_input() {
+    fn lex_example_fn() {
+        let mut symbol_map = SymbolMap::new();
+
         let source = r#"fn main() {
             x = 42;
             y = 3.14;
@@ -372,8 +390,8 @@ mod tests {
                 print("y is greater");
             }
         }"#;
-        let mut symbol_map = SymbolMap::new();
-        let expected_tokens = vec![
+
+        let tokens = vec![
             Token::KeyWord(KeyWord::Fn),
             Token::Ident(symbol_map.get_id("main")),
             Token::Ctrl(Ctrl::LeftParen),
@@ -410,13 +428,34 @@ mod tests {
             Token::Ctrl(Ctrl::End),
         ];
 
-        let mut lexer = Lexer::new(&mut symbol_map, Box::new(BufReader::new(Cursor::new(source))));
+        assert_src_tokens(source, tokens, symbol_map);
+    }
 
-        for expected_token in expected_tokens {
-            let spanned_token = lexer.get_token();
-            let token = spanned_token.item;
+    #[test]
+    fn lex_map() {
+        let mut symbol_map = SymbolMap::new();
 
-            assert_eq!(token, expected_token);
-        }
+        let source = r#"my_map = { a: 1, b: 2, c: 3 };"#;
+
+        let tokens = vec![
+            Token::Ident(symbol_map.get_id("my_map")),
+            Token::Ctrl(Ctrl::Equal),
+            Token::Ctrl(Ctrl::LeftCurly),
+            Token::Ident(symbol_map.get_id("a")),
+            Token::Ctrl(Ctrl::Colon),
+            Token::Int(1),
+            Token::Ctrl(Ctrl::Comma),
+            Token::Ident(symbol_map.get_id("b")),
+            Token::Ctrl(Ctrl::Colon),
+            Token::Int(2),
+            Token::Ctrl(Ctrl::Comma),
+            Token::Ident(symbol_map.get_id("c")),
+            Token::Ctrl(Ctrl::Colon),
+            Token::Int(3),
+            Token::Ctrl(Ctrl::RightCurly),
+            Token::Ctrl(Ctrl::SemiColon),
+        ];
+
+        assert_src_tokens(source, tokens, symbol_map);
     }
 }
