@@ -1,10 +1,8 @@
-use std::collections::VecDeque;
-use std::io::BufRead;
 use crate::symbol_map::{SymbolMap, SymID};
 use super::spanned::Spanned;
 use serde::Serialize;
 
-#[derive(Clone, PartialEq, Debug, Serialize)]
+#[derive(Clone, Copy, PartialEq, Debug, Serialize)]
 pub enum Ctrl {
     LeftParen,
     RightParen,
@@ -57,15 +55,15 @@ impl fmt::Display for Op {
     }
 }
 
-#[derive(Clone, PartialEq, Debug, Serialize)]
+#[derive(Clone, Copy, PartialEq, Debug, Serialize)]
 pub enum LexError {
     Unknown,
     UnclosedString,
-    InputError(String),
+    UnclosedComment,
     InvalidNumber,
 }
 
-#[derive(Clone, PartialEq, Debug, Serialize)]
+#[derive(Clone, Copy, PartialEq, Debug, Serialize)]
 pub enum KeyWord {
     Fn,
     If,
@@ -81,250 +79,312 @@ pub enum KeyWord {
     Read,
 }
 
-#[derive(Clone, PartialEq, Debug, Serialize)]
-pub enum Token {
+#[derive(Clone, Copy, PartialEq, Debug, Serialize)]
+pub enum Token<'a> {
     Ctrl(Ctrl),
     Op(Op),
     Ident(SymID),
     Global(SymID),
     Float(f64),
     Int(isize),
-    String(String),
+    String(&'a str),
     Error(LexError),
     KeyWord(KeyWord),
 }
 
+use std::iter::Peekable;
+use std::str::Chars;
+
 pub struct Lexer<'a> {
-    symbol_map: &'a mut SymbolMap,
-    tokens: VecDeque<Spanned<Token>>,
+    peek: Option<Spanned<Token<'a>>>,
+    chars: Peekable<Chars<'a>>,
+    input: &'a str,
     pos: usize,
     eof: bool,
-    reader: Box<dyn BufRead + 'a>,
-    pub buffer: String,
 }
 
 impl<'a> Lexer<'a> {
-    pub fn new(symbol_map: &'a mut SymbolMap, reader: Box<dyn BufRead + 'a>) -> Self {
+    pub fn new(input: &'a str) -> Self {
         Self {
-            reader,
-            symbol_map,
-            tokens: VecDeque::new(),
-            buffer: String::new(),
+            input,
+            chars: input.chars().peekable(),
+            peek: None,
             pos: 0,
             eof: false,
         }
     }
 
-    pub fn get_token(&mut self) -> Spanned<Token> {
+    pub fn get_token(&mut self, syms: &mut SymbolMap<'a>) -> Result<Spanned<Token<'a>>, Spanned<LexError>> {
         if self.eof {
-            return self.end_token();
+            return Ok(self.end_token());
         }
 
-        while self.tokens.is_empty() {
-            self.parse_next_line();
+        if let Some(token) = self.peek.take() {
+            Ok(token)
+        } else {
+            self.lex_token(syms)
         }
-
-        self.tokens.pop_front().unwrap()
     }
 
-    pub fn peek(&mut self) -> &Spanned<Token> {
-        if self.eof && self.tokens.is_empty() {
-            self.tokens.push_front(self.end_token());
+    pub fn peek(&mut self, syms: &mut SymbolMap<'a>) -> Result<Spanned<Token<'a>>, Spanned<LexError>> {
+        if self.eof {
+            return Ok(self.end_token());
         }
 
-        while self.tokens.is_empty() {
-            self.parse_next_line();
+        if let Some(token) = self.peek {
+            Ok(token)
+        } else {
+            let peek = self.lex_token(syms)?;
+            self.peek = Some(peek);
+            Ok(peek)
         }
-
-        &self.tokens[0]
     }
 
-    fn parse_next_line(&mut self) {
-        self.buffer.clear();
+    fn lex_token(&mut self, syms: &mut SymbolMap<'a>) -> Result<Spanned<Token<'a>>, Spanned<LexError>> {
+        self.skip_ignored_input()?;
 
-        match self.reader.read_line(&mut self.buffer) {
-            Ok(bytes_read) => {
-                if bytes_read == 0 {
-                    self.tokens.push_back(self.end_token());
-                    self.eof = true;
-                } else {
-                    self.parse_buffer();
-                    self.pos += bytes_read;
+        if let Some(token) = self.span_with_syms(syms, Self::lex_word)?.into() {
+            return Ok(token);
+        }
+
+        if let Some(token) = self.span(Self::lex_num)?.into() {
+            return Ok(token);
+        }
+
+        if let Some(token) = self.span(Self::lex_string)?.into() {
+            return Ok(token);
+        }
+
+        if let Some(token) = self.span(Self::lex_ctrl)?.into() {
+            return Ok(token);
+        }
+
+        Err(self.unexpected_token())
+    }
+
+    fn skip_ignored_input(&mut self) -> Result<(), Spanned<LexError>>{
+        loop {
+            if !self.span(Self::lex_comment)?.item && !self.lex_whitespace() {
+                break;
+            }
+        }
+
+        Ok(())
+    }
+
+    fn lex_whitespace(&mut self) -> bool {
+        match self.chars.peek() {
+            Some(c) if c.is_whitespace() => {
+                self.advance();
+                true
+            }
+            _ => false
+        }
+    }
+
+    fn lex_comment(&mut self) -> Result<bool, LexError> {
+        if self.read('/') {
+            if self.read('/') {
+                self.read_until('\n');
+                return Ok(true)
+            }
+
+            if self.read('*') {
+                loop {
+                    self.read_until('*');
+                    self.advance();
+                    if self.read('/') {
+                        return Ok(true)
+                    }
+
+                    if self.eof {
+                        return Err(LexError::UnclosedComment)
+                    }
                 }
             }
-            Err(err) => self.tokens.push_back(Spanned::new(
-                Token::Error(LexError::InputError(err.kind().to_string())),
-                (self.pos, self.pos),
-            )),
         }
+
+        Ok(false)
     }
 
-    fn parse_buffer(&mut self) {
-        let mut chars = self.buffer.chars().enumerate().peekable();
+    fn lex_word(&mut self, syms: &mut SymbolMap<'a>) -> Result<Option<Token<'a>>, LexError> {
+        let first_char = if let Some(p) = self.chars.peek() {
+            if !p.is_alphanumeric() && *p != '_' {
+                return Ok(None);
+            } else {
+                *p
+            }
+        } else {
+            return Ok(None);
+        };
 
-        loop {
-            let (i, c) = match chars.next() {
-                Some(c) => c,
-                None => break,
-            };
-            let start = self.pos + i;
-            let mut end = start + 1;
+        let starting_pos = self.pos;
 
-            if c.is_whitespace() {
+        while let Some(p) = self.chars.peek() {
+            if p.is_alphanumeric() || *p == '_' {
+                self.advance();
+            } else {
+                break;
+            }
+        }
+
+        let ending_pos = self.pos;
+        let word = &self.input[starting_pos..ending_pos];
+
+        Ok(Some(
+            if first_char == '@' {
+                let id = syms.get_id(word);
+
+                Token::Global(id)
+            } else {
+                match word {
+                    "fn" => Token::KeyWord(KeyWord::Fn),
+                    "if" => Token::KeyWord(KeyWord::If),
+                    "print" => Token::KeyWord(KeyWord::Print),
+                    "read" => Token::KeyWord(KeyWord::Read),
+                    "else" => Token::KeyWord(KeyWord::Else),
+                    "null" => Token::KeyWord(KeyWord::Null),
+                    "true" => Token::KeyWord(KeyWord::True),
+                    "while" => Token::KeyWord(KeyWord::While),
+                    "break" => Token::KeyWord(KeyWord::Break),
+                    "false" => Token::KeyWord(KeyWord::False),
+                    "return" => Token::KeyWord(KeyWord::Return),
+                    "continue" => Token::KeyWord(KeyWord::Continue),
+                    _ => {
+                        let id = syms.get_id(word);
+
+                        Token::Ident(id)
+                    }
+                }
+            }
+        ))
+    }
+
+    fn lex_num(&mut self) -> Result<Option<Token<'a>>, LexError> {
+        if let Some(p) = self.chars.peek() {
+            if !p.is_numeric() {
+                return Ok(None);
+            } else {
+                *p
+            }
+        } else {
+            return Ok(None);
+        };
+
+        let start_pos = self.pos;
+        let mut is_float = false;
+
+        while let Some(p) = self.chars.peek() {
+            if p.is_ascii_digit() {
+                self.advance();
                 continue;
             }
 
-            if c == '/' {
-                if let Some((_, '/')) = chars.peek() {
-                    break;
+            if *p == '.' {
+                if is_float {
+                    return Err(LexError::InvalidNumber);
+                } else {
+                    is_float = true;
+                    self.advance();
+                    continue;
                 }
             }
 
-            let token = match c {
-                '"' => {
-                    let mut str = String::new();
-                    let mut is_closed = false;
+            break;
+        }
 
-                    for (_, c) in chars.by_ref() {
-                        end += 1;
-                        if c == '"' {
-                            is_closed = true;
-                            break;
-                        } else {
-                            str.push(c);
-                        }
-                    }
+        let end_pos = self.pos;
+        let num = &self.input[start_pos..end_pos];
 
-                    if is_closed {
-                        Token::String(str)
-                    } else {
-                        Token::Error(LexError::UnclosedString)
-                    }
+        Ok(Some(
+            if is_float {
+                if let Ok(f) = num.parse() {
+                    Token::Float(f)
+                } else {
+                    Token::Error(LexError::InvalidNumber)
                 }
-
-                c if c.is_ascii_digit() => {
-                    let mut str = String::from(c);
-                    let mut is_float = false;
-
-                    while let Some((_, p)) = chars.peek() {
-                        if *p == '.' || p.is_ascii_digit() {
-                            if *p == '.' {
-                                is_float = true;
-                            }
-
-                            let (_, c) = chars.next().unwrap();
-                            str.push(c);
-                            end += 1;
-                        } else {
-                            break;
-                        }
-                    }
-
-                    if is_float {
-                        if let Ok(f) = str.parse() {
-                            Token::Float(f)
-                        } else {
-                            Token::Error(LexError::InvalidNumber)
-                        }
-                    } else {
-                        if let Ok(i) = str.parse() {
-                            Token::Int(i)
-                        } else {
-                            Token::Error(LexError::InvalidNumber)
-                        }
-                    }
+            } else {
+                if let Ok(i) = num.parse() {
+                    Token::Int(i)
+                } else {
+                    Token::Error(LexError::InvalidNumber)
                 }
-                c if c.is_alphabetic() || c == '@' => {
-                    let mut str = String::from(c);
+            }
+        ))
+    }
 
-                    while let Some((_, p)) = chars.peek() {
-                        if !p.is_alphanumeric() && *p != '_' {
-                            break;
-                        }
+    fn lex_string(&mut self) -> Result<Option<Token<'a>>, LexError> {
+        if self.read('"') {
+            let start_pos = self.pos;
+            self.read_until('"');
+            let end_pos = self.pos;
 
-                        end += 1;
+            if self.read('"') {
+                let string = &self.input[start_pos..end_pos];
 
-                        let (_, c) = chars.next().unwrap();
-                        str.push(c);
-                    }
+                Ok(Some(Token::String(string)))
+            } else {
+                Err(LexError::UnclosedString)
+            }
+        } else {
+            Ok(None)
+        }
+    }
 
-                    let first_char = str.chars().next().unwrap();
-
-                    if first_char == '@' {
-                        let id = self.symbol_map.get_id(&str);
-
-                        Token::Global(id)
-                    } else {
-                        match str.as_str() {
-                            "fn" => Token::KeyWord(KeyWord::Fn),
-                            "if" => Token::KeyWord(KeyWord::If),
-                            "print" => Token::KeyWord(KeyWord::Print),
-                            "read" => Token::KeyWord(KeyWord::Read),
-                            "else" => Token::KeyWord(KeyWord::Else),
-                            "null" => Token::KeyWord(KeyWord::Null),
-                            "true" => Token::KeyWord(KeyWord::True),
-                            "while" => Token::KeyWord(KeyWord::While),
-                            "break" => Token::KeyWord(KeyWord::Break),
-                            "false" => Token::KeyWord(KeyWord::False),
-                            "return" => Token::KeyWord(KeyWord::Return),
-                            "continue" => Token::KeyWord(KeyWord::Continue),
-                            _ => {
-                                let id = self.symbol_map.get_id(&str);
-
-                                Token::Ident(id)
-                            }
-                        }
-                    }
-                }
+    fn lex_ctrl(&mut self) -> Result<Option<Token<'a>>, LexError> {
+        if let Some(c) = self.chars.peek() {
+            let token = 
+            match *c {
                 '=' => {
-                    if let Some((_, '=')) = chars.peek() {
-                        chars.next();
+                    self.advance();
+
+                    if self.read('=') {
                         Token::Op(Op::Equal)
                     } else {
                         Token::Ctrl(Ctrl::Equal)
                     }
                 }
                 '!' => {
-                    if let Some((_, '=')) = chars.peek() {
-                        chars.next();
+                    self.advance();
+
+                    if self.read('=') {
                         Token::Op(Op::NotEqual)
                     } else {
-                        Token::Error(LexError::Unknown)
+                        return Err(LexError::Unknown);
                     }
                 }
                 '|' => {
-                    if let Some((_, '|')) = chars.peek() {
-                        chars.next();
+                    self.advance();
+
+                    if self.read('|') {
                         Token::Op(Op::Or)
                     } else {
-                        Token::Error(LexError::Unknown)
+                        return Err(LexError::Unknown);
                     }
                 }
                 '&' => {
-                    if let Some((_, '&')) = chars.peek() {
-                        chars.next();
+                    self.advance();
+
+                    if self.read('&') {
                         Token::Op(Op::And)
                     } else {
-                        Token::Error(LexError::Unknown)
+                        return Err(LexError::Unknown);
                     }
                 }
                 '<' => {
-                    if let Some((_, '=')) = chars.peek() {
-                        chars.next();
+                    if self.read('=') {
                         Token::Op(Op::Lte)
                     } else {
                         Token::Op(Op::Lt)
                     }
                 }
                 '>' => {
-                    if let Some((_, '=')) = chars.peek() {
-                        chars.next();
+                    if self.read('=') {
                         Token::Op(Op::Gte)
                     } else {
                         Token::Op(Op::Gt)
                     }
                 }
-
                 '(' => Token::Ctrl(Ctrl::LeftParen),
                 ')' => Token::Ctrl(Ctrl::RightParen),
                 '[' => Token::Ctrl(Ctrl::LeftBracket),
@@ -339,23 +399,98 @@ impl<'a> Lexer<'a> {
                 '-' => Token::Op(Op::Minus),
                 '*' => Token::Op(Op::Multiply),
                 '/' => Token::Op(Op::Divide),
-
-                _ => Token::Error(LexError::Unknown),
+                _ => return Ok(None),
             };
 
-            let spanned_token = Spanned::new (
-                token,
-                (start, end),
-            );
-
-            self.tokens.push_back(spanned_token);
+            Ok(Some(token))
+        } else {
+            Ok(None)
         }
     }
 
-    fn end_token(&self) -> Spanned<Token> {
+    fn read(&mut self, c: char) -> bool {
+        if let Some(peek) = self.chars.peek() {
+            if *peek == c {
+                self.advance();
+                return true
+            }
+        }
+
+        false
+    }
+
+    fn read_until(&mut self, c: char) {
+        loop {
+            if let Some(peek) = self.chars.peek() {
+                if *peek == c {
+                    break;
+                } else {
+                    self.advance();
+                }
+            } else {
+                break;
+            }
+        }
+    }
+
+    fn advance(&mut self) {
+        match self.chars.next() {
+            Some(c) => {
+                self.pos += c.len_utf8();
+            }
+            None => {
+                self.eof == true;
+            }
+        }
+    }
+
+    fn span<T, F>(&mut self, mut callback: F) -> Result<Spanned<T>, Spanned<LexError>>
+    where
+        F: FnMut(&mut Self) -> Result<T, LexError>,
+    {
+        let starting_pos = self.pos;
+        let value = callback(self);
+        let ending_pos = self.pos;
+
+        match value {
+            Ok(t) => {
+                Ok(Spanned::new(t, (starting_pos, ending_pos)))
+            }
+            Err(e) => {
+                Err(Spanned::new(e, (starting_pos, ending_pos)))
+            }
+        }
+    }
+
+    fn span_with_syms<T, F>(&mut self, syms: &mut SymbolMap<'a>, mut callback: F) -> Result<Spanned<T>, Spanned<LexError>>
+    where
+        F: FnMut(&mut Self, &mut SymbolMap<'a>) -> Result<T, LexError>,
+    {
+        let starting_pos = self.pos;
+        let value = callback(self, syms);
+        let ending_pos = self.pos;
+
+        match value {
+            Ok(t) => {
+                Ok(Spanned::new(t, (starting_pos, ending_pos)))
+            }
+            Err(e) => {
+                Err(Spanned::new(e, (starting_pos, ending_pos)))
+            }
+        }
+    }
+
+    fn end_token(&self) -> Spanned<Token<'a>> {
         Spanned::new (
             Token::Ctrl(Ctrl::End),
-            (self.pos, self.pos),
+            (0, 0),
+        )
+    }
+
+    fn unexpected_token(&self) -> Spanned<LexError> {
+        Spanned::new (
+            LexError::Unknown,
+            (self.pos, self.pos + 1),
         )
     }
 }
@@ -363,15 +498,13 @@ impl<'a> Lexer<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Cursor;
-    use std::io::BufReader;
 
-    fn assert_src_tokens(source: &str, tokens: Vec<Token>, mut symbol_map: SymbolMap) {
-        let mut lexer = Lexer::new(&mut symbol_map, Box::new(BufReader::new(Cursor::new(source))));
+    fn assert_src_tokens<'a>(source: &'a str, tokens: Vec<Token>, mut symbol_map: SymbolMap<'a>) {
+        let mut lexer = Lexer::new(source);
 
         for expected_token in tokens {
-            let spanned_token = lexer.get_token();
-            let token = spanned_token.item;
+            let spanned_token = lexer.get_token(&mut symbol_map);
+            let token = spanned_token.unwrap().item;
 
             assert_eq!(token, expected_token);
         }
@@ -412,7 +545,7 @@ mod tests {
             Token::Ctrl(Ctrl::LeftCurly),
             Token::KeyWord(KeyWord::Print),
             Token::Ctrl(Ctrl::LeftParen),
-            Token::String("x is greater".to_string()),
+            Token::String("x is greater"),
             Token::Ctrl(Ctrl::RightParen),
             Token::Ctrl(Ctrl::SemiColon),
             Token::Ctrl(Ctrl::RightCurly),
@@ -420,7 +553,7 @@ mod tests {
             Token::Ctrl(Ctrl::LeftCurly),
             Token::KeyWord(KeyWord::Print),
             Token::Ctrl(Ctrl::LeftParen),
-            Token::String("y is greater".to_string()),
+            Token::String("y is greater"),
             Token::Ctrl(Ctrl::RightParen),
             Token::Ctrl(Ctrl::SemiColon),
             Token::Ctrl(Ctrl::RightCurly),
