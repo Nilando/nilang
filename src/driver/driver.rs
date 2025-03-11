@@ -26,6 +26,29 @@ impl Driver {
     }
 
     pub fn run(&self) {
+        // get the static input
+        //
+        // result = parse(input)
+        // if errors exist
+        //   display syntax errors
+        // 
+        // else
+        //
+        //  run result(ast)
+        //
+        //
+        //  if repl?
+        //      input = ""
+        //      stmt_string = read_stmt
+        //      result = parse(stmt_string)
+        //      if result =
+        //      input += stmt_string
+        //
+        //
+        //
+        //
+        //
+        //
         if let Some(file_name) = &self.config.file {
             let file = File::open(file_name.clone()).expect("Unable to read file.");
             let reader = Box::new(BufReader::new(file));
@@ -47,7 +70,8 @@ impl Driver {
 
     fn read_input(&self, reader: Box<impl BufRead>) {
         let mut symbol_map = SymbolMap::new();
-        let ast = self.parse_ast(&mut symbol_map, reader);
+        /*
+        //let ast = self.parse_ast(&mut symbol_map, reader);
 
         if self.config.dry_run && self.config.bytecode_output_path.is_none() {
             return;
@@ -58,6 +82,7 @@ impl Driver {
         if self.config.dry_run {
             return;
         }
+        */
 
         // right now we can't create a VM (mutator)
         // let mut vm = VM::new(symbol_map, program);
@@ -85,27 +110,7 @@ impl Driver {
         println!("NiLang {} [ {} ]", version, date);
         println!("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
 
-        let mut symbol_map = SymbolMap::new();
-        let lexer = Lexer::new(&mut symbol_map, reader);
-        let mut parser = Parser::new(lexer);
-
-        loop {
-            let ast = match parser.parse_repl() {
-                Ok(ast) => ast,
-                Err(err) => {
-                    println!("{:?}", err);
-                    todo!();
-                }
-            };
-
-            // println!("{:#?}", stmt);
-
-            let generator = Generator::new();
-            let _program = generator.gen_program(ast);
-
-            // let mut vm = VM::new(symbol_map.clone(), program);
-            // vm.run()
-        }
+        todo!()
     }
 
     fn _display_syntax_errors(&self, file_name: &String, mut errs: Vec<Spanned<SyntaxError>>) {
@@ -195,22 +200,8 @@ impl Driver {
         };
     }
 
-    fn parse_ast(&self, symbol_map: &mut SymbolMap, reader: Box<impl BufRead>) -> AST {
-        let lexer = Lexer::new(symbol_map, reader);
-        let mut parser = Parser::new(lexer);
-
-        match parser.build_ast() {
-            Ok(ast) => {
-                if self.config.ast_output_path.is_some() {
-                    self.output_ast(&ast);
-                }
-
-                ast
-            }
-            Err(_) => {
-                todo!("handle syntax errors")
-            }
-        }
+    fn parse_ast<'a>(&self, symbol_map: &mut SymbolMap<'a>, input: &'a str) -> AST {
+        todo!("this functino needs to be removed/replaced")
     }
     
     fn generate_program(&self, ast: AST) -> IRProgram {

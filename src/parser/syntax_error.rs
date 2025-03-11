@@ -1,8 +1,8 @@
 use crate::parser::lexer::Token;
 
 #[derive(Debug)]
-pub enum SyntaxError {
+pub enum SyntaxError<'a> {
     Expected(char),
-    Unexpected(Token),
+    Unexpected(Token<'a>),
     Error(String),
 }

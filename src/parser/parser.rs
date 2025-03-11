@@ -1,3 +1,4 @@
+/*
 use crate::parser::stmt::Stmt;
 use super::value::Value;
 use super::ast::AST;
@@ -10,6 +11,10 @@ pub struct Parser<'a> {
     lexer: Lexer<'a>,
     parsing_loop: bool,
     errs: Vec<Spanned<SyntaxError>>,
+}
+
+pub fn parse_ast<'a>(lexer: Lexer<'a>, symbol_map: &mut SymbolMap<'a>) -> Result<AST, Vec<Spanned<SyntaxError>>> {
+    todo!()
 }
 
 impl<'a> Parser<'a> {
@@ -150,6 +155,7 @@ impl<'a> Parser<'a> {
                     return Err(Spanned::new(SyntaxError::Unexpected(token.item), token.span));
                 }
             }
+
             Token::KeyWord(KeyWord::Fn) => {
                 let ident_token = self.lexer.get_token();
                 let span;
@@ -574,3 +580,4 @@ mod tests {
         "#).unwrap();
     }
 }
+*/

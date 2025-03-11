@@ -140,6 +140,10 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    pub fn pos(&self) -> usize {
+        self.pos
+    }
+
     fn lex_token(&mut self, syms: &mut SymbolMap<'a>) -> Result<Spanned<Token<'a>>, Spanned<LexError>> {
         self.skip_ignored_input()?;
 
