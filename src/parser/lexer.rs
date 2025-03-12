@@ -118,7 +118,7 @@ impl<'a> Lexer<'a> {
         self.input
     }
 
-    pub fn get_token(&mut self, syms: &mut SymbolMap<'a>) -> Result<Spanned<Token<'a>>, Spanned<LexError>> {
+    pub fn get_token(&mut self, syms: &mut SymbolMap) -> Result<Spanned<Token<'a>>, Spanned<LexError>> {
         if self.eof {
             return Ok(self.end_token());
         }
@@ -130,7 +130,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    pub fn peek(&mut self, syms: &mut SymbolMap<'a>) -> Result<Spanned<Token<'a>>, Spanned<LexError>> {
+    pub fn peek(&mut self, syms: &mut SymbolMap) -> Result<Spanned<Token<'a>>, Spanned<LexError>> {
         if self.eof {
             return Ok(self.end_token());
         }
@@ -148,7 +148,7 @@ impl<'a> Lexer<'a> {
         self.pos
     }
 
-    fn lex_token(&mut self, syms: &mut SymbolMap<'a>) -> Result<Spanned<Token<'a>>, Spanned<LexError>> {
+    fn lex_token(&mut self, syms: &mut SymbolMap) -> Result<Spanned<Token<'a>>, Spanned<LexError>> {
         self.skip_ignored_input()?;
 
         if let Some(token) = self.span_with_syms(syms, Self::lex_word)?.into() {
@@ -215,7 +215,7 @@ impl<'a> Lexer<'a> {
         Ok(false)
     }
 
-    fn lex_word(&mut self, syms: &mut SymbolMap<'a>) -> Result<Option<Token<'a>>, LexError> {
+    fn lex_word(&mut self, syms: &mut SymbolMap) -> Result<Option<Token<'a>>, LexError> {
         let first_char = if let Some(p) = self.chars.peek() {
             if !p.is_alphanumeric() && *p != '_' {
                 return Ok(None);
@@ -470,9 +470,9 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn span_with_syms<T, F>(&mut self, syms: &mut SymbolMap<'a>, mut callback: F) -> Result<Spanned<T>, Spanned<LexError>>
+    fn span_with_syms<T, F>(&mut self, syms: &mut SymbolMap, mut callback: F) -> Result<Spanned<T>, Spanned<LexError>>
     where
-        F: FnMut(&mut Self, &mut SymbolMap<'a>) -> Result<T, LexError>,
+        F: FnMut(&mut Self, &mut SymbolMap) -> Result<T, LexError>,
     {
         let starting_pos = self.pos;
         let value = callback(self, syms);
@@ -507,7 +507,7 @@ impl<'a> Lexer<'a> {
 mod tests {
     use super::*;
 
-    fn assert_src_tokens<'a>(source: &'a str, tokens: Vec<Token>, mut symbol_map: SymbolMap<'a>) {
+    fn assert_src_tokens<'a>(source: &'a str, tokens: Vec<Token>, mut symbol_map: SymbolMap) {
         let mut lexer = Lexer::new(source);
 
         for expected_token in tokens {
