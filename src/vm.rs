@@ -1,3 +1,4 @@
+/*
 mod executor;
 mod mutator;
 mod global_store;
@@ -10,3 +11,4 @@ mod list;
 
 pub use mutator::VM;
 pub use bytecode::{ByteCode, Reg};
+*/

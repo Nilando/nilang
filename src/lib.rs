@@ -1,6 +1,6 @@
-mod generator;
+//mod generator;
 mod parser;
-mod vm;
+//mod vm;
 mod symbol_map;
 mod driver;
 

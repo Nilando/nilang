@@ -114,6 +114,10 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    pub fn get_input(&self) -> &'a str {
+        self.input
+    }
+
     pub fn get_token(&mut self, syms: &mut SymbolMap<'a>) -> Result<Spanned<Token<'a>>, Spanned<LexError>> {
         if self.eof {
             return Ok(self.end_token());

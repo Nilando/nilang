@@ -1,7 +1,7 @@
 use clap::{Parser, ArgGroup};
 use std::path::PathBuf;
 
-#[derive(Parser, Debug)]
+#[derive(Parser, Debug, Clone)]
 #[command(version, about, long_about = None)]
 #[clap(group(ArgGroup::new("input").args(&["file", "inline", "stdin"])))]
 pub struct Config {
@@ -27,6 +27,36 @@ pub struct Config {
 
     /// File to be run (exclude for repl)
     pub file: Option<String>,
+}
+
+impl Config {
+    pub fn get_input(&mut self) -> Option<String> {
+        if self.inline.is_some() {
+            return self.inline.take();
+        }
+
+        if self.stdin {
+            let mut input = String::new();
+            std::io::stdin().read_line(&mut input);
+
+            return Some(input);
+        }
+
+        if self.file.is_some() {
+            return Some(std::fs::read_to_string(self.file.as_ref().unwrap()).expect("Failed to read file"));
+        }
+
+        None
+    }
+
+    pub fn input_provided(&self) -> bool {
+        self.inline.is_some() || self.stdin || self.file.is_some()
+    }
+
+    pub fn repl_mode(&self) -> bool {
+        !self.input_provided()
+    }
+
 }
 
 impl TryFrom<Vec<&str>> for Config {

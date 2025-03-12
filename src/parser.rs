@@ -1,33 +1,46 @@
-mod parser;
 mod lexer;
 mod spanned;
-mod ast;
-mod syntax_error;
 mod value;
 mod expr;
 mod stmt;
 
 pub use lexer::{Lexer, LexError, Op};
 pub use spanned::Spanned;
-pub use ast::AST;
-pub use syntax_error::SyntaxError;
 pub use value::Value;
 pub use expr::Expr;
-pub use stmt::Stmt;
+pub use stmt::{Stmt, stmt};
 
-use super::symbol_map::SymbolMap;
+use super::symbol_map::{SymbolMap, SymID};
 use lexer::{Ctrl, Token, KeyWord};
 
-use std::marker::PhantomData;
+pub fn parse_program<'a>(lexer: &'a mut Lexer<'a>, syms: &'a mut SymbolMap<'a>) -> ParseResult<'a> {
+    let mut ctx = ParseContext {
+        lexer,
+        syms,
+        errors: vec![],
+        warnings: vec![]
+    };
 
-pub fn parse_program<'a>(lexer: &mut Lexer<'a>, symbol_map: &mut SymbolMap<'a>) -> Result<Vec<Stmt<'a>>, Vec<SyntaxError<'a>>> {
-    todo!()
+    let stmts = stmt().zero_or_more().parse(&mut ctx).unwrap();
+
+    ParseResult {
+        stmts,
+        errors: ctx.errors,
+        warnings: ctx.warnings,
+    }
+}
+
+pub(super) struct ParseResult<'a> {
+    pub stmts: Vec<Stmt<'a>>,
+    pub errors: Vec<Spanned<ParseError<'a>>>,
+    pub warnings: Vec<Spanned<()>>,
 }
 
 pub(super) struct ParseContext<'a> {
     lexer: &'a mut Lexer<'a>,
     syms: &'a mut SymbolMap<'a>,
-    errors: &'a mut Vec<Spanned<ParseError<'a>>>,
+    errors: Vec<Spanned<ParseError<'a>>>,
+    warnings: Vec<Spanned<()>>,
 }
 
 impl<'a> ParseContext<'a> {
@@ -62,7 +75,7 @@ impl<'a> ParseContext<'a> {
 
 pub(super) enum ParseError<'a> {
     LexError(LexError),
-    Temp(&'a str)
+    Expected(&'a str)
 }
 
 pub(super) struct Parser<'a, T> {
@@ -108,7 +121,7 @@ impl<'a, T: 'a> Parser<'a, T> {
                 Some(result)
             } else {
                 let error_span = ctx.peek().map(|s| s.span).unwrap_or((0,0));
-                ctx.add_err(Spanned::new(ParseError::Temp(error_msg), error_span));
+                ctx.add_err(Spanned::new(ParseError::Expected(error_msg), error_span));
                 None
             }
         })
@@ -264,4 +277,26 @@ pub fn symbol<'a>() -> Parser<'a, SymID> {
             None => None,
         }
     })
+}
+
+pub fn inputs<'a>() -> Parser<'a, Spanned<Vec<SymID>>> {
+    let left_paren = ctrl(Ctrl::LeftParen);
+    let right_paren = ctrl(Ctrl::RightParen).expect("Expected ')', found something else");
+    let parsed_args = inner_inputs();
+
+    parsed_args.delimited(left_paren, right_paren)
+}
+
+pub fn inner_inputs<'a>() -> Parser<'a, Spanned<Vec<SymID>>> {
+    symbol().delimited_list(ctrl(Ctrl::Comma))
+        .or(nothing().map(|_| vec![]))
+        .spanned()
+}
+
+pub fn block<'a>() -> Parser<'a, Vec<Stmt<'a>>> {
+    let left_curly = ctrl(Ctrl::LeftCurly);
+    let right_curly = ctrl(Ctrl::RightCurly).expect("Expected '}', found something else");
+    let items = stmt().zero_or_more();
+
+    items.delimited(left_curly, right_curly)
 }

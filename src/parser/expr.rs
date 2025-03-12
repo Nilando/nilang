@@ -219,7 +219,7 @@ fn value_expr<'a>() -> Parser<'a, Spanned<Expr<'a>>> {
     value().map(|value| Expr::Value(value)).spanned()
 }
 
-fn args<'a>() -> Parser<'a, Vec<Spanned<Expr<'a>>>> {
+pub fn args<'a>() -> Parser<'a, Vec<Spanned<Expr<'a>>>> {
     let left_paren = ctrl(Ctrl::LeftParen);
     let right_paren = ctrl(Ctrl::RightParen).expect("Expected ')', found something else");
     let parsed_args = inner_args();

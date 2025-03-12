@@ -3,11 +3,10 @@ use super::config::Config;
 use chrono::{DateTime, Local};
 use colored::Colorize;
 
-use crate::parser::AST;
-use crate::generator::IRProgram;
-use crate::generator::Generator;
+//use crate::generator::IRProgram;
+//use crate::generator::Generator;
 use crate::symbol_map::SymbolMap;
-use crate::parser::{Lexer, Parser, Spanned, SyntaxError};
+use crate::parser::{Lexer, Parser, Spanned, ParseError};
 
 use std::fs::File;
 use std::io::{BufRead, BufReader, Cursor, Write};
@@ -113,6 +112,7 @@ impl Driver {
         todo!()
     }
 
+    /*
     fn _display_syntax_errors(&self, file_name: &String, mut errs: Vec<Spanned<SyntaxError>>) {
         errs.sort_by(|b, a| a.span.0.partial_cmp(&b.span.0).unwrap());
 
@@ -214,4 +214,5 @@ impl Driver {
 
         program
     }
+    */
 }
