@@ -17,3 +17,21 @@ TODO:
 - symbols have been changed to be usize, they need to be changed to u32 to be able to be in a tagged pointer
 - display syntax errors
 - fix the repl
+
+
+lexer - pretty much good to go
+parser - I feel like it needs a tonn of refactoring? idk
+generator - also feels very messy
+
+
+VERSION 0.1.0
+- working repl
+- display syntax and runtime errors
+- instrinsic variables
+
+
+VERSION 0.2.0
+- CLOSURES
+
+VERSION 0.3.0
+- ASYNC
