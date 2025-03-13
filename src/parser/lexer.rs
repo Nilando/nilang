@@ -114,23 +114,22 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    pub fn get_input(&self) -> &'a str {
-        self.input
-    }
-
     pub fn get_token(&mut self, syms: &mut SymbolMap) -> Result<Spanned<Token<'a>>, Spanned<LexError>> {
         if self.eof {
             return Ok(self.end_token());
         }
 
-        if let Some(token) = self.peek.take() {
+        let t = if let Some(token) = self.peek.take() {
             Ok(token)
         } else {
             self.lex_token(syms)
-        }
+        };
+        println!("{:?}", t);
+        t
     }
 
     pub fn peek(&mut self, syms: &mut SymbolMap) -> Result<Spanned<Token<'a>>, Spanned<LexError>> {
+        println!("peeking");
         if self.eof {
             return Ok(self.end_token());
         }
@@ -217,10 +216,10 @@ impl<'a> Lexer<'a> {
 
     fn lex_word(&mut self, syms: &mut SymbolMap) -> Result<Option<Token<'a>>, LexError> {
         let first_char = if let Some(p) = self.chars.peek() {
-            if !p.is_alphanumeric() && *p != '_' {
-                return Ok(None);
-            } else {
+            if p.is_alphabetic() {
                 *p
+            } else {
+                return Ok(None);
             }
         } else {
             return Ok(None);
@@ -409,6 +408,8 @@ impl<'a> Lexer<'a> {
                 '/' => Token::Op(Op::Divide),
                 _ => return Ok(None),
             };
+
+            self.advance();
 
             Ok(Some(token))
         } else {

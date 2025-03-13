@@ -25,6 +25,7 @@ pub fn execute(mut config: Config) {
     if !parse_result.errors.is_empty() {
         println!("found errors");
         println!("{}", input);
+        println!("{:?}", parse_result.errors);
 
         std::process::exit(1);
     }

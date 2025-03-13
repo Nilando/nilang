@@ -13,6 +13,9 @@ pub use stmt::{Stmt, stmt};
 use super::symbol_map::{SymbolMap, SymID};
 use lexer::{Ctrl, Token, KeyWord};
 
+use std::rc::Rc;
+use std::cell::RefCell;
+
 pub fn parse_program(input: &str, syms: &mut SymbolMap) -> ParseResult {
     let mut lexer = Lexer::new(input);
 
@@ -75,19 +78,22 @@ impl<'a> ParseContext<'a> {
     }
 }
 
+#[derive(Debug)]
 pub(super) enum ParseError {
     LexError(LexError),
     Expected(String)
 }
 
+
+#[derive(Clone)]
 pub(super) struct Parser<'a, T> {
-    func: Box<dyn Fn(&mut ParseContext<'a>) -> Option<T> + 'a>,
+    func: Rc<dyn Fn(&mut ParseContext<'a>) -> Option<T> + 'a>,
 }
 
 impl<'a, T: 'a> Parser<'a, T> {
     pub fn new(func: impl Fn(&mut ParseContext<'a>) -> Option<T> + 'a) -> Self {
         Self {
-            func: Box::new(func)
+            func: Rc::new(func)
         }
     }
 
@@ -224,6 +230,15 @@ impl<'a, T: 'a> Parser<'a, T> {
             Some(items)
         })
     }
+
+    pub fn debug(self, msg: &'static str) -> Parser<'a, T>
+    {
+        Parser::new(move |ctx| {
+            println!("{}", msg);
+
+            self.parse(ctx)
+        })
+    }
 }
 
 pub fn nothing<'a>() -> Parser<'a, ()> {
@@ -295,10 +310,36 @@ pub fn inner_inputs<'a>() -> Parser<'a, Spanned<Vec<SymID>>> {
         .spanned()
 }
 
-pub fn block<'a>() -> Parser<'a, Vec<Stmt>> {
+pub fn block<'a>(sp: Parser<'a, Stmt>) -> Parser<'a, Vec<Stmt>> {
     let left_curly = ctrl(Ctrl::LeftCurly);
     let right_curly = ctrl(Ctrl::RightCurly).expect("Expected '}', found something else");
-    let items = stmt().zero_or_more();
+    let items = sp.zero_or_more();
 
     items.delimited(left_curly, right_curly)
+}
+
+pub fn recursive<'a, T>(
+    func: impl Fn(Parser<'a, T>) -> Parser<'a, T> + 'a
+) -> Parser<'a, T>
+where
+    T: 'a,
+{
+    let recursive_parser: Rc<RefCell<Option<Parser<'a, T>>>> = Rc::new(RefCell::new(None));
+    let recursive_parser_clone = recursive_parser.clone();
+
+    let parser = Parser::new(move |ctx| {
+        if recursive_parser_clone.borrow().is_none() {
+            let rec_parser = func(Parser::new({
+                let recursive_parser_inner = recursive_parser_clone.clone();
+                move |ctx| {
+                    // We expect this to be set now.
+                    recursive_parser_inner.borrow().as_ref().unwrap().parse(ctx)
+                }
+            }));
+            *recursive_parser_clone.borrow_mut() = Some(rec_parser);
+        }
+        recursive_parser_clone.borrow().as_ref().unwrap().parse(ctx)
+    });
+
+    parser
 }
