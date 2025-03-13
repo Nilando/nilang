@@ -166,6 +166,12 @@ impl<'a> Lexer<'a> {
             return Ok(token);
         }
 
+        if self.pos >= self.input.len() {
+            self.eof = true;
+            return Ok(self.end_token());
+        }
+
+
         Err(self.unexpected_token())
     }
 
@@ -448,7 +454,7 @@ impl<'a> Lexer<'a> {
                 self.pos += c.len_utf8();
             }
             None => {
-                self.eof == true;
+                self.eof = true;
             }
         }
     }

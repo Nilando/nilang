@@ -30,6 +30,8 @@ pub fn execute(mut config: Config) {
         std::process::exit(1);
     }
 
+    println!("{:#?}", parse_result.stmts);
+
     /*
     if ast_output_path {
         output the ast
