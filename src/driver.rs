@@ -1,37 +1,41 @@
 mod config;
+mod repl;
 
 use crate::symbol_map::SymbolMap;
 use crate::parser::{parse_program, Lexer, ParseResult};
 
 pub use config::Config;
 
-pub fn interpret_config(mut config: Config) {
+pub fn execute(mut config: Config) {
     if config.repl_mode() {
         todo!()
-            /*
-        let repl = Repl::new(config);
-        repl.run();
-        return;
+
+        /*
+            let repl = Repl::new(config);
+            repl.run();
+            return;
         */
     }
 
     let input = config.get_input().unwrap();
     let mut symbols = SymbolMap::new();
-    let parse_result = parse_input(input.as_str(), &mut symbols);
+    let parse_result = parse_program(input.as_str(), &mut symbols);
+    
 
-    /*
-    if parse_result.has_errors() {
-        display_errors(input, parse_result);
-        // exit
+    if !parse_result.errors.is_empty() {
+        println!("found errors");
+        println!("{}", input);
+
+        std::process::exit(1);
     }
 
+    /*
     if ast_output_path {
         output the ast
     }
     */
 
-    todo!()
-
+    todo!("generate bytecode")
     /*
         let bytecode = generate_bytecode(ast)
 
@@ -48,8 +52,3 @@ pub fn interpret_config(mut config: Config) {
     */
 }
 
-fn parse_input<'a>(input: &'a str, syms: &'a mut SymbolMap<'a>) -> ParseResult<'a> {
-    let mut lexer = Lexer::new(input);
-
-    parse_program(&mut lexer, syms)
-}

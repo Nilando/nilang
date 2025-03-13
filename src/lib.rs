@@ -4,4 +4,4 @@ mod parser;
 mod symbol_map;
 mod driver;
 
-pub use driver::{Driver, Config};
+pub use driver::{execute, Config};

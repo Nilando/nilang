@@ -13,9 +13,11 @@ pub use stmt::{Stmt, stmt};
 use super::symbol_map::{SymbolMap, SymID};
 use lexer::{Ctrl, Token, KeyWord};
 
-pub fn parse_program<'a>(lexer: &'a mut Lexer<'a>, syms: &'a mut SymbolMap<'a>) -> ParseResult<'a> {
+pub fn parse_program(input: &str, syms: &mut SymbolMap) -> ParseResult {
+    let mut lexer = Lexer::new(input);
+
     let mut ctx = ParseContext {
-        lexer,
+        lexer: &mut lexer,
         syms,
         errors: vec![],
         warnings: vec![]
@@ -30,16 +32,16 @@ pub fn parse_program<'a>(lexer: &'a mut Lexer<'a>, syms: &'a mut SymbolMap<'a>) 
     }
 }
 
-pub(super) struct ParseResult<'a> {
-    pub stmts: Vec<Stmt<'a>>,
-    pub errors: Vec<Spanned<ParseError<'a>>>,
+pub(super) struct ParseResult {
+    pub stmts: Vec<Stmt>,
+    pub errors: Vec<Spanned<ParseError>>,
     pub warnings: Vec<Spanned<()>>,
 }
 
 pub(super) struct ParseContext<'a> {
     lexer: &'a mut Lexer<'a>,
-    syms: &'a mut SymbolMap<'a>,
-    errors: Vec<Spanned<ParseError<'a>>>,
+    syms: &'a mut SymbolMap,
+    errors: Vec<Spanned<ParseError>>,
     warnings: Vec<Spanned<()>>,
 }
 
@@ -64,7 +66,7 @@ impl<'a> ParseContext<'a> {
         self.lexer.get_token(self.syms)
     }
 
-    fn add_err(&mut self, err: Spanned<ParseError<'a>>) {
+    fn add_err(&mut self, err: Spanned<ParseError>) {
         self.errors.push(err);
     }
 
@@ -73,9 +75,9 @@ impl<'a> ParseContext<'a> {
     }
 }
 
-pub(super) enum ParseError<'a> {
+pub(super) enum ParseError {
     LexError(LexError),
-    Expected(&'a str)
+    Expected(String)
 }
 
 pub(super) struct Parser<'a, T> {
@@ -121,7 +123,7 @@ impl<'a, T: 'a> Parser<'a, T> {
                 Some(result)
             } else {
                 let error_span = ctx.peek().map(|s| s.span).unwrap_or((0,0));
-                ctx.add_err(Spanned::new(ParseError::Expected(error_msg), error_span));
+                ctx.add_err(Spanned::new(ParseError::Expected(error_msg.to_string()), error_span));
                 None
             }
         })
@@ -293,7 +295,7 @@ pub fn inner_inputs<'a>() -> Parser<'a, Spanned<Vec<SymID>>> {
         .spanned()
 }
 
-pub fn block<'a>() -> Parser<'a, Vec<Stmt<'a>>> {
+pub fn block<'a>() -> Parser<'a, Vec<Stmt>> {
     let left_curly = ctrl(Ctrl::LeftCurly);
     let right_curly = ctrl(Ctrl::RightCurly).expect("Expected '}', found something else");
     let items = stmt().zero_or_more();

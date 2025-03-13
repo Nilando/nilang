@@ -4,12 +4,11 @@ mod vm;
 mod symbol_map;
 mod driver;
 
-use driver::{Driver, Config};
+use driver::{execute, Config};
 use clap::Parser as CliParser;
 
 fn main() {
     let config = Config::parse();
-    let driver = Driver::new(config);
 
-    driver.run();
+    execute(config);
 }
