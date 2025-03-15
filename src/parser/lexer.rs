@@ -1,5 +1,5 @@
-use crate::symbol_map::{SymbolMap, SymID};
 use super::spanned::Spanned;
+use crate::symbol_map::{SymID, SymbolMap};
 use serde::Serialize;
 
 #[derive(Clone, Copy, PartialEq, Debug, Serialize)]
@@ -114,7 +114,10 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    pub fn get_token(&mut self, syms: &mut SymbolMap) -> Result<Spanned<Token<'a>>, Spanned<LexError>> {
+    pub fn get_token(
+        &mut self,
+        syms: &mut SymbolMap,
+    ) -> Result<Spanned<Token<'a>>, Spanned<LexError>> {
         if self.eof {
             return Ok(self.end_token());
         }
@@ -144,7 +147,7 @@ impl<'a> Lexer<'a> {
         self.pos
     }
 
-    pub fn eof(&self) -> bool{
+    pub fn eof(&self) -> bool {
         self.pos >= self.input.len() || self.eof
     }
 
@@ -176,12 +179,11 @@ impl<'a> Lexer<'a> {
             return Ok(self.end_token());
         }
 
-
         self.advance();
         Err(self.unexpected_token())
     }
 
-    fn skip_ignored_input(&mut self) -> Result<(), Spanned<LexError>>{
+    fn skip_ignored_input(&mut self) -> Result<(), Spanned<LexError>> {
         loop {
             if !self.span(Self::lex_comment)?.item && !self.lex_whitespace() {
                 break;
@@ -197,7 +199,7 @@ impl<'a> Lexer<'a> {
                 self.advance();
                 true
             }
-            _ => false
+            _ => false,
         }
     }
 
@@ -205,7 +207,7 @@ impl<'a> Lexer<'a> {
         if self.read('/') {
             if self.read('/') {
                 self.read_until('\n');
-                return Ok(true)
+                return Ok(true);
             }
 
             if self.read('*') {
@@ -213,11 +215,11 @@ impl<'a> Lexer<'a> {
                     self.read_until('*');
                     self.advance();
                     if self.read('/') {
-                        return Ok(true)
+                        return Ok(true);
                     }
 
                     if self.eof {
-                        return Err(LexError::UnclosedComment)
+                        return Err(LexError::UnclosedComment);
                     }
                 }
             }
@@ -263,33 +265,31 @@ impl<'a> Lexer<'a> {
         let ending_pos = self.pos;
         let word = &self.input[starting_pos..ending_pos];
 
-        Ok(Some(
-            if is_global {
-                let id = syms.get_id(word);
+        Ok(Some(if is_global {
+            let id = syms.get_id(word);
 
-                Token::Global(id)
-            } else {
-                match word {
-                    "fn" => Token::KeyWord(KeyWord::Fn),
-                    "if" => Token::KeyWord(KeyWord::If),
-                    "print" => Token::KeyWord(KeyWord::Print),
-                    "read" => Token::KeyWord(KeyWord::Read),
-                    "else" => Token::KeyWord(KeyWord::Else),
-                    "null" => Token::KeyWord(KeyWord::Null),
-                    "true" => Token::KeyWord(KeyWord::True),
-                    "while" => Token::KeyWord(KeyWord::While),
-                    "break" => Token::KeyWord(KeyWord::Break),
-                    "false" => Token::KeyWord(KeyWord::False),
-                    "return" => Token::KeyWord(KeyWord::Return),
-                    "continue" => Token::KeyWord(KeyWord::Continue),
-                    _ => {
-                        let id = syms.get_id(word);
+            Token::Global(id)
+        } else {
+            match word {
+                "fn" => Token::KeyWord(KeyWord::Fn),
+                "if" => Token::KeyWord(KeyWord::If),
+                "print" => Token::KeyWord(KeyWord::Print),
+                "read" => Token::KeyWord(KeyWord::Read),
+                "else" => Token::KeyWord(KeyWord::Else),
+                "null" => Token::KeyWord(KeyWord::Null),
+                "true" => Token::KeyWord(KeyWord::True),
+                "while" => Token::KeyWord(KeyWord::While),
+                "break" => Token::KeyWord(KeyWord::Break),
+                "false" => Token::KeyWord(KeyWord::False),
+                "return" => Token::KeyWord(KeyWord::Return),
+                "continue" => Token::KeyWord(KeyWord::Continue),
+                _ => {
+                    let id = syms.get_id(word);
 
-                        Token::Ident(id)
-                    }
+                    Token::Ident(id)
                 }
             }
-        ))
+        }))
     }
 
     fn lex_num(&mut self) -> Result<Option<Token<'a>>, LexError> {
@@ -328,21 +328,19 @@ impl<'a> Lexer<'a> {
         let end_pos = self.pos;
         let num = &self.input[start_pos..end_pos];
 
-        Ok(Some(
-            if is_float {
-                if let Ok(f) = num.parse() {
-                    Token::Float(f)
-                } else {
-                    Token::Error(LexError::InvalidNumber)
-                }
+        Ok(Some(if is_float {
+            if let Ok(f) = num.parse() {
+                Token::Float(f)
             } else {
-                if let Ok(i) = num.parse() {
-                    Token::Int(i)
-                } else {
-                    Token::Error(LexError::InvalidNumber)
-                }
+                Token::Error(LexError::InvalidNumber)
             }
-        ))
+        } else {
+            if let Ok(i) = num.parse() {
+                Token::Int(i)
+            } else {
+                Token::Error(LexError::InvalidNumber)
+            }
+        }))
     }
 
     fn lex_string(&mut self) -> Result<Option<Token<'a>>, LexError> {
@@ -365,8 +363,7 @@ impl<'a> Lexer<'a> {
 
     fn lex_ctrl(&mut self) -> Result<Option<Token<'a>>, LexError> {
         if let Some(c) = self.chars.peek() {
-            let token = 
-            match *c {
+            let token = match *c {
                 '=' => {
                     self.advance();
 
@@ -446,7 +443,7 @@ impl<'a> Lexer<'a> {
         if let Some(peek) = self.chars.peek() {
             if *peek == c {
                 self.advance();
-                return true
+                return true;
             }
         }
 
@@ -487,16 +484,16 @@ impl<'a> Lexer<'a> {
         let ending_pos = self.pos;
 
         match value {
-            Ok(t) => {
-                Ok(Spanned::new(t, (starting_pos, ending_pos)))
-            }
-            Err(e) => {
-                Err(Spanned::new(e, (starting_pos, ending_pos)))
-            }
+            Ok(t) => Ok(Spanned::new(t, (starting_pos, ending_pos))),
+            Err(e) => Err(Spanned::new(e, (starting_pos, ending_pos))),
         }
     }
 
-    fn span_with_syms<T, F>(&mut self, syms: &mut SymbolMap, mut callback: F) -> Result<Spanned<T>, Spanned<LexError>>
+    fn span_with_syms<T, F>(
+        &mut self,
+        syms: &mut SymbolMap,
+        mut callback: F,
+    ) -> Result<Spanned<T>, Spanned<LexError>>
     where
         F: FnMut(&mut Self, &mut SymbolMap) -> Result<T, LexError>,
     {
@@ -505,27 +502,17 @@ impl<'a> Lexer<'a> {
         let ending_pos = self.pos;
 
         match value {
-            Ok(t) => {
-                Ok(Spanned::new(t, (starting_pos, ending_pos)))
-            }
-            Err(e) => {
-                Err(Spanned::new(e, (starting_pos, ending_pos)))
-            }
+            Ok(t) => Ok(Spanned::new(t, (starting_pos, ending_pos))),
+            Err(e) => Err(Spanned::new(e, (starting_pos, ending_pos))),
         }
     }
 
     fn end_token(&self) -> Spanned<Token<'a>> {
-        Spanned::new (
-            Token::Ctrl(Ctrl::End),
-            (0, 0),
-        )
+        Spanned::new(Token::Ctrl(Ctrl::End), (0, 0))
     }
 
     fn unexpected_token(&self) -> Spanned<LexError> {
-        Spanned::new (
-            LexError::Unknown,
-            (self.pos, self.pos + 1),
-        )
+        Spanned::new(LexError::Unknown, (self.pos, self.pos + 1))
     }
 }
 

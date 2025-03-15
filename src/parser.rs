@@ -1,20 +1,20 @@
+mod expr;
 mod lexer;
 mod spanned;
-mod value;
-mod expr;
 mod stmt;
+mod value;
 
-pub use lexer::{Lexer, LexError, Op};
-pub use spanned::Spanned;
-pub use value::Value;
 pub use expr::Expr;
-pub use stmt::{Stmt, stmt};
+pub use lexer::{LexError, Lexer, Op};
+pub use spanned::Spanned;
+pub use stmt::{stmt, Stmt};
+pub use value::Value;
 
-use super::symbol_map::{SymbolMap, SymID};
-use lexer::{Ctrl, Token, KeyWord};
+use super::symbol_map::{SymID, SymbolMap};
+use lexer::{Ctrl, KeyWord, Token};
 
-use std::rc::Rc;
 use std::cell::RefCell;
+use std::rc::Rc;
 
 pub fn parse_program(input: &str, syms: &mut SymbolMap) -> ParseResult<Vec<Stmt>> {
     let mut lexer = Lexer::new(input);
@@ -23,10 +23,11 @@ pub fn parse_program(input: &str, syms: &mut SymbolMap) -> ParseResult<Vec<Stmt>
         lexer: &mut lexer,
         syms,
         errors: vec![],
-        warnings: vec![]
+        warnings: vec![],
     };
 
-    let value = stmt().zero_or_more_with_recover(Ctrl::SemiColon)
+    let value = stmt()
+        .zero_or_more_with_recover(Ctrl::SemiColon)
         .append(ctrl(Ctrl::End).expect("Expected a statement definition"))
         .map(|(stmts, _)| stmts)
         .parse(&mut ctx);
@@ -88,10 +89,7 @@ impl<'a> ParseContext<'a> {
 #[derive(Debug)]
 pub(super) enum ParseError {
     LexError(LexError),
-    Expected {
-        msg: String,
-        found: String
-    }
+    Expected { msg: String, found: String },
 }
 
 #[derive(Clone)]
@@ -102,7 +100,7 @@ pub(super) struct Parser<'a, T> {
 impl<'a, T: 'a> Parser<'a, T> {
     pub fn new(func: impl Fn(&mut ParseContext<'a>) -> Option<T> + 'a) -> Self {
         Self {
-            func: Rc::new(func)
+            func: Rc::new(func),
         }
     }
 
@@ -110,8 +108,7 @@ impl<'a, T: 'a> Parser<'a, T> {
         (self.func)(ctx)
     }
 
-    pub fn then<A: 'a>(self, then: Parser<'a, A>) -> Parser<'a, A>
-    {
+    pub fn then<A: 'a>(self, then: Parser<'a, A>) -> Parser<'a, A> {
         Parser::new(move |ctx: &mut ParseContext<'a>| {
             if self.parse(ctx).is_some() {
                 then.parse(ctx)
@@ -121,8 +118,7 @@ impl<'a, T: 'a> Parser<'a, T> {
         })
     }
 
-    pub fn append<A: 'a>(self, then: Parser<'a, A>) -> Parser<'a, (T, A)>
-    {
+    pub fn append<A: 'a>(self, then: Parser<'a, A>) -> Parser<'a, (T, A)> {
         Parser::new(move |ctx: &mut ParseContext<'a>| {
             let first = self.parse(ctx)?;
             let second = then.parse(ctx)?;
@@ -131,13 +127,12 @@ impl<'a, T: 'a> Parser<'a, T> {
         })
     }
 
-    pub fn expect(self, error_msg: &'static str) -> Parser<'a, T>
-    {
+    pub fn expect(self, error_msg: &'static str) -> Parser<'a, T> {
         Parser::new(move |ctx| {
             if let Some(result) = self.parse(ctx) {
                 Some(result)
             } else {
-                let span = ctx.peek().map(|s| s.span).unwrap_or((0,0));
+                let span = ctx.peek().map(|s| s.span).unwrap_or((0, 0));
                 let error = ParseError::Expected {
                     msg: error_msg.to_string(),
                     found: ctx.lexer.get_input()[span.0..span.1].to_string(),
@@ -149,13 +144,12 @@ impl<'a, T: 'a> Parser<'a, T> {
         })
     }
 
-    pub fn or(self, alternative: Parser<'a, T>) -> Parser<'a, T>
-    {
+    pub fn or(self, alternative: Parser<'a, T>) -> Parser<'a, T> {
         Parser::new(move |ctx| {
             if let Some(value) = self.parse(ctx) {
                 Some(value)
             } else {
-               alternative.parse(ctx)
+                alternative.parse(ctx)
             }
         })
     }
@@ -191,7 +185,7 @@ impl<'a, T: 'a> Parser<'a, T> {
         })
     }
 
-    pub fn zero_or_more(self) -> Parser<'a, Vec<T>>{
+    pub fn zero_or_more(self) -> Parser<'a, Vec<T>> {
         Parser::new(move |ctx| {
             let mut values = vec![];
 
@@ -211,11 +205,8 @@ impl<'a, T: 'a> Parser<'a, T> {
     where
         C: Fn(T) -> N,
     {
-        Parser::new(move |ctx| {
-            self.parse(ctx).map(|v| callback(v))
-        })
+        Parser::new(move |ctx| self.parse(ctx).map(|v| callback(v)))
     }
-
 
     pub fn mix<B: 'a, C: 'a, D: 'a>(self, other: Parser<'a, B>, callback: C) -> Parser<'a, D>
     where
@@ -230,8 +221,7 @@ impl<'a, T: 'a> Parser<'a, T> {
         })
     }
 
-    pub fn spanned(self) -> Parser<'a, Spanned<T>>
-    {
+    pub fn spanned(self) -> Parser<'a, Spanned<T>> {
         Parser::new(move |ctx| {
             let start = ctx.peek().map(|s| s.span.0).unwrap_or(0);
             let result: Option<T> = self.parse(ctx);
@@ -241,8 +231,11 @@ impl<'a, T: 'a> Parser<'a, T> {
         })
     }
 
-    pub fn delimited<A: 'a, B: 'a>(self, left: Parser<'a, A>, right: Parser<'a, B>) -> Parser<'a, T>
-    {
+    pub fn delimited<A: 'a, B: 'a>(
+        self,
+        left: Parser<'a, A>,
+        right: Parser<'a, B>,
+    ) -> Parser<'a, T> {
         Parser::new(move |ctx| {
             let _ = left.parse(ctx)?;
             let result = self.parse(ctx)?;
@@ -252,8 +245,7 @@ impl<'a, T: 'a> Parser<'a, T> {
         })
     }
 
-    pub fn delimited_list<A: 'a>(self, delimiter: Parser<'a, A>) -> Parser<'a, Vec<T>>
-    {
+    pub fn delimited_list<A: 'a>(self, delimiter: Parser<'a, A>) -> Parser<'a, Vec<T>> {
         Parser::new(move |ctx| {
             let mut items = vec![];
 
@@ -276,8 +268,7 @@ impl<'a, T: 'a> Parser<'a, T> {
         })
     }
 
-    pub fn _debug(self, msg: &'static str) -> Parser<'a, T>
-    {
+    pub fn _debug(self, msg: &'static str) -> Parser<'a, T> {
         Parser::new(move |ctx| {
             println!("{}", msg);
 
@@ -291,53 +282,41 @@ pub fn nothing<'a>() -> Parser<'a, ()> {
 }
 
 pub fn ctrl<'a>(expected: Ctrl) -> Parser<'a, ()> {
-    Parser::new(move |ctx| {
-        match ctx.peek() {
-            Some(spanned_token) => {
-                match spanned_token.item {
-                    Token::Ctrl(ctrl) if ctrl == expected => {
-                        ctx.adv();
-                        Some(())
-                    }
-                    _ => None,
-                }
+    Parser::new(move |ctx| match ctx.peek() {
+        Some(spanned_token) => match spanned_token.item {
+            Token::Ctrl(ctrl) if ctrl == expected => {
+                ctx.adv();
+                Some(())
             }
-            None => None,
-        }
+            _ => None,
+        },
+        None => None,
     })
 }
 
 pub fn keyword<'a>(expected: KeyWord) -> Parser<'a, ()> {
-    Parser::new(move |ctx| {
-        match ctx.peek() {
-            Some(spanned_token) => {
-                match spanned_token.item {
-                    Token::KeyWord(keyword) if keyword == expected => {
-                        ctx.adv();
-                        Some(())
-                    }
-                    _ => None,
-                }
+    Parser::new(move |ctx| match ctx.peek() {
+        Some(spanned_token) => match spanned_token.item {
+            Token::KeyWord(keyword) if keyword == expected => {
+                ctx.adv();
+                Some(())
             }
-            None => None,
-        }
+            _ => None,
+        },
+        None => None,
     })
 }
 
 pub fn symbol<'a>() -> Parser<'a, SymID> {
-    Parser::new(|ctx| {
-        match ctx.peek() {
-            Some(spanned_token) => {
-                match spanned_token.item {
-                    Token::Ident(sym_id) => {
-                        ctx.adv();
-                        Some(sym_id)
-                    }
-                    _ => None,
-                }
+    Parser::new(|ctx| match ctx.peek() {
+        Some(spanned_token) => match spanned_token.item {
+            Token::Ident(sym_id) => {
+                ctx.adv();
+                Some(sym_id)
             }
-            None => None,
-        }
+            _ => None,
+        },
+        None => None,
     })
 }
 
@@ -350,7 +329,8 @@ pub fn inputs<'a>() -> Parser<'a, Spanned<Vec<SymID>>> {
 }
 
 pub fn inner_inputs<'a>() -> Parser<'a, Spanned<Vec<SymID>>> {
-    symbol().delimited_list(ctrl(Ctrl::Comma))
+    symbol()
+        .delimited_list(ctrl(Ctrl::Comma))
         .or(nothing().map(|_| vec![]))
         .spanned()
 }
@@ -363,9 +343,7 @@ pub fn block<'a>(sp: Parser<'a, Stmt>) -> Parser<'a, Vec<Stmt>> {
     items.delimited(left_curly, right_curly)
 }
 
-pub fn recursive<'a, T>(
-    func: impl Fn(Parser<'a, T>) -> Parser<'a, T> + 'a
-) -> Parser<'a, T>
+pub fn recursive<'a, T>(func: impl Fn(Parser<'a, T>) -> Parser<'a, T> + 'a) -> Parser<'a, T>
 where
     T: 'a,
 {

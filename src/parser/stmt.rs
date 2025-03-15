@@ -1,7 +1,9 @@
-use super::lexer::{KeyWord, Ctrl};
-use super::spanned::{Spanned};
-use super::expr::{Expr, expr, args};
-use super::{Parser, ParseContext, ParseError, recursive, ctrl, keyword, nothing, symbol, inputs, block};
+use super::expr::{args, expr, Expr};
+use super::lexer::{Ctrl, KeyWord};
+use super::spanned::Spanned;
+use super::{
+    block, ctrl, inputs, keyword, nothing, recursive, symbol, ParseContext, ParseError, Parser,
+};
 
 use crate::symbol_map::SymID;
 
@@ -47,63 +49,42 @@ pub fn stmt<'a>() -> Parser<'a, Stmt> {
 }
 
 fn func_decl<'a>(sp: Parser<'a, Stmt>) -> Parser<'a, Stmt> {
-    keyword(KeyWord::Fn)
-        .then(
-            symbol().expect("Expected function name after 'fn' keyword")
-            .append(
-                inputs().expect("Expected input list after 'fn name'")
-            )
-            .append(
-                block(sp).expect("Expected block '{ .. }' after function inputs")
-            )
-            .map(|((ident, inputs), stmts)| {
-                Stmt::FuncDecl {
-                    ident,
-                    inputs,
-                    stmts
-                }
-            })
-        )
+    keyword(KeyWord::Fn).then(
+        symbol()
+            .expect("Expected function name after 'fn' keyword")
+            .append(inputs().expect("Expected input list after 'fn name'"))
+            .append(block(sp).expect("Expected block '{ .. }' after function inputs"))
+            .map(|((ident, inputs), stmts)| Stmt::FuncDecl {
+                ident,
+                inputs,
+                stmts,
+            }),
+    )
 }
 
 fn if_or_ifelse_stmt<'a>(sp: Parser<'a, Stmt>) -> Parser<'a, Stmt> {
-    if_stmt(sp.clone())
-        .mix(
-            else_block(sp),
-            |(cond, stmts), else_stmts| {
-                if let Some(else_stmts) = else_stmts {
-                    Some(Stmt::IfElse {
-                        cond,
-                        stmts,
-                        else_stmts
-                    })
-                } else {
-                    Some(Stmt::If {
-                        cond,
-                        stmts,
-                    })
-                }
-            }
-        )
+    if_stmt(sp.clone()).mix(else_block(sp), |(cond, stmts), else_stmts| {
+        if let Some(else_stmts) = else_stmts {
+            Some(Stmt::IfElse {
+                cond,
+                stmts,
+                else_stmts,
+            })
+        } else {
+            Some(Stmt::If { cond, stmts })
+        }
+    })
 }
 
 fn else_block<'a>(sp: Parser<'a, Stmt>) -> Parser<'a, Vec<Stmt>> {
-    keyword(KeyWord::Else)
-        .then(
-            block(sp).expect("Expected a block '{ ... }' after else keyword")
-        )
+    keyword(KeyWord::Else).then(block(sp).expect("Expected a block '{ ... }' after else keyword"))
 }
 
 fn while_stmt<'a>(sp: Parser<'a, Stmt>) -> Parser<'a, Stmt> {
     keyword(KeyWord::While)
         .then(expr(sp.clone()).expect("Expected expression after 'while' keyword"))
         .append(block(sp).expect("Expected a block '{ ... }' after while expression"))
-        .map(|(cond, stmts)| {
-            Stmt::While {
-                cond,
-                stmts
-            }
-        })
+        .map(|(cond, stmts)| Stmt::While { cond, stmts })
 }
 
 fn if_stmt<'a>(sp: Parser<'a, Stmt>) -> Parser<'a, (Spanned<Expr>, Vec<Stmt>)> {
@@ -117,42 +98,28 @@ fn closed_stmt<'a>(sp: Parser<'a, Stmt>) -> Parser<'a, Stmt> {
         .or(return_stmt(sp))
         .or(break_stmt())
         .or(continue_stmt())
-        .append(
-            ctrl(Ctrl::SemiColon).expect("expected ';' at end of stmt")
-        )
+        .append(ctrl(Ctrl::SemiColon).expect("expected ';' at end of stmt"))
         .map(|(stmt, _)| stmt)
 }
 
 fn basic_stmt<'a>(sp: Parser<'a, Stmt>) -> Parser<'a, Stmt> {
-    expr(sp.clone())
-        .mix(
-            rhs_assign(sp),
-            |lhs, rhs| {
-                if let Some(src) = rhs {
-                    Some(Stmt::Assign {
-                        dest: lhs,
-                        src
-                    })
-                } else {
-                    Some(Stmt::Expr(lhs))
-                }
-            }
-        )
+    expr(sp.clone()).mix(rhs_assign(sp), |lhs, rhs| {
+        if let Some(src) = rhs {
+            Some(Stmt::Assign { dest: lhs, src })
+        } else {
+            Some(Stmt::Expr(lhs))
+        }
+    })
 }
 
 fn rhs_assign<'a>(sp: Parser<'a, Stmt>) -> Parser<'a, Spanned<Expr>> {
-    ctrl(Ctrl::Equal)
-        .then(
-            expr(sp).expect("expected expression after '='")
-        )
+    ctrl(Ctrl::Equal).then(expr(sp).expect("expected expression after '='"))
 }
 
 fn return_stmt<'a>(sp: Parser<'a, Stmt>) -> Parser<'a, Stmt> {
     keyword(KeyWord::Return)
-        .then(
-            expr(sp).map(|e| Some(e))
-                .or(nothing().map(|_| None))
-        ).map(|expr| Stmt::Return(expr))
+        .then(expr(sp).map(|e| Some(e)).or(nothing().map(|_| None)))
+        .map(|expr| Stmt::Return(expr))
 }
 
 fn break_stmt<'a>() -> Parser<'a, Stmt> {

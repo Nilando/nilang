@@ -1,11 +1,11 @@
+mod driver;
 mod generator;
 mod parser;
-mod vm;
 mod symbol_map;
-mod driver;
+mod vm;
 
-use driver::{execute, Config};
 use clap::Parser as CliParser;
+use driver::{execute, Config};
 
 fn main() {
     let config = Config::parse();

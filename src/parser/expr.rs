@@ -1,8 +1,8 @@
+use super::lexer::{Ctrl, KeyWord, Op, Token};
 use super::spanned::Spanned;
-use super::value::{Value, value};
-use super::lexer::{Op, Token, Ctrl, KeyWord};
-use super::{Parser, ParseContext, ParseError, ctrl, keyword, nothing, symbol, recursive};
 use super::stmt::Stmt;
+use super::value::{value, Value};
+use super::{ctrl, keyword, nothing, recursive, symbol, ParseContext, ParseError, Parser};
 
 use crate::symbol_map::SymID;
 
@@ -14,26 +14,26 @@ use serde::Serialize;
 //
 // BinopExpr ->
 //  || PrimaryExpr op Expr
-// 
-// PrimaryExpr -> 
+//
+// PrimaryExpr ->
 //  || SecondaryExpr
 //  || PrimaryExpr ( Args )
 //  || PrimaryExpr [ Expr ]
 //  || PrimaryExpr . Symbol
 //
-// SecondaryExpr -> 
+// SecondaryExpr ->
 //  || Value
 //  || ( Expr )
 //  || Read
 //  || Print ( Args )
 //
-// Args -> 
+// Args ->
 //  || NOTHING
 //  || InnerArgs
 //
 // InnerArgs ->
 //  || Expr , InnerArgs
-//  || Expr 
+//  || Expr
 
 #[derive(Debug, Serialize, Clone)]
 pub enum Expr {
@@ -62,15 +62,9 @@ pub enum Expr {
 }
 
 enum ExprSuffix {
-    Access {
-        key: SymID,
-    },
-    Index {
-        key: Box<Spanned<Expr>>,
-    },
-    Call {
-        args: Vec<Spanned<Expr>>,
-    },
+    Access { key: SymID },
+    Index { key: Box<Spanned<Expr>> },
+    Call { args: Vec<Spanned<Expr>> },
 }
 
 impl Expr {
@@ -79,24 +73,18 @@ impl Expr {
         let end = suffix.span.1;
 
         let new_expr = match suffix.item {
-            ExprSuffix::Call { args } => {
-                Expr::Call {
-                    calle: Box::new(expr),
-                    args
-                }
-            }
-            ExprSuffix::Index { key } => {
-                Expr::Index {
-                    store: Box::new(expr),
-                    key
-                }
-            }
-            ExprSuffix::Access { key } => {
-                Expr::Access {
-                    store: Box::new(expr),
-                    key
-                }
-            }
+            ExprSuffix::Call { args } => Expr::Call {
+                calle: Box::new(expr),
+                args,
+            },
+            ExprSuffix::Index { key } => Expr::Index {
+                store: Box::new(expr),
+                key,
+            },
+            ExprSuffix::Access { key } => Expr::Access {
+                store: Box::new(expr),
+                key,
+            },
         };
 
         Spanned::new(new_expr, (start, end))
@@ -106,20 +94,17 @@ impl Expr {
 pub fn expr<'a>(sp: Parser<'a, Stmt>) -> Parser<'a, Spanned<Expr>> {
     recursive(move |ep| {
         primary_expr(ep.clone(), sp.clone())
-            .mix(
-                rhs_binop(ep),
-                |lhs, rhs_binop|  {
-                    if let Some((op, rhs)) = rhs_binop {
-                        Some(Expr::Binop {
-                            lhs: Box::new(lhs),
-                            op,
-                            rhs: Box::new(rhs)
-                        })
-                    } else {
-                        Some(lhs.item)
-                    }
+            .mix(rhs_binop(ep), |lhs, rhs_binop| {
+                if let Some((op, rhs)) = rhs_binop {
+                    Some(Expr::Binop {
+                        lhs: Box::new(lhs),
+                        op,
+                        rhs: Box::new(rhs),
+                    })
+                } else {
+                    Some(lhs.item)
                 }
-            )
+            })
             .spanned()
     })
 }
@@ -131,29 +116,26 @@ pub fn rhs_binop<'a>(ep: Parser<'a, Spanned<Expr>>) -> Parser<'a, (Op, Spanned<E
 }
 
 pub fn binop<'a>() -> Parser<'a, Op> {
-    Parser::new(move |ctx| {
-        match ctx.peek() {
-            Some(spanned_token) => {
-                match spanned_token.item {
-                    Token::Op(op) => {
-                        ctx.adv();
-                        Some(op)
-                    }
-                    _ => None,
-                }
+    Parser::new(move |ctx| match ctx.peek() {
+        Some(spanned_token) => match spanned_token.item {
+            Token::Op(op) => {
+                ctx.adv();
+                Some(op)
             }
-            None => None,
-        }
+            _ => None,
+        },
+        None => None,
     })
 }
 
-fn primary_expr<'a>(ep: Parser<'a, Spanned<Expr>>, sp: Parser<'a, Stmt>) -> Parser<'a, Spanned<Expr>> {
+fn primary_expr<'a>(
+    ep: Parser<'a, Spanned<Expr>>,
+    sp: Parser<'a, Stmt>,
+) -> Parser<'a, Spanned<Expr>> {
     secondary_expr(ep.clone(), sp)
-        .append(
-            expr_suffix(ep).zero_or_more()
-        )
+        .append(expr_suffix(ep).zero_or_more())
         .map(|(secondary_expr, suffixes)| {
-            let mut expr = secondary_expr; 
+            let mut expr = secondary_expr;
 
             for suffix in suffixes.into_iter() {
                 expr = Expr::append_suffix(expr, suffix);
@@ -182,18 +164,20 @@ fn index_suffix<'a>(ep: Parser<'a, Spanned<Expr>>) -> Parser<'a, ExprSuffix> {
     let right_bracket = ctrl(Ctrl::RightBracket).expect("Expected ']', found something else");
     let expr = ep.expect("Expected and expression, found something else");
 
-    expr.delimited(left_bracket, right_bracket).map(|expr| {
-        ExprSuffix::Index {
-            key: Box::new(expr)
-        }
-    })
+    expr.delimited(left_bracket, right_bracket)
+        .map(|expr| ExprSuffix::Index {
+            key: Box::new(expr),
+        })
 }
 
 fn call_suffix<'a>(ep: Parser<'a, Spanned<Expr>>) -> Parser<'a, ExprSuffix> {
     args(ep).map(|args| ExprSuffix::Call { args })
 }
 
-fn secondary_expr<'a>(ep: Parser<'a, Spanned<Expr>>, sp: Parser<'a, Stmt>) -> Parser<'a, Spanned<Expr>> {
+fn secondary_expr<'a>(
+    ep: Parser<'a, Spanned<Expr>>,
+    sp: Parser<'a, Stmt>,
+) -> Parser<'a, Spanned<Expr>> {
     value_expr(ep.clone(), sp)
         .or(nested_expr(ep.clone()))
         .or(read_expr())
@@ -209,16 +193,17 @@ fn nested_expr<'a>(ep: Parser<'a, Spanned<Expr>>) -> Parser<'a, Spanned<Expr>> {
 }
 
 fn print_expr<'a>(ep: Parser<'a, Spanned<Expr>>) -> Parser<'a, Spanned<Expr>> {
-    keyword(KeyWord::Print).then(
-        args(ep).map(|args| Expr::Print { args }).spanned()
-    )
+    keyword(KeyWord::Print).then(args(ep).map(|args| Expr::Print { args }).spanned())
 }
 
 fn read_expr<'a>() -> Parser<'a, Spanned<Expr>> {
     keyword(KeyWord::Read).map(|_| Expr::Read).spanned()
 }
 
-fn value_expr<'a>(ep: Parser<'a, Spanned<Expr>>, sp: Parser<'a, Stmt>) -> Parser<'a, Spanned<Expr>> {
+fn value_expr<'a>(
+    ep: Parser<'a, Spanned<Expr>>,
+    sp: Parser<'a, Stmt>,
+) -> Parser<'a, Spanned<Expr>> {
     value(ep, sp).map(|value| Expr::Value(value)).spanned()
 }
 

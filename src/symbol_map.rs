@@ -1,6 +1,6 @@
-use std::collections::HashMap;
 use sandpit::TraceLeaf;
 use serde::Serialize;
+use std::collections::HashMap;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, TraceLeaf, Hash, Serialize)]
 pub struct SymID(u64);
@@ -21,9 +21,7 @@ impl SymbolMap {
         map.insert("@".to_string(), INPUT_SYM_ID);
         map.insert("self".to_string(), SELF_SYM_ID);
 
-        Self {
-            map,
-        }
+        Self { map }
     }
 
     pub fn get_id(&mut self, str: &str) -> SymID {

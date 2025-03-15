@@ -1,4 +1,4 @@
-use clap::{Parser, ArgGroup};
+use clap::{ArgGroup, Parser};
 use std::path::PathBuf;
 
 #[derive(Parser, Debug, Clone)]
@@ -6,11 +6,21 @@ use std::path::PathBuf;
 #[clap(group(ArgGroup::new("input").args(&["file", "inline", "stdin"])))]
 pub struct Config {
     /// Optionally output AST to stdout or to a file if provided
-    #[clap(short = 'a', long = "ast_output", requires = "input", default_missing_value = "stdout")]
+    #[clap(
+        short = 'a',
+        long = "ast_output",
+        requires = "input",
+        default_missing_value = "stdout"
+    )]
     pub ast_output_path: Option<PathBuf>,
 
     /// Optionally output bytecode to stdout or to a file if provided
-    #[clap(short = 'b', long = "bytecode_output", requires = "input", default_missing_value = "stdout")]
+    #[clap(
+        short = 'b',
+        long = "bytecode_output",
+        requires = "input",
+        default_missing_value = "stdout"
+    )]
     pub bytecode_output_path: Option<PathBuf>,
 
     /// Optionally read program as an arg
@@ -38,13 +48,17 @@ impl Config {
         if self.stdin {
             let mut input = String::new();
 
-            std::io::stdin().read_line(&mut input).expect("Error reading from stdin");
+            std::io::stdin()
+                .read_line(&mut input)
+                .expect("Error reading from stdin");
 
             return Some(input);
         }
 
         if self.file.is_some() {
-            return Some(std::fs::read_to_string(self.file.as_ref().unwrap()).expect("Failed to read file"));
+            return Some(
+                std::fs::read_to_string(self.file.as_ref().unwrap()).expect("Failed to read file"),
+            );
         }
 
         None
@@ -57,7 +71,6 @@ impl Config {
     pub fn repl_mode(&self) -> bool {
         !self.input_provided()
     }
-
 }
 
 impl TryFrom<Vec<&str>> for Config {

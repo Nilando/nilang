@@ -13,23 +13,17 @@ pub struct Span {
 
 impl<T> Spanned<T> {
     pub fn new(item: T, span: (usize, usize)) -> Self {
-        Self {
-            item,
-            span,
-        }
+        Self { item, span }
     }
 
     pub fn map<F, B>(&mut self, f: F) -> Spanned<B>
     where
-        F: Fn(&mut T) -> B
+        F: Fn(&mut T) -> B,
     {
         let span = self.span;
         let item = f(&mut self.item);
 
-        Spanned {
-            item,
-            span
-        }
+        Spanned { item, span }
     }
 }
 
