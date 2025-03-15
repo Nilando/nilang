@@ -1,5 +1,4 @@
 mod config;
-mod repl;
 
 use crate::parser::{parse_program, ParseError, Spanned};
 use crate::symbol_map::SymbolMap;
@@ -42,7 +41,7 @@ fn run_script(mut config: Config) {
     todo!("generate bytecode")
 }
 
-fn run_repl(config: Config) {
+fn run_repl(_config: Config) {
     println!("ENTERING REPL");
     let stdin = stdin();
     let mut stdout = stdout().into_raw_mode().unwrap();

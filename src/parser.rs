@@ -68,9 +68,11 @@ impl<'a> ParseContext<'a> {
         let _ = self.lexer.get_token(self.syms);
     }
 
+    /*
     fn next(&mut self) -> Result<Spanned<lexer::Token<'a>>, Spanned<lexer::LexError>> {
         self.lexer.get_token(self.syms)
     }
+    */
 
     fn add_err(&mut self, err: Spanned<ParseError>) {
         self.errors.push(err);

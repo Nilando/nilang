@@ -6,11 +6,6 @@ pub struct Spanned<T> {
     pub span: (usize, usize),
 }
 
-pub struct Span {
-    start: usize,
-    end: usize,
-}
-
 impl<T> Spanned<T> {
     pub fn new(item: T, span: (usize, usize)) -> Self {
         Self { item, span }
