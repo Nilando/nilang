@@ -30,14 +30,15 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn get_input(&mut self) -> Option<String> {
+    pub fn get_script(&mut self) -> Option<String> {
         if self.inline.is_some() {
             return self.inline.take();
         }
 
         if self.stdin {
             let mut input = String::new();
-            std::io::stdin().read_line(&mut input);
+
+            std::io::stdin().read_line(&mut input).expect("Error reading from stdin");
 
             return Some(input);
         }

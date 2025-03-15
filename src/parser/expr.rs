@@ -220,7 +220,6 @@ fn read_expr<'a>() -> Parser<'a, Spanned<Expr>> {
 
 fn value_expr<'a>(ep: Parser<'a, Spanned<Expr>>, sp: Parser<'a, Stmt>) -> Parser<'a, Spanned<Expr>> {
     value(ep, sp).map(|value| Expr::Value(value)).spanned()
-        .debug("value expr")
 }
 
 pub fn args<'a>(ep: Parser<'a, Spanned<Expr>>) -> Parser<'a, Vec<Spanned<Expr>>> {

@@ -16,7 +16,7 @@ use lexer::{Ctrl, Token, KeyWord};
 use std::rc::Rc;
 use std::cell::RefCell;
 
-pub fn parse_program(input: &str, syms: &mut SymbolMap) -> ParseResult {
+pub fn parse_program(input: &str, syms: &mut SymbolMap) -> ParseResult<Vec<Stmt>> {
     let mut lexer = Lexer::new(input);
 
     let mut ctx = ParseContext {
@@ -26,17 +26,20 @@ pub fn parse_program(input: &str, syms: &mut SymbolMap) -> ParseResult {
         warnings: vec![]
     };
 
-    let stmts = stmt().zero_or_more().parse(&mut ctx).unwrap();
+    let value = stmt().zero_or_more_with_recover(Ctrl::SemiColon)
+        .append(ctrl(Ctrl::End).expect("Expected a statement definition"))
+        .map(|(stmts, _)| stmts)
+        .parse(&mut ctx);
 
     ParseResult {
-        stmts,
+        value,
         errors: ctx.errors,
         warnings: ctx.warnings,
     }
 }
 
-pub(super) struct ParseResult {
-    pub stmts: Vec<Stmt>,
+pub(super) struct ParseResult<T> {
+    pub value: Option<T>,
     pub errors: Vec<Spanned<ParseError>>,
     pub warnings: Vec<Spanned<()>>,
 }
@@ -76,14 +79,20 @@ impl<'a> ParseContext<'a> {
     fn pos(&self) -> usize {
         self.lexer.pos()
     }
+
+    fn eof(&self) -> bool {
+        self.lexer.eof()
+    }
 }
 
 #[derive(Debug)]
 pub(super) enum ParseError {
     LexError(LexError),
-    Expected(String)
+    Expected {
+        msg: String,
+        found: String
+    }
 }
-
 
 #[derive(Clone)]
 pub(super) struct Parser<'a, T> {
@@ -128,8 +137,13 @@ impl<'a, T: 'a> Parser<'a, T> {
             if let Some(result) = self.parse(ctx) {
                 Some(result)
             } else {
-                let error_span = ctx.peek().map(|s| s.span).unwrap_or((0,0));
-                ctx.add_err(Spanned::new(ParseError::Expected(error_msg.to_string()), error_span));
+                let span = ctx.peek().map(|s| s.span).unwrap_or((0,0));
+                let error = ParseError::Expected {
+                    msg: error_msg.to_string(),
+                    found: ctx.lexer.get_input()[span.0..span.1].to_string(),
+                };
+
+                ctx.add_err(Spanned::new(error, span));
                 None
             }
         })
@@ -143,6 +157,37 @@ impl<'a, T: 'a> Parser<'a, T> {
             } else {
                alternative.parse(ctx)
             }
+        })
+    }
+
+    pub fn zero_or_more_with_recover(self, ctrl_recover: Ctrl) -> Parser<'a, Vec<T>> {
+        Parser::new(move |ctx| {
+            let mut values = vec![];
+
+            'a: loop {
+                if let Some(value) = self.parse(ctx) {
+                    values.push(value);
+                } else {
+                    loop {
+                        match ctrl(ctrl_recover).parse(ctx) {
+                            Some(_) => {
+                                continue 'a;
+                            }
+                            None => {
+                                if ctx.eof() {
+                                    break;
+                                }
+
+                                ctx.adv();
+                            }
+                        }
+                    }
+
+                    break;
+                }
+            }
+
+            Some(values)
         })
     }
 
@@ -231,7 +276,7 @@ impl<'a, T: 'a> Parser<'a, T> {
         })
     }
 
-    pub fn debug(self, msg: &'static str) -> Parser<'a, T>
+    pub fn _debug(self, msg: &'static str) -> Parser<'a, T>
     {
         Parser::new(move |ctx| {
             println!("{}", msg);

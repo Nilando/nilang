@@ -1,37 +1,17 @@
-TODO:
-- update parser to accept multi arg calls and funcs
-- update the generator to correctly build the IR for func calls
-- update the compiler to correctly build the byte code for both calling, 
-  and handling input that was passed into the func
-- refactor the lexer to be a function
-
-- parsers need a major refactor
-  - the code is hard to read and very imperative
-  - could be much more declarative
-  - look into adding parser combinators
-  - consider getting rid of the parser struct and move to a more functional approach
-
-- change lexer from struct to a function
-- make bytecode actually readable
-- add unit tests
-- symbols have been changed to be usize, they need to be changed to u32 to be able to be in a tagged pointer
-- display syntax errors
-- fix the repl
-
-
-lexer - pretty much good to go
-parser - I feel like it needs a tonn of refactoring? idk
-generator - also feels very messy
-
-
 VERSION 0.1.0
-- working repl
 - display syntax and runtime errors
-- instrinsic variables
+- custom bytecode format
+- functions are first class citizens
+- function closures
+- global variables
+- simple read & print io
+- working repl
+- concurrent garbage collection
+- standard library?
 
-
-VERSION 0.2.0
-- CLOSURES
-
-VERSION 0.3.0
-- ASYNC
+ROADMAP
+- async functions
+- type type
+- error throwing
+- static typing!?
+- built in SQL!?

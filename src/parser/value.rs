@@ -3,7 +3,6 @@ use crate::parser::stmt::Stmt;
 use crate::symbol_map::{SymbolMap, SymID};
 use super::lexer::{Op, Token, Ctrl, KeyWord};
 use super::{Parser, ParseContext, ParseError, ctrl, keyword, nothing, symbol, inputs, block, recursive};
-use super::expr::expr;
 
 use serde::Serialize;
 
@@ -99,4 +98,140 @@ fn atom_value<'a>() -> Parser<'a, Value> {
             None => None,
         }
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use super::super::expr::expr;
+    use super::super::stmt::stmt;
+    use super::super::ParseResult;
+    use super::super::lexer::Lexer;
+
+    fn parse_value(input: &str) -> ParseResult<Value> {
+        let mut lexer = Lexer::new(input);
+        let mut syms = SymbolMap::new();
+        let mut ctx = ParseContext {
+            lexer: &mut lexer,
+            syms:&mut syms,
+            errors: vec![],
+            warnings: vec![]
+        };
+        let stmt = stmt();
+        let value = value(expr(stmt.clone()), stmt).parse(&mut ctx);
+
+        ParseResult {
+            value,
+            errors: ctx.errors,
+            warnings: ctx.warnings,
+        }
+    }
+
+    #[test]
+    fn parse_symbol() {
+        match parse_value("testing").value {
+            Some(Value::Ident(_)) => {}
+             _ => assert!(false),
+        }
+    }
+
+    #[test]
+    fn parse_int() {
+        match parse_value("123").value {
+            Some(Value::Int(123)) => {}
+             _ => assert!(false),
+        }
+    }
+
+    #[test]
+    fn parse_float() {
+        match parse_value("420.69").value {
+            Some(Value::Float(420.69)) => {}
+             _ => assert!(false),
+        }
+    }
+
+    #[test]
+    fn parse_string() {
+        match parse_value("\"bababooy\"").value {
+            Some(Value::String(s)) => assert!(&s == "bababooy"),
+             _ => assert!(false),
+        }
+    }
+
+    #[test]
+    fn parse_global() {
+        match parse_value("@test").value {
+            Some(Value::Global(_)) => {},
+             _ => assert!(false),
+        }
+    }
+
+    #[test]
+    fn parse_empty_list() {
+        match parse_value("[]").value {
+            Some(Value::List(l)) => assert!(l.is_empty()),
+             _ => assert!(false),
+        }
+    }
+
+    #[test]
+    fn parse_list_with_single_value() {
+        match parse_value("[333]").value {
+            Some(Value::List(list)) => {
+                assert!(list.len() == 1);
+                if let Expr::Value(Value::Int(333)) = list[0].item {
+                } else {
+                    assert!(false);
+                }
+            }
+             _ => assert!(false),
+        }
+    }
+
+    #[test]
+    fn parse_empty_fn() {
+        match parse_value("fn(){}").value {
+            Some(Value::InlineFunc { inputs, stmts } ) => {
+                assert!(inputs.item.is_empty());
+                assert!(stmts.is_empty());
+            }
+             _ => assert!(false),
+        }
+    }
+
+    #[test]
+    fn parse_example_fn() {
+        match parse_value("fn(x, y) { return x + y; }").value {
+            Some(Value::InlineFunc { inputs, stmts } ) => {
+                assert!(inputs.item.len() == 2);
+                assert!(stmts.len() == 1);
+            }
+             _ => assert!(false),
+        }
+    }
+
+    #[test]
+    fn parse_null() {
+        match parse_value("null").value {
+            Some(Value::Null) => {}
+             _ => assert!(false),
+        }
+    }
+
+    #[test]
+    fn parse_true() {
+        match parse_value("true").value {
+            Some(Value::Bool(true)) => {}
+             _ => assert!(false),
+        }
+    }
+
+    #[test]
+    fn parse_false() {
+        match parse_value("false").value {
+            Some(Value::Bool(false)) => {}
+             _ => assert!(false),
+        }
+    }
 }

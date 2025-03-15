@@ -119,17 +119,14 @@ impl<'a> Lexer<'a> {
             return Ok(self.end_token());
         }
 
-        let t = if let Some(token) = self.peek.take() {
+        if let Some(token) = self.peek.take() {
             Ok(token)
         } else {
             self.lex_token(syms)
-        };
-        println!("{:?}", t);
-        t
+        }
     }
 
     pub fn peek(&mut self, syms: &mut SymbolMap) -> Result<Spanned<Token<'a>>, Spanned<LexError>> {
-        println!("peeking");
         if self.eof {
             return Ok(self.end_token());
         }
@@ -145,6 +142,14 @@ impl<'a> Lexer<'a> {
 
     pub fn pos(&self) -> usize {
         self.pos
+    }
+
+    pub fn eof(&self) -> bool{
+        self.pos >= self.input.len() || self.eof
+    }
+
+    pub fn get_input(&self) -> &str {
+        self.input
     }
 
     fn lex_token(&mut self, syms: &mut SymbolMap) -> Result<Spanned<Token<'a>>, Spanned<LexError>> {
@@ -172,6 +177,7 @@ impl<'a> Lexer<'a> {
         }
 
 
+        self.advance();
         Err(self.unexpected_token())
     }
 
@@ -221,15 +227,28 @@ impl<'a> Lexer<'a> {
     }
 
     fn lex_word(&mut self, syms: &mut SymbolMap) -> Result<Option<Token<'a>>, LexError> {
-        let first_char = if let Some(p) = self.chars.peek() {
-            if p.is_alphabetic() {
-                *p
+        let is_global;
+        if self.read('@') {
+            is_global = true;
+
+            if let Some(p) = self.chars.peek() {
+                if !p.is_alphabetic() {
+                    return Err(LexError::Unknown);
+                }
             } else {
-                return Ok(None);
+                return Err(LexError::Unknown);
             }
         } else {
-            return Ok(None);
-        };
+            is_global = false;
+
+            if let Some(p) = self.chars.peek() {
+                if !p.is_alphabetic() {
+                    return Ok(None);
+                }
+            } else {
+                return Ok(None);
+            };
+        }
 
         let starting_pos = self.pos;
 
@@ -245,7 +264,7 @@ impl<'a> Lexer<'a> {
         let word = &self.input[starting_pos..ending_pos];
 
         Ok(Some(
-            if first_char == '@' {
+            if is_global {
                 let id = syms.get_id(word);
 
                 Token::Global(id)

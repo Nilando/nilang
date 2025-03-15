@@ -27,14 +27,6 @@ a = [[[[]]]];
 a[0] = 1;
 a[1] = a[0 + 0];
 
-// ==================== Error
-err = Error("error message");
-err.throw();
-err?; 
-
-// ==================== Type Type
-Error, List, Map, String, Num, Fn, AsyncFn, Bool, Null, Future
-
 // ==================== Map
 a = {};
 a = {a : "a", b: 123, c: []};
@@ -43,25 +35,19 @@ a = {map: {}};
 a = {foo: 1, "bar": 2};
 
 // use 'map.key' to access symbolic keys
-a.foo == 1;
+print(a.foo == 1); // true
 
 // use 'map[key]' to access value keys
 a["bar"] == 2;
 
-
 // ==================== Function
-fn() {};
+fn () {};
 
-// Putting an exclamation in front of a fn means it will catch a thrown error
-// return it as its return value.
-err = fn!() {
-  throw Error("this will be caught");
-};
-
-fn(arg1, arg2, arg3) {
+fn test (arg1, arg2, arg3) {
   print("Hello from function!");
   return arg1 + arg2 + arg3;
-};
+}
+
 
 // functions can be assigned to values
 my_fn = fn() { 1 + 1; };
@@ -70,7 +56,7 @@ my_fn = fn() { 1 + 1; };
 // functions are values and can be assigned to vars
 adder = fn(a, b) { 
   return a + b;
-}
+};
 
 // functions support binding arguements
 get_two = adder.bind(1, 1);
@@ -83,8 +69,8 @@ two = add_one(1);
 adder_maker = fn(b) {
   return fn(a) { 
     return a + b;
-  }
-}
+  };
+};
 
 add_one = adder_maker(1);
 
@@ -92,37 +78,12 @@ get_counter = fn() {
   i = 0;
 
   return fn() {
-    i += 1;
+    i = i + 1;
 
     return i;
-  }
-}
+  };
+};
 
-
-// ====================== Globals
-// denoted by a leading @
-@my_global_value = "data_accessible_everywhere";
-
-data = @my_global_value;
-
-
-// ====================== Global Intrinsic Functions
-// denoted by a leading $
-$print("message");
-$error("message");
-$assert(true != false);
-
-bool_string = $type_string(true)
-
-input_string = $read();
-input_args = $args();
-
-async_fn = async fn() {};
-
-async_fn(); // launched asynchronously, future is ignored
-my_future = async_fn(); // launched asynchronously and future is held onto
-value = await my_future;
-value = await async_fn();
 
 
 // ====================== Control Flow

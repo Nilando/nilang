@@ -114,7 +114,6 @@ fn if_stmt<'a>(sp: Parser<'a, Stmt>) -> Parser<'a, (Spanned<Expr>, Vec<Stmt>)> {
 
 fn closed_stmt<'a>(sp: Parser<'a, Stmt>) -> Parser<'a, Stmt> {
     basic_stmt(sp.clone())
-        .debug("parsing basic stmt")
         .or(return_stmt(sp))
         .or(break_stmt())
         .or(continue_stmt())
