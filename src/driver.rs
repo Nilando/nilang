@@ -103,14 +103,16 @@ fn run_repl(_config: Config) {
                 write!(stdout, "{}", c).unwrap();
             }
             Event::Key(Key::Backspace) => {
-                input.pop();
-                write!(
-                    stdout,
-                    "{}  {}",
-                    termion::cursor::Left(1),
-                    termion::cursor::Left(1)
-                )
-                .unwrap();
+                if !input.is_empty() {
+                    input.pop();
+                    write!(
+                        stdout,
+                        "\r> {} \r> {}",
+                        " ".repeat(80),
+                        input
+                    )
+                    .unwrap();
+                }
             }
             Event::Key(Key::Ctrl('c')) | Event::Key(Key::Ctrl('d')) => {
                 writeln!(stdout, "\nExiting REPL").unwrap();
