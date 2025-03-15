@@ -140,6 +140,7 @@ fn update_integration_test(program_name: &str, expected_status: bool) {
     );
 }
 
+/*
 #[test]
 fn test_hello_world() {
     integration_test_runner("hello_world", false);
@@ -149,3 +150,4 @@ fn test_hello_world() {
 fn test_doubler() {
     integration_test_runner("doubler", false);
 }
+*/

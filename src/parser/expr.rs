@@ -35,7 +35,7 @@ use serde::Serialize;
 //  || Expr , InnerArgs
 //  || Expr
 
-#[derive(Debug, Serialize, Clone)]
+#[derive(Debug, Serialize, Clone, PartialEq)]
 pub enum Expr {
     Value(Value),
     Binop {
@@ -55,9 +55,7 @@ pub enum Expr {
         calle: Box<Spanned<Expr>>,
         args: Vec<Spanned<Expr>>,
     },
-    Print {
-        args: Vec<Spanned<Expr>>,
-    },
+    Print(Box<Spanned<Expr>>),
     Read,
 }
 
@@ -193,7 +191,7 @@ fn nested_expr(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, Spanned<Expr>> {
 }
 
 fn print_expr(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, Spanned<Expr>> {
-    keyword(KeyWord::Print).then(args(ep).map(|args| Expr::Print { args }).spanned())
+    keyword(KeyWord::Print).then(ep.map(|e| Expr::Print(Box::new(e))).spanned())
 }
 
 fn read_expr<'a>() -> Parser<'a, Spanned<Expr>> {
@@ -218,4 +216,137 @@ pub fn args(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, Vec<Spanned<Expr>>> {
 fn inner_args(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, Vec<Spanned<Expr>>> {
     ep.delimited_list(ctrl(Ctrl::Comma))
         .or(nothing().map(|_| vec![]))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::super::expr::expr;
+    use super::super::stmt::stmt;
+    use super::super::ParseResult;
+    use crate::symbol_map::SymbolMap;
+    use super::*;
+
+    fn parse_expr_with_syms(input: &str, syms: &mut SymbolMap) -> ParseResult<Expr> {
+        let stmt = stmt();
+
+        expr(stmt).map(|e| e.item).parse_str(input, syms)
+    }
+
+    fn parse_expr(input: &str) -> ParseResult<Expr> {
+        let mut syms = SymbolMap::new();
+
+        parse_expr_with_syms(input, &mut syms)
+    }
+
+    #[test]
+    fn print_string() {
+        match parse_expr("print \"potato\"").value {
+            Some(Expr::Print(v)) => {
+                assert!(v.item == Expr::Value(Value::String("potato".to_string())));
+            }
+            _ => assert!(false),
+        }
+    }
+
+    #[test]
+    fn number_expr() {
+        match parse_expr("09876").value {
+            Some(Expr::Value(Value::Int(i))) => assert!(i == 09876),
+            _ => assert!(false),
+        }
+    }
+
+    #[test]
+    fn read_expr() {
+        match parse_expr("read").value {
+            Some(Expr::Read) => {}
+            _ => assert!(false),
+        }
+    }
+
+    #[test]
+    fn binop_expr() {
+        match parse_expr("1 + 2 - 3").value {
+            Some(Expr::Binop { lhs, op, rhs }) => {
+                assert!(lhs.item == Expr::Value(Value::Int(1)));
+                assert!(op == Op::Plus);
+                match rhs.item {
+                    Expr::Binop { lhs, op, rhs } => {
+                        assert!(lhs.item == Expr::Value(Value::Int(2)));
+                        assert!(op == Op::Minus);
+                        assert!(rhs.item == Expr::Value(Value::Int(3)));
+                    }
+                    _ => assert!(false),
+                }
+            }
+            _ => assert!(false),
+        }
+    }
+
+    #[test]
+    fn indexed_expr() {
+        if let Some(Expr::Index { store, key }) = parse_expr("my_array[0][1][2]").value {
+            assert!(key.item == Expr::Value(Value::Int(2)));
+
+            if let Expr::Index { store, key } = store.item {
+                assert!(key.item == Expr::Value(Value::Int(1)));
+
+                if let Expr::Index { store, key } = store.item {
+                    assert!(key.item == Expr::Value(Value::Int(0)));
+
+                    if let Expr::Value(Value::Ident(_)) = store.item {
+                        return
+                    }
+                }
+            }
+        }
+
+        assert!(false);
+    }
+
+    #[test]
+    fn access_expr() {
+        let mut syms = SymbolMap::new();
+        if let Some(Expr::Access { store, key }) = parse_expr_with_syms("a.b.c", &mut syms).value {
+            assert!(key == syms.get_id("c"));
+
+            if let Expr::Access { store, key } = store.item {
+                assert!(key == syms.get_id("b"));
+                assert!(store.item == Expr::Value(Value::Ident(syms.get_id("a"))));
+                return;
+            }
+        }
+
+        assert!(false);
+    }
+
+    #[test]
+    fn nested_call_expr() {
+        let mut syms = SymbolMap::new();
+        if let Some(Expr::Call { calle, args }) = parse_expr_with_syms("a(0)(1)(2)", &mut syms).value {
+            assert!(args[0].item == Expr::Value(Value::Int(2)));
+
+            if let Expr::Call { calle, args } = calle.item {
+                assert!(args[0].item == Expr::Value(Value::Int(1)));
+
+                if let Expr::Call { calle, args } = calle.item {
+                    assert!(args[0].item == Expr::Value(Value::Int(0)));
+                    assert!(calle.item == Expr::Value(Value::Ident(syms.get_id("a"))));
+                    return;
+                }
+            }
+        }
+
+        assert!(false);
+    }
+
+    #[test]
+    fn expr_none() {
+        assert_eq!(parse_expr("").value, None);
+    }
+
+    #[test]
+    fn bad_binop_returns_lhs() {
+        assert_eq!(parse_expr("1 + ").value, Some(Expr::Value(Value::Int(1))));
+    }
 }

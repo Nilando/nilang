@@ -16,26 +16,11 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 pub fn parse_program(input: &str, syms: &mut SymbolMap) -> ParseResult<Vec<Stmt>> {
-    let mut lexer = Lexer::new(input);
-
-    let mut ctx = ParseContext {
-        lexer: &mut lexer,
-        syms,
-        errors: vec![],
-        warnings: vec![],
-    };
-
-    let value = stmt()
+    stmt()
         .zero_or_more_with_recover(Ctrl::SemiColon)
         .append(ctrl(Ctrl::End).expect("Expected a statement definition"))
         .map(|(stmts, _)| stmts)
-        .parse(&mut ctx);
-
-    ParseResult {
-        value,
-        errors: ctx.errors,
-        warnings: ctx.warnings,
-    }
+        .parse_str(input, syms)
 }
 
 pub(super) struct ParseResult<T> {
@@ -45,7 +30,7 @@ pub(super) struct ParseResult<T> {
 }
 
 pub(super) struct ParseContext<'a> {
-    lexer: &'a mut Lexer<'a>,
+    lexer: Lexer<'a>,
     syms: &'a mut SymbolMap,
     errors: Vec<Spanned<ParseError>>,
     warnings: Vec<Spanned<()>>,
@@ -105,7 +90,26 @@ impl<'a, T: 'a> Parser<'a, T> {
         }
     }
 
-    pub fn parse(&self, ctx: &mut ParseContext<'a>) -> Option<T> {
+    pub fn parse_str(self, input: &'a str, syms: &'a mut SymbolMap) -> ParseResult<T> {
+        let lexer = Lexer::new(input);
+
+        let mut ctx = ParseContext {
+            lexer,
+            syms,
+            errors: vec![],
+            warnings: vec![],
+        };
+
+        let value = self.parse(&mut ctx);
+
+        ParseResult {
+            value,
+            errors: ctx.errors,
+            warnings: ctx.warnings,
+        }
+    }
+
+    fn parse(&self, ctx: &mut ParseContext<'a>) -> Option<T> {
         (self.func)(ctx)
     }
 
@@ -356,7 +360,6 @@ where
             let rec_parser = func(Parser::new({
                 let recursive_parser_inner = recursive_parser_clone.clone();
                 move |ctx| {
-                    // We expect this to be set now.
                     recursive_parser_inner.borrow().as_ref().unwrap().parse(ctx)
                 }
             }));

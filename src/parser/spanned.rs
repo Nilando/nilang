@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-#[derive(Clone, Copy, Debug, Serialize)]
+#[derive(Clone, Copy, Debug, Serialize, PartialEq)]
 pub struct Spanned<T> {
     pub item: T,
     pub span: (usize, usize),

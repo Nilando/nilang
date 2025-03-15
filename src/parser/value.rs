@@ -8,7 +8,7 @@ use crate::symbol_map::SymID;
 
 use serde::Serialize;
 
-#[derive(Debug, Serialize, Clone)]
+#[derive(Debug, Serialize, Clone, PartialEq)]
 pub enum Value {
     Ident(SymID),
     Global(SymID),
@@ -106,78 +106,65 @@ fn atom_value<'a>() -> Parser<'a, Value> {
 #[cfg(test)]
 mod tests {
     use super::super::expr::expr;
-    use super::super::lexer::Lexer;
     use super::super::stmt::stmt;
     use super::super::ParseResult;
-    use crate::parser::ParseContext;
     use crate::symbol_map::SymbolMap;
     use super::*;
 
     fn parse_value(input: &str) -> ParseResult<Value> {
-        let mut lexer = Lexer::new(input);
         let mut syms = SymbolMap::new();
-        let mut ctx = ParseContext {
-            lexer: &mut lexer,
-            syms: &mut syms,
-            errors: vec![],
-            warnings: vec![],
-        };
-        let stmt = stmt();
-        let value = value(expr(stmt.clone()), stmt).parse(&mut ctx);
 
-        ParseResult {
-            value,
-            errors: ctx.errors,
-            warnings: ctx.warnings,
-        }
+        parse_value_with_syms(input, &mut syms)
+    }
+
+    fn parse_value_with_syms(input: &str, syms: &mut SymbolMap) -> ParseResult<Value> {
+        let stmt = stmt();
+
+        value(expr(stmt.clone()), stmt).parse_str(input, syms)
     }
 
     #[test]
     fn parse_symbol() {
-        match parse_value("testing").value {
-            Some(Value::Ident(_)) => {}
-            _ => assert!(false),
-        }
+        let mut syms = SymbolMap::new();
+        let v = parse_value_with_syms("testing", &mut syms).value;
+
+        assert_eq!(v, Some(Value::Ident(syms.get_id("testing"))));
     }
 
     #[test]
     fn parse_int() {
-        match parse_value("123").value {
-            Some(Value::Int(123)) => {}
-            _ => assert!(false),
-        }
+        let v = parse_value("123").value;
+
+        assert_eq!(v, Some(Value::Int(123)));
     }
 
     #[test]
     fn parse_float() {
-        match parse_value("420.69").value {
-            Some(Value::Float(420.69)) => {}
-            _ => assert!(false),
-        }
+        let v = parse_value("420.69").value;
+
+        assert_eq!(v, Some(Value::Float(420.69)));
     }
 
     #[test]
     fn parse_string() {
-        match parse_value("\"bababooy\"").value {
-            Some(Value::String(s)) => assert!(&s == "bababooy"),
-            _ => assert!(false),
-        }
+        let v = parse_value("\"bababooy\"").value;
+
+        assert_eq!(v, Some(Value::String("bababooy".to_string())));
     }
 
     #[test]
     fn parse_global() {
-        match parse_value("@test").value {
-            Some(Value::Global(_)) => {}
-            _ => assert!(false),
-        }
+        let mut syms = SymbolMap::new();
+        let v = parse_value_with_syms("@test", &mut syms).value;
+
+        assert_eq!(v, Some(Value::Global(syms.get_id("test"))));
     }
 
     #[test]
     fn parse_empty_list() {
-        match parse_value("[]").value {
-            Some(Value::List(l)) => assert!(l.is_empty()),
-            _ => assert!(false),
-        }
+        let v = parse_value("[]").value.unwrap();
+
+        assert_eq!(v, Value::List(vec![]));
     }
 
     #[test]
@@ -218,25 +205,36 @@ mod tests {
 
     #[test]
     fn parse_null() {
-        match parse_value("null").value {
-            Some(Value::Null) => {}
-            _ => assert!(false),
-        }
+        assert_eq!(parse_value("null").value.unwrap(), Value::Null)
     }
 
     #[test]
     fn parse_true() {
-        match parse_value("true").value {
-            Some(Value::Bool(true)) => {}
-            _ => assert!(false),
-        }
+        assert_eq!(parse_value("true").value.unwrap(), Value::Bool(true))
     }
 
     #[test]
     fn parse_false() {
-        match parse_value("false").value {
-            Some(Value::Bool(false)) => {}
-            _ => assert!(false),
-        }
+        assert_eq!(parse_value("false").value.unwrap(), Value::Bool(false))
+    }
+
+    #[test]
+    fn parse_none() {
+        assert_eq!(parse_value(";").value, None)
+    }
+
+    #[test]
+    fn parse_eof() {
+        assert_eq!(parse_value("").value, None)
+    }
+
+    #[test]
+    fn parse_bad_symbol() {
+        assert_eq!(parse_value("%").value, None)
+    }
+
+    #[test]
+    fn parse_comment() {
+        assert_eq!(parse_value("// this is a comment!").value, None)
     }
 }
