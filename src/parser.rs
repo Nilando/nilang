@@ -5,10 +5,9 @@ mod stmt;
 mod value;
 
 pub use expr::Expr;
-pub use lexer::{LexError, Lexer, Op};
+pub use lexer::{LexError, Lexer};
 pub use spanned::Spanned;
 pub use stmt::{stmt, Stmt};
-pub use value::Value;
 
 use super::symbol_map::{SymID, SymbolMap};
 use lexer::{Ctrl, KeyWord, Token};
@@ -205,7 +204,7 @@ impl<'a, T: 'a> Parser<'a, T> {
     where
         C: Fn(T) -> N,
     {
-        Parser::new(move |ctx| self.parse(ctx).map(|v| callback(v)))
+        Parser::new(move |ctx| self.parse(ctx).map(&callback))
     }
 
     pub fn mix<B: 'a, C: 'a, D: 'a>(self, other: Parser<'a, B>, callback: C) -> Parser<'a, D>
@@ -335,7 +334,7 @@ pub fn inner_inputs<'a>() -> Parser<'a, Spanned<Vec<SymID>>> {
         .spanned()
 }
 
-pub fn block<'a>(sp: Parser<'a, Stmt>) -> Parser<'a, Vec<Stmt>> {
+pub fn block(sp: Parser<'_, Stmt>) -> Parser<'_, Vec<Stmt>> {
     let left_curly = ctrl(Ctrl::LeftCurly);
     let right_curly = ctrl(Ctrl::RightCurly).expect("Expected '}', found something else");
     let items = sp.zero_or_more();

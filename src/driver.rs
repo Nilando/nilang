@@ -107,9 +107,8 @@ fn run_repl(config: Config) {
                 input.pop();
                 write!(
                     stdout,
-                    "{} {}{}",
+                    "{}  {}",
                     termion::cursor::Left(1),
-                    ' ',
                     termion::cursor::Left(1)
                 )
                 .unwrap();
@@ -164,7 +163,7 @@ fn display_parse_errors(
                     write!(stdout, "   | {}\r\n", line).unwrap();
                 }
 
-                let mut highlight_line = String::from(format!("   {}|{} ", blue, reset));
+                let mut highlight_line = format!("   {}|{} ", blue, reset);
                 for (i, _) in line.chars().enumerate() {
                     let pos = line_start + i;
                     if pos >= error.span.0 && pos < error.span.1 {

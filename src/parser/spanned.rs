@@ -27,11 +27,11 @@ impl<T> Spanned<T> {
     }
 }
 
-impl<T> Into<Option<Spanned<T>>> for Spanned<Option<T>> {
-    fn into(self) -> Option<Spanned<T>> {
-        match self.item {
+impl<T> From<Spanned<Option<T>>> for Option<Spanned<T>> {
+    fn from(val: Spanned<Option<T>>) -> Self {
+        match val.item {
             None => None,
-            Some(t) => Some(Spanned::new(t, self.span)),
+            Some(t) => Some(Spanned::new(t, val.span)),
         }
     }
 }

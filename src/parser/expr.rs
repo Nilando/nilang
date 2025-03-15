@@ -2,7 +2,7 @@ use super::lexer::{Ctrl, KeyWord, Op, Token};
 use super::spanned::Spanned;
 use super::stmt::Stmt;
 use super::value::{value, Value};
-use super::{ctrl, keyword, nothing, recursive, symbol, ParseContext, ParseError, Parser};
+use super::{ctrl, keyword, nothing, recursive, symbol, Parser};
 
 use crate::symbol_map::SymID;
 
@@ -91,7 +91,7 @@ impl Expr {
     }
 }
 
-pub fn expr<'a>(sp: Parser<'a, Stmt>) -> Parser<'a, Spanned<Expr>> {
+pub fn expr(sp: Parser<'_, Stmt>) -> Parser<'_, Spanned<Expr>> {
     recursive(move |ep| {
         primary_expr(ep.clone(), sp.clone())
             .mix(rhs_binop(ep), |lhs, rhs_binop| {
@@ -109,7 +109,7 @@ pub fn expr<'a>(sp: Parser<'a, Stmt>) -> Parser<'a, Spanned<Expr>> {
     })
 }
 
-pub fn rhs_binop<'a>(ep: Parser<'a, Spanned<Expr>>) -> Parser<'a, (Op, Spanned<Expr>)> {
+pub fn rhs_binop(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, (Op, Spanned<Expr>)> {
     let expr = ep.expect("Expected expression after binary operator");
 
     binop().append(expr)
@@ -145,7 +145,7 @@ fn primary_expr<'a>(
         })
 }
 
-fn expr_suffix<'a>(ep: Parser<'a, Spanned<Expr>>) -> Parser<'a, Spanned<ExprSuffix>> {
+fn expr_suffix(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, Spanned<ExprSuffix>> {
     call_suffix(ep.clone())
         .or(index_suffix(ep))
         .or(access_suffix())
@@ -159,7 +159,7 @@ fn access_suffix<'a>() -> Parser<'a, ExprSuffix> {
     period.then(sym).map(|key| ExprSuffix::Access { key })
 }
 
-fn index_suffix<'a>(ep: Parser<'a, Spanned<Expr>>) -> Parser<'a, ExprSuffix> {
+fn index_suffix(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, ExprSuffix> {
     let left_bracket = ctrl(Ctrl::LeftBracket);
     let right_bracket = ctrl(Ctrl::RightBracket).expect("Expected ']', found something else");
     let expr = ep.expect("Expected and expression, found something else");
@@ -170,7 +170,7 @@ fn index_suffix<'a>(ep: Parser<'a, Spanned<Expr>>) -> Parser<'a, ExprSuffix> {
         })
 }
 
-fn call_suffix<'a>(ep: Parser<'a, Spanned<Expr>>) -> Parser<'a, ExprSuffix> {
+fn call_suffix(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, ExprSuffix> {
     args(ep).map(|args| ExprSuffix::Call { args })
 }
 
@@ -184,7 +184,7 @@ fn secondary_expr<'a>(
         .or(print_expr(ep))
 }
 
-fn nested_expr<'a>(ep: Parser<'a, Spanned<Expr>>) -> Parser<'a, Spanned<Expr>> {
+fn nested_expr(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, Spanned<Expr>> {
     let left_paren = ctrl(Ctrl::LeftParen);
     let right_paren = ctrl(Ctrl::RightParen).expect("Expected ')', found something else");
     let expr = ep.expect("Expected and expression, found something else");
@@ -192,7 +192,7 @@ fn nested_expr<'a>(ep: Parser<'a, Spanned<Expr>>) -> Parser<'a, Spanned<Expr>> {
     expr.delimited(left_paren, right_paren)
 }
 
-fn print_expr<'a>(ep: Parser<'a, Spanned<Expr>>) -> Parser<'a, Spanned<Expr>> {
+fn print_expr(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, Spanned<Expr>> {
     keyword(KeyWord::Print).then(args(ep).map(|args| Expr::Print { args }).spanned())
 }
 
@@ -204,10 +204,10 @@ fn value_expr<'a>(
     ep: Parser<'a, Spanned<Expr>>,
     sp: Parser<'a, Stmt>,
 ) -> Parser<'a, Spanned<Expr>> {
-    value(ep, sp).map(|value| Expr::Value(value)).spanned()
+    value(ep, sp).map(Expr::Value).spanned()
 }
 
-pub fn args<'a>(ep: Parser<'a, Spanned<Expr>>) -> Parser<'a, Vec<Spanned<Expr>>> {
+pub fn args(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, Vec<Spanned<Expr>>> {
     let left_paren = ctrl(Ctrl::LeftParen);
     let right_paren = ctrl(Ctrl::RightParen).expect("Expected ')', found something else");
     let parsed_args = inner_args(ep);
@@ -215,7 +215,7 @@ pub fn args<'a>(ep: Parser<'a, Spanned<Expr>>) -> Parser<'a, Vec<Spanned<Expr>>>
     parsed_args.delimited(left_paren, right_paren)
 }
 
-fn inner_args<'a>(ep: Parser<'a, Spanned<Expr>>) -> Parser<'a, Vec<Spanned<Expr>>> {
+fn inner_args(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, Vec<Spanned<Expr>>> {
     ep.delimited_list(ctrl(Ctrl::Comma))
         .or(nothing().map(|_| vec![]))
 }

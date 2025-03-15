@@ -1,10 +1,10 @@
-use super::lexer::{Ctrl, KeyWord, Op, Token};
+use super::lexer::{Ctrl, KeyWord, Token};
 use super::{
-    block, ctrl, inputs, keyword, nothing, recursive, symbol, ParseContext, ParseError, Parser,
+    block, ctrl, inputs, keyword, nothing, Parser,
 };
 use crate::parser::stmt::Stmt;
 use crate::parser::{Expr, Spanned};
-use crate::symbol_map::{SymID, SymbolMap};
+use crate::symbol_map::SymID;
 
 use serde::Serialize;
 
@@ -32,7 +32,7 @@ pub fn value<'a>(ep: Parser<'a, Spanned<Expr>>, sp: Parser<'a, Stmt>) -> Parser<
         .or(inline_func(sp))
 }
 
-fn inline_func<'a>(sp: Parser<'a, Stmt>) -> Parser<'a, Value> {
+fn inline_func(sp: Parser<'_, Stmt>) -> Parser<'_, Value> {
     keyword(KeyWord::Fn).then(
         inputs()
             .expect("Expected input list after 'fn name'")
@@ -41,41 +41,41 @@ fn inline_func<'a>(sp: Parser<'a, Stmt>) -> Parser<'a, Value> {
     )
 }
 
-fn map<'a>(ep: Parser<'a, Spanned<Expr>>) -> Parser<'a, Value> {
+fn map(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, Value> {
     let left_curly = ctrl(Ctrl::LeftCurly);
     let right_curly = ctrl(Ctrl::RightCurly).expect("Expected '}', found something else");
     let items = inner_map(ep);
 
     items
         .delimited(left_curly, right_curly)
-        .map(|items| Value::Map(items))
+        .map(Value::Map)
 }
 
-pub fn inner_map<'a>(
-    ep: Parser<'a, Spanned<Expr>>,
-) -> Parser<'a, Vec<(Spanned<Expr>, Spanned<Expr>)>> {
+pub fn inner_map(
+    ep: Parser<'_, Spanned<Expr>>,
+) -> Parser<'_, Vec<(Spanned<Expr>, Spanned<Expr>)>> {
     map_entry(ep)
         .delimited_list(ctrl(Ctrl::Comma))
         .or(nothing().map(|_| vec![]))
 }
 
-pub fn map_entry<'a>(ep: Parser<'a, Spanned<Expr>>) -> Parser<'a, (Spanned<Expr>, Spanned<Expr>)> {
+pub fn map_entry(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, (Spanned<Expr>, Spanned<Expr>)> {
     let colon = ctrl(Ctrl::Colon).expect("expected ':' found something else");
 
     ep.clone().append(colon.then(ep))
 }
 
-pub fn list<'a>(ep: Parser<'a, Spanned<Expr>>) -> Parser<'a, Value> {
+pub fn list(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, Value> {
     let left_bracket = ctrl(Ctrl::LeftBracket);
     let right_bracket = ctrl(Ctrl::RightBracket).expect("Expected ']', found something else");
     let items = inner_list(ep);
 
     items
         .delimited(left_bracket, right_bracket)
-        .map(|items| Value::List(items))
+        .map(Value::List)
 }
 
-pub fn inner_list<'a>(ep: Parser<'a, Spanned<Expr>>) -> Parser<'a, Vec<Spanned<Expr>>> {
+pub fn inner_list(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, Vec<Spanned<Expr>>> {
     ep.delimited_list(ctrl(Ctrl::Comma))
         .or(nothing().map(|_| vec![]))
 }
@@ -109,6 +109,8 @@ mod tests {
     use super::super::lexer::Lexer;
     use super::super::stmt::stmt;
     use super::super::ParseResult;
+    use crate::parser::ParseContext;
+    use crate::symbol_map::SymbolMap;
     use super::*;
 
     fn parse_value(input: &str) -> ParseResult<Value> {

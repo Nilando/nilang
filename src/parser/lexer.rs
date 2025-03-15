@@ -334,12 +334,10 @@ impl<'a> Lexer<'a> {
             } else {
                 Token::Error(LexError::InvalidNumber)
             }
+        } else if let Ok(i) = num.parse() {
+            Token::Int(i)
         } else {
-            if let Ok(i) = num.parse() {
-                Token::Int(i)
-            } else {
-                Token::Error(LexError::InvalidNumber)
-            }
+            Token::Error(LexError::InvalidNumber)
         }))
     }
 
@@ -520,7 +518,7 @@ impl<'a> Lexer<'a> {
 mod tests {
     use super::*;
 
-    fn assert_src_tokens<'a>(source: &'a str, tokens: Vec<Token>, mut symbol_map: SymbolMap) {
+    fn assert_src_tokens(source: &str, tokens: Vec<Token>, mut symbol_map: SymbolMap) {
         let mut lexer = Lexer::new(source);
 
         for expected_token in tokens {

@@ -1,8 +1,8 @@
-use super::expr::{args, expr, Expr};
+use super::expr::{expr, Expr};
 use super::lexer::{Ctrl, KeyWord};
 use super::spanned::Spanned;
 use super::{
-    block, ctrl, inputs, keyword, nothing, recursive, symbol, ParseContext, ParseError, Parser,
+    block, ctrl, inputs, keyword, nothing, recursive, symbol, Parser,
 };
 
 use crate::symbol_map::SymID;
@@ -48,7 +48,7 @@ pub fn stmt<'a>() -> Parser<'a, Stmt> {
     })
 }
 
-fn func_decl<'a>(sp: Parser<'a, Stmt>) -> Parser<'a, Stmt> {
+fn func_decl(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
     keyword(KeyWord::Fn).then(
         symbol()
             .expect("Expected function name after 'fn' keyword")
@@ -62,7 +62,7 @@ fn func_decl<'a>(sp: Parser<'a, Stmt>) -> Parser<'a, Stmt> {
     )
 }
 
-fn if_or_ifelse_stmt<'a>(sp: Parser<'a, Stmt>) -> Parser<'a, Stmt> {
+fn if_or_ifelse_stmt(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
     if_stmt(sp.clone()).mix(else_block(sp), |(cond, stmts), else_stmts| {
         if let Some(else_stmts) = else_stmts {
             Some(Stmt::IfElse {
@@ -76,24 +76,24 @@ fn if_or_ifelse_stmt<'a>(sp: Parser<'a, Stmt>) -> Parser<'a, Stmt> {
     })
 }
 
-fn else_block<'a>(sp: Parser<'a, Stmt>) -> Parser<'a, Vec<Stmt>> {
+fn else_block(sp: Parser<'_, Stmt>) -> Parser<'_, Vec<Stmt>> {
     keyword(KeyWord::Else).then(block(sp).expect("Expected a block '{ ... }' after else keyword"))
 }
 
-fn while_stmt<'a>(sp: Parser<'a, Stmt>) -> Parser<'a, Stmt> {
+fn while_stmt(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
     keyword(KeyWord::While)
         .then(expr(sp.clone()).expect("Expected expression after 'while' keyword"))
         .append(block(sp).expect("Expected a block '{ ... }' after while expression"))
         .map(|(cond, stmts)| Stmt::While { cond, stmts })
 }
 
-fn if_stmt<'a>(sp: Parser<'a, Stmt>) -> Parser<'a, (Spanned<Expr>, Vec<Stmt>)> {
+fn if_stmt(sp: Parser<'_, Stmt>) -> Parser<'_, (Spanned<Expr>, Vec<Stmt>)> {
     keyword(KeyWord::If)
         .then(expr(sp.clone()).expect("Expected expression after 'if' keyword"))
         .append(block(sp).expect("Expected a block '{ ... }' after if expression"))
 }
 
-fn closed_stmt<'a>(sp: Parser<'a, Stmt>) -> Parser<'a, Stmt> {
+fn closed_stmt(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
     basic_stmt(sp.clone())
         .or(return_stmt(sp))
         .or(break_stmt())
@@ -102,7 +102,7 @@ fn closed_stmt<'a>(sp: Parser<'a, Stmt>) -> Parser<'a, Stmt> {
         .map(|(stmt, _)| stmt)
 }
 
-fn basic_stmt<'a>(sp: Parser<'a, Stmt>) -> Parser<'a, Stmt> {
+fn basic_stmt(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
     expr(sp.clone()).mix(rhs_assign(sp), |lhs, rhs| {
         if let Some(src) = rhs {
             Some(Stmt::Assign { dest: lhs, src })
@@ -112,14 +112,14 @@ fn basic_stmt<'a>(sp: Parser<'a, Stmt>) -> Parser<'a, Stmt> {
     })
 }
 
-fn rhs_assign<'a>(sp: Parser<'a, Stmt>) -> Parser<'a, Spanned<Expr>> {
+fn rhs_assign(sp: Parser<'_, Stmt>) -> Parser<'_, Spanned<Expr>> {
     ctrl(Ctrl::Equal).then(expr(sp).expect("expected expression after '='"))
 }
 
-fn return_stmt<'a>(sp: Parser<'a, Stmt>) -> Parser<'a, Stmt> {
+fn return_stmt(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
     keyword(KeyWord::Return)
-        .then(expr(sp).map(|e| Some(e)).or(nothing().map(|_| None)))
-        .map(|expr| Stmt::Return(expr))
+        .then(expr(sp).map(Some).or(nothing().map(|_| None)))
+        .map(Stmt::Return)
 }
 
 fn break_stmt<'a>() -> Parser<'a, Stmt> {
