@@ -53,6 +53,13 @@ impl<'a> ParseContext<'a> {
         let _ = self.lexer.get_token(self.syms);
     }
 
+    fn peek_one_ahead(&mut self) -> Option<Spanned<Token<'a>>> {
+        match self.lexer.peek_nth(1, self.syms) {
+            Err(_) => None,
+            Ok(spanned_token) => Some(spanned_token),
+        }
+    }
+
     /*
     fn next(&mut self) -> Result<Spanned<lexer::Token<'a>>, Spanned<lexer::LexError>> {
         self.lexer.get_token(self.syms)
@@ -319,9 +326,9 @@ pub fn symbol<'a>() -> Parser<'a, SymID> {
                 ctx.adv();
                 Some(sym_id)
             }
-            _ => None,
+            _ => None
         },
-        None => None,
+        None => None
     })
 }
 

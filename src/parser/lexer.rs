@@ -143,6 +143,35 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    // 0 is equivalent to peek(), 1 would be the token after peek() and so on
+    pub fn peek_nth(&mut self, mut n: usize, syms: &mut SymbolMap) -> Result<Spanned<Token<'a>>, Spanned<LexError>> {
+        if n == 0 {
+            return self.peek(syms);
+        }
+
+        let starting_pos = self.pos;
+        let eof = self.eof;
+
+        // if peek is     present we lex n     tokens
+        // if peek is NOT present we lex n + 1 tokens
+        if self.peek.is_none() {
+            n += 1;
+        }
+
+        for _ in 1..n {
+            let _ = self.lex_token(syms);
+        }
+
+        let token = self.lex_token(syms);
+
+        // rewind to where we started
+        self.eof = eof;
+        self.pos = starting_pos;
+        self.chars = self.input[starting_pos..(self.input.len())].chars().peekable();
+
+        token
+    }
+
     pub fn pos(&self) -> usize {
         self.pos
     }
@@ -609,5 +638,22 @@ mod tests {
         ];
 
         assert_src_tokens(source, tokens, symbol_map);
+    }
+
+    #[test]
+    fn peek_one_ahead() {
+        let mut syms = SymbolMap::new();
+
+        let source = r#"0 1 2 3 4"#;
+
+        let mut lexer = Lexer::new(source);
+
+        for i in 0..5 {
+            assert_eq!(lexer.peek_nth(i, &mut syms).unwrap().item, Token::Int(i as isize));
+        }
+
+        for i in 0..5 {
+            assert_eq!(lexer.get_token(&mut syms).unwrap().item, Token::Int(i));
+        }
     }
 }

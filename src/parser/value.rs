@@ -33,12 +33,13 @@ pub fn value<'a>(ep: Parser<'a, Spanned<Expr>>, sp: Parser<'a, Stmt>) -> Parser<
 }
 
 fn inline_func(sp: Parser<'_, Stmt>) -> Parser<'_, Value> {
-    keyword(KeyWord::Fn).then(
-        inputs()
-            .expect("Expected input list after 'fn name'")
-            .append(block(sp).expect("Expected block '{ .. }' after function inputs"))
-            .map(|(inputs, stmts)| Value::InlineFunc { inputs, stmts }),
-    )
+    keyword(KeyWord::Fn)
+        .then(
+            inputs()
+                .expect("Expected input list after 'fn name'")
+                .append(block(sp).expect("Expected block '{ .. }' after function inputs"))
+                .map(|(inputs, stmts)| Value::InlineFunc { inputs, stmts }),
+        )
 }
 
 fn map(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, Value> {

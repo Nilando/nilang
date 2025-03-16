@@ -1,5 +1,5 @@
 use super::expr::{expr, Expr};
-use super::lexer::{Ctrl, KeyWord};
+use super::lexer::{Token, Ctrl, KeyWord};
 use super::spanned::Spanned;
 use super::{
     block, ctrl, inputs, keyword, nothing, recursive, symbol, Parser,
@@ -41,25 +41,42 @@ pub enum Stmt {
 
 pub fn stmt<'a>() -> Parser<'a, Stmt> {
     recursive(|stmt_parser| {
-        closed_stmt(stmt_parser.clone())
+        func_decl(stmt_parser.clone())
+            .or(closed_stmt(stmt_parser.clone()))
             .or(if_or_ifelse_stmt(stmt_parser.clone()))
-            .or(while_stmt(stmt_parser.clone()))
-            .or(func_decl(stmt_parser))
+            .or(while_stmt(stmt_parser))
     })
 }
 
 fn func_decl(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
-    keyword(KeyWord::Fn).then(
-        symbol()
-            .expect("Expected function name after 'fn' keyword")
-            .append(inputs().expect("Expected input list after 'fn name'"))
-            .append(block(sp).expect("Expected block '{ .. }' after function inputs"))
-            .map(|((ident, inputs), stmts)| Stmt::FuncDecl {
-                ident,
-                inputs,
-                stmts,
-            }),
-    )
+    let func_decl = 
+        keyword(KeyWord::Fn)
+            .then(
+                symbol()
+                .expect("Expected function name after 'fn' keyword")
+                .append(inputs().expect("Expected input list after 'fn name'"))
+                .append(block(sp).expect("Expected block '{ .. }' after function inputs"))
+                .map(|((ident, inputs), stmts)| Stmt::FuncDecl {
+                    ident,
+                    inputs,
+                    stmts,
+                }),
+        );
+
+    // requires a peek ahead to the token after the next to 
+    // differentiate between a func value vs a function declaration
+    Parser::new(move |ctx| {
+        let next = ctx.peek_one_ahead();
+
+        if let Some(token) = next {
+            if let Token::Ident(_) = token.item {
+
+                return func_decl.parse(ctx);
+            }
+        }
+
+        None
+    })
 }
 
 fn if_or_ifelse_stmt(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
@@ -128,4 +145,45 @@ fn break_stmt<'a>() -> Parser<'a, Stmt> {
 
 fn continue_stmt<'a>() -> Parser<'a, Stmt> {
     keyword(KeyWord::Continue).map(|_| Stmt::Continue)
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::symbol_map::SymbolMap;
+    use super::super::value::Value;
+    use super::super::ParseResult;
+    use super::*;
+
+    fn parse_stmt_with_syms(input: &str, syms: &mut SymbolMap) -> ParseResult<Stmt> {
+        stmt().parse_str(input, syms)
+    }
+
+    fn parse_stmt(input: &str) -> ParseResult<Stmt> {
+        let mut syms = SymbolMap::new();
+
+        parse_stmt_with_syms(input, &mut syms)
+    }
+
+    #[test]
+    fn expr_stmt() {
+        match parse_stmt("555;").value {
+            Some(Stmt::Expr(e)) => {
+                assert!(e.item == Expr::Value(Value::Int(555)));
+            }
+            _ => assert!(false),
+        }
+    }
+
+    #[test]
+    fn func_decl_stmt() {
+        let mut syms = SymbolMap::new();
+        match parse_stmt_with_syms("fn add(x, y) { return x + y; }", &mut syms).value {
+            Some(Stmt::FuncDecl { ident, inputs, stmts }) => {
+                assert!(ident == syms.get_id("add"));
+                assert!(inputs.item.len() == 2);
+                assert!(stmts.len() == 1);
+            }
+            _ => assert!(false),
+        }
+    }
 }
