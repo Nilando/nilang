@@ -17,8 +17,10 @@ use std::rc::Rc;
 
 pub fn parse_program(input: &str, syms: &mut SymbolMap) -> ParseResult<Vec<Stmt>> {
     stmt()
-        .zero_or_more_with_recover(Ctrl::SemiColon)
-        .closed_by(ctrl(Ctrl::End))
+        .expect("Expected a statement")
+        .unless(ctrl(Ctrl::End))
+        .recover(Ctrl::SemiColon)
+        .zero_or_more()
         .parse_str(input, syms)
 }
 
@@ -58,12 +60,6 @@ impl<'a> ParseContext<'a> {
             Ok(spanned_token) => Some(spanned_token),
         }
     }
-
-    /*
-    fn next(&mut self) -> Result<Spanned<lexer::Token<'a>>, Spanned<lexer::LexError>> {
-        self.lexer.get_token(self.syms)
-    }
-    */
 
     fn add_err(&mut self, err: Spanned<ParseError>) {
         self.errors.push(err);
@@ -174,34 +170,34 @@ impl<'a, T: 'a> Parser<'a, T> {
         })
     }
 
-    pub fn zero_or_more_with_recover(self, ctrl_recover: Ctrl) -> Parser<'a, Vec<T>> {
+    pub fn unless<A: 'a>(self, alternative: Parser<'a, A>) -> Parser<'a, T> {
         Parser::new(move |ctx| {
-            let mut values = vec![];
+            if let Some(_) = alternative.parse(ctx) {
+                None
+            } else {
+                self.parse(ctx)
+            }
+        })
+    }
 
-            'a: loop {
-                if let Some(value) = self.parse(ctx) {
-                    values.push(value);
-                } else {
-                    loop {
-                        match ctrl(ctrl_recover).parse(ctx) {
-                            Some(_) => {
-                                continue 'a;
-                            }
-                            None => {
-                                if ctx.eof() {
-                                    break;
-                                }
-
-                                ctx.adv();
-                            }
-                        }
+    pub fn recover(self, ctrl_recover: Ctrl) -> Parser<'a, T> {
+        Parser::new(move |ctx| {
+            if let Some(value) = self.parse(ctx) {
+                return Some(value)
+            } else {
+                loop {
+                    if ctx.eof() {
+                        break;
                     }
 
-                    break;
+                    match ctrl(ctrl_recover).parse(ctx) {
+                        Some(_) => break,
+                        None => ctx.adv(),
+                    }
                 }
-            }
 
-            Some(values)
+                None
+            }
         })
     }
 
