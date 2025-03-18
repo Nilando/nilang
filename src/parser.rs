@@ -35,6 +35,7 @@ pub(super) struct ParseContext<'a> {
     syms: &'a mut SymbolMap,
     errors: Vec<Spanned<ParseError>>,
     warnings: Vec<Spanned<()>>,
+    is_in_loop: bool
 }
 
 impl<'a> ParseContext<'a> {
@@ -100,6 +101,7 @@ impl<'a, T: 'a> Parser<'a, T> {
             syms,
             errors: vec![],
             warnings: vec![],
+            is_in_loop: false,
         };
 
         let value = self.parse(&mut ctx);
@@ -180,6 +182,19 @@ impl<'a, T: 'a> Parser<'a, T> {
         })
     }
 
+    pub fn looping(self, is_looping: bool) -> Parser<'a, T> {
+        Parser::new(move |ctx| {
+            let prev_loop_state = ctx.is_in_loop;
+            ctx.is_in_loop = is_looping;
+
+            let result = self.parse(ctx)?;
+
+            ctx.is_in_loop = prev_loop_state;
+
+            Some(result)
+        })
+    }
+
     pub fn recover(self, ctrl_recover: Ctrl) -> Parser<'a, T> {
         Parser::new(move |ctx| {
             if let Some(value) = self.parse(ctx) {
@@ -217,6 +232,26 @@ impl<'a, T: 'a> Parser<'a, T> {
         })
     }
 
+    pub fn expect_looped(self) -> Parser<'a, T> {
+        let p = self.spanned();
+
+        Parser::new(move |ctx| {
+            let value = p.parse(ctx)?;
+            let span = value.span;
+
+            if !ctx.is_in_loop {
+                let error = ParseError::Expected {
+                    msg: "Item not contained inside a loop".to_string(),
+                    found: ctx.lexer.get_input()[span.0..span.1].to_string(),
+                };
+
+                ctx.add_err(Spanned::new(error, span));
+            }
+
+            Some(value.item)
+        })
+    }
+
     pub fn map<C: 'a, N: 'a>(self, callback: C) -> Parser<'a, N>
     where
         C: Fn(T) -> N,
@@ -238,13 +273,7 @@ impl<'a, T: 'a> Parser<'a, T> {
     }
 
     pub fn spanned(self) -> Parser<'a, Spanned<T>> {
-        Parser::new(move |ctx| {
-            let start = ctx.peek().map(|s| s.span.0).unwrap_or(0);
-            let result: Option<T> = self.parse(ctx);
-            let end = ctx.pos();
-
-            result.map(|value| Spanned::new(value, (start, end)))
-        })
+        span(self)
     }
 
     pub fn delimited<A: 'a, B: 'a>(
@@ -351,12 +380,20 @@ pub fn inner_inputs<'a>() -> Parser<'a, Spanned<Vec<SymID>>> {
         .spanned()
 }
 
-pub fn block(sp: Parser<'_, Stmt>) -> Parser<'_, Vec<Stmt>> {
+pub fn block_with_loop_setting(sp: Parser<'_, Stmt>, is_looping: bool) -> Parser<'_, Vec<Stmt>> {
     let left_curly = ctrl(Ctrl::LeftCurly);
     let right_curly = ctrl(Ctrl::RightCurly).expect("Expected '}', found something else");
     let items = sp.zero_or_more();
 
-    items.delimited(left_curly, right_curly)
+    items.delimited(left_curly, right_curly).looping(is_looping)
+}
+
+pub fn loop_block(sp: Parser<'_, Stmt>) -> Parser<'_, Vec<Stmt>> {
+    block_with_loop_setting(sp, true)
+}
+
+pub fn block(sp: Parser<'_, Stmt>) -> Parser<'_, Vec<Stmt>> {
+    block_with_loop_setting(sp, false)
 }
 
 pub fn recursive<'a, T>(func: impl Fn(Parser<'a, T>) -> Parser<'a, T> + 'a) -> Parser<'a, T>
@@ -380,4 +417,14 @@ where
     });
 
     parser
+}
+
+pub fn span<'a, T: 'a>(func: Parser<'a, T>) -> Parser<'a, Spanned<T>> {
+    Parser::new(move |ctx| {
+        let start = ctx.peek().map(|s| s.span.0).unwrap_or(0);
+        let result: Option<T> = func.parse(ctx);
+        let end = ctx.pos();
+
+        result.map(|value| Spanned::new(value, (start, end)))
+    })
 }

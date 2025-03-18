@@ -2,7 +2,7 @@ use super::expr::{expr, Expr, LhsExpr};
 use super::lexer::{Token, Ctrl, KeyWord};
 use super::spanned::Spanned;
 use super::{
-    block, ctrl, inputs, keyword, nothing, recursive, symbol, Parser, ParseError
+    loop_block, block, ctrl, inputs, keyword, nothing, recursive, symbol, Parser, ParseError
 };
 
 use crate::symbol_map::SymID;
@@ -100,7 +100,7 @@ fn else_block(sp: Parser<'_, Stmt>) -> Parser<'_, Vec<Stmt>> {
 fn while_stmt(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
     keyword(KeyWord::While)
         .then(expr(sp.clone()).expect("Expected expression after 'while' keyword"))
-        .append(block(sp).expect("Expected a block '{ ... }' after while expression"))
+        .append(loop_block(sp).expect("Expected a block '{ ... }' after while expression"))
         .map(|(cond, stmts)| Stmt::While { cond, stmts })
 }
 
@@ -160,11 +160,11 @@ fn return_stmt(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
 }
 
 fn break_stmt<'a>() -> Parser<'a, Stmt> {
-    keyword(KeyWord::Break).map(|_| Stmt::Break)
+    keyword(KeyWord::Break).map(|_| Stmt::Break).expect_looped()
 }
 
 fn continue_stmt<'a>() -> Parser<'a, Stmt> {
-    keyword(KeyWord::Continue).map(|_| Stmt::Continue)
+    keyword(KeyWord::Continue).map(|_| Stmt::Continue).expect_looped()
 }
 
 #[cfg(test)]
