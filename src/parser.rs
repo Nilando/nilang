@@ -5,8 +5,8 @@ mod stmt;
 mod value;
 
 pub use expr::Expr;
-pub use lexer::{LexError, Lexer};
-pub use spanned::Spanned;
+pub use lexer::{LexError, Lexer, Op};
+pub use spanned::{Spanned, Span};
 pub use stmt::{stmt, Stmt};
 
 use super::symbol_map::{SymID, SymbolMap};
@@ -18,8 +18,7 @@ use std::rc::Rc;
 pub fn parse_program(input: &str, syms: &mut SymbolMap) -> ParseResult<Vec<Stmt>> {
     stmt()
         .zero_or_more_with_recover(Ctrl::SemiColon)
-        .append(ctrl(Ctrl::End).expect("Expected a statement definition"))
-        .map(|(stmts, _)| stmts)
+        .closed_by(ctrl(Ctrl::End))
         .parse_str(input, syms)
 }
 
@@ -39,8 +38,8 @@ pub(super) struct ParseContext<'a> {
 impl<'a> ParseContext<'a> {
     fn peek(&mut self) -> Option<Spanned<Token<'a>>> {
         match self.lexer.peek(self.syms) {
-            Err(mut lex_error) => {
-                let parse_error = lex_error.map(|e| ParseError::LexError(*e));
+            Err(lex_error) => {
+                let parse_error = lex_error.map(|e| ParseError::LexError(e));
                 self.adv();
                 self.add_err(parse_error);
                 None
@@ -136,6 +135,15 @@ impl<'a, T: 'a> Parser<'a, T> {
             let second = then.parse(ctx)?;
 
             Some((first, second))
+        })
+    }
+
+    pub fn closed_by<A: 'a>(self, then: Parser<'a, A>) -> Parser<'a, T> {
+        Parser::new(move |ctx: &mut ParseContext<'a>| {
+            let first = self.parse(ctx)?;
+            let _ = then.parse(ctx)?;
+
+            Some(first)
         })
     }
 

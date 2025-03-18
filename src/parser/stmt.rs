@@ -1,8 +1,8 @@
-use super::expr::{expr, Expr};
+use super::expr::{expr, Expr, LhsExpr};
 use super::lexer::{Token, Ctrl, KeyWord};
 use super::spanned::Spanned;
 use super::{
-    block, ctrl, inputs, keyword, nothing, recursive, symbol, Parser,
+    block, ctrl, inputs, keyword, nothing, recursive, symbol, Parser, ParseError
 };
 
 use crate::symbol_map::SymID;
@@ -13,7 +13,7 @@ use serde::Serialize;
 pub enum Stmt {
     Expr(Spanned<Expr>),
     Assign {
-        dest: Spanned<Expr>,
+        dest: Spanned<LhsExpr>,
         src: Spanned<Expr>,
     },
     FuncDecl {
@@ -120,11 +120,30 @@ fn closed_stmt(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
 }
 
 fn basic_stmt(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
-    expr(sp.clone()).mix(rhs_assign(sp), |lhs, rhs| {
-        if let Some(src) = rhs {
-            Some(Stmt::Assign { dest: lhs, src })
+    Parser::new(move |ctx| {
+        let lhs_expr = expr(sp.clone()).parse(ctx)?;
+        let rhs_expr = rhs_assign(sp.clone()).parse(ctx);
+
+        if let Some(rhs) = rhs_expr {
+            let span = lhs_expr.span;
+
+            if let Some(lhs) = lhs_expr.item.into() {
+                return Some(Stmt::Assign { 
+                    dest: Spanned::new(lhs, span), 
+                    src: rhs 
+                });
+            }
+
+            let error = ParseError::Expected {
+                msg: "Expected left hand side expression".to_string(),
+                found: ctx.lexer.get_input()[span.0..span.1].to_string(),
+            };
+
+            ctx.add_err(Spanned::new(error, span));
+
+            None
         } else {
-            Some(Stmt::Expr(lhs))
+            Some(Stmt::Expr(lhs_expr))
         }
     })
 }

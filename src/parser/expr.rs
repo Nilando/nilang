@@ -34,6 +34,41 @@ use serde::Serialize;
 // InnerArgs ->
 //  || Expr , InnerArgs
 //  || Expr
+//
+//
+//  lhsExpr
+//  || ident
+//  || idx_expr
+//  || access_expr
+
+
+#[derive(Debug, Serialize, Clone, PartialEq)]
+pub enum LhsExpr {
+    Index {
+        store: Box<Spanned<Expr>>,
+        key: Box<Spanned<Expr>>,
+    },
+    Access {
+        store: Box<Spanned<Expr>>,
+        key: SymID,
+    },
+    Global(SymID),
+    Local(SymID)
+}
+
+impl From<Expr> for Option<LhsExpr> {
+    fn from(value: Expr) -> Self {
+        Some(
+            match value {
+                Expr::Index { store, key } => LhsExpr::Index { store, key },
+                Expr::Access { store, key } => LhsExpr::Access { store, key },
+                Expr::Value(Value::Ident(sym_id)) => LhsExpr::Local(sym_id),
+                Expr::Value(Value::Global(sym_id)) => LhsExpr::Global(sym_id),
+                _ => return None,
+            }
+        )
+    }
+}
 
 #[derive(Debug, Serialize, Clone, PartialEq)]
 pub enum Expr {
