@@ -1,10 +1,8 @@
-use sandpit::TraceLeaf;
-use serde::Serialize;
 use std::collections::HashMap;
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, TraceLeaf, Hash, Serialize)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct SymID(u64);
-#[derive(Debug, Copy, Clone, PartialEq, Eq, TraceLeaf, Hash, Serialize)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct SmallSymID(u16);
 
 pub struct SymbolMap {

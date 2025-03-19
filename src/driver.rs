@@ -6,6 +6,7 @@ use crate::symbol_map::SymbolMap;
 pub use config::Config;
 
 use std::io::{stdin, stdout, Write};
+
 use termion::color;
 use termion::event::{Event, Key};
 use termion::input::TermRead;
@@ -30,12 +31,29 @@ fn run_script(mut config: Config) {
         return;
     }
 
-    println!("{:#?}", parse_result.value);
+    let ast = parse_result.value;
+
+
+    if let Some(output_path) = config.ast_output_path {
+        let ast_string = format!("{:#?}", ast.unwrap());
+
+        if output_path == std::path::Path::new("stdout") {
+            println!("{}", ast_string);
+        } else {
+            let mut file = std::fs::File::create(output_path).expect("Failed to create file");
+
+            file.write_all(ast_string.as_bytes()).expect("Failed to write to file");
+        }
+    }
 
     /*
+    optimize_ast(&mut ast);
+
     if ast_output_path {
         output the ast
     }
+
+    let tac = ast_to_tac(ast);
     */
 
     todo!("generate bytecode")

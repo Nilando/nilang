@@ -1,8 +1,7 @@
 use super::spanned::Spanned;
 use crate::symbol_map::{SymID, SymbolMap};
-use serde::Serialize;
 
-#[derive(Clone, Copy, PartialEq, Debug, Serialize)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Ctrl {
     LeftParen,
     RightParen,
@@ -18,7 +17,7 @@ pub enum Ctrl {
     Period,
 }
 
-#[derive(Copy, Clone, PartialEq, Debug, Serialize)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub enum Op {
     Plus,
     Minus,
@@ -55,7 +54,7 @@ impl fmt::Display for Op {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Debug, Serialize)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub enum LexError {
     Unknown,
     UnclosedString,
@@ -63,7 +62,7 @@ pub enum LexError {
     InvalidNumber,
 }
 
-#[derive(Clone, Copy, PartialEq, Debug, Serialize)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub enum KeyWord {
     Fn,
     If,
@@ -79,7 +78,7 @@ pub enum KeyWord {
     Read,
 }
 
-#[derive(Clone, Copy, PartialEq, Debug, Serialize)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Token<'a> {
     Ctrl(Ctrl),
     Op(Op),

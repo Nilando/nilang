@@ -4,10 +4,11 @@ mod spanned;
 mod stmt;
 mod value;
 
-pub use expr::Expr;
+pub use expr::{Expr, LhsExpr};
 pub use lexer::{LexError, Lexer, Op};
 pub use spanned::{Spanned, Span};
 pub use stmt::{stmt, Stmt};
+pub use value::{Value, MapKey};
 
 use super::symbol_map::{SymID, SymbolMap};
 use lexer::{Ctrl, KeyWord, Token};

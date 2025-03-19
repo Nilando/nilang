@@ -7,9 +7,7 @@ use super::{
 
 use crate::symbol_map::SymID;
 
-use serde::Serialize;
-
-#[derive(Debug, Serialize, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Stmt {
     Expr(Spanned<Expr>),
     Assign {

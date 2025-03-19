@@ -1,5 +1,5 @@
 VERSION 0.1.0
-- display syntax and runtime errors
+- display syntax and runtime errors nicely
 - custom bytecode format
 - functions are first class citizens
 - function closures
@@ -7,11 +7,36 @@ VERSION 0.1.0
 - simple read & print io
 - working repl
 - concurrent garbage collection
-- standard library?
-
-ROADMAP
+- standard library
+- lsp
+- interop with rust
+- load multiple files
 - async functions
 - type type
 - error throwing
-- static typing!?
-- built in SQL!?
+- dependency manager
+- basic static analysis
+  - dead code analysis
+  - unused variable warnings
+  - unused expression warnings
+
+
+fn create_user(params) {
+  this = params;
+
+  this.get_name = fn() {
+    return this.name;
+  }
+
+  this.set_name = fn(name) {
+    this.name = name;
+  }
+
+  this.say_name = fn() {
+    print this.name;
+  }
+  
+  this.is_confirmed = fn() {
+    return this.name;
+  }
+}

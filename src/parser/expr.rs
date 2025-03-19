@@ -6,8 +6,6 @@ use super::{ctrl, keyword, nothing, recursive, symbol, Parser};
 
 use crate::symbol_map::SymID;
 
-use serde::Serialize;
-
 // Expr ->
 //  || PrimaryExpr
 //  || BinopExpr
@@ -42,7 +40,7 @@ use serde::Serialize;
 //  || access_expr
 
 
-#[derive(Debug, Serialize, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum LhsExpr {
     Index {
         store: Box<Spanned<Expr>>,
@@ -70,7 +68,7 @@ impl From<Expr> for Option<LhsExpr> {
     }
 }
 
-#[derive(Debug, Serialize, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
     Value(Value),
     Binop {

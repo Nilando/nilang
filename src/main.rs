@@ -1,8 +1,7 @@
 mod driver;
-mod generator;
 mod parser;
 mod symbol_map;
-mod vm;
+mod tac;
 
 use clap::Parser as CliParser;
 use driver::{execute, Config};

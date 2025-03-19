@@ -6,9 +6,7 @@ use crate::parser::stmt::Stmt;
 use crate::parser::{Expr, Spanned};
 use crate::symbol_map::SymID;
 
-use serde::Serialize;
-
-#[derive(Debug, Serialize, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Ident(SymID),
     Global(SymID),
@@ -18,11 +16,17 @@ pub enum Value {
     String(String),
     Bool(bool),
     List(Vec<Spanned<Expr>>),
-    Map(Vec<(Spanned<Expr>, Spanned<Expr>)>),
+    Map(Vec<(MapKey, Spanned<Expr>)>),
     InlineFunc {
         inputs: Spanned<Vec<SymID>>,
         stmts: Vec<Stmt>,
     },
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum MapKey {
+    Sym(SymID),
+    Expr(Spanned<Expr>)
 }
 
 pub fn value<'a>(ep: Parser<'a, Spanned<Expr>>, sp: Parser<'a, Stmt>) -> Parser<'a, Value> {
@@ -54,16 +58,25 @@ fn map(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, Value> {
 
 pub fn inner_map(
     ep: Parser<'_, Spanned<Expr>>,
-) -> Parser<'_, Vec<(Spanned<Expr>, Spanned<Expr>)>> {
+) -> Parser<'_, Vec<(MapKey, Spanned<Expr>)>> {
     map_entry(ep)
         .delimited_list(ctrl(Ctrl::Comma))
         .or(nothing().map(|_| vec![]))
 }
 
-pub fn map_entry(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, (Spanned<Expr>, Spanned<Expr>)> {
+pub fn map_entry(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, (MapKey, Spanned<Expr>)> {
     let colon = ctrl(Ctrl::Colon).expect("expected ':' found something else");
 
-    ep.clone().append(colon.then(ep))
+    map_key(ep.clone()).clone().append(colon.then(ep))
+}
+
+pub fn map_key(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, MapKey> {
+    ep.map(|expr| {
+        match expr.item {
+            Expr::Value(Value::Ident(sym_id)) => MapKey::Sym(sym_id),
+            _ => MapKey::Expr(expr),
+        }
+    })
 }
 
 pub fn list(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, Value> {
