@@ -2,6 +2,7 @@ mod config;
 
 use crate::parser::{parse_program, ParseError, Spanned};
 use crate::symbol_map::SymbolMap;
+use crate::tac::stream_tac_from_stmts;
 
 pub use config::Config;
 
@@ -31,11 +32,11 @@ fn run_script(mut config: Config) {
         return;
     }
 
-    let ast = parse_result.value;
+    let ast = parse_result.value.unwrap();
 
 
     if let Some(output_path) = config.ast_output_path {
-        let ast_string = format!("{:#?}", ast.unwrap());
+        let ast_string = format!("{:#?}", ast);
 
         if output_path == std::path::Path::new("stdout") {
             println!("{}", ast_string);
@@ -45,6 +46,12 @@ fn run_script(mut config: Config) {
             file.write_all(ast_string.as_bytes()).expect("Failed to write to file");
         }
     }
+
+
+    stream_tac_from_stmts(ast, |func| {
+        println!("{:#?}", func);
+    });
+
 
     /*
     optimize_ast(&mut ast);

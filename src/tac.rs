@@ -8,7 +8,7 @@ pub type UpvalueID = usize;
 pub type TempID = usize;
 pub type FuncID = usize;
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub enum TacVar {
     Temp(TempID),
     Local(SymID),
@@ -16,6 +16,7 @@ pub enum TacVar {
     Global(SymID),
 }
 
+#[derive(Debug)]
 pub enum TacConst {
     String(String),
     Int(isize),
@@ -25,12 +26,13 @@ pub enum TacConst {
     Null,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Debug)]
 pub enum Key {
     Var(TacVar),
     Sym(SymID)
 }
 
+#[derive(Debug)]
 pub enum Tac {
     Binop { 
         dest: TacVar,
@@ -98,12 +100,14 @@ pub enum Tac {
     },
 }
 
+#[derive(Debug)]
 pub struct TacFunc {
     id: FuncID,
     inputs: HashSet<SymID>,
     tac: Vec<Tac>,
     spans: Vec<(usize, Span)>,
     upvalues: HashSet<SymID>,
+    is_main: bool,
 }
 
 struct LoopCtx {
@@ -112,10 +116,11 @@ struct LoopCtx {
 }
 
 impl TacFunc {
-    fn new(id: FuncID, inputs: HashSet<SymID>) -> Self {
+    fn new(id: FuncID, inputs: HashSet<SymID>, is_main: bool) -> Self {
         Self {
             id,
             inputs,
+            is_main,
             tac: vec![],
             spans: vec![],
             upvalues: HashSet::new(),
@@ -132,12 +137,12 @@ struct TacFuncGenerator {
 }
 
 impl TacFuncGenerator {
-    fn new(id: FuncID, inputs: HashSet<SymID>) -> Self {
+    fn new(id: FuncID, inputs: HashSet<SymID>, is_main: bool) -> Self {
         Self {
-            func: TacFunc::new(id, inputs),
+            func: TacFunc::new(id, inputs.clone(), is_main),
             temp_counter: 0,
             label_counter: 0,
-            defined_variables: HashSet::new(),
+            defined_variables: inputs,
             loop_ctxs: vec![],
         }
     }
@@ -151,7 +156,7 @@ struct TacGenCtx<'a> {
 
 impl<'a> TacGenCtx<'a> {
     pub fn new(callback: impl FnMut(TacFunc) + 'a) -> Self {
-        let main_func = TacFuncGenerator::new(0, HashSet::new());
+        let main_func = TacFuncGenerator::new(0, HashSet::new(), true);
 
         Self {
             func_counter: 0,
@@ -163,51 +168,31 @@ impl<'a> TacGenCtx<'a> {
     fn generate_stmt(&mut self, stmt: Stmt) {
         match stmt {
             Stmt::Expr(expr) => { self.generate_expr(expr); }
-            Stmt::Return(return_expr) => {
-                let var =
-                if let Some(expr) = return_expr {
-                    self.generate_expr(expr)
-                } else {
-                    self.new_temp()
-                };
-
-                self.generate_return(var);
-            }
-            Stmt::Break => {
-                self.generate_break();
-            }
-            Stmt::Continue => {
-                self.generate_continue();
-            }
-            Stmt::While { cond, stmts } => {
-                self.generate_while_block(cond, stmts);
-            }
-            Stmt::If { cond, stmts } => {
-                self.generate_if_block(cond, stmts);
-            }
-            Stmt::IfElse { cond, stmts, else_stmts } => {
-                self.generate_if_else_block(cond, stmts, else_stmts);
-            }
-            Stmt::FuncDecl { ident, inputs, stmts } => {
-                self.define_var(ident);
-                let func = self.generate_func(inputs, stmts);
-
-                self.emit(
-                    Tac::Copy {
-                        dest: TacVar::Local(ident),
-                        src: func
-                    }
-                )
-            }
-            Stmt::Assign { dest, src } => {
-                let src = self.generate_expr(src);
-
-                self.generate_assign(dest, src);
-            }
-        }
+            Stmt::Return(expr) => self.generate_return(expr),
+            Stmt::Break => self.generate_break(),
+            Stmt::Continue => self.generate_continue(),
+            Stmt::While { cond, stmts } => self.generate_while_block(cond, stmts),
+            Stmt::If { cond, stmts } => self.generate_if_block(cond, stmts),
+            Stmt::IfElse { cond, stmts, else_stmts } => self.generate_if_else_block(cond, stmts, else_stmts),
+            Stmt::FuncDecl { ident, inputs, stmts } => self.generate_func_decl(ident, inputs, stmts),
+            Stmt::Assign { dest, src } => self.generate_assign(dest, src),
+        };
     }
 
-    fn generate_assign(&mut self, lhs_expr: Spanned<LhsExpr>, src: TacVar) {
+    fn generate_return(&mut self, return_expr: Option<Spanned<Expr>>) {
+        let var =
+        if let Some(expr) = return_expr {
+            self.generate_expr(expr)
+        } else {
+            self.new_temp()
+        };
+
+        self.emit(Tac::Return { src: var });
+    }
+
+    fn generate_assign(&mut self, lhs_expr: Spanned<LhsExpr>, src: Spanned<Expr>) {
+        let src = self.generate_expr(src);
+
         match lhs_expr.item {
             LhsExpr::Index { store, key } => {
                 let store = self.generate_expr(*store);
@@ -328,10 +313,6 @@ impl<'a> TacGenCtx<'a> {
         temp
     }
 
-    fn generate_return(&mut self, val: TacVar) {
-        self.emit(Tac::Return { src: val });
-    }
-
     fn generate_break(&mut self) {
         let label = self.get_loop_end();
 
@@ -342,6 +323,19 @@ impl<'a> TacGenCtx<'a> {
         let label = self.get_loop_start();
 
         self.emit_jump(label);
+    }
+
+    fn generate_func_decl(&mut self, ident: SymID, inputs: Spanned<Vec<SymID>>, stmts: Vec<Stmt>) {
+        self.define_var(ident);
+
+        let func = self.generate_func(inputs, stmts);
+
+        self.emit(
+            Tac::Copy {
+                dest: TacVar::Local(ident),
+                src: func
+            }
+        );
     }
 
     fn generate_func(&mut self, inputs: Spanned<Vec<SymID>>, stmts: Vec<Stmt>) -> TacVar {
@@ -360,11 +354,16 @@ impl<'a> TacGenCtx<'a> {
 
     fn new_func(&mut self, inputs: Spanned<Vec<SymID>>, stmts: Vec<Stmt>) -> FuncID {
         let func_id = self.new_func_id();
-        let generator = TacFuncGenerator::new(func_id, HashSet::from_iter(inputs.item));
+        let generator = TacFuncGenerator::new(func_id, HashSet::from_iter(inputs.item), false);
 
         self.generators.push(generator);
 
         self.generate_stmts(stmts);
+
+        // func has now been defined!
+        let tac_func = self.generators.pop().unwrap().func;
+
+        (self.streaming_callback)(tac_func);
 
         func_id
     }
@@ -589,5 +588,9 @@ impl<'a> TacGenCtx<'a> {
 pub fn stream_tac_from_stmts(stmts: Vec<Stmt>, callback: impl FnMut(TacFunc)) {
     let mut ctx = TacGenCtx::new(callback);
 
-    ctx.generate_stmts(stmts)
+    ctx.generate_stmts(stmts);
+
+    let main = ctx.generators.pop().unwrap().func;
+
+    (ctx.streaming_callback)(main);
 }

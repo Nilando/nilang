@@ -4,6 +4,7 @@ pub struct Spanned<T> {
     pub span: (usize, usize),
 }
 
+#[derive(Debug)]
 pub struct Span {
     start: usize,
     end: usize
