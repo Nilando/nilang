@@ -31,27 +31,7 @@ pub enum Op {
     Lte,
     Gt,
     Gte,
-}
-
-use std::fmt;
-
-impl fmt::Display for Op {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::Plus => write!(f, "+"),
-            Self::Minus => write!(f, "-"),
-            Self::Multiply => write!(f, "*"),
-            Self::Divide => write!(f, "/"),
-            Self::And => write!(f, "&&"),
-            Self::Or => write!(f, "||"),
-            Self::Equal => write!(f, "=="),
-            Self::NotEqual => write!(f, "!="),
-            Self::Lt => write!(f, "<"),
-            Self::Lte => write!(f, "<="),
-            Self::Gt => write!(f, ">"),
-            Self::Gte => write!(f, ">="),
-        }
-    }
+    Modulo
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -118,7 +98,7 @@ impl<'a> Lexer<'a> {
         syms: &mut SymbolMap,
     ) -> Result<Spanned<Token<'a>>, Spanned<LexError>> {
         if self.eof {
-            return Ok(self.end_token());
+            return Ok(Spanned::new(self.end_token(), (self.pos, self.pos)));
         }
 
         if let Some(token) = self.peek.take() {
@@ -130,7 +110,7 @@ impl<'a> Lexer<'a> {
 
     pub fn peek(&mut self, syms: &mut SymbolMap) -> Result<Spanned<Token<'a>>, Spanned<LexError>> {
         if self.eof {
-            return Ok(self.end_token());
+            return Ok(Spanned::new(self.end_token(), (self.pos, self.pos)));
         }
 
         if let Some(token) = self.peek {
@@ -186,24 +166,37 @@ impl<'a> Lexer<'a> {
     fn lex_token(&mut self, syms: &mut SymbolMap) -> Result<Spanned<Token<'a>>, Spanned<LexError>> {
         self.skip_ignored_input()?;
 
-        if let Some(token) = self.span_with_syms(syms, Self::lex_word)?.into() {
+        let start = self.pos;
+        let result = self.lex_token_inner(syms);
+        let end = self.pos;
+        let span = (start, end);
+
+        match result {
+            Ok(token) => Ok(Spanned::new(token, span)),
+            Err(err) => Err(Spanned::new(err, span)),
+        }
+    }
+
+    fn lex_token_inner(&mut self, syms: &mut SymbolMap) -> Result<Token<'a>, LexError> {
+        if let Some(token) = self.lex_word(syms)? {
             return Ok(token);
         }
 
-        if let Some(token) = self.span(Self::lex_num)?.into() {
+        if let Some(token) = self.lex_num()? {
             return Ok(token);
         }
 
-        if let Some(token) = self.span(Self::lex_string)?.into() {
+        if let Some(token) = self.lex_string()? {
             return Ok(token);
         }
 
-        if let Some(token) = self.span(Self::lex_ctrl)?.into() {
+        if let Some(token) = self.lex_ctrl()? {
             return Ok(token);
         }
 
         if self.pos >= self.input.len() {
             self.eof = true;
+
             return Ok(self.end_token());
         }
 
@@ -213,12 +206,10 @@ impl<'a> Lexer<'a> {
 
     fn skip_ignored_input(&mut self) -> Result<(), Spanned<LexError>> {
         loop {
-            if !self.span(Self::lex_comment)?.item && !self.lex_whitespace() {
-                break;
+            if !self.lex_whitespace() && !self.lex_comment()? {
+                return Ok(())
             }
         }
-
-        Ok(())
     }
 
     fn lex_whitespace(&mut self) -> bool {
@@ -231,7 +222,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn lex_comment(&mut self) -> Result<bool, LexError> {
+    fn lex_comment(&mut self) -> Result<bool, Spanned<LexError>> {
         if self.read('/') {
             if self.read('/') {
                 self.read_until('\n');
@@ -239,6 +230,8 @@ impl<'a> Lexer<'a> {
             }
 
             if self.read('*') {
+                let start = self.pos - 2;
+
                 loop {
                     self.read_until('*');
                     self.advance();
@@ -247,7 +240,7 @@ impl<'a> Lexer<'a> {
                     }
 
                     if self.eof {
-                        return Err(LexError::UnclosedComment);
+                        return Err(Spanned::new(LexError::UnclosedComment, (start, self.pos)));
                     }
                 }
             }
@@ -454,6 +447,7 @@ impl<'a> Lexer<'a> {
                 '-' => Token::Op(Op::Minus),
                 '*' => Token::Op(Op::Multiply),
                 '/' => Token::Op(Op::Divide),
+                '%' => Token::Op(Op::Modulo),
                 _ => return Ok(None),
             };
 
@@ -501,44 +495,12 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn span<T, F>(&mut self, mut callback: F) -> Result<Spanned<T>, Spanned<LexError>>
-    where
-        F: FnMut(&mut Self) -> Result<T, LexError>,
-    {
-        let starting_pos = self.pos;
-        let value = callback(self);
-        let ending_pos = self.pos;
-
-        match value {
-            Ok(t) => Ok(Spanned::new(t, (starting_pos, ending_pos))),
-            Err(e) => Err(Spanned::new(e, (starting_pos, ending_pos))),
-        }
+    fn end_token(&self) -> Token<'a> {
+        Token::Ctrl(Ctrl::End)
     }
 
-    fn span_with_syms<T, F>(
-        &mut self,
-        syms: &mut SymbolMap,
-        mut callback: F,
-    ) -> Result<Spanned<T>, Spanned<LexError>>
-    where
-        F: FnMut(&mut Self, &mut SymbolMap) -> Result<T, LexError>,
-    {
-        let starting_pos = self.pos;
-        let value = callback(self, syms);
-        let ending_pos = self.pos;
-
-        match value {
-            Ok(t) => Ok(Spanned::new(t, (starting_pos, ending_pos))),
-            Err(e) => Err(Spanned::new(e, (starting_pos, ending_pos))),
-        }
-    }
-
-    fn end_token(&self) -> Spanned<Token<'a>> {
-        Spanned::new(Token::Ctrl(Ctrl::End), (0, 0))
-    }
-
-    fn unexpected_token(&self) -> Spanned<LexError> {
-        Spanned::new(LexError::Unknown, (self.pos, self.pos + 1))
+    fn unexpected_token(&self) -> LexError {
+        LexError::Unknown
     }
 }
 
@@ -653,6 +615,23 @@ mod tests {
 
         for i in 0..5 {
             assert_eq!(lexer.get_token(&mut syms).unwrap().item, Token::Int(i));
+        }
+    }
+
+    #[test]
+    fn lex_fibonacci_program() {
+        let mut syms = SymbolMap::new();
+        let source = std::fs::read_to_string("./examples/fibonacci.nl").expect("Error reading file");
+
+        let mut lexer = Lexer::new(&source);
+
+        loop {
+            match lexer.get_token(&mut syms) {
+                Ok(token) => if token.item == Token::Ctrl(Ctrl::End) {
+                    break;
+                }
+                Err(_) => assert!(false),
+            }
         }
     }
 }

@@ -41,7 +41,7 @@ fn inline_func(sp: Parser<'_, Stmt>) -> Parser<'_, Value> {
         .then(
             inputs()
                 .expect("Expected input list after 'fn name'")
-                .append(block(sp).expect("Expected block '{ .. }' after function inputs"))
+                .append(block(sp).looping(false).expect("Expected block '{ .. }' after function inputs"))
                 .map(|(inputs, stmts)| Value::InlineFunc { inputs, stmts }),
         )
 }

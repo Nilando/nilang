@@ -2,7 +2,7 @@ use super::expr::{expr, Expr, LhsExpr};
 use super::lexer::{Token, Ctrl, KeyWord};
 use super::spanned::Spanned;
 use super::{
-    loop_block, block, ctrl, inputs, keyword, nothing, recursive, symbol, Parser, ParseError
+    block, ctrl, inputs, keyword, nothing, recursive, symbol, Parser, ParseError
 };
 
 use crate::symbol_map::SymID;
@@ -53,7 +53,7 @@ fn func_decl(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
                 symbol()
                 .expect("Expected function name after 'fn' keyword")
                 .append(inputs().expect("Expected input list after 'fn name'"))
-                .append(block(sp).expect("Expected block '{ .. }' after function inputs"))
+                .append(block(sp).looping(false).expect("Expected block '{ .. }' after function inputs"))
                 .map(|((ident, inputs), stmts)| Stmt::FuncDecl {
                     ident,
                     inputs,
@@ -98,7 +98,7 @@ fn else_block(sp: Parser<'_, Stmt>) -> Parser<'_, Vec<Stmt>> {
 fn while_stmt(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
     keyword(KeyWord::While)
         .then(expr(sp.clone()).expect("Expected expression after 'while' keyword"))
-        .append(loop_block(sp).expect("Expected a block '{ ... }' after while expression"))
+        .append(block(sp).looping(true).expect("Expected a block '{ ... }' after while expression"))
         .map(|(cond, stmts)| Stmt::While { cond, stmts })
 }
 

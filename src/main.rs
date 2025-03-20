@@ -1,10 +1,6 @@
-mod driver;
-mod parser;
-mod symbol_map;
-mod tac;
+use nilang::driver::{execute, Config};
 
 use clap::Parser as CliParser;
-use driver::{execute, Config};
 
 fn main() {
     let config = Config::parse();

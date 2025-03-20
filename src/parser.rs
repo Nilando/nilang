@@ -5,13 +5,13 @@ mod stmt;
 mod value;
 
 pub use expr::{Expr, LhsExpr};
-pub use lexer::{LexError, Lexer, Op};
+pub use lexer::{LexError, Lexer, Op, Ctrl, Token};
 pub use spanned::{Spanned, Span};
 pub use stmt::{stmt, Stmt};
 pub use value::{Value, MapKey};
 
 use super::symbol_map::{SymID, SymbolMap};
-use lexer::{Ctrl, KeyWord, Token};
+use lexer::{ KeyWord};
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -381,20 +381,12 @@ pub fn inner_inputs<'a>() -> Parser<'a, Spanned<Vec<SymID>>> {
         .spanned()
 }
 
-pub fn block_with_loop_setting(sp: Parser<'_, Stmt>, is_looping: bool) -> Parser<'_, Vec<Stmt>> {
+pub fn block(sp: Parser<'_, Stmt>) -> Parser<'_, Vec<Stmt>> {
     let left_curly = ctrl(Ctrl::LeftCurly);
     let right_curly = ctrl(Ctrl::RightCurly).expect("Expected '}', found something else");
     let items = sp.zero_or_more();
 
-    items.delimited(left_curly, right_curly).looping(is_looping)
-}
-
-pub fn loop_block(sp: Parser<'_, Stmt>) -> Parser<'_, Vec<Stmt>> {
-    block_with_loop_setting(sp, true)
-}
-
-pub fn block(sp: Parser<'_, Stmt>) -> Parser<'_, Vec<Stmt>> {
-    block_with_loop_setting(sp, false)
+    items.delimited(left_curly, right_curly)
 }
 
 pub fn recursive<'a, T>(func: impl Fn(Parser<'a, T>) -> Parser<'a, T> + 'a) -> Parser<'a, T>
