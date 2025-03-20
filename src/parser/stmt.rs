@@ -183,10 +183,31 @@ mod tests {
     }
 
     #[test]
-    fn expr_stmt() {
+    fn int_value_expr_stmt() {
         match parse_stmt("555;").value {
             Some(Stmt::Expr(e)) => {
                 assert!(e.item == Expr::Value(Value::Int(555)));
+            }
+            _ => assert!(false),
+        }
+    }
+
+    #[test]
+    fn string_value_expr_stmt() {
+        match parse_stmt("\"string\";").value {
+            Some(Stmt::Expr(e)) => {
+                assert!(e.item == Expr::Value(Value::String("string".to_string())));
+            }
+            _ => assert!(false),
+        }
+    }
+
+    #[test]
+    fn ident_value_expr_stmt() {
+        let mut syms = SymbolMap::new();
+        match parse_stmt_with_syms("a;", &mut syms).value {
+            Some(Stmt::Expr(e)) => {
+                assert!(e.item == Expr::Value(Value::Ident(syms.get_id("a"))));
             }
             _ => assert!(false),
         }

@@ -2,21 +2,63 @@ use crate::parser::{Span, Spanned, Stmt, Expr, Value, Op, MapKey, LhsExpr};
 use crate::symbol_map::SymID;
 use std::collections::HashSet;
 
-const LABEL_BACKPATCH: usize = 0;
+const MAIN_FUNC_ID: usize = 0;
 pub type LabelID = usize;
 pub type UpvalueID = usize;
 pub type TempID = usize;
 pub type FuncID = usize;
 
-#[derive(Debug, Copy, Clone)]
-pub enum TacVar {
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum TacVarID {
     Temp(TempID),
     Local(SymID),
     Upvalue(SymID),
     Global(SymID),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub struct TacVar {
+    id: TacVarID,
+    info: Option<TacVarInfo>
+}
+
+impl TacVar {
+    fn local(sym_id: SymID) -> Self {
+        Self {
+            id: TacVarID::Local(sym_id),
+            info: None
+        }
+    }
+
+    fn global(sym_id: SymID) -> Self {
+        Self {
+            id: TacVarID::Global(sym_id),
+            info: None
+        }
+    }
+
+    fn upvalue(sym_id: SymID) -> Self {
+        Self {
+            id: TacVarID::Upvalue(sym_id),
+            info: None
+        }
+    }
+
+    fn temp(temp_id: TempID) -> Self {
+        Self {
+            id: TacVarID::Temp(temp_id),
+            info: None
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+struct TacVarInfo {
+    next_use: Option<usize>,
+    live: bool
+}
+
+#[derive(Debug, PartialEq)]
 pub enum TacConst {
     String(String),
     Int(isize),
@@ -26,13 +68,13 @@ pub enum TacConst {
     Null,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Key {
     Var(TacVar),
     Sym(SymID)
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Tac {
     Binop { 
         dest: TacVar,
@@ -107,7 +149,6 @@ pub struct TacFunc {
     tac: Vec<Tac>,
     spans: Vec<(usize, Span)>,
     upvalues: HashSet<SymID>,
-    is_main: bool,
 }
 
 struct LoopCtx {
@@ -116,15 +157,23 @@ struct LoopCtx {
 }
 
 impl TacFunc {
-    fn new(id: FuncID, inputs: HashSet<SymID>, is_main: bool) -> Self {
+    fn new(id: FuncID, inputs: HashSet<SymID>) -> Self {
         Self {
             id,
             inputs,
-            is_main,
             tac: vec![],
             spans: vec![],
             upvalues: HashSet::new(),
         }
+    }
+
+    fn attach_liveness_info(&mut self) {
+        // first divide into a cfg
+        // then apply next use and liveness info
+        // then apply ssa form
+        //
+        // go through each instruction backwards... setting next use and liveness along the way
+        // we want to also divide things into blocks
     }
 }
 
@@ -137,9 +186,9 @@ struct TacFuncGenerator {
 }
 
 impl TacFuncGenerator {
-    fn new(id: FuncID, inputs: HashSet<SymID>, is_main: bool) -> Self {
+    fn new(id: FuncID, inputs: HashSet<SymID>) -> Self {
         Self {
-            func: TacFunc::new(id, inputs.clone(), is_main),
+            func: TacFunc::new(id, inputs.clone()),
             temp_counter: 0,
             label_counter: 0,
             defined_variables: inputs,
@@ -156,7 +205,7 @@ struct TacGenCtx<'a> {
 
 impl<'a> TacGenCtx<'a> {
     pub fn new(callback: impl FnMut(TacFunc) + 'a) -> Self {
-        let main_func = TacFuncGenerator::new(0, HashSet::new(), true);
+        let main_func = TacFuncGenerator::new(MAIN_FUNC_ID, HashSet::new());
 
         Self {
             func_counter: 0,
@@ -192,24 +241,25 @@ impl<'a> TacGenCtx<'a> {
 
     fn generate_assign(&mut self, lhs_expr: Spanned<LhsExpr>, src: Spanned<Expr>) {
         let src = self.generate_expr(src);
+        let span = lhs_expr.get_span();
 
         match lhs_expr.item {
             LhsExpr::Index { store, key } => {
                 let store = self.generate_expr(*store);
                 let key = self.generate_expr(*key);
 
-                self.generate_key_store(store, Key::Var(key), src);
+                self.generate_key_store(store, Key::Var(key), src, span);
             }
             LhsExpr::Access { store, key } => {
                 let store = self.generate_expr(*store);
 
-                self.generate_key_store(store, Key::Sym(key), src);
+                self.generate_key_store(store, Key::Sym(key), src, span);
             }
             LhsExpr::Local(sym_id) => {
                 self.define_var(sym_id);
                 self.emit(
                     Tac::Copy {
-                        dest: TacVar::Local(sym_id),
+                        dest: TacVar::local(sym_id),
                         src
                     }
                 )
@@ -217,7 +267,7 @@ impl<'a> TacGenCtx<'a> {
             LhsExpr::Global(sym_id) => {
                 self.emit(
                     Tac::Copy {
-                        dest: TacVar::Global(sym_id),
+                        dest: TacVar::global(sym_id),
                         src
                     }
                 )
@@ -226,6 +276,7 @@ impl<'a> TacGenCtx<'a> {
     }
 
     fn generate_expr(&mut self, spanned_expr: Spanned<Expr>) -> TacVar {
+        let span = spanned_expr.get_span();
         match spanned_expr.item {
             Expr::Value(value) => self.generate_value(value),
             Expr::Read => self.generate_read(),
@@ -238,24 +289,24 @@ impl<'a> TacGenCtx<'a> {
                 let v1 = self.generate_expr(*lhs);
                 let v2 = self.generate_expr(*rhs);
 
-                self.generate_binop(v1, op, v2)
+                self.generate_binop(v1, op, v2, span)
             }
             Expr::Access { store, key } => {
                 let var = self.generate_expr(*store);
 
-                self.generate_key_load(var, Key::Sym(key))
+                self.generate_key_load(var, Key::Sym(key), span)
             }
             Expr::Index { store, key } => {
                 let store_val = self.generate_expr(*store);
                 let key_val = self.generate_expr(*key);
 
-                self.generate_key_load(store_val, Key::Var(key_val))
+                self.generate_key_load(store_val, Key::Var(key_val), span)
             }
             Expr::Call { calle, args } => {
                 let arg_vals = args.into_iter().map(|a| self.generate_expr(a)).collect();
                 let calle_val = self.generate_expr(*calle);
 
-                self.generate_call(calle_val, arg_vals)
+                self.generate_call(calle_val, arg_vals, span)
             }
         }
     }
@@ -267,7 +318,7 @@ impl<'a> TacGenCtx<'a> {
             Value::Float(f) => self.load_const(TacConst::Float(f)),
             Value::Bool(b) => self.load_const(TacConst::Bool(b)),
             Value::String(s) => self.load_const(TacConst::String(s)),
-            Value::Global(sym_id) => TacVar::Global(sym_id),
+            Value::Global(sym_id) => TacVar::global(sym_id),
             Value::Ident(sym_id) => self.generate_ident(sym_id),
             Value::Map(map) => self.generate_map(map),
             Value::List(list) => self.generate_list(list),
@@ -275,39 +326,42 @@ impl<'a> TacGenCtx<'a> {
         }
     }
 
-    fn generate_call(&mut self, calle: TacVar, args: Vec<TacVar>) -> TacVar {
+    fn generate_call(&mut self, calle: TacVar, args: Vec<TacVar>, span: Span) -> TacVar {
         let temp = self.new_temp();
 
-        self.emit(
+        self.emit_spanned(
             Tac::Call {
                 dest: temp,
                 calle,
                 args,
-            }
+            },
+            span
         );
 
         temp
     }
 
-    fn generate_key_store(&mut self, store: TacVar, key: Key, value: TacVar) {
-        self.emit(
+    fn generate_key_store(&mut self, store: TacVar, key: Key, value: TacVar, span: Span) {
+        self.emit_spanned(
             Tac::KeyStore {
                 store,
                 key,
                 value
-            }
+            },
+            span
         );
     }
 
-    fn generate_key_load(&mut self, store: TacVar, key: Key) -> TacVar {
+    fn generate_key_load(&mut self, store: TacVar, key: Key, span: Span) -> TacVar {
         let temp = self.new_temp();
 
-        self.emit(
+        self.emit_spanned(
             Tac::KeyLoad {
                 dest: temp,
                 store,
                 key,
-            }
+            },
+            span
         );
 
         temp
@@ -332,7 +386,7 @@ impl<'a> TacGenCtx<'a> {
 
         self.emit(
             Tac::Copy {
-                dest: TacVar::Local(ident),
+                dest: TacVar::local(ident),
                 src: func
             }
         );
@@ -354,18 +408,30 @@ impl<'a> TacGenCtx<'a> {
 
     fn new_func(&mut self, inputs: Spanned<Vec<SymID>>, stmts: Vec<Stmt>) -> FuncID {
         let func_id = self.new_func_id();
-        let generator = TacFuncGenerator::new(func_id, HashSet::from_iter(inputs.item), false);
+        let generator = TacFuncGenerator::new(func_id, HashSet::from_iter(inputs.item));
 
         self.generators.push(generator);
 
         self.generate_stmts(stmts);
 
-        // func has now been defined!
-        let tac_func = self.generators.pop().unwrap().func;
-
-        (self.streaming_callback)(tac_func);
+        self.stream_current_func();
 
         func_id
+    }
+
+    fn stream_current_func(&mut self) {
+        let func = self.process_top_func();
+
+        (self.streaming_callback)(func);
+    }
+
+    fn process_top_func(&mut self) -> TacFunc {
+        let mut func = self.generators.pop().unwrap().func;
+
+        func.attach_liveness_info();
+        // TODO: optimize here
+
+        func
     }
 
     fn generate_if_block(&mut self, cond: Spanned<Expr>, stmts: Vec<Stmt>) {
@@ -422,11 +488,11 @@ impl<'a> TacGenCtx<'a> {
 
     fn generate_ident(&mut self, sym_id: SymID) -> TacVar {
         if self.defined_local(sym_id) {
-            TacVar::Local(sym_id)
+            TacVar::local(sym_id)
         } else if self.defined_upvalue(sym_id) {
             self.set_upvalue(sym_id);
 
-            TacVar::Upvalue(sym_id)
+            TacVar::upvalue(sym_id)
         } else {
             self.new_temp()
         }
@@ -460,16 +526,17 @@ impl<'a> TacGenCtx<'a> {
         temp
     }
 
-    fn generate_binop(&mut self, lhs: TacVar, op: Op, rhs: TacVar) -> TacVar {
+    fn generate_binop(&mut self, lhs: TacVar, op: Op, rhs: TacVar, span: Span) -> TacVar {
         let temp = self.new_temp();
 
-        self.emit(
+        self.emit_spanned(
             Tac::Binop {
                 dest: temp,
                 lhs,
                 op,
                 rhs
-            }
+            },
+            span
         );
 
         temp
@@ -511,19 +578,30 @@ impl<'a> TacGenCtx<'a> {
     }
 
     fn emit_label(&mut self, label: LabelID) {
-        self.emit_spanned(Tac::Label { label }, None)
+        self.emit(Tac::Label { label })
     }
 
     fn emit_jump(&mut self, label: LabelID) {
-        self.emit_spanned(Tac::Jump { label }, None)
+        self.emit(Tac::Jump { label })
     }
 
     fn emit(&mut self, tac: Tac) {
-        self.emit_spanned(tac, None)
+        self.generators.last_mut().as_mut().unwrap().func.tac.push(tac);
     }
 
-    fn emit_spanned(&mut self, tac: Tac, span: Option<Span>) {
-        self.generators.last_mut().as_mut().unwrap().func.tac.push(tac);
+    fn emit_spanned(&mut self, tac: Tac, span: Span) {
+        let func = &mut self.generators.last_mut().unwrap().func;
+        let index = func.tac.len();
+
+        func.tac.push(tac);
+
+        if let Some(prev_span) = func.spans.last() {
+            if prev_span.1 != span {
+                func.spans.push((index, span))
+            }
+        } else {
+            func.spans.push((index, span))
+        }
     }
 
     fn push_loop_ctx(&mut self, ctx: LoopCtx) {
@@ -539,7 +617,7 @@ impl<'a> TacGenCtx<'a> {
     fn new_temp(&mut self) -> TacVar {
         self.generators.last_mut().as_mut().unwrap().temp_counter += 1;
 
-        TacVar::Temp(self.generators.last().unwrap().temp_counter)
+        TacVar::temp(self.generators.last().unwrap().temp_counter)
     }
 
     fn new_label(&mut self) -> LabelID {
@@ -590,7 +668,48 @@ pub fn stream_tac_from_stmts(stmts: Vec<Stmt>, callback: impl FnMut(TacFunc)) {
 
     ctx.generate_stmts(stmts);
 
-    let main = ctx.generators.pop().unwrap().func;
+    ctx.stream_current_func();
+}
 
-    (ctx.streaming_callback)(main);
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn load_int_value() {
+        let mut ctx = TacGenCtx::new(|_| {});
+
+        ctx.generate_value(Value::Int(69));
+
+        assert!(ctx.generators[0].func.tac[0] == Tac::LoadConst { dest: TacVar::temp(1), val: TacConst::Int(69) });
+        assert!(ctx.generators[0].func.spans.is_empty());
+    }
+
+    #[test]
+    fn load_string_value() {
+        let mut ctx = TacGenCtx::new(|_| {});
+
+        ctx.generate_value(Value::String("test".to_string()));
+
+        assert!(ctx.generators[0].func.tac[0] == Tac::LoadConst { dest: TacVar::temp(1), val: TacConst::String("test".to_string()) });
+    }
+
+    #[test]
+    fn load_float_value() {
+        let mut ctx = TacGenCtx::new(|_| {});
+
+        ctx.generate_value(Value::Float(612357.234532));
+
+        assert!(ctx.generators[0].func.tac[0] == Tac::LoadConst { dest: TacVar::temp(1), val: TacConst::Float(612357.234532) })
+    }
+
+    #[test]
+    fn emit_read() {
+        let mut ctx = TacGenCtx::new(|_| {});
+
+        ctx.generate_expr(Spanned::new(Expr::Read, (0, 1)));
+
+        assert!(ctx.generators[0].func.tac[0] == Tac::Read { dest: TacVar::temp(1) });
+        assert!(ctx.generators[0].func.spans.is_empty());
+    }
 }

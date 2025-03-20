@@ -47,7 +47,6 @@ fn run_script(mut config: Config) {
         }
     }
 
-
     stream_tac_from_stmts(ast, |func| {
         println!("{:#?}", func);
     });
