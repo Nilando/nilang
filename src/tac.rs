@@ -173,15 +173,6 @@ impl TacFunc {
             upvalues: HashSet::new(),
         }
     }
-
-    fn attach_liveness_info(&mut self) {
-        // first divide into a cfg
-        // then apply next use and liveness info
-        // then apply ssa form
-        //
-        // go through each instruction backwards... setting next use and liveness along the way
-        // we want to also divide things into blocks
-    }
 }
 
 struct TacFuncGenerator {
