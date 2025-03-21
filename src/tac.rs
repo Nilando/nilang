@@ -7,9 +7,10 @@ pub type LabelID = usize;
 pub type UpvalueID = usize;
 pub type TempID = usize;
 pub type FuncID = usize;
+pub type SSAVer = usize;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum TacVarID {
+pub enum VarID {
     Temp(TempID),
     Local(SymID),
     Upvalue(SymID),
@@ -18,36 +19,41 @@ pub enum TacVarID {
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct TacVar {
-    id: TacVarID,
-    info: Option<TacVarInfo>
+    id: VarID,
+    liveness: Option<TacVarInfo>,
+    ssa_ver: Option<SSAVer>,
 }
 
 impl TacVar {
     fn local(sym_id: SymID) -> Self {
         Self {
-            id: TacVarID::Local(sym_id),
-            info: None
+            id: VarID::Local(sym_id),
+            liveness: None,
+            ssa_ver: None
         }
     }
 
     fn global(sym_id: SymID) -> Self {
         Self {
-            id: TacVarID::Global(sym_id),
-            info: None
+            id: VarID::Global(sym_id),
+            liveness: None,
+            ssa_ver: None
         }
     }
 
     fn upvalue(sym_id: SymID) -> Self {
         Self {
-            id: TacVarID::Upvalue(sym_id),
-            info: None
+            id: VarID::Upvalue(sym_id),
+            liveness: None,
+            ssa_ver: None
         }
     }
 
     fn temp(temp_id: TempID) -> Self {
         Self {
-            id: TacVarID::Temp(temp_id),
-            info: None
+            id: VarID::Temp(temp_id),
+            liveness: None,
+            ssa_ver: None
         }
     }
 }
@@ -55,7 +61,8 @@ impl TacVar {
 #[derive(Debug, Copy, Clone, PartialEq)]
 struct TacVarInfo {
     next_use: Option<usize>,
-    live: bool
+    live: bool,
+    version: usize,
 }
 
 #[derive(Debug, PartialEq)]
@@ -146,7 +153,7 @@ pub enum Tac {
 pub struct TacFunc {
     id: FuncID,
     inputs: HashSet<SymID>,
-    tac: Vec<Tac>,
+    pub tac: Vec<Tac>,
     spans: Vec<(usize, Span)>,
     upvalues: HashSet<SymID>,
 }
@@ -394,6 +401,9 @@ impl<'a> TacGenCtx<'a> {
 
     fn generate_func(&mut self, inputs: Spanned<Vec<SymID>>, stmts: Vec<Stmt>) -> TacVar {
         let temp = self.new_temp();
+
+        // TODO: here we need to create store upvalue instructions
+
         let func_id = self.new_func(inputs, stmts);
 
         self.emit(
@@ -428,8 +438,8 @@ impl<'a> TacGenCtx<'a> {
     fn process_top_func(&mut self) -> TacFunc {
         let mut func = self.generators.pop().unwrap().func;
 
-        func.attach_liveness_info();
-        // TODO: optimize here
+        // ... do we need to do any processing?
+        // insert upvalue load instructions
 
         func
     }

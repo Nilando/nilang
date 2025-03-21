@@ -47,8 +47,10 @@ fn run_script(mut config: Config) {
         }
     }
 
+    use crate::cfg::CFG;
     stream_tac_from_stmts(ast, |func| {
-        println!("{:#?}", func);
+        let cfg = CFG::new(func);
+        println!("{:#?}", cfg);
     });
 
 
