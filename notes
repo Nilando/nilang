@@ -10,16 +10,18 @@ VERSION 0.1.0
 - standard library
 - lsp
 - interop with rust
-- load multiple files
-- async functions
+- import and export files
+- async and await
 - type type
-- error throwing
+- error throwing and catching
 - dependency manager
 - basic static analysis
-  - dead code analysis
+  - dead code warnings
   - unused variable warnings
   - unused expression warnings
 
+BUGS:
+- only allow one of each sym in func input
 
 fn create_user(params) {
   this = params;

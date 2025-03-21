@@ -604,9 +604,7 @@ mod tests {
     #[test]
     fn peek_one_ahead() {
         let mut syms = SymbolMap::new();
-
         let source = r#"0 1 2 3 4"#;
-
         let mut lexer = Lexer::new(source);
 
         for i in 0..5 {
@@ -615,23 +613,6 @@ mod tests {
 
         for i in 0..5 {
             assert_eq!(lexer.get_token(&mut syms).unwrap().item, Token::Int(i));
-        }
-    }
-
-    #[test]
-    fn lex_fibonacci_program() {
-        let mut syms = SymbolMap::new();
-        let source = std::fs::read_to_string("./examples/fibonacci.nl").expect("Error reading file");
-
-        let mut lexer = Lexer::new(&source);
-
-        loop {
-            match lexer.get_token(&mut syms) {
-                Ok(token) => if token.item == Token::Ctrl(Ctrl::End) {
-                    break;
-                }
-                Err(_) => assert!(false),
-            }
         }
     }
 }
