@@ -323,11 +323,11 @@ impl<'a, T: 'a> Parser<'a, T> {
     }
 }
 
-pub fn nothing<'a>() -> Parser<'a, ()> {
+pub(self) fn nothing<'a>() -> Parser<'a, ()> {
     Parser::new(move |_| Some(()))
 }
 
-pub fn ctrl<'a>(expected: Ctrl) -> Parser<'a, ()> {
+pub(self) fn ctrl<'a>(expected: Ctrl) -> Parser<'a, ()> {
     Parser::new(move |ctx| match ctx.peek() {
         Some(spanned_token) => match spanned_token.item {
             Token::Ctrl(ctrl) if ctrl == expected => {
@@ -340,7 +340,7 @@ pub fn ctrl<'a>(expected: Ctrl) -> Parser<'a, ()> {
     })
 }
 
-pub fn keyword<'a>(expected: KeyWord) -> Parser<'a, ()> {
+pub(self) fn keyword<'a>(expected: KeyWord) -> Parser<'a, ()> {
     Parser::new(move |ctx| match ctx.peek() {
         Some(spanned_token) => match spanned_token.item {
             Token::KeyWord(keyword) if keyword == expected => {
@@ -353,7 +353,7 @@ pub fn keyword<'a>(expected: KeyWord) -> Parser<'a, ()> {
     })
 }
 
-pub fn symbol<'a>() -> Parser<'a, SymID> {
+pub(self) fn symbol<'a>() -> Parser<'a, SymID> {
     Parser::new(|ctx| match ctx.peek() {
         Some(spanned_token) => match spanned_token.item {
             Token::Ident(sym_id) => {
@@ -366,7 +366,7 @@ pub fn symbol<'a>() -> Parser<'a, SymID> {
     })
 }
 
-pub fn inputs<'a>() -> Parser<'a, Spanned<Vec<SymID>>> {
+pub(self) fn inputs<'a>() -> Parser<'a, Spanned<Vec<SymID>>> {
     let left_paren = ctrl(Ctrl::LeftParen);
     let right_paren = ctrl(Ctrl::RightParen).expect("Expected ')', found something else");
     let parsed_args = inner_inputs();
@@ -374,14 +374,14 @@ pub fn inputs<'a>() -> Parser<'a, Spanned<Vec<SymID>>> {
     parsed_args.delimited(left_paren, right_paren)
 }
 
-pub fn inner_inputs<'a>() -> Parser<'a, Spanned<Vec<SymID>>> {
+pub(self) fn inner_inputs<'a>() -> Parser<'a, Spanned<Vec<SymID>>> {
     symbol()
         .delimited_list(ctrl(Ctrl::Comma))
         .or(nothing().map(|_| vec![]))
         .spanned()
 }
 
-pub fn block(sp: Parser<'_, Stmt>) -> Parser<'_, Vec<Stmt>> {
+pub(self) fn block(sp: Parser<'_, Stmt>) -> Parser<'_, Vec<Stmt>> {
     let left_curly = ctrl(Ctrl::LeftCurly);
     let right_curly = ctrl(Ctrl::RightCurly).expect("Expected '}', found something else");
     let items = sp.zero_or_more();
@@ -389,7 +389,7 @@ pub fn block(sp: Parser<'_, Stmt>) -> Parser<'_, Vec<Stmt>> {
     items.delimited(left_curly, right_curly)
 }
 
-pub fn recursive<'a, T>(func: impl Fn(Parser<'a, T>) -> Parser<'a, T> + 'a) -> Parser<'a, T>
+pub(self) fn recursive<'a, T>(func: impl Fn(Parser<'a, T>) -> Parser<'a, T> + 'a) -> Parser<'a, T>
 where
     T: 'a,
 {
@@ -412,7 +412,7 @@ where
     parser
 }
 
-pub fn span<'a, T: 'a>(func: Parser<'a, T>) -> Parser<'a, Spanned<T>> {
+pub(self) fn span<'a, T: 'a>(func: Parser<'a, T>) -> Parser<'a, Spanned<T>> {
     Parser::new(move |ctx| {
         let start = ctx.peek().map(|s| s.span.0).unwrap_or(0);
         let result: Option<T> = func.parse(ctx);
