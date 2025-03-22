@@ -5,13 +5,14 @@ mod stmt;
 mod value;
 
 pub use expr::{Expr, LhsExpr};
-pub use lexer::{LexError, Lexer, Op, Ctrl, Token};
+pub use lexer::{LexError, Lexer, Op, Ctrl, Token, KeyWord};
 pub use spanned::{Spanned, Span};
-pub use stmt::{stmt, Stmt};
+pub use stmt::Stmt;
 pub use value::{Value, MapKey};
 
+use stmt::stmt;
+
 use super::symbol_map::{SymID, SymbolMap};
-use lexer::{ KeyWord};
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -25,13 +26,13 @@ pub fn parse_program(input: &str, syms: &mut SymbolMap) -> ParseResult<Vec<Stmt>
         .parse_str(input, syms)
 }
 
-pub(super) struct ParseResult<T> {
+pub struct ParseResult<T> {
     pub value: Option<T>,
     pub errors: Vec<Spanned<ParseError>>,
     pub warnings: Vec<Spanned<()>>,
 }
 
-pub(super) struct ParseContext<'a> {
+pub(self) struct ParseContext<'a> {
     lexer: Lexer<'a>,
     syms: &'a mut SymbolMap,
     errors: Vec<Spanned<ParseError>>,
@@ -77,13 +78,13 @@ impl<'a> ParseContext<'a> {
 }
 
 #[derive(Debug)]
-pub(super) enum ParseError {
+pub enum ParseError {
     LexError(LexError),
     Expected { msg: String, found: String },
 }
 
 #[derive(Clone)]
-pub(super) struct Parser<'a, T> {
+pub(self) struct Parser<'a, T> {
     func: Rc<dyn Fn(&mut ParseContext<'a>) -> Option<T> + 'a>,
 }
 
