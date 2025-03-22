@@ -615,4 +615,45 @@ mod tests {
             assert_eq!(lexer.get_token(&mut syms).unwrap().item, Token::Int(i));
         }
     }
+
+    #[test]
+    fn ignore_multi_line_comment() {
+        let syms = SymbolMap::new();
+        let source = r#"
+            /*
+             * 23534 (*&%$)#(&+@#%
+             * afs
+             * advancesfa
+             * sadf
+             * */
+
+            69
+
+        "#;
+
+        let tokens = vec![
+            Token::Int(69)
+        ];
+
+        assert_src_tokens(source, tokens, syms);
+    }
+
+    #[test]
+    fn unclosed_multi_line_comment() {
+        let mut syms = SymbolMap::new();
+        let source = r#"
+            /*
+             * 23534 (*&%$)#(&+@#%
+             * afs
+             * advancesfa
+             * sadf
+             *
+
+            69
+        "#;
+
+        let mut lexer = Lexer::new(source);
+        let result = lexer.get_token(&mut syms);
+        assert!(result.is_err());
+    }
 }

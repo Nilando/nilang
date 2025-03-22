@@ -170,10 +170,13 @@ mod tests {
     use crate::symbol_map::SymbolMap;
     use super::super::value::Value;
     use super::super::ParseResult;
+    use crate::parser::Op;
     use super::*;
 
     fn parse_stmt_with_syms(input: &str, syms: &mut SymbolMap) -> ParseResult<Stmt> {
-        stmt().parse_str(input, syms)
+        let result = stmt().parse_str(input, syms);
+        assert!(result.errors.is_empty());
+        result
     }
 
     fn parse_stmt(input: &str) -> ParseResult<Stmt> {
@@ -224,5 +227,70 @@ mod tests {
             }
             _ => assert!(false),
         }
+    }
+
+    #[test]
+    fn if_stmt() {
+        let mut syms = SymbolMap::new();
+        match parse_stmt_with_syms("if true { print true; }", &mut syms).value {
+            Some(Stmt::If { cond, stmts}) => {
+                assert!(cond.item == Expr::Value(Value::Bool(true)));
+                assert!(stmts.len() == 1);
+            }
+            _ => assert!(false),
+        }
+    }
+
+    #[test]
+    fn if_else_stmt() {
+        let mut syms = SymbolMap::new();
+        match parse_stmt_with_syms("if true { print true; } else { print false; }", &mut syms).value {
+            Some(Stmt::IfElse { cond, stmts, else_stmts }) => {
+                assert!(cond.item == Expr::Value(Value::Bool(true)));
+                assert!(stmts.len() == 1);
+                assert!(else_stmts.len() == 1);
+            }
+            _ => assert!(false),
+        }
+    }
+
+    #[test]
+    fn while_stmt() {
+        let mut syms = SymbolMap::new();
+        let result = parse_stmt_with_syms("while 2 == 3 { two = 3; }", &mut syms);
+        let expected = Stmt::While {
+            cond: Spanned::new(Expr::Binop {
+                    lhs: Box::new(Spanned::new(Expr::Value(Value::Int(2)), (6, 7))),
+                    op: Op::Equal,
+                    rhs: Box::new(Spanned::new(Expr::Value(Value::Int(3)), (11, 14)))
+                }, 
+                (6, 14)
+            ),
+            stmts: vec![
+                Stmt::Assign {
+                    dest: Spanned::new(LhsExpr::Local(syms.get_id("two")), (15,21)),
+                    src: Spanned::new(Expr::Value(Value::Int(3)), (21, 23)),
+                }
+            ]
+        };
+
+        assert_eq!(result.value.unwrap(), expected);
+    }
+
+    #[test]
+    fn continue_and_break_stmts() {
+        let mut syms = SymbolMap::new();
+        let result = parse_stmt_with_syms("while true { continue; break; continue; break; }", &mut syms);
+        let expected = Stmt::While {
+            cond: Spanned::new(Expr::Value(Value::Bool(true)), (6, 12)),
+            stmts: vec![
+                Stmt::Continue,
+                Stmt::Break,
+                Stmt::Continue,
+                Stmt::Break,
+            ]
+        };
+
+        assert_eq!(result.value.unwrap(), expected);
     }
 }
