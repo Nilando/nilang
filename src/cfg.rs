@@ -51,8 +51,6 @@ pub struct CFGBuilder {
     blocks:  Vec<Block>,
     block_label_mapping: HashMap<LabelID, BlockID>,
     current_block: Option<Block>,
-    ssa_version_map: HashMap<VarID, VersionID>,
-    // when ever we push a tac instr apply all the variables ssa versions
 }
 
 impl CFGBuilder {
@@ -61,7 +59,6 @@ impl CFGBuilder {
             blocks: vec![],
             block_label_mapping: HashMap::new(),
             current_block: None,
-            ssa_version_map: HashMap::new(),
         }
     }
 

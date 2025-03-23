@@ -183,16 +183,11 @@ mod tests {
 
     #[test]
     fn parse_list_with_single_value() {
-        match parse_value("[333]").value {
-            Some(Value::List(list)) => {
-                assert!(list.len() == 1);
-                if let Expr::Value(Value::Int(333)) = list[0].item {
-                } else {
-                    assert!(false);
-                }
-            }
-            _ => assert!(false),
-        }
+        let Some(Value::List(list)) = parse_value("[333]").value else { panic!() };
+
+        assert!(list.len() == 1);
+
+        let Expr::Value(Value::Int(333)) = list[0].item else { panic!() };
     }
 
     #[test]
@@ -215,6 +210,43 @@ mod tests {
             }
             _ => assert!(false),
         }
+    }
+
+    #[test]
+    fn parse_map() {
+        let mut syms = SymbolMap::new();
+        match parse_value_with_syms("{a: 1, b: 2}", &mut syms).value {
+            Some(Value::Map(entries)) => {
+                assert!(entries.len() == 2);
+                assert!(entries[0].0 == MapKey::Sym(syms.get_id("a")));
+                assert!(entries[0].1.item == Expr::Value(Value::Int(1)));
+                assert!(entries[1].0 == MapKey::Sym(syms.get_id("b")));
+                assert!(entries[1].1.item == Expr::Value(Value::Int(2)));
+            }
+            _ => assert!(false),
+        }
+    }
+
+    #[test]
+    fn expr_map_key() {
+        let mut syms = SymbolMap::new();
+        let parse_value = parse_value_with_syms("{ \"test\": 2 }", &mut syms).value;
+        let Some(Value::Map(entries)) = parse_value else { panic!() };
+
+        assert!(entries.len() == 1);
+        assert!(entries[0].1.item == Expr::Value(Value::Int(2)));
+
+        let MapKey::Expr(expr) = &entries[0].0 else { panic!() };
+
+        assert!(expr.item == Expr::Value(Value::String("test".to_string())));
+    }
+
+    #[test]
+    fn parse_empty_map() {
+        let parse_value = parse_value("{}").value;
+        let Some(Value::Map(entries)) = parse_value else { panic!() };
+
+        assert!(entries.len() == 0);
     }
 
     #[test]

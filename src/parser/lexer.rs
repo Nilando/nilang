@@ -420,17 +420,21 @@ impl<'a> Lexer<'a> {
                     }
                 }
                 '<' => {
+                    self.advance();
+
                     if self.read('=') {
                         Token::Op(Op::Lte)
                     } else {
-                        Token::Op(Op::Lt)
+                        return Ok(Some(Token::Op(Op::Lt)));
                     }
                 }
                 '>' => {
+                    self.advance();
+
                     if self.read('=') {
                         Token::Op(Op::Gte)
                     } else {
-                        Token::Op(Op::Gt)
+                        return Ok(Some(Token::Op(Op::Gt)));
                     }
                 }
                 '(' => Token::Ctrl(Ctrl::LeftParen),
@@ -655,5 +659,21 @@ mod tests {
         let mut lexer = Lexer::new(source);
         let result = lexer.get_token(&mut syms);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn lex_two_char_tokens() {
+        let symbol_map = SymbolMap::new();
+        let source = r#"&& || <= >= == !="#;
+        let tokens = vec![
+            Token::Op(Op::And),
+            Token::Op(Op::Or),
+            Token::Op(Op::Lte),
+            Token::Op(Op::Gte),
+            Token::Op(Op::Equal),
+            Token::Op(Op::NotEqual),
+        ];
+
+        assert_src_tokens(source, tokens, symbol_map);
     }
 }

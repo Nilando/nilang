@@ -124,10 +124,7 @@ pub enum Tac {
     UpvalueStore {
         dest: TacVar,
         val: TacVar,
-    },
-    UpvalueLoad {
-        dest: TacVar,
-        id: UpvalueID,
+        upvalue: UpvalueID
     },
     Call {
         dest: TacVar,
@@ -675,6 +672,23 @@ pub fn stream_tac_from_stmts(stmts: Vec<Stmt>, callback: impl FnMut(TacFunc)) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::parser::parse_program;
+    use crate::symbol_map::SymbolMap;
+
+    fn expect_tac(input: &str, expected_code: Vec<Vec<Tac>>) {
+        let mut syms = SymbolMap::new();
+
+        expect_tac_with_syms(input, expected_code, &mut syms);
+    }
+
+    fn expect_tac_with_syms(input: &str, mut expected_code: Vec<Vec<Tac>>, syms: &mut SymbolMap) {
+        let parse_result = parse_program(input, syms);
+        assert!(parse_result.errors.is_empty());
+
+        stream_tac_from_stmts(parse_result.value.unwrap(), |tac_func| {
+            assert_eq!(tac_func.tac, expected_code.pop().unwrap())
+        });
+    }
 
     #[test]
     fn load_int_value() {
@@ -712,5 +726,87 @@ mod tests {
 
         assert!(ctx.generators[0].func.tac[0] == Tac::Read { dest: TacVar::temp(1) });
         assert!(ctx.generators[0].func.spans.is_empty());
+    }
+
+    #[test]
+    fn expr_stmt_tac() {
+        let tac = vec![
+            vec![
+                Tac::LoadConst { dest: TacVar::temp(1), val: TacConst::Int(1) }
+            ]
+        ];
+        let input = "1;";
+
+        expect_tac(input, tac);
+    }
+
+    #[test]
+    fn generates_expr_tac() {
+        let tac = vec![
+            vec![
+                Tac::LoadConst { dest: TacVar::temp(1), val: TacConst::Int(1) },
+                Tac::LoadConst { dest: TacVar::temp(2), val: TacConst::Int(1) },
+                Tac::LoadConst { dest: TacVar::temp(3), val: TacConst::Int(1) },
+                Tac::Binop { dest: TacVar::temp(4), lhs: TacVar::temp(2), op: Op::Multiply, rhs: TacVar::temp(3) },
+                Tac::Binop { dest: TacVar::temp(5), lhs: TacVar::temp(1), op: Op::Multiply, rhs: TacVar::temp(4) }
+            ]
+        ];
+        let input = "1 * 1 * 1;";
+
+        expect_tac(input, tac);
+    }
+
+    #[test]
+    fn generates_assignment_tac() {
+        let tac = vec![
+            vec![
+                Tac::LoadConst { dest: TacVar::temp(1), val: TacConst::Int(1) },
+                Tac::LoadConst { dest: TacVar::temp(3), val: TacConst::Int(1) },
+                Tac::NewList { dest: TacVar::temp(2), items: vec![TacVar::temp(3)] },
+                Tac::LoadConst { dest: TacVar::temp(4), val: TacConst::Int(0) },
+                Tac::KeyStore { store: TacVar::temp(2), key: Key::Var(TacVar::temp(4)), value: TacVar::temp(1) },
+            ]
+        ];
+        let input = "[1][0] = 1;";
+
+        expect_tac(input, tac);
+    }
+
+    #[test]
+    fn generates_return_with_value() {
+        let tac = vec![
+            vec![
+                Tac::LoadConst { dest: TacVar::temp(1), val: TacConst::Bool(true) },
+                Tac::Return { src: TacVar::temp(1) },
+            ]
+        ];
+        let input = "return true;";
+
+        expect_tac(input, tac);
+    }
+
+    #[test]
+    fn generates_return_with_no_value() {
+        let tac = vec![
+            vec![
+                Tac::Return { src: TacVar::temp(1) },
+            ]
+        ];
+        let input = "return;";
+
+        expect_tac(input, tac);
+    }
+
+    #[test]
+    fn generates_print_expr() {
+        let tac = vec![
+            vec![
+                Tac::LoadConst { dest: TacVar::temp(1), val: TacConst::String("Hello World".to_string()) },
+                Tac::Print { dest: TacVar::temp(1) },
+            ]
+        ];
+        let input = "print \"Hello World\";";
+
+        expect_tac(input, tac);
     }
 }

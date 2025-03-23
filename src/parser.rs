@@ -315,13 +315,15 @@ impl<'a, T: 'a> Parser<'a, T> {
         })
     }
 
-    pub fn _debug(self, msg: &'static str) -> Parser<'a, T> {
+    /*
+    pub fn debug(self, msg: &'static str) -> Parser<'a, T> {
         Parser::new(move |ctx| {
             println!("{}", msg);
 
             self.parse(ctx)
         })
     }
+    */
 }
 
 pub(self) fn nothing<'a>() -> Parser<'a, ()> {

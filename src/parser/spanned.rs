@@ -10,11 +10,13 @@ pub struct Span {
     end: usize
 }
 
+/*
 impl Span {
     pub fn new(start: usize, end: usize) -> Self {
         Self { start, end }
     }
 }
+*/
 
 impl<T> Spanned<T> {
     pub fn new(item: T, span: (usize, usize)) -> Self {
@@ -36,6 +38,7 @@ impl<T> Spanned<T> {
     }
 }
 
+/*
 impl<T> From<Spanned<Option<T>>> for Option<Spanned<T>> {
     fn from(val: Spanned<Option<T>>) -> Self {
         match val.item {
@@ -44,3 +47,4 @@ impl<T> From<Spanned<Option<T>>> for Option<Spanned<T>> {
         }
     }
 }
+*/
