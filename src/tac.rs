@@ -757,7 +757,7 @@ mod tests {
     }
 
     #[test]
-    fn generates_assignment_tac() {
+    fn index_assignment_tac() {
         let tac = vec![
             vec![
                 Tac::LoadConst { dest: TacVar::temp(1), val: TacConst::Int(1) },
@@ -770,6 +770,48 @@ mod tests {
         let input = "[1][0] = 1;";
 
         expect_tac(input, tac);
+    }
+
+    #[test]
+    fn access_assignment_tac() {
+        let mut syms = SymbolMap::new();
+        let tac = vec![
+            vec![
+                Tac::LoadConst { dest: TacVar::temp(1), val: TacConst::Int(1) },
+                Tac::KeyStore { store: TacVar::temp(2), key: Key::Sym(syms.get_id("b")), value: TacVar::temp(1) },
+            ]
+        ];
+        let input = "a.b = 1;";
+
+        expect_tac_with_syms(input, tac, &mut syms);
+    }
+
+    #[test]
+    fn assign_local() {
+        let mut syms = SymbolMap::new();
+        let tac = vec![
+            vec![
+                Tac::LoadConst { dest: TacVar::temp(1), val: TacConst::Int(1) },
+                Tac::Copy { dest: TacVar::local(syms.get_id("a")), src: TacVar::temp(1) },
+            ]
+        ];
+        let input = "a = 1;";
+
+        expect_tac_with_syms(input, tac, &mut syms);
+    }
+
+    #[test]
+    fn assign_global() {
+        let mut syms = SymbolMap::new();
+        let tac = vec![
+            vec![
+                Tac::LoadConst { dest: TacVar::temp(1), val: TacConst::Int(1) },
+                Tac::Copy { dest: TacVar::global(syms.get_id("a")), src: TacVar::temp(1) },
+            ]
+        ];
+        let input = "@a = 1;";
+
+        expect_tac_with_syms(input, tac, &mut syms);
     }
 
     #[test]
@@ -806,6 +848,24 @@ mod tests {
             ]
         ];
         let input = "print \"Hello World\";";
+
+        expect_tac(input, tac);
+    }
+
+    #[test]
+    fn generates_break_and_continue_stmts() {
+        let tac = vec![
+            vec![
+                Tac::LoadConst { dest: TacVar::temp(1), val: TacConst::Bool(true) },
+                Tac::Label { label: 1 },
+                Tac::Jnt { cond: TacVar::temp(1), label: 2 },
+                Tac::Jump { label: 1 },
+                Tac::Jump { label: 2 },
+                Tac::Jump { label: 1 },
+                Tac::Label { label: 2 },
+            ]
+        ];
+        let input = "while true { continue; break; }";
 
         expect_tac(input, tac);
     }
