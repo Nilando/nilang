@@ -1,4 +1,4 @@
-use crate::tac::{Tac, TacFunc, LabelID, VarID};
+use crate::tac::{Tac, TacFunc, LabelID, Var};
 use crate::cfg::{CFG, BlockID, Block};
 use std::collections::HashMap;
 

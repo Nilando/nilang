@@ -1,4 +1,4 @@
-use crate::tac::{Tac, TacFunc, LabelID, VarID};
+use crate::tac::{Tac, TacFunc, LabelID, Var};
 use std::ops::{Index, IndexMut};
 use crate::cfg_builder::CFGBuilder;
 
@@ -12,7 +12,7 @@ pub struct Block {
     pub label: Option<LabelID>,
     pub successors: Vec<BlockID>,
     pub predecessors: Vec<BlockID>,
-    pub entry_arguments: Option<Vec<VarID>>,
+    pub entry_arguments: Option<Vec<Var>>,
 }
 
 impl Block {
@@ -25,6 +25,10 @@ impl Block {
             successors: vec![],
             entry_arguments: None,
         }
+    }
+
+    pub fn get_return_var_id(&self) -> Option<Var> {
+        todo!()
     }
 }
 
