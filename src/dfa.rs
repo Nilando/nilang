@@ -1,13 +1,13 @@
-use crate::cfg::{CFG, BlockID, Block};
+use crate::cfg::{CFG, BlockID, BasicBlock};
 use std::collections::HashMap;
 
 pub trait DFA {
     type Item: PartialEq;
     const BACKWARDS: bool = false;
 
-    fn init(block: &Block) -> (Self::Item, Self::Item); // (Input, Output)
+    fn init(block: &BasicBlock) -> (Self::Item, Self::Item); // (Input, Output)
     fn merge(values: &[&Self::Item]) -> Self::Item; 
-    fn transfer(block: &Block, value: &Self::Item) -> Self::Item;
+    fn transfer(block: &BasicBlock, value: &Self::Item) -> Self::Item;
 }
 
 pub struct DFAResult<T> {
@@ -24,14 +24,13 @@ pub fn exec_dfa<T: DFA>(cfg: &CFG) -> DFAResult<<T as DFA>::Item>{
 }
 
 struct DFAExecutor<T> 
-where T: DFA
+where T: DFA,
 {
     result: DFAResult<<T as DFA>::Item>,
     work_list: Vec<BlockID>
 }
 
-impl<T> DFAExecutor<T> 
-where T: DFA 
+impl<T: DFA> DFAExecutor<T> 
 {
     fn new(cfg: &CFG) -> Self {
         Self {
@@ -58,18 +57,18 @@ where T: DFA
     }
 
     fn exec(&mut self, cfg: &CFG) {
-        while let Some(block_id) = self. work_list.pop() {
+        while let Some(block_id) = self.work_list.pop() {
             let block = &cfg[block_id];
 
             if T::BACKWARDS {
-                self.backward_update(block)
+                self.propagate_backward(block)
             } else {
-                self.forward_update(block)
+                self.propagate_forward(block)
             }
         }
     }
 
-    fn backward_update(&mut self, block: &Block) {
+    fn propagate_backward(&mut self, block: &BasicBlock) {
         let successor_inputs = block.successors.iter().map(|succ_id| {
             self.result.inputs.get(&*succ_id).unwrap()
         }).collect::<Vec<&<T as DFA>::Item>>();
@@ -87,7 +86,7 @@ where T: DFA
         }
     }
 
-    fn forward_update(&mut self, block: &Block) {
+    fn propagate_forward(&mut self, block: &BasicBlock) {
         let predecessors_outputs = block.predecessors.iter().map(|succ_id| {
             self.result.outputs.get(&*succ_id).unwrap()
         }).collect::<Vec<&<T as DFA>::Item>>();

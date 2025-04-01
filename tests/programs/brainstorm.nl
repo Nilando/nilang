@@ -34,14 +34,28 @@ a = {1 + 1: null};
 a = {map: {}};
 a = {foo: 1, "bar": 2};
 
-// use 'map.key' to access symbolic keys
-print(a.foo == 1); // true
+// Heres some map examples...
+map = {1: "x", a: "y"};
 
-// use 'map[key]' to access value keys
-a["bar"] == 2;
+// use 'map.key' to access symbolic keys
+print(map.a == "y"); // true
+
+// however map[key], will try to use the value stored in key
+a = 1;
+print(map[a] == "y"); // false
+
+// use 'map[*value*]' to access value keys
+print(map[1] == "x"); // true
 
 // ==================== Function
+// There are 2 kinds of ways to declare a function.
+
+// anonymous func
+// can be used as an expression
 fn () {};
+
+// named func
+// can only be written where a statement is needed
 
 fn test (arg1, arg2, arg3) {
   print("Hello from function!");
@@ -50,8 +64,20 @@ fn test (arg1, arg2, arg3) {
 
 
 // functions can be assigned to values
-my_fn = fn() { 1 + 1; };
+fn my_fn () { 
+  return 1 + 1; 
+}
 
+// or like this
+my_fn = fn() { 
+  return 1 + 1; 
+};
+
+// functions are first class citizens. Store them wherever you like
+list[0] = my_fn;
+map.b = my_fn;
+var = my_fn;
+other_func(my_fn);
 
 // functions are values and can be assigned to vars
 adder = fn(a, b) { 

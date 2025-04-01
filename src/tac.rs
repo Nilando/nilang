@@ -10,38 +10,47 @@ pub type FuncID = usize;
 pub type VersionID = usize;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
-pub enum Var {
+pub enum VarID {
     Temp(TempID), 
     Upvalue(SymID),
     Local(SymID),
     Global(SymID),
 }
 
-// rules for processing globals
-// whenever we store to a global add a global store instruction
-// however whenever we use a global we have a choice
-//  1. load the global from the store which will always be the most up to date value
-//      - we may have to do this if the global's value is not found in a register
-//  2. try to reuse the latest computed version of a global locally
-//
-//  what does this mean for data flow analysis?
-//  1. we want to marka global as live on entry if it has since been used or stored
-//      and there have been no calls between its use/definition and its next use
-//  2. 
-
-/*
-main {
-    @a.1 = 1;
-    jnt cond .l1
-    @a.2 = 2;
-    call func // this increments all live global variables meaning this is like we just declared
-              // @a.3
-    .l1
-    @a = phi ( a.1 , a.3 ) // here we would see we don't have any value a.3 so we would need to
-                           // create load global instruction
-    print @a;
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub struct Var {
+    id: VarID,
+    ver: Option<usize>,
+    last_use: Option<usize>,
+    live: Option<bool>
 }
-*/
+
+impl Var {
+    fn local(id: SymID) -> Self {
+        Self::new(VarID::Local(id))
+    }
+
+    fn global(id: SymID) -> Self {
+        Self::new(VarID::Global(id))
+    }
+
+    fn temp(id: usize) -> Self {
+        Self::new(VarID::Temp(id))
+    }
+
+    fn upvalue(id: SymID) -> Self {
+        Self::new(VarID::Upvalue(id))
+    }
+
+    fn new(id: VarID) -> Self {
+        Self {
+            id,
+            ver: None,
+            last_use: None,
+            live: None,
+        }
+    }
+}
 
 #[derive(Debug, PartialEq)]
 pub enum TacConst {
@@ -231,7 +240,7 @@ impl<'a> TacGenCtx<'a> {
                 self.define_var(sym_id);
                 self.emit(
                     Tac::Copy {
-                        dest: Var::Local(sym_id),
+                        dest: Var::local(sym_id),
                         src
                     }
                 )
@@ -239,7 +248,7 @@ impl<'a> TacGenCtx<'a> {
             LhsExpr::Global(sym_id) => {
                 self.emit(
                     Tac::Copy {
-                        dest: Var::Global(sym_id),
+                        dest: Var::global(sym_id),
                         src
                     }
                 )
@@ -290,7 +299,7 @@ impl<'a> TacGenCtx<'a> {
             Value::Float(f) => self.load_const(TacConst::Float(f)),
             Value::Bool(b) => self.load_const(TacConst::Bool(b)),
             Value::String(s) => self.load_const(TacConst::String(s)),
-            Value::Global(sym_id) => Var::Global(sym_id),
+            Value::Global(sym_id) => Var::global(sym_id),
             Value::Ident(sym_id) => self.generate_ident(sym_id),
             Value::Map(map) => self.generate_map(map),
             Value::List(list) => self.generate_list(list),
@@ -365,7 +374,7 @@ impl<'a> TacGenCtx<'a> {
 
         self.emit(
             Tac::Copy {
-                dest: Var::Local(ident),
+                dest: Var::local(ident),
                 src: func
             }
         );
@@ -472,14 +481,14 @@ impl<'a> TacGenCtx<'a> {
 
     fn generate_ident(&mut self, sym_id: SymID) -> Var {
         if self.defined_local(sym_id) {
-            Var::Local(sym_id)
+            Var::local(sym_id)
         } else if self.defined_upvalue(sym_id) {
             self.set_upvalue(sym_id);
 
-            Var::Upvalue(sym_id)
+            Var::upvalue(sym_id)
         } else {
             // this local will be dead, probably can optimize here to keep this info
-            Var::Local(sym_id)
+            Var::local(sym_id)
         }
     }
 
@@ -625,7 +634,7 @@ impl<'a> TacGenCtx<'a> {
     fn new_temp(&mut self) -> Var {
         self.generators.last_mut().as_mut().unwrap().temp_counter += 1;
 
-        Var::Temp(self.generators.last().unwrap().temp_counter)
+        Var::temp(self.generators.last().unwrap().temp_counter)
     }
 
     fn new_label(&mut self) -> LabelID {
@@ -706,7 +715,7 @@ mod tests {
 
         ctx.generate_value(Value::Int(69));
 
-        assert!(ctx.generators[0].func.tac[0] == Tac::LoadConst { dest: Var::Temp(1), src: TacConst::Int(69) });
+        assert!(ctx.generators[0].func.tac[0] == Tac::LoadConst { dest: Var::temp(1), src: TacConst::Int(69) });
         assert!(ctx.generators[0].func.spans.is_empty());
     }
 
@@ -716,7 +725,7 @@ mod tests {
 
         ctx.generate_value(Value::String("test".to_string()));
 
-        assert!(ctx.generators[0].func.tac[0] == Tac::LoadConst { dest: Var::Temp(1), src: TacConst::String("test".to_string()) });
+        assert!(ctx.generators[0].func.tac[0] == Tac::LoadConst { dest: Var::temp(1), src: TacConst::String("test".to_string()) });
     }
 
     #[test]
@@ -725,7 +734,7 @@ mod tests {
 
         ctx.generate_value(Value::Float(612357.234532));
 
-        assert!(ctx.generators[0].func.tac[0] == Tac::LoadConst { dest: Var::Temp(1), src: TacConst::Float(612357.234532) })
+        assert!(ctx.generators[0].func.tac[0] == Tac::LoadConst { dest: Var::temp(1), src: TacConst::Float(612357.234532) })
     }
 
     #[test]
@@ -734,7 +743,7 @@ mod tests {
 
         ctx.generate_expr(Spanned::new(Expr::Read, (0, 1)));
 
-        assert!(ctx.generators[0].func.tac[0] == Tac::Read { dest: Var::Temp(1) });
+        assert!(ctx.generators[0].func.tac[0] == Tac::Read { dest: Var::temp(1) });
         assert!(ctx.generators[0].func.spans.is_empty());
     }
 
@@ -742,7 +751,7 @@ mod tests {
     fn expr_stmt_tac() {
         let tac = vec![
             vec![
-                Tac::LoadConst { dest: Var::Temp(1), src: TacConst::Int(1) }
+                Tac::LoadConst { dest: Var::temp(1), src: TacConst::Int(1) }
             ]
         ];
         let input = "1;";
@@ -754,11 +763,11 @@ mod tests {
     fn generates_expr_tac() {
         let tac = vec![
             vec![
-                Tac::LoadConst { dest: Var::Temp(1), src: TacConst::Int(1) },
-                Tac::LoadConst { dest: Var::Temp(2), src: TacConst::Int(1) },
-                Tac::LoadConst { dest: Var::Temp(3), src: TacConst::Int(1) },
-                Tac::Binop { dest: Var::Temp(4), lhs: Var::Temp(2), op: Op::Multiply, rhs: Var::Temp(3) },
-                Tac::Binop { dest: Var::Temp(5), lhs: Var::Temp(1), op: Op::Multiply, rhs: Var::Temp(4) }
+                Tac::LoadConst { dest: Var::temp(1), src: TacConst::Int(1) },
+                Tac::LoadConst { dest: Var::temp(2), src: TacConst::Int(1) },
+                Tac::LoadConst { dest: Var::temp(3), src: TacConst::Int(1) },
+                Tac::Binop { dest: Var::temp(4), lhs: Var::temp(2), op: Op::Multiply, rhs: Var::temp(3) },
+                Tac::Binop { dest: Var::temp(5), lhs: Var::temp(1), op: Op::Multiply, rhs: Var::temp(4) }
             ]
         ];
         let input = "1 * 1 * 1;";
@@ -770,13 +779,13 @@ mod tests {
     fn index_assignment_tac() {
         let tac = vec![
             vec![
-                Tac::LoadConst { dest: Var::Temp(1), src: TacConst::Int(1) },
-                Tac::NewList { dest: Var::Temp(2) },
-                Tac::LoadConst { dest: Var::Temp(3), src: TacConst::Int(1) },
-                Tac::LoadConst { dest: Var::Temp(4), src: TacConst::Int(0) },
-                Tac::KeyStore { store: Var::Temp(2), src: Var::Temp(3), key: Key::Var(Var::Temp(4)) },
-                Tac::LoadConst { dest: Var::Temp(5), src: TacConst::Int(0) },
-                Tac::KeyStore { store: Var::Temp(2), key: Key::Var(Var::Temp(5)), src: Var::Temp(1) },
+                Tac::LoadConst { dest: Var::temp(1), src: TacConst::Int(1) },
+                Tac::NewList { dest: Var::temp(2) },
+                Tac::LoadConst { dest: Var::temp(3), src: TacConst::Int(1) },
+                Tac::LoadConst { dest: Var::temp(4), src: TacConst::Int(0) },
+                Tac::KeyStore { store: Var::temp(2), src: Var::temp(3), key: Key::Var(Var::temp(4)) },
+                Tac::LoadConst { dest: Var::temp(5), src: TacConst::Int(0) },
+                Tac::KeyStore { store: Var::temp(2), key: Key::Var(Var::temp(5)), src: Var::temp(1) },
             ]
         ];
         let input = "[1][0] = 1;";
@@ -789,8 +798,8 @@ mod tests {
         let mut syms = SymbolMap::new();
         let tac = vec![
             vec![
-                Tac::LoadConst { dest: Var::Temp(1), src: TacConst::Int(1) },
-                Tac::KeyStore { store: Var::Local(syms.get_id("a")), key: Key::Sym(syms.get_id("b")), src: Var::Temp(1) },
+                Tac::LoadConst { dest: Var::temp(1), src: TacConst::Int(1) },
+                Tac::KeyStore { store: Var::local(syms.get_id("a")), key: Key::Sym(syms.get_id("b")), src: Var::temp(1) },
             ]
         ];
         let input = "a.b = 1;";
@@ -803,8 +812,8 @@ mod tests {
         let mut syms = SymbolMap::new();
         let tac = vec![
             vec![
-                Tac::LoadConst { dest: Var::Temp(1), src: TacConst::Int(1) },
-                Tac::Copy { dest: Var::Local(syms.get_id("a")), src: Var::Temp(1) },
+                Tac::LoadConst { dest: Var::temp(1), src: TacConst::Int(1) },
+                Tac::Copy { dest: Var::local(syms.get_id("a")), src: Var::temp(1) },
             ]
         ];
         let input = "a = 1;";
@@ -817,8 +826,8 @@ mod tests {
         let mut syms = SymbolMap::new();
         let tac = vec![
             vec![
-                Tac::LoadConst { dest: Var::Temp(1), src: TacConst::Int(1) },
-                Tac::Copy { dest: Var::Global(syms.get_id("a")), src: Var::Temp(1) },
+                Tac::LoadConst { dest: Var::temp(1), src: TacConst::Int(1) },
+                Tac::Copy { dest: Var::global(syms.get_id("a")), src: Var::temp(1) },
             ]
         ];
         let input = "@a = 1;";
@@ -830,8 +839,8 @@ mod tests {
     fn generates_return_with_value() {
         let tac = vec![
             vec![
-                Tac::LoadConst { dest: Var::Temp(1), src: TacConst::Bool(true) },
-                Tac::Return { src: Var::Temp(1) },
+                Tac::LoadConst { dest: Var::temp(1), src: TacConst::Bool(true) },
+                Tac::Return { src: Var::temp(1) },
             ]
         ];
         let input = "return true;";
@@ -843,7 +852,7 @@ mod tests {
     fn generates_return_with_no_value() {
         let tac = vec![
             vec![
-                Tac::Return { src: Var::Temp(1) },
+                Tac::Return { src: Var::temp(1) },
             ]
         ];
         let input = "return;";
@@ -855,8 +864,8 @@ mod tests {
     fn generates_print_expr() {
         let tac = vec![
             vec![
-                Tac::LoadConst { dest: Var::Temp(1), src: TacConst::String("Hello World".to_string()) },
-                Tac::Print { src: Var::Temp(1) },
+                Tac::LoadConst { dest: Var::temp(1), src: TacConst::String("Hello World".to_string()) },
+                Tac::Print { src: Var::temp(1) },
             ]
         ];
         let input = "print \"Hello World\";";
@@ -868,9 +877,9 @@ mod tests {
     fn generates_break_and_continue_stmts() {
         let tac = vec![
             vec![
-                Tac::LoadConst { dest: Var::Temp(1), src: TacConst::Bool(true) },
+                Tac::LoadConst { dest: Var::temp(1), src: TacConst::Bool(true) },
                 Tac::Label { label: 1 },
-                Tac::Jnt { cond: Var::Temp(1), label: 2 },
+                Tac::Jnt { cond: Var::temp(1), label: 2 },
                 Tac::Jump { label: 1 },
                 Tac::Jump { label: 2 },
                 Tac::Jump { label: 1 },
@@ -887,13 +896,13 @@ mod tests {
         let mut syms = SymbolMap::new();
         let tac = vec![
             vec![
-                Tac::LoadConst { dest: Var::Temp(1), src: TacConst::Int(0) },
-                Tac::LoadConst { dest: Var::Temp(2), src: TacConst::Int(1) },
-                Tac::LoadConst { dest: Var::Temp(3), src: TacConst::Int(2) },
-                Tac::LoadArg { src: Var::Temp(1), },
-                Tac::LoadArg { src: Var::Temp(2), },
-                Tac::LoadArg { src: Var::Temp(3), },
-                Tac::Call { dest: Var::Temp(4), src: Var::Local(syms.get_id("a")), },
+                Tac::LoadConst { dest: Var::temp(1), src: TacConst::Int(0) },
+                Tac::LoadConst { dest: Var::temp(2), src: TacConst::Int(1) },
+                Tac::LoadConst { dest: Var::temp(3), src: TacConst::Int(2) },
+                Tac::LoadArg { src: Var::temp(1), },
+                Tac::LoadArg { src: Var::temp(2), },
+                Tac::LoadArg { src: Var::temp(3), },
+                Tac::Call { dest: Var::temp(4), src: Var::local(syms.get_id("a")), },
             ]
         ];
         let input = "a(0, 1, 2);";

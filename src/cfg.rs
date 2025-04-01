@@ -1,21 +1,24 @@
 use crate::tac::{Tac, TacFunc, LabelID, Var};
+use std::fmt::Debug;
 use std::ops::{Index, IndexMut};
+use std::collections::{HashMap, HashSet};
 use crate::cfg_builder::CFGBuilder;
 
 pub type BlockID = usize;
 const ENTRY_BLOCK_ID: usize = 0;
 
 #[derive(Debug)]
-pub struct Block {
+pub struct BasicBlock {
     pub id: BlockID,
     pub code: Vec<Tac>,
     pub label: Option<LabelID>,
     pub successors: Vec<BlockID>,
     pub predecessors: Vec<BlockID>,
     pub entry_arguments: Option<Vec<Var>>,
+    // pub phi_nodes:
 }
 
-impl Block {
+impl BasicBlock {
     pub fn new(id: BlockID, label: Option<LabelID>) -> Self {
         Self {
             id,
@@ -34,7 +37,7 @@ impl Block {
 
 #[derive(Debug)]
 pub struct CFG {
-    pub blocks: Vec<Block>,
+    pub blocks: Vec<BasicBlock>,
 }
 
 impl CFG {
@@ -60,17 +63,86 @@ impl CFG {
     pub fn get_entry_block_id(&self) -> BlockID {
         ENTRY_BLOCK_ID
     }
+
+    pub fn compute_unreachable_blocks(&self) -> HashSet<BlockID> {
+        let entry_block = self.blocks.iter().find(|b| b.id == ENTRY_BLOCK_ID).unwrap();
+        let reachable_blocks = self.compute_reachable_blocks(entry_block);
+        let all_blocks = self.blocks.iter().map(|b| b.id).collect::<HashSet<BlockID>>();
+
+        all_blocks.difference(&reachable_blocks).map(|id| *id).collect()
+
+    }
+
+    pub fn compute_reachable_blocks(&self, block: &BasicBlock) -> HashSet<BlockID> {
+        let mut reachable_blocks = HashSet::from([block.id]);
+        let mut work_list: Vec<usize> = block.successors.to_vec();
+
+        while let Some(id) = work_list.pop() {
+            if reachable_blocks.get(&id).is_some() {
+                continue;
+            }
+
+            reachable_blocks.insert(id);
+
+            let successor = self.blocks.iter().find(|b| b.id == id).unwrap();
+
+            work_list.append(&mut successor.successors.to_vec())
+        }
+
+        reachable_blocks
+    }
+
+    pub fn compute_dominated_blocks(&self, seed_block: &BasicBlock) -> HashSet<BlockID> {
+        let mut dominated_blocks: HashSet<BlockID> = self.compute_reachable_blocks(seed_block).into_iter().collect();
+        let mut work_list: Vec<BlockID> = self.compute_reachable_blocks(seed_block).into_iter().collect();
+
+        while let Some(id) = work_list.pop() {
+            if id == seed_block.id {
+                continue;
+            }
+
+            let block = self.blocks.iter().find(|b| b.id == id).unwrap();
+
+            if block.predecessors.iter().find(|id| dominated_blocks.get(&id).is_none()).is_some() {
+                dominated_blocks.remove(&id);
+
+                for id in block.predecessors.iter() {
+                    work_list.push(*id);
+                }
+            }
+        }
+
+        dominated_blocks
+    }
+
+    pub fn compute_dominance_frontier(&self, seed_block: &BasicBlock) -> HashSet<BlockID> {
+        let mut dominance_frontier: HashSet<BlockID> = HashSet::new();
+        let dominated_blocks = self.compute_dominated_blocks(seed_block);
+
+        for id in dominated_blocks.iter() {
+            let block = self.blocks.iter().find(|b| b.id == *id).unwrap();
+
+            for successor_id in block.successors.iter() {
+                if dominated_blocks.get(successor_id).is_none() {
+                    dominance_frontier.insert(*successor_id);
+                }
+            }
+        }
+
+        dominance_frontier
+    }
 }
 
 impl Index<BlockID> for CFG {
-    type Output = Block;
-    fn index<'a>(&'a self, i: usize) -> &'a Block {
+    type Output = BasicBlock;
+
+    fn index<'a>(&'a self, i: usize) -> &'a BasicBlock {
         &self.blocks[i]
     }
 }
 
 impl IndexMut<BlockID> for CFG {
-    fn index_mut<'a>(&'a mut self, i: usize) -> &'a mut Block {
+    fn index_mut<'a>(&'a mut self, i: usize) -> &'a mut BasicBlock {
         &mut self.blocks[i]
     }
 }
