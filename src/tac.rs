@@ -1,4 +1,5 @@
 use crate::parser::{Span, Spanned, Stmt, Expr, Value, Op, MapKey, LhsExpr};
+use std::hash::Hash;
 use crate::symbol_map::SymID;
 use std::collections::HashSet;
 
@@ -17,12 +18,20 @@ pub enum VarID {
     Global(SymID),
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct Var {
-    id: VarID,
+    pub id: VarID,
     ver: Option<usize>,
-    last_use: Option<usize>,
-    live: Option<bool>
+    //last_use: Option<usize>,
+    //live: Option<bool>
+}
+
+impl Hash for Var {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.id.hash(state);
+        self.ver.hash(state);
+        // don't use last use and liveness to hash
+    }
 }
 
 impl Var {
@@ -46,8 +55,8 @@ impl Var {
         Self {
             id,
             ver: None,
-            last_use: None,
-            live: None,
+            //last_use: None,
+            //live: None,
         }
     }
 }
@@ -125,11 +134,60 @@ pub enum Tac {
     },
     Jnt {
         label: LabelID,
-        cond: Var,
+        src: Var,
     },
     Label {
         label: LabelID,
     },
+}
+
+impl Tac {
+    pub fn used_vars(&self) -> (Option<&Var>, Option<&Var>, Option<&Var>) {
+        match self {
+            Tac::Binop { lhs, rhs, .. } => (Some(lhs), Some(rhs), None),
+
+            Tac::Copy { src, .. } |
+            Tac::Print { src, .. } |
+            Tac::LoadArg { src, .. } |
+            Tac::Call { src, .. } |
+            Tac::Return { src, .. } |
+            Tac::Jnt { src, .. } 
+                => (Some(src), None, None),
+
+            Tac::KeyLoad { store, key, .. } => {
+                if let Key::Var(var) = key {
+                    (Some(store), Some(var), None)
+                } else {
+                    (Some(store), None, None)
+                }
+            }
+
+            Tac::KeyStore { store, key, src } => {
+                if let Key::Var(var) = key {
+                    (Some(store), Some(src), Some(var))
+                } else {
+                    (Some(store), Some(src), None)
+                }
+            }
+
+            _ => (None, None, None)
+        }
+    }
+
+    pub fn dest_var(&self) -> Option<&Var> {
+        match self {
+            Tac::Call { dest, .. } |
+            Tac::LoadConst { dest, .. } |
+            Tac::KeyLoad { dest, .. } |
+            Tac::Copy { dest, .. } |
+            Tac::Read { dest, .. } |
+            Tac::NewMap { dest, .. } |
+            Tac::NewList { dest, .. } |
+            Tac::Binop { dest, .. }
+            => Some(dest),
+            _ => None
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -433,7 +491,7 @@ impl<'a> TacGenCtx<'a> {
 
         self.emit(
             Tac::Jnt {
-                cond,
+                src: cond,
                 label,
             }
         );
@@ -448,7 +506,7 @@ impl<'a> TacGenCtx<'a> {
 
         self.emit(
             Tac::Jnt {
-                cond,
+                src: cond,
                 label: else_start,
             }
         );
@@ -470,7 +528,7 @@ impl<'a> TacGenCtx<'a> {
         self.emit_label(start);
         self.emit(
             Tac::Jnt {
-                cond,
+                src: cond,
                 label: end,
             }
         );
@@ -627,7 +685,6 @@ impl<'a> TacGenCtx<'a> {
 
     fn new_func_id(&mut self) -> FuncID {
         self.func_counter += 1;
-
         self.func_counter
     }
 
@@ -879,7 +936,7 @@ mod tests {
             vec![
                 Tac::LoadConst { dest: Var::temp(1), src: TacConst::Bool(true) },
                 Tac::Label { label: 1 },
-                Tac::Jnt { cond: Var::temp(1), label: 2 },
+                Tac::Jnt { src: Var::temp(1), label: 2 },
                 Tac::Jump { label: 1 },
                 Tac::Jump { label: 2 },
                 Tac::Jump { label: 1 },

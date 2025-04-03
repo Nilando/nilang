@@ -11,8 +11,8 @@ pub trait DFA {
 }
 
 pub struct DFAResult<T> {
-    inputs: HashMap<BlockID, T>,
-    outputs: HashMap<BlockID, T>,
+    pub inputs: HashMap<BlockID, T>,
+    pub outputs: HashMap<BlockID, T>,
 }
 
 pub fn exec_dfa<T: DFA>(cfg: &CFG) -> DFAResult<<T as DFA>::Item>{

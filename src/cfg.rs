@@ -1,4 +1,6 @@
 use crate::tac::{Tac, TacFunc, LabelID, Var};
+use crate::dfa::exec_dfa;
+use crate::liveness_dfa::LivenessDFA;
 use std::fmt::Debug;
 use std::ops::{Index, IndexMut};
 use std::collections::{HashMap, HashSet};
@@ -6,6 +8,11 @@ use crate::cfg_builder::CFGBuilder;
 
 pub type BlockID = usize;
 const ENTRY_BLOCK_ID: usize = 0;
+
+#[derive(Debug)]
+pub struct CFG {
+    pub blocks: Vec<BasicBlock>,
+}
 
 #[derive(Debug)]
 pub struct BasicBlock {
@@ -16,6 +23,13 @@ pub struct BasicBlock {
     pub predecessors: Vec<BlockID>,
     pub entry_arguments: Option<Vec<Var>>,
     // pub phi_nodes:
+    // span info
+}
+
+#[derive(Debug)]
+struct PhiNode {
+    dest: Var,
+    srcs: Vec<(BlockID, usize)>
 }
 
 impl BasicBlock {
@@ -31,13 +45,24 @@ impl BasicBlock {
     }
 
     pub fn get_return_var_id(&self) -> Option<Var> {
-        todo!()
+        if let Some(Tac::Return { src }) = self.code.last() {
+            Some(*src)
+        } else {
+            None
+        }
     }
-}
 
-#[derive(Debug)]
-pub struct CFG {
-    pub blocks: Vec<BasicBlock>,
+    pub fn defined_vars(&self) -> HashSet<Var> {
+        let mut defined = HashSet::new();
+
+        for instr in self.code.iter() {
+            if let Some(var) = instr.dest_var() {
+                defined.insert(*var);
+            }
+        }
+
+        defined
+    }
 }
 
 impl CFG {
@@ -60,17 +85,16 @@ impl CFG {
             .collect()
     }
 
-    pub fn get_entry_block_id(&self) -> BlockID {
-        ENTRY_BLOCK_ID
+    pub fn get_entry_block(&self) -> &BasicBlock {
+        &self[ENTRY_BLOCK_ID]
     }
 
     pub fn compute_unreachable_blocks(&self) -> HashSet<BlockID> {
-        let entry_block = self.blocks.iter().find(|b| b.id == ENTRY_BLOCK_ID).unwrap();
+        let entry_block = self.get_entry_block();
         let reachable_blocks = self.compute_reachable_blocks(entry_block);
         let all_blocks = self.blocks.iter().map(|b| b.id).collect::<HashSet<BlockID>>();
 
         all_blocks.difference(&reachable_blocks).map(|id| *id).collect()
-
     }
 
     pub fn compute_reachable_blocks(&self, block: &BasicBlock) -> HashSet<BlockID> {
@@ -84,7 +108,7 @@ impl CFG {
 
             reachable_blocks.insert(id);
 
-            let successor = self.blocks.iter().find(|b| b.id == id).unwrap();
+            let successor = &self[id];
 
             work_list.append(&mut successor.successors.to_vec())
         }
@@ -101,7 +125,7 @@ impl CFG {
                 continue;
             }
 
-            let block = self.blocks.iter().find(|b| b.id == id).unwrap();
+            let block = &self[id];
 
             if block.predecessors.iter().find(|id| dominated_blocks.get(&id).is_none()).is_some() {
                 dominated_blocks.remove(&id);
@@ -120,7 +144,7 @@ impl CFG {
         let dominated_blocks = self.compute_dominated_blocks(seed_block);
 
         for id in dominated_blocks.iter() {
-            let block = self.blocks.iter().find(|b| b.id == *id).unwrap();
+            let block = &self[*id];
 
             for successor_id in block.successors.iter() {
                 if dominated_blocks.get(successor_id).is_none() {
@@ -131,6 +155,79 @@ impl CFG {
 
         dominance_frontier
     }
+
+    fn compute_phi_nodes(&self) -> HashMap<BlockID, Vec<PhiNode>> {
+        let dfa_result = exec_dfa::<LivenessDFA>(self);
+        let mut phi_nodes: HashMap<BlockID, Vec<PhiNode>> = HashMap::new();
+
+        for block in self.blocks.iter() {
+            for df_id in self.compute_dominance_frontier(block).iter() {
+                let df_block = &self[*df_id];
+
+                for var in df_block.defined_vars() {
+                    let mut node_exists = false;
+                    if let Some(nodes) = phi_nodes.get(&df_id) {
+                        for node in nodes.iter() {
+                            if node.dest.id == var.id {
+                                node_exists = true;
+                            }
+                        }
+                    }
+
+                    // this block already has a phi node for var
+                    if node_exists {
+                        continue;
+                    }
+
+                    // if var is not live on entry based on the dfa result
+                    if dfa_result.inputs.get(&df_id).unwrap().get(&var).is_none() {
+                        continue;
+                    }
+
+                    // add phi node for v to b in the map
+                    let new_phi = PhiNode {
+                        dest: var,
+                        srcs: vec![]
+                    };
+
+                    if let Some(nodes) = phi_nodes.get_mut(&df_id) {
+                        nodes.push(new_phi);
+                    } else {
+                        phi_nodes.insert(*df_id, vec![new_phi]);
+                    }
+                }
+            }
+        }
+
+        phi_nodes
+    }
+
+    fn convert_to_ssa(&self) {
+        // let phi_nodes = self.insert_phi_nodes();
+        let version_counters: HashMap<Var, usize> = HashMap::new();
+        let version_stacks: HashMap<Var, Vec<usize>> = HashMap::new();
+        let entry_block = self.get_entry_block();
+        let mut worklist = vec![entry_block.id];
+
+        // for each phi node set the dest give the top version on the stacks
+        for code in entry_block.code.iter() {
+            // if the var is used get the top verion in the stack and set the version
+            // if the var is assigned get the next version from the counter, 
+            //  push the version to the stack
+            //  set the var to that version
+            //
+        }
+    }
+
+    fn version_block(&mut self) {
+    }
+
+    // needs the version stacks and the version counters
+    fn convert_block_to_ssa(&mut self, block_id: BlockID) {
+        todo!()
+    }
+
+    // comiple_cfg_bytecode
 }
 
 impl Index<BlockID> for CFG {
