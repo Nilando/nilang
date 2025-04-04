@@ -1,25 +1,28 @@
 use super::bytecode::ByteCode;
-use super::gc_vec::GcVec;
-use super::value::Value;
-use sandpit::{gc::Gc, Mutator, Trace};
+use sandpit::{Gc, Mutator, Trace, GcVec};
+use super::list::List;
+use super::func::Func;
 use std::cell::Cell;
 
 #[derive(Trace)]
 pub struct Stack<'gc> {
-    stack_frames: GcVec<'gc, StackFrame<'gc>>,
-    registers: GcVec<'gc, Value<'gc>>
+    stack_frames: GcVec<'gc, Gc<'gc, StackFrame<'gc>>>,
+    registers: List<'gc>,
 }
 
 impl<'gc> Stack<'gc> {
-    pub fn new(_m: &'gc Mutator) -> Self {
-        todo!()
+    pub fn new(mu: &'gc Mutator) -> Self {
+        Self {
+            stack_frames: GcVec::new(mu),
+            registers: List::new(mu),
+        }
     }
 }
 
 #[derive(Trace)]
 struct StackFrame<'gc> {
     stream: InstrStream<'gc>,
-    // func: Gc<'gc, Func<'gc>>,
+    func: Gc<'gc, Func<'gc>>,
 }
 
 #[derive(Trace)]

@@ -1,7 +1,11 @@
-mod generator;
-mod parser;
-mod vm;
-mod symbol_map;
-mod driver;
+pub mod driver;
+pub mod parser;
+pub mod symbol_map;
+mod tac;
+mod cfg;
+mod cfg_builder;
+mod ssa_conversion;
+mod dfa;
+mod liveness_dfa;
 
-pub use driver::{Driver, Config};
+pub use symbol_map::SymbolMap;
