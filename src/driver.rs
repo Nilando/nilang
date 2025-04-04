@@ -48,8 +48,11 @@ fn run_script(mut config: Config) {
     }
 
     use crate::cfg::CFG;
+    use crate::ssa_conversion::convert_cfg_to_ssa;
     stream_tac_from_stmts(ast, |func| {
-        let cfg = CFG::new(func);
+        let mut cfg = CFG::new(func);
+        convert_cfg_to_ssa(&mut cfg);
+
         println!("{:#?}", cfg);
     });
 

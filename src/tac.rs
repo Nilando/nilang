@@ -1014,4 +1014,92 @@ mod tests {
 
         expect_tac_with_syms(input, tac, &mut syms);
     }
+
+    #[test]
+    fn use_defined_local() {
+        let mut syms = SymbolMap::new();
+        let tac = vec![
+            vec![
+                Tac::LoadConst { dest: Var::temp(1), src: TacConst::Int(1) },
+                Tac::Copy { dest: Var::local(syms.get_id("a")), src: Var::temp(1) },
+                Tac::Copy { dest: Var::local(syms.get_id("b")), src: Var::local(syms.get_id("a")) },
+            ]
+        ];
+        let input = "a = 1; b = a;";
+
+        expect_tac_with_syms(input, tac, &mut syms);
+    }
+
+    #[test]
+    fn simple_if_stmt() {
+        let mut syms = SymbolMap::new();
+        let tac = vec![
+            vec![
+                Tac::LoadConst { dest: Var::temp(1), src: TacConst::Bool(true) }, 
+                Tac::Jnt { label: 1, src: Var::temp(1) }, 
+                Tac::LoadConst { dest: Var::temp(2), src: TacConst::String(String::from("test")) }, 
+                Tac::Print { src: Var::temp(2) }, 
+                Tac::Label { label: 1 }
+            ]
+        ];
+        let input = "if true { print(\"test\"); }";
+
+        expect_tac_with_syms(input, tac, &mut syms);
+    }
+
+    #[test]
+    fn load_null() {
+        let mut syms = SymbolMap::new();
+        let tac = vec![
+            vec![
+                Tac::LoadConst { dest: Var::temp(1), src: TacConst::Null }, 
+                Tac::Copy { dest: Var::local(syms.get_id("a")), src: Var::temp(1) },
+            ]
+        ];
+        let input = "a = null;";
+
+        expect_tac_with_syms(input, tac, &mut syms);
+    }
+
+    #[test]
+    fn sym_key_load() {
+        let mut syms = SymbolMap::new();
+        let tac = vec![
+            vec![
+              Tac::KeyLoad { dest: Var::temp(1), store: Var::local(syms.get_id("b")), key: Key::Sym(syms.get_id("c")) }, 
+              Tac::Copy { dest: Var::local(syms.get_id("a")), src: Var::temp(1) }
+            ]
+        ];
+        let input = "a = b.c;";
+
+        expect_tac_with_syms(input, tac, &mut syms);
+    }
+
+    #[test]
+    fn val_key_load() {
+        let mut syms = SymbolMap::new();
+        let tac = vec![
+            vec![
+              Tac::LoadConst { dest: Var::temp(1), src: TacConst::Int(0) }, 
+              Tac::KeyLoad { dest: Var::temp(2), store: Var::local(syms.get_id("b")), key: Key::Var(Var::temp(1)) }, 
+              Tac::Copy { dest: Var::local(syms.get_id("a")), src: Var::temp(2) }
+            ]
+        ];
+        let input = "a = b[0];";
+
+        expect_tac_with_syms(input, tac, &mut syms);
+    }
+
+    #[test]
+    fn load_global() {
+        let mut syms = SymbolMap::new();
+        let tac = vec![
+            vec![
+              Tac::Copy { dest: Var::local(syms.get_id("a")), src: Var::global(syms.get_id("b")) }
+            ]
+        ];
+        let input = "a = @b;";
+
+        expect_tac_with_syms(input, tac, &mut syms);
+    }
 }

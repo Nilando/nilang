@@ -6,7 +6,7 @@ use crate::tac::{Var, VerID, VarID};
 
 const INIT_VERSION: usize = 0;
 
-fn convert_cfg_to_ssa(cfg: &mut CFG) {
+pub fn convert_cfg_to_ssa(cfg: &mut CFG) {
     SSAConverter::convert(cfg);
 }
 

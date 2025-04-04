@@ -129,10 +129,10 @@ impl CFGBuilder {
     }
 
     fn init_block(&mut self, label: Option<LabelID>) -> BasicBlock {
-        let id = self.blocks.len() + 1;
+        let id = self.blocks.len();
 
         if self.non_jump_edge_flag {
-            self.non_jump_edges.push((id - 1, id));
+            self.non_jump_edges.push((id, id));
         }
 
         BasicBlock::new(id, label)
