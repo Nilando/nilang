@@ -18,10 +18,12 @@ pub enum VarID {
     Global(SymID),
 }
 
+pub type VerID = usize;
+
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct Var {
     pub id: VarID,
-    ver: Option<usize>,
+    pub ver: Option<VerID>,
     //last_use: Option<usize>,
     //live: Option<bool>
 }
@@ -173,8 +175,54 @@ impl Tac {
             _ => (None, None, None)
         }
     }
+    pub fn used_vars_mut(&mut self) -> (Option<&mut Var>, Option<&mut Var>, Option<&mut Var>) {
+        match self {
+            Tac::Binop { lhs, rhs, .. } => (Some(lhs), Some(rhs), None),
+
+            Tac::Copy { src, .. } |
+            Tac::Print { src, .. } |
+            Tac::LoadArg { src, .. } |
+            Tac::Call { src, .. } |
+            Tac::Return { src, .. } |
+            Tac::Jnt { src, .. } 
+                => (Some(src), None, None),
+
+            Tac::KeyLoad { store, key, .. } => {
+                if let Key::Var(var) = key {
+                    (Some(store), Some(var), None)
+                } else {
+                    (Some(store), None, None)
+                }
+            }
+
+            Tac::KeyStore { store, key, src } => {
+                if let Key::Var(var) = key {
+                    (Some(store), Some(src), Some(var))
+                } else {
+                    (Some(store), Some(src), None)
+                }
+            }
+
+            _ => (None, None, None)
+        }
+    }
 
     pub fn dest_var(&self) -> Option<&Var> {
+        match self {
+            Tac::Call { dest, .. } |
+            Tac::LoadConst { dest, .. } |
+            Tac::KeyLoad { dest, .. } |
+            Tac::Copy { dest, .. } |
+            Tac::Read { dest, .. } |
+            Tac::NewMap { dest, .. } |
+            Tac::NewList { dest, .. } |
+            Tac::Binop { dest, .. }
+            => Some(dest),
+            _ => None
+        }
+    }
+
+    pub fn dest_var_mut(&mut self) -> Option<&mut Var> {
         match self {
             Tac::Call { dest, .. } |
             Tac::LoadConst { dest, .. } |

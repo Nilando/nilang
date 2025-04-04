@@ -30,8 +30,7 @@ where T: DFA,
     work_list: Vec<BlockID>
 }
 
-impl<T: DFA> DFAExecutor<T> 
-{
+impl<T: DFA> DFAExecutor<T> {
     fn new(cfg: &CFG) -> Self {
         Self {
             result: Self::init_result(cfg),

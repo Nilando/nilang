@@ -1,6 +1,4 @@
 use crate::tac::{Tac, TacFunc, LabelID, Var};
-use crate::dfa::exec_dfa;
-use crate::liveness_dfa::LivenessDFA;
 use std::fmt::Debug;
 use std::ops::{Index, IndexMut};
 use std::collections::{HashMap, HashSet};
@@ -22,14 +20,14 @@ pub struct BasicBlock {
     pub successors: Vec<BlockID>,
     pub predecessors: Vec<BlockID>,
     pub entry_arguments: Option<Vec<Var>>,
-    // pub phi_nodes:
+    pub phi_nodes: Vec<PhiNode>
     // span info
 }
 
 #[derive(Debug)]
-struct PhiNode {
-    dest: Var,
-    srcs: Vec<(BlockID, usize)>
+pub struct PhiNode {
+    pub dest: Var,
+    pub srcs: Vec<(BlockID, usize)>
 }
 
 impl BasicBlock {
@@ -41,6 +39,7 @@ impl BasicBlock {
             predecessors: vec![],
             successors: vec![],
             entry_arguments: None,
+            phi_nodes: vec![]
         }
     }
 
@@ -64,6 +63,12 @@ impl BasicBlock {
         defined
     }
 }
+// to compile a tac function
+//  convert to cfg
+//  convert cfg to ssa
+//  optimize the cfg
+//  create an interference graph
+//  perform register allocation over the cfg
 
 impl CFG {
     pub fn new(tac_func: TacFunc) -> Self {
@@ -130,7 +135,7 @@ impl CFG {
             if block.predecessors.iter().find(|id| dominated_blocks.get(&id).is_none()).is_some() {
                 dominated_blocks.remove(&id);
 
-                for id in block.predecessors.iter() {
+                for id in block.successors.iter() {
                     work_list.push(*id);
                 }
             }
@@ -155,79 +160,6 @@ impl CFG {
 
         dominance_frontier
     }
-
-    fn compute_phi_nodes(&self) -> HashMap<BlockID, Vec<PhiNode>> {
-        let dfa_result = exec_dfa::<LivenessDFA>(self);
-        let mut phi_nodes: HashMap<BlockID, Vec<PhiNode>> = HashMap::new();
-
-        for block in self.blocks.iter() {
-            for df_id in self.compute_dominance_frontier(block).iter() {
-                let df_block = &self[*df_id];
-
-                for var in df_block.defined_vars() {
-                    let mut node_exists = false;
-                    if let Some(nodes) = phi_nodes.get(&df_id) {
-                        for node in nodes.iter() {
-                            if node.dest.id == var.id {
-                                node_exists = true;
-                            }
-                        }
-                    }
-
-                    // this block already has a phi node for var
-                    if node_exists {
-                        continue;
-                    }
-
-                    // if var is not live on entry based on the dfa result
-                    if dfa_result.inputs.get(&df_id).unwrap().get(&var).is_none() {
-                        continue;
-                    }
-
-                    // add phi node for v to b in the map
-                    let new_phi = PhiNode {
-                        dest: var,
-                        srcs: vec![]
-                    };
-
-                    if let Some(nodes) = phi_nodes.get_mut(&df_id) {
-                        nodes.push(new_phi);
-                    } else {
-                        phi_nodes.insert(*df_id, vec![new_phi]);
-                    }
-                }
-            }
-        }
-
-        phi_nodes
-    }
-
-    fn convert_to_ssa(&self) {
-        // let phi_nodes = self.insert_phi_nodes();
-        let version_counters: HashMap<Var, usize> = HashMap::new();
-        let version_stacks: HashMap<Var, Vec<usize>> = HashMap::new();
-        let entry_block = self.get_entry_block();
-        let mut worklist = vec![entry_block.id];
-
-        // for each phi node set the dest give the top version on the stacks
-        for code in entry_block.code.iter() {
-            // if the var is used get the top verion in the stack and set the version
-            // if the var is assigned get the next version from the counter, 
-            //  push the version to the stack
-            //  set the var to that version
-            //
-        }
-    }
-
-    fn version_block(&mut self) {
-    }
-
-    // needs the version stacks and the version counters
-    fn convert_block_to_ssa(&mut self, block_id: BlockID) {
-        todo!()
-    }
-
-    // comiple_cfg_bytecode
 }
 
 impl Index<BlockID> for CFG {
