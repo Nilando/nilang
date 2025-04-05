@@ -21,17 +21,21 @@ impl CFGBuilder {
         }
     }
 
-    pub fn build(tac_func: TacFunc) -> Vec<BasicBlock> {
+    pub fn build(tac_func: TacFunc) -> CFG {
         let mut builder = Self::new();
 
-        builder.blocks_from_tac(tac_func);
+        let inputs = tac_func.inputs;
+        builder.blocks_from_tac(tac_func.tac);
         builder.link_blocks();
 
-        builder.blocks
+        CFG {
+            entry_arguments: inputs,
+            blocks: builder.blocks
+        }
     }
 
-    fn blocks_from_tac(&mut self, tac_func: TacFunc) {
-        for tac in tac_func.tac.into_iter() {
+    fn blocks_from_tac(&mut self, tacs: Vec<Tac>) {
+        for tac in tacs.into_iter() {
             let flag = match tac {
                 Tac::Jump { .. } | Tac::Return { .. } => false,
                 _ => true,
@@ -97,6 +101,7 @@ impl CFGBuilder {
         let mut block = self.take_or_init_current_block();
 
         block.code.push(Tac::Jump { label });
+
         self.block_jump_map.insert(label, block.id);
 
         self.blocks.push(block);
@@ -132,9 +137,111 @@ impl CFGBuilder {
         let id = self.blocks.len();
 
         if self.non_jump_edge_flag {
-            self.non_jump_edges.push((id, id));
+            self.non_jump_edges.push((id - 1, id));
         }
 
         BasicBlock::new(id, label)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::tac::TacConst;
+    use crate::tac::tests::fabricate_tac_func;
+    use crate::cfg::ENTRY_BLOCK_ID;
+
+    #[test]
+    fn empty_cfg() {
+        let func = fabricate_tac_func(vec![]);
+        let cfg = CFG::new(func);
+
+        assert!(cfg.blocks.len() == 0);
+    }
+
+    #[test]
+    fn single_block_cfg() {
+        let func = fabricate_tac_func(vec![
+            Tac::LoadConst { dest: Var::temp(1), src: TacConst::Null}
+        ]);
+        let cfg = CFG::new(func);
+
+        assert!(cfg.blocks.len() == 1);
+        assert!(cfg.blocks[0].id == ENTRY_BLOCK_ID);
+        assert!(cfg.blocks[0].code.len() == 1);
+        assert!(cfg.blocks[0].predecessors.is_empty());
+        assert!(cfg.blocks[0].successors.is_empty());
+        assert!(cfg.blocks[0].label.is_none());
+    }
+
+    #[test]
+    fn cfg_for_a_mock_if_stmt() {
+        let func = fabricate_tac_func(vec![
+            Tac::LoadConst { dest: Var::temp(1), src: TacConst::Null },
+            Tac::Jnt { src: Var::temp(1), label: 1 },
+            Tac::LoadConst { dest: Var::temp(2), src: TacConst::Int(420) },
+            Tac::Print { src: Var::temp(2) },
+            Tac::Label { label: 1 },
+            Tac::LoadConst { dest: Var::temp(3), src: TacConst::Int(69) },
+            Tac::Return { src: Var::temp(3) }
+        ]);
+        let cfg = CFG::new(func);
+        let b0 = &cfg.blocks[0];
+        let b1 = &cfg.blocks[1];
+        let b2 = &cfg.blocks[2];
+
+        assert!(cfg.blocks.len() == 3);
+
+        assert!(b0.code.len() == 2);
+        assert!(b0.label.is_none());
+        assert!(b0.predecessors.is_empty());
+        assert!(b0.successors == vec![2, 1]);
+
+        assert!(b1.code.len() == 2);
+        assert!(b1.label.is_none());
+        assert!(b1.predecessors == vec![0]);
+        assert!(b1.successors == vec![2]);
+
+        assert!(b2.code.len() == 2);
+        assert!(b2.label == Some(1));
+        assert!(b2.predecessors == vec![0, 1]);
+        assert!(b2.successors.is_empty());
+    }
+
+    #[test]
+    fn cfg_for_a_mock_while_stmt() {
+        let func = fabricate_tac_func(vec![
+            Tac::Label { label: 1 },
+            Tac::LoadConst { dest: Var::temp(1), src: TacConst::Null },
+            Tac::Jnt { src: Var::temp(1), label: 2 },
+            Tac::LoadConst { dest: Var::temp(2), src: TacConst::Int(420) },
+            Tac::Print { src: Var::temp(2) },
+            Tac::Jump { label: 1 },
+            Tac::Label { label: 2 },
+            Tac::LoadConst { dest: Var::temp(3), src: TacConst::Int(69) },
+            Tac::Return { src: Var::temp(3) }
+        ]);
+
+        let cfg = CFG::new(func);
+        let b0 = &cfg.blocks[0];
+        let b1 = &cfg.blocks[1];
+        let b2 = &cfg.blocks[2];
+
+        assert!(cfg.blocks.len() == 3);
+
+        assert!(b0.code.len() == 2);
+        assert!(b0.label == Some(1));
+        assert!(b0.predecessors == vec![1]);
+        assert!(b0.successors == vec![2, 1]);
+
+        assert!(b1.code.len() == 3);
+        assert!(b1.label.is_none());
+        assert!(b1.predecessors == vec![0]);
+        assert!(b1.successors == vec![0]);
+
+        assert!(b2.code.len() == 2);
+        assert!(b2.label == Some(2));
+        assert!(b2.predecessors == vec![0]);
+        assert!(b2.successors.is_empty());
     }
 }

@@ -37,19 +37,19 @@ impl Hash for Var {
 }
 
 impl Var {
-    fn local(id: SymID) -> Self {
+    pub fn local(id: SymID) -> Self {
         Self::new(VarID::Local(id))
     }
 
-    fn global(id: SymID) -> Self {
+    pub fn global(id: SymID) -> Self {
         Self::new(VarID::Global(id))
     }
 
-    fn temp(id: usize) -> Self {
+    pub fn temp(id: usize) -> Self {
         Self::new(VarID::Temp(id))
     }
 
-    fn upvalue(id: SymID) -> Self {
+    pub fn upvalue(id: SymID) -> Self {
         Self::new(VarID::Upvalue(id))
     }
 
@@ -241,7 +241,7 @@ impl Tac {
 #[derive(Debug)]
 pub struct TacFunc {
     id: FuncID,
-    inputs: HashSet<SymID>,
+    pub inputs: HashSet<SymID>,
     pub tac: Vec<Tac>,
     spans: Vec<(usize, Span)>,
     upvalues: HashSet<SymID>,
@@ -794,10 +794,18 @@ pub fn stream_tac_from_stmts(stmts: Vec<Stmt>, callback: impl FnMut(TacFunc)) {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::*;
     use crate::parser::parse_program;
     use crate::symbol_map::SymbolMap;
+
+    pub fn fabricate_tac_func(tac: Vec<Tac>) -> TacFunc {
+        let mut func = TacFunc::new(0, HashSet::new());
+
+        func.tac = tac;
+
+        func
+    }
 
     fn expect_tac(input: &str, expected_code: Vec<Vec<Tac>>) {
         let mut syms = SymbolMap::new();
@@ -1102,4 +1110,5 @@ mod tests {
 
         expect_tac_with_syms(input, tac, &mut syms);
     }
+
 }

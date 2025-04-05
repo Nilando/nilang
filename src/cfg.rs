@@ -1,3 +1,4 @@
+use crate::symbol_map::SymID;
 use crate::tac::{Tac, TacFunc, LabelID, Var};
 use std::fmt::Debug;
 use std::ops::{Index, IndexMut};
@@ -5,10 +6,11 @@ use std::collections::{HashMap, HashSet};
 use crate::cfg_builder::CFGBuilder;
 
 pub type BlockID = usize;
-const ENTRY_BLOCK_ID: usize = 0;
+pub const ENTRY_BLOCK_ID: usize = 0;
 
 #[derive(Debug)]
 pub struct CFG {
+    pub entry_arguments: HashSet<SymID>,
     pub blocks: Vec<BasicBlock>,
 }
 
@@ -19,7 +21,6 @@ pub struct BasicBlock {
     pub label: Option<LabelID>,
     pub successors: Vec<BlockID>,
     pub predecessors: Vec<BlockID>,
-    pub entry_arguments: Option<Vec<Var>>,
     pub phi_nodes: Vec<PhiNode>
     // span info
 }
@@ -38,7 +39,6 @@ impl BasicBlock {
             code: vec![],
             predecessors: vec![],
             successors: vec![],
-            entry_arguments: None,
             phi_nodes: vec![]
         }
     }
@@ -72,11 +72,7 @@ impl BasicBlock {
 
 impl CFG {
     pub fn new(tac_func: TacFunc) -> Self {
-        let blocks = CFGBuilder::build(tac_func);
-
-        Self {
-            blocks
-        }
+        CFGBuilder::build(tac_func)
     }
 
     pub fn get_block_ids(&self) -> Vec<BlockID> {
