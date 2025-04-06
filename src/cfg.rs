@@ -119,7 +119,7 @@ impl CFG {
 
     pub fn compute_dominated_blocks(&self, seed_block: &BasicBlock) -> HashSet<BlockID> {
         let mut dominated_blocks: HashSet<BlockID> = self.compute_reachable_blocks(seed_block).into_iter().collect();
-        let mut work_list: Vec<BlockID> = self.compute_reachable_blocks(seed_block).into_iter().collect();
+        let mut work_list: Vec<BlockID> = dominated_blocks.iter().map(|id| *id).collect();
 
         while let Some(id) = work_list.pop() {
             if id == seed_block.id {
@@ -132,7 +132,9 @@ impl CFG {
                 dominated_blocks.remove(&id);
 
                 for id in block.successors.iter() {
-                    work_list.push(*id);
+                    if dominated_blocks.get(&id).is_some() {
+                        work_list.push(*id);
+                    }
                 }
             }
         }
