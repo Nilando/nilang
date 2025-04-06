@@ -71,7 +71,9 @@ impl<T: DFA> DFAExecutor<T> {
         let successor_inputs = block.successors.iter().map(|succ_id| {
             self.result.inputs.get(&*succ_id).unwrap()
         }).collect::<Vec<&<T as DFA>::Item>>();
-        let new_output = T::merge(successor_inputs.as_slice());
+        let existing_output = self.result.outputs.get(&block.id).unwrap();
+        let successor_ouput = T::merge(successor_inputs.as_slice());
+        let new_output = T::merge(&[&existing_output, &successor_ouput]);
         let new_input = T::transfer(block, &new_output);
 
         self.result.outputs.insert(block.id, new_output);
@@ -89,7 +91,9 @@ impl<T: DFA> DFAExecutor<T> {
         let predecessors_outputs = block.predecessors.iter().map(|succ_id| {
             self.result.outputs.get(&*succ_id).unwrap()
         }).collect::<Vec<&<T as DFA>::Item>>();
-        let new_input = T::merge(predecessors_outputs.as_slice());
+        let existing_input = self.result.inputs.get(&block.id).unwrap();
+        let predecessor_input = T::merge(predecessors_outputs.as_slice());
+        let new_input = T::merge(&[&existing_input, &predecessor_input]);
         let new_output = T::transfer(block, &new_input);
 
         self.result.inputs.insert(block.id, new_input);

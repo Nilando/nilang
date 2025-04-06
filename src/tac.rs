@@ -61,6 +61,13 @@ impl Var {
             //live: None,
         }
     }
+
+    pub fn is_temp(&self) -> bool {
+        match self.id {
+            VarID::Temp(_) => true,
+            _ => false
+        }
+    }
 }
 
 #[derive(Debug, PartialEq)]

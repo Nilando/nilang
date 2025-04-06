@@ -16,9 +16,7 @@ fn compute_phi_nodes(cfg: &CFG) -> HashMap<BlockID, Vec<PhiNode>> {
 
     for block in cfg.blocks.iter() {
         for df_id in cfg.compute_dominance_frontier(block).iter() {
-            let df_block = &cfg[*df_id];
-
-            for var in df_block.defined_vars() {
+            for var in block.defined_vars() {
                 let mut node_exists = false;
                 if let Some(nodes) = phi_nodes.get(&df_id) {
                     for node in nodes.iter() {
@@ -42,7 +40,7 @@ fn compute_phi_nodes(cfg: &CFG) -> HashMap<BlockID, Vec<PhiNode>> {
                 // add phi node for v to b in the map
                 let new_phi = PhiNode {
                     dest: var,
-                    srcs: vec![]
+                    srcs: HashSet::new()
                 };
 
                 if let Some(nodes) = phi_nodes.get_mut(&df_id) {
@@ -127,7 +125,7 @@ impl SSAConverter {
 
             for phi_node in succ.phi_nodes.iter_mut() {
                 let version = self.get_version(phi_node.dest.id);
-                phi_node.srcs.push((block_id, version));
+                phi_node.srcs.insert(version);
             }
         }
 

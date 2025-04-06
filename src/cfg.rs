@@ -28,7 +28,7 @@ pub struct BasicBlock {
 #[derive(Debug)]
 pub struct PhiNode {
     pub dest: Var,
-    pub srcs: Vec<(BlockID, usize)>
+    pub srcs: HashSet<usize>
 }
 
 impl BasicBlock {
@@ -56,6 +56,10 @@ impl BasicBlock {
 
         for instr in self.code.iter() {
             if let Some(var) = instr.dest_var() {
+                if var.is_temp() {
+                    continue;
+                }
+
                 defined.insert(*var);
             }
         }
