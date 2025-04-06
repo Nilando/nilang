@@ -4,7 +4,7 @@ use std::collections::HashMap;
 
 pub struct CFGBuilder {
     blocks:  Vec<BasicBlock>,
-    block_jump_map: HashMap<LabelID, BlockID>, // label is jumped to by the block id
+    block_jump_map: HashMap<LabelID, Vec<BlockID>>, // label is jumped to by the block id
     non_jump_edges: Vec<(BlockID, BlockID)>, // 0 -> 1
     current_block: Option<BasicBlock>,
     non_jump_edge_flag: bool,
@@ -58,9 +58,11 @@ impl CFGBuilder {
     fn link_blocks(&mut self) {
         for labeled_block in 0..self.blocks.len() {
             if let Some(label) = self.blocks[labeled_block].label {
-                if let Some(jumping_block) = self.block_jump_map.get(&label) {
-                    self.blocks[*jumping_block].successors.push(labeled_block);
-                    self.blocks[labeled_block].predecessors.push(*jumping_block);
+                if let Some(jumping_blocks) = self.block_jump_map.get(&label) {
+                    for jumping_block in jumping_blocks.iter() {
+                        self.blocks[*jumping_block].successors.push(labeled_block);
+                        self.blocks[labeled_block].predecessors.push(*jumping_block);
+                    }
                 }
             }
         }
@@ -84,7 +86,7 @@ impl CFGBuilder {
 
         block.code.push(tac);
 
-        self.block_jump_map.insert(label, block.id);
+        self.insert_jump_mapping(label, block.id);
 
         self.blocks.push(block);
     }
@@ -102,7 +104,7 @@ impl CFGBuilder {
 
         block.code.push(Tac::Jump { label });
 
-        self.block_jump_map.insert(label, block.id);
+        self.insert_jump_mapping(label, block.id);
 
         self.blocks.push(block);
     }
@@ -141,6 +143,14 @@ impl CFGBuilder {
         }
 
         BasicBlock::new(id, label)
+    }
+
+    fn insert_jump_mapping(&mut self, label: LabelID, block_id: BlockID) {
+        if let Some(block_ids) = self.block_jump_map.get_mut(&label) {
+            block_ids.push(block_id);
+        } else {
+            self.block_jump_map.insert(label, vec![block_id]);
+        }
     }
 }
 
@@ -214,9 +224,11 @@ mod tests {
             Tac::Label { label: 1 },
             Tac::LoadConst { dest: Var::temp(1), src: TacConst::Null },
             Tac::Jnt { src: Var::temp(1), label: 2 },
+
             Tac::LoadConst { dest: Var::temp(2), src: TacConst::Int(420) },
             Tac::Print { src: Var::temp(2) },
             Tac::Jump { label: 1 },
+
             Tac::Label { label: 2 },
             Tac::LoadConst { dest: Var::temp(3), src: TacConst::Int(69) },
             Tac::Return { src: Var::temp(3) }
