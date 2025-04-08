@@ -175,7 +175,7 @@ impl SSAConverter {
         }
 
         let ver = self.get_new_version(var_id);
-        self.version_stacks.last_mut().unwrap().insert(var_id, ver);
+        self.version_stacks.first_mut().unwrap().insert(var_id, ver);
         ver
     }
 
