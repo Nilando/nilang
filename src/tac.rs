@@ -13,6 +13,7 @@ pub type VersionID = usize;
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum VarID {
     Temp(TempID), 
+    LongTemp(TempID),
     Upvalue(SymID),
     Local(SymID),
     Global(SymID),
@@ -47,6 +48,10 @@ impl Var {
 
     pub fn temp(id: usize) -> Self {
         Self::new(VarID::Temp(id))
+    }
+
+    pub fn long_temp(id: usize) -> Self {
+        Self::new(VarID::LongTemp(id))
     }
 
     pub fn upvalue(id: SymID) -> Self {
@@ -145,6 +150,10 @@ pub enum Tac {
         label: LabelID,
         src: Var,
     },
+    Jit {
+        label: LabelID,
+        src: Var,
+    },
     Label {
         label: LabelID,
     },
@@ -160,7 +169,7 @@ impl Tac {
             Tac::LoadArg { src, .. } |
             Tac::Call { src, .. } |
             Tac::Return { src, .. } |
-            Tac::Jnt { src, .. } 
+            Tac::Jnt { src, .. } | Tac::Jit { src, .. }
                 => (Some(src), None, None),
 
             Tac::KeyLoad { store, key, .. } => {
@@ -191,7 +200,7 @@ impl Tac {
             Tac::LoadArg { src, .. } |
             Tac::Call { src, .. } |
             Tac::Return { src, .. } |
-            Tac::Jnt { src, .. } 
+            Tac::Jnt { src, .. } | Tac::Jit { src, .. }
                 => (Some(src), None, None),
 
             Tac::KeyLoad { store, key, .. } => {
@@ -380,10 +389,15 @@ impl<'a> TacGenCtx<'a> {
                 self.generate_print(var)
             }
             Expr::Binop { lhs, op, rhs } => {
-                let v1 = self.generate_expr(*lhs);
-                let v2 = self.generate_expr(*rhs);
+                match op {
+                    Op::And | Op::Or => self.generate_shortcircuit(*lhs, op, *rhs),
+                    _ => {
+                        let v1 = self.generate_expr(*lhs);
+                        let v2 = self.generate_expr(*rhs);
 
-                self.generate_binop(v1, op, v2, span)
+                        self.generate_binop(v1, op, v2, span)
+                    }
+                }
             }
             Expr::Access { store, key } => {
                 let var = self.generate_expr(*store);
@@ -403,6 +417,50 @@ impl<'a> TacGenCtx<'a> {
                 self.generate_call(calle_val, arg_vals, span)
             }
         }
+    }
+
+    fn generate_shortcircuit(&mut self, lhs: Spanned<Expr>, op: Op, rhs: Spanned<Expr>) -> Var {
+        let label = self.new_label();
+        let lt = self.new_long_temp();
+        let v1 = self.generate_expr(lhs);
+
+        self.emit(
+            Tac::Copy {
+                dest: lt,
+                src: v1
+            }
+        );
+
+        match op {
+            Op::And => 
+                self.emit(
+                    Tac::Jnt {
+                        src: lt,
+                        label,
+                    }
+                ),
+            Op::Or => 
+                self.emit(
+                    Tac::Jit {
+                        src: lt,
+                        label,
+                    }
+                ),
+            _ => panic!("tried to generated shortcircuit for wrong op"),
+        }
+
+        let v2 = self.generate_expr(rhs);
+
+        self.emit(
+            Tac::Copy {
+                dest: lt,
+                src: v2
+            }
+        );
+
+        self.emit_label(label);
+
+        return lt;
     }
 
     fn generate_value(&mut self, value: Value) -> Var {
@@ -578,9 +636,10 @@ impl<'a> TacGenCtx<'a> {
 
         self.push_loop_ctx(LoopCtx { start, end });
 
+        self.emit_label(start);
+
         let cond = self.generate_expr(cond);
 
-        self.emit_label(start);
         self.emit(
             Tac::Jnt {
                 src: cond,
@@ -747,6 +806,12 @@ impl<'a> TacGenCtx<'a> {
         self.generators.last_mut().as_mut().unwrap().temp_counter += 1;
 
         Var::temp(self.generators.last().unwrap().temp_counter)
+    }
+
+    fn new_long_temp(&mut self) -> Var {
+        self.generators.last_mut().as_mut().unwrap().temp_counter += 1;
+
+        Var::long_temp(self.generators.last().unwrap().temp_counter)
     }
 
     fn new_label(&mut self) -> LabelID {
@@ -997,8 +1062,8 @@ pub mod tests {
     fn generates_break_and_continue_stmts() {
         let tac = vec![
             vec![
-                Tac::LoadConst { dest: Var::temp(1), src: TacConst::Bool(true) },
                 Tac::Label { label: 1 },
+                Tac::LoadConst { dest: Var::temp(1), src: TacConst::Bool(true) },
                 Tac::Jnt { src: Var::temp(1), label: 2 },
                 Tac::Jump { label: 1 },
                 Tac::Jump { label: 2 },

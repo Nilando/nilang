@@ -45,7 +45,7 @@ impl CFGBuilder {
                 Tac::Label { label } => self.process_label(label),
                 Tac::Jump { label } => self.process_jump(label),
                 Tac::Return { .. } => self.process_return(tac),
-                Tac::Jnt { label, .. } => self.process_jnt(tac, label),
+                Tac::Jnt { label, .. } | Tac::Jit { label, .. } => self.process_cond_jump(tac, label),
                 _ => self.process_basic_tac(tac),
             }
 
@@ -81,7 +81,7 @@ impl CFGBuilder {
         self.set_current(block);
     }
 
-    fn process_jnt(&mut self, tac: Tac, label: LabelID) {
+    fn process_cond_jump(&mut self, tac: Tac, label: LabelID) {
         let mut block = self.take_or_init_current_block();
 
         block.code.push(tac);
