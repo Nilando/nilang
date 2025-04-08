@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::rc::Rc;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct SymID(u64);
@@ -6,32 +7,49 @@ pub struct SymID(u64);
 pub struct SmallSymID(u16);
 
 pub struct SymbolMap {
-    map: HashMap<String, SymID>,
+    str_to_id: HashMap<Rc<String>, SymID>,
+    id_to_str: Vec<Rc<String>>
 }
 
-pub const INPUT_SYM_ID: SymID = SymID(0);
-pub const SELF_SYM_ID: SymID = SymID(1);
+pub const LENGTH_SYM: SymID = SymID(0);
+pub const PUSH_SYM: SymID = SymID(1);
 
 impl SymbolMap {
     pub fn new() -> Self {
-        let mut map = HashMap::new();
+        let mut this = Self { 
+            str_to_id: HashMap::new(), 
+            id_to_str: Vec::new()
+        };
 
-        map.insert("@".to_string(), INPUT_SYM_ID);
-        map.insert("self".to_string(), SELF_SYM_ID);
+        this.init();
 
-        Self { map }
+        this
     }
 
     pub fn get_id(&mut self, str: &str) -> SymID {
-        match self.map.get(str) {
+        let str = str.to_string();
+        match self.str_to_id.get(&str) {
             Some(id) => *id,
-            None => {
-                let id = SymID(self.map.len().try_into().unwrap());
-
-                self.map.insert(str.to_string(), id);
-
-                id
-            }
+            None => self.insert(str),
         }
+    }
+
+    pub fn get_str(&mut self, id: SymID) -> &str {
+        &self.id_to_str[id.0 as usize]
+    }
+
+    fn init(&mut self) {
+        self.insert("length".to_string());
+        self.insert("push".to_string());
+    }
+
+    fn insert(&mut self, str: String) -> SymID {
+        let id = SymID(self.id_to_str.len() as u64);
+        let s = Rc::new(str);
+
+        self.id_to_str.push(s.clone());
+        self.str_to_id.insert(s.clone(), id);
+
+        id
     }
 }
