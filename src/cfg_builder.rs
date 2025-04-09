@@ -1,4 +1,5 @@
-use crate::tac::{Tac, TacFunc, LabelID, Var};
+use crate::parser::PackedSpans;
+use crate::tac::{Tac, TacFunc, LabelID};
 use crate::cfg::{CFG, BlockID, BasicBlock};
 use std::collections::HashMap;
 
@@ -8,21 +9,25 @@ pub struct CFGBuilder {
     non_jump_edges: Vec<(BlockID, BlockID)>, // 0 -> 1
     current_block: Option<BasicBlock>,
     non_jump_edge_flag: bool,
+    spans: PackedSpans,
+    tac_counter: usize,
 }
 
 impl CFGBuilder {
-    fn new() -> Self {
+    fn new(spans: PackedSpans) -> Self {
         Self {
             blocks: vec![],
             block_jump_map: HashMap::new(),
             non_jump_edges: vec![],
             current_block: None,
             non_jump_edge_flag: false,
+            tac_counter: 0,
+            spans
         }
     }
 
     pub fn build(tac_func: TacFunc) -> CFG {
-        let mut builder = Self::new();
+        let mut builder = Self::new(tac_func.spans);
 
         let inputs = tac_func.inputs;
         builder.blocks_from_tac(tac_func.tac);
@@ -74,39 +79,29 @@ impl CFGBuilder {
     }
 
     fn process_basic_tac(&mut self, tac: Tac) {
-        let mut block = self.take_or_init_current_block();
-
-        block.code.push(tac);
-
-        self.set_current(block);
+        self.push_tac(tac);
     }
 
     fn process_cond_jump(&mut self, tac: Tac, label: LabelID) {
-        let mut block = self.take_or_init_current_block();
+        self.push_tac(tac);
 
-        block.code.push(tac);
+        self.insert_jump_mapping(label);
 
-        self.insert_jump_mapping(label, block.id);
-
-        self.blocks.push(block);
+        self.insert_current();
     }
 
     fn process_return(&mut self, tac: Tac) {
-        let mut block = self.take_or_init_current_block();
+        self.push_tac(tac);
 
-        block.code.push(tac);
-
-        self.blocks.push(block);
+        self.insert_current();
     }
 
     fn process_jump(&mut self, label: LabelID) {
-        let mut block = self.take_or_init_current_block();
+        self.push_tac(Tac::Jump { label });
 
-        block.code.push(Tac::Jump { label });
+        self.insert_jump_mapping(label);
 
-        self.insert_jump_mapping(label, block.id);
-
-        self.blocks.push(block);
+        self.insert_current();
     }
 
     fn process_label(&mut self, label: LabelID) {
@@ -117,12 +112,27 @@ impl CFGBuilder {
         self.set_current(block);
     }
 
-    fn take_or_init_current_block(&mut self) -> BasicBlock {
-        if let Some(block) = self.current_block.take() {
-            block
-        } else {
-            self.init_block(None)
+    fn push_tac(&mut self, tac: Tac) {
+        let i = self.tac_counter;
+
+        let current_span = self.spans[i];
+        self.tac_counter += 1;
+
+        let block = self.take_or_init_current_block();
+        if tac.needs_span() {
+            block.spans.push(current_span, i);
         }
+        block.code.push(tac);
+    }
+
+    fn take_or_init_current_block(&mut self) -> &mut BasicBlock {
+        if self.current_block.is_none() {
+            let block = self.init_block(None);
+            self.current_block = Some(block);
+        }
+
+        self.current_block.as_mut().unwrap()
+
     }
 
     fn insert_current(&mut self) {
@@ -145,7 +155,9 @@ impl CFGBuilder {
         BasicBlock::new(id, label)
     }
 
-    fn insert_jump_mapping(&mut self, label: LabelID, block_id: BlockID) {
+    fn insert_jump_mapping(&mut self, label: LabelID) {
+        let block_id = self.take_or_init_current_block().id;
+
         if let Some(block_ids) = self.block_jump_map.get_mut(&label) {
             block_ids.push(block_id);
         } else {
@@ -157,7 +169,7 @@ impl CFGBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tac::TacConst;
+    use crate::tac::{TacConst, Var};
     use crate::tac::tests::fabricate_tac_func;
     use crate::cfg::ENTRY_BLOCK_ID;
 

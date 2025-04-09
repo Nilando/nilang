@@ -1,4 +1,4 @@
-use crate::parser::{Span, Spanned, Stmt, Expr, Value, Op, MapKey, LhsExpr};
+use crate::parser::{PackedSpans, Span, Spanned, Stmt, Expr, Value, Op, MapKey, LhsExpr};
 use std::hash::Hash;
 use crate::symbol_map::SymID;
 use std::collections::HashSet;
@@ -160,6 +160,17 @@ pub enum Tac {
 }
 
 impl Tac {
+    pub fn needs_span(&self) -> bool {
+        match self {
+            Tac::Binop { .. } |
+            Tac::KeyStore { .. }  |
+            Tac::KeyLoad { .. } |
+            Tac::Call { .. } |
+            Tac::Read { .. } =>  true,
+            _ => false
+        }
+    }
+
     pub fn used_vars(&self) -> (Option<&Var>, Option<&Var>, Option<&Var>) {
         match self {
             Tac::Binop { lhs, rhs, .. } => (Some(lhs), Some(rhs), None),
@@ -259,7 +270,7 @@ pub struct TacFunc {
     id: FuncID,
     pub inputs: HashSet<SymID>,
     pub tac: Vec<Tac>,
-    spans: Vec<(usize, Span)>,
+    pub spans: PackedSpans,
     upvalues: HashSet<SymID>,
 }
 
@@ -274,7 +285,7 @@ impl TacFunc {
             id,
             inputs,
             tac: vec![],
-            spans: vec![],
+            spans: PackedSpans::new(),
             upvalues: HashSet::new(),
         }
     }
@@ -791,17 +802,9 @@ impl<'a> TacGenCtx<'a> {
 
     fn emit_spanned(&mut self, tac: Tac, span: Span) {
         let func = &mut self.generators.last_mut().unwrap().func;
-        let index = func.tac.len();
 
         func.tac.push(tac);
-
-        if let Some(prev_span) = func.spans.last() {
-            if prev_span.1 != span {
-                func.spans.push((index, span))
-            }
-        } else {
-            func.spans.push((index, span))
-        }
+        func.spans.push(span, func.tac.len() - 1);
     }
 
     fn push_loop_ctx(&mut self, ctx: LoopCtx) {

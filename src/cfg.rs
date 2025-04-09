@@ -1,3 +1,4 @@
+use crate::parser::{Span, PackedSpans};
 use crate::symbol_map::SymID;
 use crate::tac::{Tac, TacFunc, LabelID, Var};
 use std::fmt::Debug;
@@ -21,8 +22,8 @@ pub struct BasicBlock {
     pub label: Option<LabelID>,
     pub successors: Vec<BlockID>,
     pub predecessors: Vec<BlockID>,
-    pub phi_nodes: Vec<PhiNode>
-    // span info
+    pub phi_nodes: Vec<PhiNode>,
+    pub spans: PackedSpans,
 }
 
 #[derive(Debug)]
@@ -39,7 +40,8 @@ impl BasicBlock {
             code: vec![],
             predecessors: vec![],
             successors: vec![],
-            phi_nodes: vec![]
+            phi_nodes: vec![],
+            spans: PackedSpans::new()
         }
     }
 
