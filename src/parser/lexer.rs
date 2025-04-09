@@ -137,6 +137,7 @@ impl<'a> Lexer<'a> {
             n += 1;
         }
 
+
         for _ in 1..n {
             let _ = self.lex_token(syms);
         }
@@ -244,6 +245,10 @@ impl<'a> Lexer<'a> {
                     }
                 }
             }
+
+            // Go back! this might be a dividing op '/'
+            self.pos -= 1;
+            self.reset_iter();
         }
 
         Ok(false)
@@ -497,6 +502,10 @@ impl<'a> Lexer<'a> {
                 self.eof = true;
             }
         }
+    }
+
+    fn reset_iter(&mut self) {
+        self.chars = self.input[self.pos..self.input.len()].chars().peekable();
     }
 
     fn end_token(&self) -> Token<'a> {

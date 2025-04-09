@@ -382,4 +382,16 @@ mod tests {
     fn bad_binop_returns_lhs() {
         assert_eq!(parse_expr("1 + ").value, Some(Expr::Value(Value::Int(1))));
     }
+
+    #[test]
+    fn division_expr() {
+        match parse_expr("1 / 1").value {
+            Some(Expr::Binop { lhs, op, rhs }) => {
+                assert!(lhs.item == Expr::Value(Value::Int(1)));
+                assert!(op == Op::Divide);
+                assert!(rhs.item == Expr::Value(Value::Int(1)));
+            }
+            _ => assert!(false),
+        }
+    }
 }
