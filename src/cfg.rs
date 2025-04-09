@@ -79,6 +79,10 @@ impl CFG {
         CFGBuilder::build(tac_func)
     }
 
+    pub fn get_block_from_label(&self, label: LabelID) -> BlockID {
+        self.blocks.iter().find(|block| block.label == Some(label)).unwrap().id
+    }
+
     pub fn get_block_ids(&self) -> Vec<BlockID> {
         self.blocks.iter().map(|block| block.id).collect()
     }
@@ -91,6 +95,10 @@ impl CFG {
     }
 
     pub fn get_entry_block(&self) -> &BasicBlock {
+        &self[ENTRY_BLOCK_ID]
+    }
+
+    pub fn args_(&self) -> &BasicBlock {
         &self[ENTRY_BLOCK_ID]
     }
 

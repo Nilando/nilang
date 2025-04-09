@@ -3,14 +3,14 @@ use crate::symbol_map::SymbolMap;
 use crate::cfg::{CFG, BasicBlock};
 use crate::tac::{Key, VarID, Var, Tac, TacConst};
 
-struct CFGStringifier<'a> {
+struct CFGPrinter<'a> {
     cfg: &'a CFG,
     syms: &'a mut SymbolMap,
     result: String
 }
 
 pub fn cfg_to_string(cfg: &CFG, syms: &mut SymbolMap) -> String {
-    let stringifier = CFGStringifier {
+    let stringifier = CFGPrinter {
         cfg,
         syms,
         result: String::new()
@@ -19,7 +19,7 @@ pub fn cfg_to_string(cfg: &CFG, syms: &mut SymbolMap) -> String {
     stringifier.stringify()
 }
 
-impl<'a> CFGStringifier<'a> {
+impl<'a> CFGPrinter<'a> {
     fn stringify(mut self) -> String {
         self.push_first_line();
 
@@ -88,28 +88,38 @@ impl<'a> CFGStringifier<'a> {
                     self.result.push_str("print ");
                     self.push_var(src);
                 }
+                Tac::Read { dest } => {
+                    self.push_var(dest);
+                    self.result.push_str(" = read");
+                }
+                Tac::Jump { label } => {
+                    let block_id = self.cfg.get_block_from_label(*label);
+                    self.result.push_str(&format!("jump block{block_id}"));
+                }
                 Tac::Jnt { label, src } => {
                     self.result.push_str("jnt ");
                     self.push_var(src);
-                    // get the successor block
-                    // self.result.push_str(format!(" block{}", block_id));
-                    // does the block we are jumping to have phi nodes?
-                    // if yes what versions are we passing for those nodes?
-                    // this would require some calculating...
+                    let block_id = self.cfg.get_block_from_label(*label);
+                    self.result.push_str(&format!(" block{block_id}"));
                 }
                 Tac::Jit { label, src } => {
                     self.result.push_str("jit ");
                     self.push_var(src);
-                    // self.result.push_str(format!(" block{}", block_id));
-                    // does the block we are jumping to have phi nodes?
-                    // if yes what versions are we passing for those nodes?
-                    // this would require some calculating...
+                    let block_id = self.cfg.get_block_from_label(*label);
+                    self.result.push_str(&format!(" block{block_id}"));
                 }
                 Tac::Return { src } => {
                     self.result.push_str("return ");
                     self.push_var(src);
                 }
-                _ => {}
+                Tac::UpvalueStore { store, src } => {
+                    self.push_var(store);
+                    self.result.push_str(".upvalues << ");
+                    self.result.push_str(self.syms.get_str(*src));
+                }
+                Tac::Label { .. } => {
+                    panic!("CFG contained label TAC! Labels should have been removed during CFG building process")
+                }
             }
             self.result.push_str("\n");
         }
@@ -119,11 +129,14 @@ impl<'a> CFGStringifier<'a> {
     fn push_op(&mut self, op: &Op) {
         let s = match op {
             Op::Lt => format!("<"),
+            Op::Gt => format!(">"),
+            Op::Multiply => format!("*"),
             Op::Equal => format!("=="),
             Op::And => format!("&&"),
             Op::Or => format!("||"),
             Op::Modulo => format!("%"),
             Op::Plus => format!("+"),
+            Op::Divide => format!("/"),
             _ => todo!()
         };
 
@@ -134,6 +147,8 @@ impl<'a> CFGStringifier<'a> {
         let s = match val {
             TacConst::Int(i) => format!("{i}"),
             TacConst::String(s) => format!("{:?}", s),
+            TacConst::Bool(b) => format!("{}", b),
+            TacConst::Null => format!("null"),
             _ => todo!(),
         };
 
@@ -180,7 +195,8 @@ impl<'a> CFGStringifier<'a> {
             VarID::Local(id) => format!("{}_{}", self.syms.get_str(id), var.ver.unwrap()),
             VarID::Temp(id) => format!("t{id}"),
             VarID::LongTemp(id) => format!("l{id}_{}", var.ver.unwrap()),
-            _ => "TODO".to_string(),
+            VarID::Global(id) => format!("@{}_{}", self.syms.get_str(id), var.ver.unwrap()),
+            VarID::Upvalue(id) => format!("^{}", self.syms.get_str(id)),
         }
     }
 
@@ -194,49 +210,3 @@ impl<'a> CFGStringifier<'a> {
         self.result.push_str("}");
     }
 }
-
-fn comma_separated_args(cfg: &CFG, syms: &mut SymbolMap) -> String {
-    "n".to_string()
-}
-
-/*
-fn (n) {
-    t1 = new_list
-    result_0 = t1
-    t2 = 0
-    prev_0 = t2
-    t3 = 1
-    cur_0 = t3
-
-block1(cur_1, prev_1):
-    t4 = result_0.length
-    t5 = t4 < n_0
-    jnt t5 block5
-
-block2:
-    t6 = result_0.length
-    t7 = 0
-    t8 = t6 == t7
-    jnt t8 block4
-
-block3:
-    t9 = 0
-    t10 = result_0.push
-    load_arg t9
-    t11 = call t10
-    jump block1(cur_1, prev_1)
-
-block4:
-    t12 = prev_1 + cur_1
-    next_0 = t12
-    t13 = result_0.push
-    load_arg next_0
-    t14 = call t13
-    prev_2 = cur_1
-    cur_2 = next_0
-    jump block1(cur_2, prev_2)
-
-block5:
-    return result_0
-}
-*/
