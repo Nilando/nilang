@@ -360,12 +360,17 @@ impl<'a> TacGenCtx<'a> {
             }
             LhsExpr::Local(sym_id) => {
                 self.define_var(sym_id);
-                self.emit(
-                    Tac::Copy {
-                        dest: Var::local(sym_id),
-                        src
-                    }
-                )
+
+                if src.is_temp() {
+                    self.update_prev_dest(Var::local(sym_id));
+                } else {
+                    self.emit(
+                        Tac::Copy {
+                            dest: Var::local(sym_id),
+                            src
+                        }
+                    )
+                }
             }
             LhsExpr::Global(sym_id) => {
                 self.emit(
@@ -774,8 +779,14 @@ impl<'a> TacGenCtx<'a> {
         self.emit(Tac::Jump { label })
     }
 
+    fn update_prev_dest(&mut self, var: Var) {
+        let dest = self.generators.last_mut().unwrap().func.tac.last_mut().unwrap().dest_var_mut().unwrap();
+
+        *dest = var;
+    }
+
     fn emit(&mut self, tac: Tac) {
-        self.generators.last_mut().as_mut().unwrap().func.tac.push(tac);
+        self.generators.last_mut().unwrap().func.tac.push(tac);
     }
 
     fn emit_spanned(&mut self, tac: Tac, span: Span) {
@@ -997,8 +1008,7 @@ pub mod tests {
         let mut syms = SymbolMap::new();
         let tac = vec![
             vec![
-                Tac::LoadConst { dest: Var::temp(1), src: TacConst::Int(1) },
-                Tac::Copy { dest: Var::local(syms.get_id("a")), src: Var::temp(1) },
+                Tac::LoadConst { dest: Var::local(syms.get_id("a")), src: TacConst::Int(1) },
             ]
         ];
         let input = "a = 1;";
@@ -1100,8 +1110,7 @@ pub mod tests {
         let mut syms = SymbolMap::new();
         let tac = vec![
             vec![
-                Tac::LoadConst { dest: Var::temp(1), src: TacConst::Int(1) },
-                Tac::Copy { dest: Var::local(syms.get_id("a")), src: Var::temp(1) },
+                Tac::LoadConst { dest: Var::local(syms.get_id("a")), src: TacConst::Int(1) },
                 Tac::Copy { dest: Var::local(syms.get_id("b")), src: Var::local(syms.get_id("a")) },
             ]
         ];
@@ -1132,8 +1141,7 @@ pub mod tests {
         let mut syms = SymbolMap::new();
         let tac = vec![
             vec![
-                Tac::LoadConst { dest: Var::temp(1), src: TacConst::Null }, 
-                Tac::Copy { dest: Var::local(syms.get_id("a")), src: Var::temp(1) },
+                Tac::LoadConst { dest: Var::local(syms.get_id("a")), src: TacConst::Null }, 
             ]
         ];
         let input = "a = null;";
@@ -1146,8 +1154,7 @@ pub mod tests {
         let mut syms = SymbolMap::new();
         let tac = vec![
             vec![
-              Tac::KeyLoad { dest: Var::temp(1), store: Var::local(syms.get_id("b")), key: Key::Sym(syms.get_id("c")) }, 
-              Tac::Copy { dest: Var::local(syms.get_id("a")), src: Var::temp(1) }
+              Tac::KeyLoad { dest: Var::local(syms.get_id("a")), store: Var::local(syms.get_id("b")), key: Key::Sym(syms.get_id("c")) }, 
             ]
         ];
         let input = "a = b.c;";
@@ -1161,8 +1168,7 @@ pub mod tests {
         let tac = vec![
             vec![
               Tac::LoadConst { dest: Var::temp(1), src: TacConst::Int(0) }, 
-              Tac::KeyLoad { dest: Var::temp(2), store: Var::local(syms.get_id("b")), key: Key::Var(Var::temp(1)) }, 
-              Tac::Copy { dest: Var::local(syms.get_id("a")), src: Var::temp(2) }
+              Tac::KeyLoad { dest: Var::local(syms.get_id("a")), store: Var::local(syms.get_id("b")), key: Key::Var(Var::temp(1)) }, 
             ]
         ];
         let input = "a = b[0];";
