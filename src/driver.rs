@@ -32,7 +32,7 @@ fn run_script(mut config: Config) {
     let parse_result = parse_program(input.as_str(), &mut symbols);
 
     if !parse_result.errors.is_empty() {
-        display_parse_errors(&mut stdout(), &input, &parse_result.errors, config.file);
+        display_parse_errors(&input, &parse_result.errors, config.file);
 
         return;
     }
@@ -95,11 +95,11 @@ fn run_repl(_config: Config) {
 
                 let parse_result = parse_program(&input, &mut symbols);
 
+                let _ = stdout.suspend_raw_mode();
                 if !parse_result.errors.is_empty() {
-                    display_parse_errors(&mut stdout, &input, &parse_result.errors, None);
+                    display_parse_errors(&input, &parse_result.errors, None);
                 }
 
-                let _ = stdout.suspend_raw_mode();
                 compile_ast(parse_result.value.unwrap(), &mut symbols);
                 let _ = stdout.activate_raw_mode();
 
@@ -166,14 +166,12 @@ fn run_repl(_config: Config) {
             Event::Key(Key::Backspace) => {
                 if !input.is_empty() {
                     input_pos -= 1;
-                    input.pop();
-                    write!(
-                        stdout,
-                        "\r> {} \r> {}",
-                        " ".repeat(80),
-                        input
-                    )
-                    .unwrap();
+                    if let Some((i, _)) = input.char_indices().nth(input_pos) {
+                        input.remove(i);
+                    } else {
+                        input.pop();
+                    }
+                    write!(stdout, "\r{}\r> {} {}", " ".repeat(80), input, termion::cursor::Left(((input.len() + 1) - input_pos) as u16)).unwrap();
                 }
             }
             Event::Key(Key::Ctrl('c')) | Event::Key(Key::Ctrl('d')) => {
@@ -184,6 +182,10 @@ fn run_repl(_config: Config) {
                 input_pos = input.len();
                 write!(stdout, "\r{}\r> {}", " ".repeat(80), input).unwrap();
             }
+            Event::Key(Key::Ctrl('a')) => {
+                input_pos = 0;
+                write!(stdout, "\r{}\r> {} {}", " ".repeat(80), input, termion::cursor::Left(((input.len() + 1) - input_pos) as u16)).unwrap();
+            }
             _ => {}
         }
         stdout.flush().unwrap();
@@ -191,7 +193,6 @@ fn run_repl(_config: Config) {
 }
 
 fn display_parse_errors(
-    stdout: &mut std::io::Stdout,
     input: &str,
     errors: &[Spanned<ParseError>],
     file_name: Option<String>,
@@ -210,24 +211,22 @@ fn display_parse_errors(
         while error_idx < errors.len() && errors[error_idx].span.0 < line_end {
             let error = &errors[error_idx];
             if error.span.0 >= line_start && error.span.0 < line_end {
-                write!(stdout, "{}parser error{}: {:?}\r\n", red, reset, error.item).unwrap();
+                println!("{}parser error{}: {:?}\r\n", red, reset, error.item);
 
                 if let Some(ref file_name) = file_name {
-                    write!(
-                        stdout,
+                    println!(
                         "{}-->{} {}:{}:{}\r\n",
                         blue,
                         reset,
                         file_name,
                         line_num,
                         error.span.0 - line_start
-                    )
-                    .unwrap();
-                    write!(stdout, "   {}|{}\r\n", blue, reset).unwrap();
-                    write!(stdout, "{}{} |{} {}\r\n", blue, line_num, reset, line).unwrap();
+                    );
+                    println!("   {}|{}\r\n", blue, reset);
+                    println!("{}{} |{} {}\r\n", blue, line_num, reset, line);
                 } else {
-                    write!(stdout, "   {}|{}\r\n", blue, reset).unwrap();
-                    write!(stdout, "   | {}\r\n", line).unwrap();
+                    println!("   {}|{}\r\n", blue, reset);
+                    println!("   | {}\r\n", line);
                 }
 
                 let mut highlight_line = format!("   {}|{} ", blue, reset);
@@ -240,8 +239,8 @@ fn display_parse_errors(
                     }
                 }
 
-                write!(stdout, "{}\r\n", highlight_line).unwrap();
-                writeln!(stdout).unwrap();
+                println!("{}\r\n", highlight_line);
+                println!();
             }
             error_idx += 1;
         }
