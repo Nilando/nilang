@@ -63,26 +63,20 @@ impl PackedSpans {
     pub fn is_empty(&self) -> bool {
         self.spans.is_empty()
     }
-}
 
-use std::ops::Index;
-
-impl Index<usize> for PackedSpans {
-    type Output = Span;
-
-    fn index<'a>(&'a self, i: usize) -> &'a Span {
+    pub fn get(&self, i: usize) -> Option<&Span> {
         for k in 0..self.spans.len() {
             let (span, span_start) = &self.spans[k];
             if k + 1 == self.spans.len() {
-                return &span;
+                return Some(&span);
             }
             let span_end = &self.spans[k + 1].1;
             if i >= *span_start && i < *span_end {
-                return &span;
+                return Some(&span);
             }
         }
 
-        panic!("out of bound index access on packed spans");
+        None
     }
 }
 

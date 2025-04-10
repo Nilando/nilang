@@ -3,7 +3,7 @@ use std::hash::Hash;
 use crate::symbol_map::SymID;
 use std::collections::HashSet;
 
-const MAIN_FUNC_ID: usize = 0;
+pub const MAIN_FUNC_ID: usize = 0;
 pub type LabelID = usize;
 pub type UpvalueID = usize;
 pub type TempID = usize;
@@ -267,7 +267,7 @@ impl Tac {
 
 #[derive(Debug)]
 pub struct TacFunc {
-    id: FuncID,
+    pub id: FuncID,
     pub inputs: HashSet<SymID>,
     pub tac: Vec<Tac>,
     pub spans: PackedSpans,

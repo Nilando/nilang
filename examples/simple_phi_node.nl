@@ -1,7 +1,7 @@
 input = read;
 
 if input == "bananas" {
-  reply = "I need it";
+  reply = "I need them";
 } else {
   reply = "don't care";
 }

@@ -1,6 +1,6 @@
 use crate::parser::{Span, PackedSpans};
 use crate::symbol_map::SymID;
-use crate::tac::{Tac, TacFunc, LabelID, Var};
+use crate::tac::{Tac, TacFunc, FuncID, LabelID, Var};
 use std::fmt::Debug;
 use std::ops::{Index, IndexMut};
 use std::collections::{HashMap, HashSet};
@@ -11,6 +11,7 @@ pub const ENTRY_BLOCK_ID: usize = 0;
 
 #[derive(Debug)]
 pub struct CFG {
+    pub func_id: FuncID,
     pub entry_arguments: HashSet<SymID>,
     pub blocks: Vec<BasicBlock>,
 }

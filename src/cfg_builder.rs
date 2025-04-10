@@ -27,6 +27,7 @@ impl CFGBuilder {
     }
 
     pub fn build(tac_func: TacFunc) -> CFG {
+        let func_id = tac_func.id;
         let mut builder = Self::new(tac_func.spans);
 
         let inputs = tac_func.inputs;
@@ -34,6 +35,7 @@ impl CFGBuilder {
         builder.link_blocks();
 
         CFG {
+            func_id,
             entry_arguments: inputs,
             blocks: builder.blocks
         }
@@ -115,12 +117,12 @@ impl CFGBuilder {
     fn push_tac(&mut self, tac: Tac) {
         let i = self.tac_counter;
 
-        let current_span = self.spans[i];
+        let current_span = self.spans.get(i).map(|s| *s);
         self.tac_counter += 1;
 
         let block = self.take_or_init_current_block();
-        if tac.needs_span() {
-            block.spans.push(current_span, i);
+        if tac.needs_span() && current_span.is_some() {
+            block.spans.push(current_span.unwrap(), i);
         }
         block.code.push(tac);
     }

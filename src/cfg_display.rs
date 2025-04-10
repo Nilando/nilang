@@ -1,7 +1,7 @@
 use crate::parser::Op;
 use crate::symbol_map::SymbolMap;
 use crate::cfg::{CFG, BasicBlock};
-use crate::tac::{Key, VarID, Var, Tac, TacConst};
+use crate::tac::{Key, VarID, Var, Tac, TacConst, MAIN_FUNC_ID};
 
 struct CFGPrinter<'a> {
     cfg: &'a CFG,
@@ -129,15 +129,18 @@ impl<'a> CFGPrinter<'a> {
     fn push_op(&mut self, op: &Op) {
         let s = match op {
             Op::Lt => format!("<"),
+            Op::Lte => format!("<="),
             Op::Gt => format!(">"),
+            Op::Gte => format!(">="),
             Op::Multiply => format!("*"),
             Op::Equal => format!("=="),
+            Op::NotEqual => format!("!="),
             Op::And => format!("&&"),
             Op::Or => format!("||"),
             Op::Modulo => format!("%"),
             Op::Plus => format!("+"),
+            Op::Minus => format!("-"),
             Op::Divide => format!("/"),
-            _ => todo!()
         };
 
         self.result.push_str(&format!(" {} ", s));
@@ -149,7 +152,8 @@ impl<'a> CFGPrinter<'a> {
             TacConst::String(s) => format!("{:?}", s),
             TacConst::Bool(b) => format!("{}", b),
             TacConst::Null => format!("null"),
-            _ => todo!(),
+            TacConst::Func(func_id) => format!("fn({func_id})"),
+            TacConst::Float(f) => format!("{}", f),
         };
 
         self.result.push_str(&s);
@@ -201,9 +205,21 @@ impl<'a> CFGPrinter<'a> {
     }
 
     fn push_first_line(&mut self) {
-        let s = format!("fn ({}) {{\n", "n");
-        
-        self.result.push_str(&s);
+        if self.cfg.func_id == MAIN_FUNC_ID {
+            self.result.push_str(&format!("MAIN ("));
+        } else {
+            self.result.push_str(&format!("fn{} (", self.cfg.func_id));
+        }
+
+        for (idx, sym) in self.cfg.entry_arguments.iter().enumerate() {
+            self.result.push_str(&format!("{}", self.syms.get_str(*sym)));
+
+            if idx + 1 < self.cfg.entry_arguments.len() {
+                self.result.push_str(", ");
+            }
+        }
+
+        self.result.push_str(&format!(") {{\n"));
     }
 
     fn push_last_line(&mut self) {

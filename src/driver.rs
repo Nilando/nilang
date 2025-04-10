@@ -3,6 +3,9 @@ mod config;
 use crate::parser::{parse_program, ParseError, Spanned};
 use crate::symbol_map::SymbolMap;
 use crate::tac::stream_tac_from_stmts;
+use crate::cfg::CFG;
+use crate::ssa_conversion::convert_cfg_to_ssa;
+use crate::cfg_display::cfg_to_string;
 
 pub use config::Config;
 
@@ -47,28 +50,18 @@ fn run_script(mut config: Config) {
         }
     }
 
-    use crate::cfg::CFG;
-    use crate::ssa_conversion::convert_cfg_to_ssa;
-    use crate::cfg_display::cfg_to_string;
+    // initialize a vm
+    // pass the vm into the stream tac function
+
     stream_tac_from_stmts(ast, |func| {
         let mut cfg = CFG::new(func);
         convert_cfg_to_ssa(&mut cfg);
 
+        //println!("{:#?}", cfg);
         println!("{}", cfg_to_string(&cfg, &mut symbols));
     });
 
-
-    /*
-    optimize_ast(&mut ast);
-
-    if ast_output_path {
-        output the ast
-    }
-
-    let tac = ast_to_tac(ast);
-    */
-
-    todo!("generate bytecode")
+    todo!("run the vm")
 }
 
 fn run_repl(_config: Config) {
