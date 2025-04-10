@@ -1,6 +1,7 @@
 mod config;
 
-use crate::parser::{parse_program, ParseError, Spanned};
+
+use crate::parser::{parse_program, ParseError, Spanned, Stmt};
 use crate::symbol_map::SymbolMap;
 use crate::tac::stream_tac_from_stmts;
 use crate::cfg::CFG;
@@ -15,6 +16,7 @@ use termion::color;
 use termion::event::{Event, Key};
 use termion::input::TermRead;
 use termion::raw::IntoRawMode;
+use termion::cursor::DetectCursorPos;
 
 pub fn execute(config: Config) {
     if config.repl_mode() {
@@ -50,18 +52,21 @@ fn run_script(mut config: Config) {
         }
     }
 
-    // initialize a vm
-    // pass the vm into the stream tac function
 
+    // initialize a vm
+    // pass the vm into the compile ast function
+    compile_ast(ast, &mut symbols);
+    todo!("run the vm")
+
+}
+
+fn compile_ast(ast: Vec<Stmt>, syms: &mut SymbolMap) {
     stream_tac_from_stmts(ast, |func| {
         let mut cfg = CFG::new(func);
         convert_cfg_to_ssa(&mut cfg);
 
-        //println!("{:#?}", cfg);
-        println!("{}", cfg_to_string(&cfg, &mut symbols));
+        println!("{}", cfg_to_string(&cfg, syms));
     });
-
-    todo!("run the vm")
 }
 
 fn run_repl(_config: Config) {
@@ -72,6 +77,7 @@ fn run_repl(_config: Config) {
     let mut symbols = SymbolMap::new();
     let mut inputs: Vec<String> = vec![];
     let mut history_index = None;
+    let mut input_pos = 0;
 
     write!(stdout, "> ").unwrap();
     stdout.flush().unwrap();
@@ -81,6 +87,7 @@ fn run_repl(_config: Config) {
         match evt {
             Event::Key(Key::Char('\n')) if input.trim().is_empty() => {
                 write!(stdout, "\r\n> ").unwrap();
+                input_pos = 0;
             }
             Event::Key(Key::Char('\n')) => {
                 write!(stdout, "\r\n").unwrap();
@@ -92,10 +99,15 @@ fn run_repl(_config: Config) {
                     display_parse_errors(&mut stdout, &input, &parse_result.errors, None);
                 }
 
+                let _ = stdout.suspend_raw_mode();
+                compile_ast(parse_result.value.unwrap(), &mut symbols);
+                let _ = stdout.activate_raw_mode();
+
                 inputs.push(input.clone());
                 history_index = Some(inputs.len());
                 input.clear();
                 write!(stdout, "\r\n> ").unwrap();
+                input_pos = 0;
             }
             Event::Key(Key::Up) => {
                 if let Some(idx) = history_index {
@@ -108,6 +120,7 @@ fn run_repl(_config: Config) {
                     input = inputs.last().unwrap().clone();
                 }
                 write!(stdout, "\r{}\r> {}", " ".repeat(80), input).unwrap();
+                input_pos = input.len();
             }
             Event::Key(Key::Down) => {
                 if let Some(idx) = history_index {
@@ -120,13 +133,39 @@ fn run_repl(_config: Config) {
                     }
                 }
                 write!(stdout, "\r{}\r> {}", " ".repeat(80), input).unwrap();
+                input_pos = input.len();
+            }
+            Event::Key(Key::Left) => {
+                let left = termion::cursor::Left(1);
+                let (x, _) = stdout.cursor_pos().expect("failed to get cursor position");
+
+                if x <= 3 { continue; }
+
+                write!(stdout, "{}", left).unwrap();
+                input_pos -= 1;
+            }
+            Event::Key(Key::Right) => {
+                let right = termion::cursor::Right(1);
+                write!(stdout, "{}", right).unwrap();
+                input_pos += 1;
+                if input_pos >= input.len() {
+                    input.push(' ');
+                }
             }
             Event::Key(Key::Char(c)) => {
-                input.push(c);
-                write!(stdout, "{}", c).unwrap();
+                if let Some((i, _)) = input.char_indices().nth(input_pos) {
+                    input.insert(i, c);
+                } else {
+                    input.push(c);
+                }
+
+                input_pos += 1;
+
+                write!(stdout, "\r{}\r> {} {}", " ".repeat(80), input, termion::cursor::Left(((input.len() + 1) - input_pos) as u16)).unwrap();
             }
             Event::Key(Key::Backspace) => {
                 if !input.is_empty() {
+                    input_pos -= 1;
                     input.pop();
                     write!(
                         stdout,
@@ -140,6 +179,10 @@ fn run_repl(_config: Config) {
             Event::Key(Key::Ctrl('c')) | Event::Key(Key::Ctrl('d')) => {
                 writeln!(stdout, "\nExiting REPL").unwrap();
                 break;
+            }
+            Event::Key(Key::Ctrl('e')) => {
+                input_pos = input.len();
+                write!(stdout, "\r{}\r> {}", " ".repeat(80), input).unwrap();
             }
             _ => {}
         }
