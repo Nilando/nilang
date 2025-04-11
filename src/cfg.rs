@@ -46,6 +46,13 @@ impl BasicBlock {
         }
     }
 
+    pub fn continues(&self) -> bool {
+        match self.code.last() {
+            Some(Tac::Return { .. }) | Some(Tac::Jump { .. }) => false,
+            _ => true
+        }
+    }
+
     pub fn get_return_var_id(&self) -> Option<Var> {
         if let Some(Tac::Return { src }) = self.code.last() {
             Some(*src)

@@ -131,6 +131,15 @@ impl<'a> CFGPrinter<'a> {
             }
             self.result.push_str("\n");
         }
+
+        if block.continues() {
+            if self.cfg.blocks.len() > block.id + 1 {
+                self.result.push_str(&format!("  next block{}", block.id + 1));
+                self.print_block_args(block.id, block.id + 1);
+                self.result.push_str("\n");
+            }
+        }
+
         self.result.push_str("\n");
     }
 
@@ -228,7 +237,7 @@ impl<'a> CFGPrinter<'a> {
 
     fn push_first_line(&mut self) {
         if self.cfg.func_id == MAIN_FUNC_ID {
-            self.result.push_str(&format!("MAIN ("));
+            self.result.push_str("MAIN (");
         } else {
             self.result.push_str(&format!("fn{} (", self.cfg.func_id));
         }
