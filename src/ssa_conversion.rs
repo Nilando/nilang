@@ -1,4 +1,4 @@
-use crate::cfg::{CFG, BlockID, PhiNode};
+use crate::cfg::{CFG, BasicBlock, BlockID, PhiNode};
 use std::collections::{HashMap, HashSet};
 use crate::liveness_dfa::LivenessDFA;
 use crate::dfa::exec_dfa;
@@ -10,25 +10,22 @@ pub fn convert_cfg_to_ssa(cfg: &mut CFG) {
     SSAConverter::convert(cfg);
 }
 
-fn compute_phi_nodes(cfg: &CFG) -> HashMap<BlockID, Vec<PhiNode>> {
+fn find_phi_nodes(cfg: &CFG) -> HashMap<BlockID, Vec<PhiNode>> {
     let dfa_result = exec_dfa::<LivenessDFA>(cfg);
     let mut phi_nodes: HashMap<BlockID, Vec<PhiNode>> = HashMap::new();
 
     for block in cfg.blocks.iter() {
         for df_id in cfg.compute_dominance_frontier(block).iter() {
             for var in block.defined_vars() {
-                let mut node_already_exists = false;
                 if let Some(nodes) = phi_nodes.get(&df_id) {
-                    node_already_exists = nodes.iter().find(|node| node.dest == var).is_some();
+                    if nodes.iter().find(|node| node.dest == var).is_some() {
+                        continue;
+                    }
                 }
 
-                if node_already_exists {
-                    continue;
-                }
 
-
-                let var_is_live_on_entry = dfa_result.inputs.get(&df_id).unwrap().get(&var).is_none();
-                if var_is_live_on_entry {
+                let var_is_live_on_entry = dfa_result.inputs.get(&df_id).unwrap().get(&var).is_some();
+                if !var_is_live_on_entry {
                     continue;
                 }
 
@@ -50,7 +47,7 @@ fn compute_phi_nodes(cfg: &CFG) -> HashMap<BlockID, Vec<PhiNode>> {
 }
 
 fn insert_phi_nodes(cfg: &mut CFG) {
-    let mut phi_nodes = compute_phi_nodes(cfg);
+    let mut phi_nodes = find_phi_nodes(cfg);
 
     for block in cfg.blocks.iter_mut() {
         if let Some(nodes) = phi_nodes.remove(&block.id) {
@@ -95,10 +92,35 @@ impl SSAConverter {
 
         let block = &mut cfg[block_id];
 
-        for phi_node in block.phi_nodes.iter_mut() {
-            self.apply_dest_versioning(&mut phi_node.dest);
+        self.version_self_phi_nodes(block);
+        self.version_instructions(block);
+
+        let successor_ids = block.successors.clone();
+
+        self.version_successor_phi_nodes(block.id, successor_ids.clone(), cfg);
+
+        for succ_id in successor_ids.iter() {
+            self.convert_block(cfg, *succ_id);
         }
 
+        self.version_stacks.pop();
+    }
+
+    fn version_successor_phi_nodes(&mut self, predecessor_id: BlockID, successor_ids: Vec<BlockID>, cfg: &mut CFG) {
+        for succ_id in successor_ids.iter() {
+            let succ = &mut cfg[*succ_id];
+
+            for phi_node in succ.phi_nodes.iter_mut() {
+                let version = self.get_version(phi_node.dest.id);
+                let mut var = phi_node.dest;
+
+                var.ver = Some(version);
+                phi_node.srcs.insert(predecessor_id, var);
+            }
+        }
+    }
+
+    fn version_instructions(&mut self, block: &mut BasicBlock) {
         for code in block.code.iter_mut() {
             let (u1, u2, u3) = code.used_vars_mut();
             for uv in [u1, u2, u3].into_iter() {
@@ -111,26 +133,12 @@ impl SSAConverter {
                 self.apply_dest_versioning(dest);
             }
         }
+    }
 
-        let successor_ids = block.successors.clone();
-
-        for succ_id in successor_ids.iter() {
-            let succ = &mut cfg[*succ_id];
-
-            for phi_node in succ.phi_nodes.iter_mut() {
-                let version = self.get_version(phi_node.dest.id);
-                let mut var = phi_node.dest;
-
-                var.ver = Some(version);
-                phi_node.srcs.insert(block_id, var);
-            }
+    fn version_self_phi_nodes(&mut self, block: &mut BasicBlock) {
+        for phi_node in block.phi_nodes.iter_mut() {
+            self.apply_dest_versioning(&mut phi_node.dest);
         }
-
-        for succ_id in successor_ids.iter() {
-            self.convert_block(cfg, *succ_id);
-        }
-
-        self.version_stacks.pop();
     }
 
     fn apply_dest_versioning(&mut self, var: &mut Var) {
