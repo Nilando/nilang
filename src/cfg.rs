@@ -1,4 +1,4 @@
-use crate::parser::{Span, PackedSpans};
+use crate::parser::PackedSpans;
 use crate::symbol_map::SymID;
 use crate::tac::{Tac, TacFunc, FuncID, LabelID, Var};
 use std::fmt::Debug;
@@ -30,7 +30,7 @@ pub struct BasicBlock {
 #[derive(Debug)]
 pub struct PhiNode {
     pub dest: Var,
-    pub srcs: HashSet<usize>
+    pub srcs: HashMap<BlockID, Var>
 }
 
 impl BasicBlock {
@@ -70,12 +70,6 @@ impl BasicBlock {
         defined
     }
 }
-// to compile a tac function
-//  convert to cfg
-//  convert cfg to ssa
-//  optimize the cfg
-//  create an interference graph
-//  perform register allocation over the cfg
 
 impl CFG {
     pub fn new(tac_func: TacFunc) -> Self {
@@ -89,22 +83,12 @@ impl CFG {
     pub fn get_block_ids(&self) -> Vec<BlockID> {
         self.blocks.iter().map(|block| block.id).collect()
     }
-    
-    pub fn get_exit_block_ids(&self) -> Vec<BlockID> {
-        self.blocks.iter()
-            .filter(|block| block.successors.is_empty())
-            .map(|block| block.id)
-            .collect()
-    }
 
     pub fn get_entry_block(&self) -> &BasicBlock {
         &self[ENTRY_BLOCK_ID]
     }
 
-    pub fn args_(&self) -> &BasicBlock {
-        &self[ENTRY_BLOCK_ID]
-    }
-
+    /*
     pub fn compute_unreachable_blocks(&self) -> HashSet<BlockID> {
         let entry_block = self.get_entry_block();
         let reachable_blocks = self.compute_reachable_blocks(entry_block);
@@ -112,6 +96,7 @@ impl CFG {
 
         all_blocks.difference(&reachable_blocks).map(|id| *id).collect()
     }
+    */
 
     pub fn compute_reachable_blocks(&self, block: &BasicBlock) -> HashSet<BlockID> {
         let mut reachable_blocks = HashSet::from([block.id]);

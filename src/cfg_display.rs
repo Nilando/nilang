@@ -1,6 +1,6 @@
 use crate::parser::Op;
 use crate::symbol_map::SymbolMap;
-use crate::cfg::{CFG, BasicBlock};
+use crate::cfg::{CFG, BasicBlock, BlockID};
 use crate::tac::{Key, VarID, Var, Tac, TacConst, MAIN_FUNC_ID};
 
 struct CFGPrinter<'a> {
@@ -93,20 +93,28 @@ impl<'a> CFGPrinter<'a> {
                     self.result.push_str(" = read");
                 }
                 Tac::Jump { label } => {
-                    let block_id = self.cfg.get_block_from_label(*label);
-                    self.result.push_str(&format!("jump block{block_id}"));
+                    let succ_id = self.cfg.get_block_from_label(*label);
+                    self.result.push_str(&format!("jump block{succ_id}"));
+
+                    self.print_block_args(block.id, succ_id);
                 }
                 Tac::Jnt { label, src } => {
                     self.result.push_str("jnt ");
                     self.push_var(src);
-                    let block_id = self.cfg.get_block_from_label(*label);
-                    self.result.push_str(&format!(" block{block_id}"));
+
+                    let succ_id = self.cfg.get_block_from_label(*label);
+                    self.result.push_str(&format!(" block{succ_id}"));
+
+                    self.print_block_args(block.id, succ_id);
                 }
                 Tac::Jit { label, src } => {
                     self.result.push_str("jit ");
                     self.push_var(src);
-                    let block_id = self.cfg.get_block_from_label(*label);
-                    self.result.push_str(&format!(" block{block_id}"));
+
+                    let succ_id = self.cfg.get_block_from_label(*label);
+                    self.result.push_str(&format!(" block{succ_id}"));
+
+                    self.print_block_args(block.id, succ_id);
                 }
                 Tac::Return { src } => {
                     self.result.push_str("return ");
@@ -124,6 +132,20 @@ impl<'a> CFGPrinter<'a> {
             self.result.push_str("\n");
         }
         self.result.push_str("\n");
+    }
+
+    fn print_block_args(&mut self, caller_id: BlockID, calle_id: BlockID) {
+        if !self.cfg[calle_id].phi_nodes.is_empty() {
+            self.result.push_str(&format!("("));
+            for (i, node) in self.cfg[calle_id].phi_nodes.iter().enumerate() {
+                self.push_var(node.srcs.get(&caller_id).unwrap());
+
+                if  i + 1 < self.cfg[calle_id].phi_nodes.len() {
+                    self.result.push_str(", ");
+                }
+            }
+            self.result.push_str(&format!(")"));
+        }
     }
 
     fn push_op(&mut self, op: &Op) {

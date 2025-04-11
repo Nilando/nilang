@@ -17,30 +17,24 @@ fn compute_phi_nodes(cfg: &CFG) -> HashMap<BlockID, Vec<PhiNode>> {
     for block in cfg.blocks.iter() {
         for df_id in cfg.compute_dominance_frontier(block).iter() {
             for var in block.defined_vars() {
-                let mut node_exists = false;
+                let mut node_already_exists = false;
                 if let Some(nodes) = phi_nodes.get(&df_id) {
-                    for node in nodes.iter() {
-                        if node.dest == var {
-                            node_exists = true;
-                        }
-                    }
+                    node_already_exists = nodes.iter().find(|node| node.dest == var).is_some();
                 }
 
-                // this block already has a phi node for var
-                if node_exists {
+                if node_already_exists {
                     continue;
                 }
 
-                // if var is not live on entry based on the dfa result
-                // there is no need to insert a phi node
-                if dfa_result.inputs.get(&df_id).unwrap().get(&var).is_none() {
+
+                let var_is_live_on_entry = dfa_result.inputs.get(&df_id).unwrap().get(&var).is_none();
+                if var_is_live_on_entry {
                     continue;
                 }
 
-                // add phi node for v to b in the map
                 let new_phi = PhiNode {
                     dest: var,
-                    srcs: HashSet::new()
+                    srcs: HashMap::new()
                 };
 
                 if let Some(nodes) = phi_nodes.get_mut(&df_id) {
@@ -125,7 +119,10 @@ impl SSAConverter {
 
             for phi_node in succ.phi_nodes.iter_mut() {
                 let version = self.get_version(phi_node.dest.id);
-                phi_node.srcs.insert(version);
+                let mut var = phi_node.dest;
+
+                var.ver = Some(version);
+                phi_node.srcs.insert(block_id, var);
             }
         }
 
