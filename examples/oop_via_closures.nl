@@ -20,4 +20,4 @@ fn create_user(name, email) {
 user = create_user("Bob", "bobby@gmail.com");
 
 print user.get_email(); // bobby@gmail.com
-user.update_name("joe")
+user.update_name("joe");

@@ -1,6 +1,6 @@
 fn fizzbuzz(n) {
-  if (n % 5 == 0 || n.to_s().contains("5"))
-  &&  (n % 7 == 0 || n.to_s().contains("7"))
+  if (((n % 5) == 0) || n.to_s().contains("5"))
+  &&  (((n % 7) == 0) || n.to_s().contains("7"))
   {
     print "fizzbuzz";
   }
