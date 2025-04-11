@@ -1,13 +1,30 @@
-use crate::dfa::DFA;
+use crate::cfg::BlockID;
+use crate::dfa::{DFA, DFAResult};
 use crate::tac::Var;
-use std::collections::HashSet;
+use std::collections::{HashSet, HashMap};
 
-pub struct LivenessDFA;
+pub struct LivenessDFA {
+    live_in: HashMap<BlockID, HashSet<Var>>,
+    live_out: HashMap<BlockID, HashSet<Var>>,
+}
+
+impl LivenessDFA {
+    pub fn is_live_on_entry(&self, block_id: BlockID, var: &Var) -> bool {
+        self.live_in.get(&block_id).unwrap().get(&var).is_some()
+    }
+}
 
 impl DFA for LivenessDFA {
     const BACKWARDS: bool = true;
 
     type Item = HashSet<Var>;
+
+    fn from_result(result: DFAResult<Self::Item>) -> Self {
+        Self {
+            live_in: result.inputs,
+            live_out: result.outputs,
+        }
+    }
 
     fn init(block: &crate::cfg::BasicBlock) -> (Self::Item, Self::Item) {
         if let Some(var_id) = block.get_return_var_id() {
@@ -23,6 +40,7 @@ impl DFA for LivenessDFA {
 
         for instr in block.code.iter() {
             let (u1, u2, u3) = instr.used_vars();
+
             for v in [u1, u2, u3] {
                 if let Some(var) = v {
                     if var.is_temp() {

@@ -1,10 +1,14 @@
 use crate::cfg::{CFG, BlockID, BasicBlock};
 use std::collections::HashMap;
 
-pub trait DFA {
+pub trait DFA: Sized {
     type Item: PartialEq;
     const BACKWARDS: bool = false;
 
+    fn run(cfg: &CFG) -> Self {
+        Self::from_result(run_executor::<Self>(cfg))
+    }
+    fn from_result(result: DFAResult<Self::Item>) -> Self;
     fn init(block: &BasicBlock) -> (Self::Item, Self::Item); // (Input, Output)
     fn merge(values: &[&Self::Item]) -> Self::Item; 
     fn transfer(block: &BasicBlock, value: &Self::Item) -> Self::Item;
@@ -15,7 +19,7 @@ pub struct DFAResult<T> {
     pub outputs: HashMap<BlockID, T>,
 }
 
-pub fn exec_dfa<T: DFA>(cfg: &CFG) -> DFAResult<<T as DFA>::Item>{
+fn run_executor<T: DFA>(cfg: &CFG) -> DFAResult<<T as DFA>::Item>{
     let mut executor = DFAExecutor::<T>::new(cfg);
 
     executor.exec(cfg);

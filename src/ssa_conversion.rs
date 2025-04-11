@@ -1,7 +1,7 @@
 use crate::cfg::{CFG, BasicBlock, BlockID, PhiNode};
 use std::collections::{HashMap, HashSet};
 use crate::liveness_dfa::LivenessDFA;
-use crate::dfa::exec_dfa;
+use crate::dfa::DFA;
 use crate::tac::{Var, VerID, VarID};
 
 const INIT_VERSION: usize = 0;
@@ -11,21 +11,19 @@ pub fn convert_cfg_to_ssa(cfg: &mut CFG) {
 }
 
 fn find_phi_nodes(cfg: &CFG) -> HashMap<BlockID, Vec<PhiNode>> {
-    let dfa_result = exec_dfa::<LivenessDFA>(cfg);
+    let liveness = LivenessDFA::run(cfg);
     let mut phi_nodes: HashMap<BlockID, Vec<PhiNode>> = HashMap::new();
 
     for block in cfg.blocks.iter() {
-        for df_id in cfg.compute_dominance_frontier(block).iter() {
+        for df_block_id in cfg.compute_dominance_frontier(block).iter() {
             for var in block.defined_vars() {
-                if let Some(nodes) = phi_nodes.get(&df_id) {
+                if let Some(nodes) = phi_nodes.get(&df_block_id) {
                     if nodes.iter().find(|node| node.dest == var).is_some() {
                         continue;
                     }
                 }
 
-
-                let var_is_live_on_entry = dfa_result.inputs.get(&df_id).unwrap().get(&var).is_some();
-                if !var_is_live_on_entry {
+                if !liveness.is_live_on_entry(*df_block_id, &var) {
                     continue;
                 }
 
@@ -34,10 +32,10 @@ fn find_phi_nodes(cfg: &CFG) -> HashMap<BlockID, Vec<PhiNode>> {
                     srcs: HashMap::new()
                 };
 
-                if let Some(nodes) = phi_nodes.get_mut(&df_id) {
+                if let Some(nodes) = phi_nodes.get_mut(&df_block_id) {
                     nodes.push(new_phi);
                 } else {
-                    phi_nodes.insert(*df_id, vec![new_phi]);
+                    phi_nodes.insert(*df_block_id, vec![new_phi]);
                 }
             }
         }
