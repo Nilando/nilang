@@ -80,24 +80,18 @@ impl SSAConverter {
     }
 
     fn convert_block(&mut self, cfg: &mut CFG, block_id: BlockID) {
-        if self.visited.contains(&block_id) {
-            return;
-        } else {
-            self.visited.insert(block_id);
-        }
-
-        self.version_stacks.push(HashMap::new());
-
         let block = &mut cfg[block_id];
-
-        self.version_self_phi_nodes(block);
-        self.version_instructions(block);
-
         let successor_ids = block.successors.clone();
 
+        self.visited.insert(block_id);
+        self.version_stacks.push(HashMap::new());
+        self.version_self_phi_nodes(block);
+        self.version_instructions(block);
         self.version_successor_phi_nodes(block.id, successor_ids.clone(), cfg);
 
         for succ_id in successor_ids.iter() {
+            if self.visited.contains(&block_id) { continue; }
+
             self.convert_block(cfg, *succ_id);
         }
 
