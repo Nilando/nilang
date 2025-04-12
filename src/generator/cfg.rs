@@ -1,10 +1,12 @@
+use super::dom_tree::compute_dom_tree;
+use super::ssa_conversion::convert_cfg_to_ssa;
 use crate::parser::PackedSpans;
 use crate::symbol_map::SymID;
-use crate::tac::{Tac, TacFunc, FuncID, LabelID, Var};
+use super::tac::{Tac, TacFunc, FuncID, LabelID, Var};
 use std::fmt::Debug;
 use std::ops::{Index, IndexMut};
 use std::collections::{HashMap, HashSet};
-use crate::cfg_builder::CFGBuilder;
+use super::cfg_builder::CFGBuilder;
 
 pub type BlockID = usize;
 pub const ENTRY_BLOCK_ID: usize = 0;
@@ -14,6 +16,7 @@ pub struct CFG {
     pub func_id: FuncID,
     pub entry_arguments: HashSet<SymID>,
     pub blocks: Vec<BasicBlock>,
+    pub dom_tree: HashMap<BlockID, Vec<BlockID>>
 }
 
 #[derive(Debug)]
@@ -80,7 +83,20 @@ impl BasicBlock {
 
 impl CFG {
     pub fn new(tac_func: TacFunc) -> Self {
-        CFGBuilder::build(tac_func)
+        let mut cfg = CFGBuilder::build(tac_func);
+
+        compute_dom_tree(&mut cfg);
+        
+        convert_cfg_to_ssa(&mut cfg);
+
+        cfg
+    }
+
+    pub fn optimize(&mut self) {
+        // GVN pass
+        // dead code elimination
+        // jump threading
+        // do this until convergence
     }
 
     pub fn get_block_from_label(&self, label: LabelID) -> BlockID {

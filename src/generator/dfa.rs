@@ -1,4 +1,4 @@
-use crate::cfg::{CFG, BlockID, BasicBlock};
+use super::cfg::{CFG, BlockID, BasicBlock};
 use std::collections::HashMap;
 
 pub trait DFA: Sized {

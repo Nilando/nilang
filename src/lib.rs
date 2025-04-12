@@ -1,12 +1,6 @@
 pub mod driver;
 pub mod parser;
 pub mod symbol_map;
-mod tac;
-mod cfg;
-mod cfg_builder;
-mod ssa_conversion;
-mod cfg_display;
-mod dfa;
-mod liveness_dfa;
+mod generator;
 
 pub use symbol_map::SymbolMap;

@@ -1,12 +1,8 @@
 mod config;
 
-
 use crate::parser::{parse_program, ParseError, Spanned, Stmt};
 use crate::symbol_map::SymbolMap;
-use crate::tac::stream_tac_from_stmts;
-use crate::cfg::CFG;
-use crate::ssa_conversion::convert_cfg_to_ssa;
-use crate::cfg_display::cfg_to_string;
+use crate::generator::compile_ast;
 
 pub use config::Config;
 
@@ -52,21 +48,9 @@ fn run_script(mut config: Config) {
         }
     }
 
+    let program = compile_ast(ast, &mut symbols);
 
-    // initialize a vm
-    // pass the vm into the compile ast function
-    compile_ast(ast, &mut symbols);
-    todo!("run the vm")
-
-}
-
-fn compile_ast(ast: Vec<Stmt>, syms: &mut SymbolMap) {
-    stream_tac_from_stmts(ast, |func| {
-        let mut cfg = CFG::new(func);
-        convert_cfg_to_ssa(&mut cfg);
-
-        println!("{}", cfg_to_string(&cfg, syms));
-    });
+    todo!("run the program")
 }
 
 fn run_repl(_config: Config) {

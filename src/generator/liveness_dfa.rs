@@ -1,6 +1,6 @@
-use crate::cfg::BlockID;
-use crate::dfa::{DFA, DFAResult};
-use crate::tac::Var;
+use super::cfg::{BlockID, BasicBlock};
+use super::dfa::{DFA, DFAResult};
+use super::tac::Var;
 use std::collections::{HashSet, HashMap};
 
 pub struct LivenessDFA {
@@ -26,7 +26,7 @@ impl DFA for LivenessDFA {
         }
     }
 
-    fn init(block: &crate::cfg::BasicBlock) -> (Self::Item, Self::Item) {
+    fn init(block: &BasicBlock) -> (Self::Item, Self::Item) {
         if let Some(var_id) = block.get_return_var_id() {
             return (HashSet::new(), HashSet::from([var_id]));
         }
@@ -34,7 +34,7 @@ impl DFA for LivenessDFA {
         (HashSet::new(), HashSet::new())
     }
 
-    fn transfer(block: &crate::cfg::BasicBlock, live_out: &Self::Item) -> Self::Item {
+    fn transfer(block: &BasicBlock, live_out: &Self::Item) -> Self::Item {
         let mut defined: HashSet<Var> = HashSet::new();
         let mut live_in: HashSet<Var> = HashSet::new();
 

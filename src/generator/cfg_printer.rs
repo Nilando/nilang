@@ -1,7 +1,7 @@
 use crate::parser::Op;
 use crate::symbol_map::SymbolMap;
-use crate::cfg::{CFG, BasicBlock, BlockID};
-use crate::tac::{Key, VarID, Var, Tac, TacConst, MAIN_FUNC_ID};
+use super::cfg::{CFG, BasicBlock, BlockID};
+use super::tac::{Key, VarID, Var, Tac, TacConst, MAIN_FUNC_ID};
 
 struct CFGPrinter<'a> {
     cfg: &'a CFG,

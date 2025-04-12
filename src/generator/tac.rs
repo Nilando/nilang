@@ -372,16 +372,19 @@ impl<'a> TacGenCtx<'a> {
             LhsExpr::Local(sym_id) => {
                 self.define_var(sym_id);
 
-                if src.is_temp() {
-                    self.update_prev_dest(Var::local(sym_id));
-                } else {
+                // THIS IS BROKEN DOESN'T WORK WITH MAP AND LIST values
+                //if src.is_temp() {
+                    //self.update_prev_dest(Var::local(sym_id));
+                //} else {
+                //
+                // we need something like src.is_temp() && last
                     self.emit(
                         Tac::Copy {
                             dest: Var::local(sym_id),
                             src
                         }
                     )
-                }
+                //}
             }
             LhsExpr::Global(sym_id) => {
                 self.emit(
@@ -557,14 +560,9 @@ impl<'a> TacGenCtx<'a> {
     fn generate_func_decl(&mut self, ident: SymID, inputs: Spanned<Vec<SymID>>, stmts: Vec<Stmt>) {
         self.define_var(ident);
 
-        let func = self.generate_func(inputs, stmts);
+        self.generate_func(inputs, stmts);
 
-        self.emit(
-            Tac::Copy {
-                dest: Var::local(ident),
-                src: func
-            }
-        );
+        self.update_prev_dest(Var::local(ident));
     }
 
     fn generate_func(&mut self, inputs: Spanned<Vec<SymID>>, stmts: Vec<Stmt>) -> Var {
@@ -791,6 +789,10 @@ impl<'a> TacGenCtx<'a> {
     }
 
     fn update_prev_dest(&mut self, var: Var) {
+        println!("generated map");
+        // This isn't needed but makes the printed CFG a little more readable
+        self.generators.last_mut().unwrap().temp_counter -= 1; 
+
         let dest = self.generators.last_mut().unwrap().func.tac.last_mut().unwrap().dest_var_mut().unwrap();
 
         *dest = var;
@@ -817,37 +819,37 @@ impl<'a> TacGenCtx<'a> {
     }
 
     fn new_temp(&mut self) -> Var {
-        self.generators.last_mut().as_mut().unwrap().temp_counter += 1;
+        self.generators.last_mut().unwrap().temp_counter += 1;
 
         Var::temp(self.generators.last().unwrap().temp_counter)
     }
 
     fn new_long_temp(&mut self) -> Var {
-        self.generators.last_mut().as_mut().unwrap().temp_counter += 1;
+        self.generators.last_mut().unwrap().temp_counter += 1;
 
         Var::long_temp(self.generators.last().unwrap().temp_counter)
     }
 
     fn new_label(&mut self) -> LabelID {
-        self.generators.last_mut().as_mut().unwrap().label_counter += 1;
+        self.generators.last_mut().unwrap().label_counter += 1;
 
         self.generators.last().unwrap().label_counter
     }
 
     fn get_loop_start(&mut self) -> LabelID {
-        self.generators.last_mut().as_mut().unwrap().loop_ctxs.last().unwrap().start
+        self.generators.last_mut().unwrap().loop_ctxs.last().unwrap().start
     }
 
     fn get_loop_end(&mut self) -> LabelID {
-        self.generators.last_mut().as_mut().unwrap().loop_ctxs.last().unwrap().end
+        self.generators.last_mut().unwrap().loop_ctxs.last().unwrap().end
     }
 
     fn define_var(&mut self, sym: SymID) {
-        self.generators.last_mut().as_mut().unwrap().defined_variables.insert(sym);
+        self.generators.last_mut().unwrap().defined_variables.insert(sym);
     }
 
     fn set_upvalue(&mut self, sym: SymID) {
-        self.generators.last_mut().as_mut().unwrap().func.upvalues.insert(sym);
+        self.generators.last_mut().unwrap().func.upvalues.insert(sym);
     }
 
     fn defined_local(&self, sym: SymID) -> bool {

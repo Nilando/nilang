@@ -1,8 +1,8 @@
-use crate::cfg::{CFG, BasicBlock, BlockID, PhiNode};
+use super::cfg::{CFG, BasicBlock, BlockID, PhiNode};
 use std::collections::{HashMap, HashSet};
-use crate::liveness_dfa::LivenessDFA;
-use crate::dfa::DFA;
-use crate::tac::{Var, VerID, VarID};
+use super::liveness_dfa::LivenessDFA;
+use super::dfa::DFA;
+use super::tac::{Var, VerID, VarID};
 
 const INIT_VERSION: usize = 0;
 
@@ -90,7 +90,7 @@ impl SSAConverter {
         self.version_successor_phi_nodes(block.id, successor_ids.clone(), cfg);
 
         for succ_id in successor_ids.iter() {
-            if self.visited.contains(&block_id) { continue; }
+            if self.visited.contains(&succ_id) { continue; }
 
             self.convert_block(cfg, *succ_id);
         }

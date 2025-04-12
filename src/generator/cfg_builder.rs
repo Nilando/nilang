@@ -1,6 +1,6 @@
 use crate::parser::PackedSpans;
-use crate::tac::{Tac, TacFunc, LabelID};
-use crate::cfg::{CFG, BlockID, BasicBlock};
+use super::tac::{Tac, TacFunc, LabelID};
+use super::cfg::{CFG, BlockID, BasicBlock};
 use std::collections::HashMap;
 
 pub struct CFGBuilder {
@@ -37,7 +37,8 @@ impl CFGBuilder {
         CFG {
             func_id,
             entry_arguments: inputs,
-            blocks: builder.blocks
+            blocks: builder.blocks,
+            dom_tree: HashMap::new()
         }
     }
 
@@ -171,9 +172,11 @@ impl CFGBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tac::{TacConst, Var};
-    use crate::tac::tests::fabricate_tac_func;
-    use crate::cfg::ENTRY_BLOCK_ID;
+    use super::super::{
+        tac::{TacConst, Var},
+        tac::tests::fabricate_tac_func,
+        cfg::ENTRY_BLOCK_ID,
+    };
 
     #[test]
     fn empty_cfg() {
