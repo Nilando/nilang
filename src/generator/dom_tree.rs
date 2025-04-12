@@ -39,3 +39,28 @@ pub fn compute_dominated_blocks(cfg: &CFG, seed_block: &BasicBlock) -> HashSet<B
 
     dominated_blocks
 }
+/*
+ DVNT_GVN(block b):
+  for each phi node in b:
+    remove and continue if meaningless or redundant
+    set the value number for the remaining phi node to be the assigned variable name
+    add phi node to the hash table
+
+  for each assignment:
+    get value numbers for each operand
+    simplify the expression if possible
+    if the expression has been computed before:
+      set the value number for the assigned variable to the expression's value number
+    else:
+      set the value number for the expression to be the assigned variable name
+      add the expression to the hash table
+
+  for each child c of b in the control flow graph:
+    replace all phi node operands in c that were computed in this block with their value numbers
+
+  for each child c of b in the dominator tree:
+    DVNT_GVN(c)
+
+  remove all values hashed during this function call
+
+*/
