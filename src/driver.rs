@@ -195,22 +195,22 @@ fn display_parse_errors(
         while error_idx < errors.len() && errors[error_idx].span.0 < line_end {
             let error = &errors[error_idx];
             if error.span.0 >= line_start && error.span.0 < line_end {
-                println!("{}parser error{}: {:?}\r\n", red, reset, error.item);
+                println!("{}parser error{}: {:?}", red, reset, error.item);
 
                 if let Some(ref file_name) = file_name {
                     println!(
-                        "{}-->{} {}:{}:{}\r\n",
+                        "{}-->{} {}:{}:{}",
                         blue,
                         reset,
                         file_name,
                         line_num,
                         error.span.0 - line_start
                     );
-                    println!("   {}|{}\r\n", blue, reset);
-                    println!("{}{} |{} {}\r\n", blue, line_num, reset, line);
+                    println!("   {}|{}", blue, reset);
+                    println!("{}{} |{} {}", blue, line_num, reset, line);
                 } else {
-                    println!("   {}|{}\r\n", blue, reset);
-                    println!("   | {}\r\n", line);
+                    println!("   {}|{}", blue, reset);
+                    println!("   | {}", line);
                 }
 
                 let mut highlight_line = format!("   {}|{} ", blue, reset);
@@ -223,7 +223,7 @@ fn display_parse_errors(
                     }
                 }
 
-                println!("{}\r\n", highlight_line);
+                println!("{}", highlight_line);
                 println!();
             }
             error_idx += 1;

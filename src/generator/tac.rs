@@ -372,19 +372,16 @@ impl<'a> TacGenCtx<'a> {
             LhsExpr::Local(sym_id) => {
                 self.define_var(sym_id);
 
-                // THIS IS BROKEN DOESN'T WORK WITH MAP AND LIST values
-                //if src.is_temp() {
-                    //self.update_prev_dest(Var::local(sym_id));
-                //} else {
-                //
-                // we need something like src.is_temp() && last
+                if src.is_temp() && self.last_instr_has_dest() {
+                  self.update_prev_dest(Var::local(sym_id));
+                } else {
                     self.emit(
                         Tac::Copy {
                             dest: Var::local(sym_id),
                             src
                         }
                     )
-                //}
+                }
             }
             LhsExpr::Global(sym_id) => {
                 self.emit(
@@ -788,14 +785,18 @@ impl<'a> TacGenCtx<'a> {
         self.emit(Tac::Jump { label })
     }
 
+    fn last_instr_has_dest(&mut self) -> bool {
+        self.generators.last().unwrap().func.tac.last().unwrap().dest_var().is_some()
+    }
+
     fn update_prev_dest(&mut self, var: Var) {
-        println!("generated map");
         // This isn't needed but makes the printed CFG a little more readable
         self.generators.last_mut().unwrap().temp_counter -= 1; 
 
         let dest = self.generators.last_mut().unwrap().func.tac.last_mut().unwrap().dest_var_mut().unwrap();
 
         *dest = var;
+        // if the last instr was a keystore
     }
 
     fn emit(&mut self, tac: Tac) {
@@ -1068,7 +1069,7 @@ pub mod tests {
                 Tac::Print { src: Var::temp(1) },
             ]
         ];
-        let input = "print \"Hello World\";";
+        let input = "print(\"Hello World\");";
 
         expect_tac(input, tac);
     }
@@ -1190,6 +1191,22 @@ pub mod tests {
             ]
         ];
         let input = "a = @b;";
+
+        expect_tac_with_syms(input, tac, &mut syms);
+    }
+
+    #[test]
+    fn map_assignment() {
+        let mut syms = SymbolMap::new();
+        let tac = vec![
+            vec![
+              Tac::NewMap { dest: Var::temp(1) },
+              Tac::LoadConst { dest: Var::temp(2), src: TacConst::Int(0) },
+              Tac::KeyStore { store: Var::temp(1), key: Key::Sym(syms.get_id("b")), src: Var::temp(2) },
+              Tac::Copy { dest: Var::local(syms.get_id("a")), src: Var::temp(1) },
+            ]
+        ];
+        let input = "a = { b: 0 };";
 
         expect_tac_with_syms(input, tac, &mut syms);
     }

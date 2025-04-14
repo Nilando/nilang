@@ -33,7 +33,6 @@ use crate::symbol_map::SymID;
 //  || Expr , InnerArgs
 //  || Expr
 //
-//
 //  lhsExpr
 //  || ident
 //  || idx_expr
@@ -224,7 +223,11 @@ fn nested_expr(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, Spanned<Expr>> {
 }
 
 fn print_expr(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, Spanned<Expr>> {
-    keyword(KeyWord::Print).then(ep.map(|e| Expr::Print(Box::new(e))).spanned())
+    keyword(KeyWord::Print).then(
+        nested_expr(ep)
+            .map(|e| Expr::Print(Box::new(e)))
+            .spanned()
+    )
 }
 
 fn read_expr<'a>() -> Parser<'a, Spanned<Expr>> {
@@ -273,7 +276,7 @@ mod tests {
 
     #[test]
     fn print_string() {
-        match parse_expr("print \"potato\"").value {
+        match parse_expr("print (\"potato\")").value {
             Some(Expr::Print(v)) => {
                 assert!(v.item == Expr::Value(Value::String("potato".to_string())));
             }

@@ -6,7 +6,7 @@ mod ssa_conversion;
 mod dfa;
 mod liveness_dfa;
 mod dom_tree;
-// mod gvn;
+mod gvn;
 // mod dce;
 // mod jump_threading;
 

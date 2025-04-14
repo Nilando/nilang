@@ -20,4 +20,4 @@ fn fibonacci_sequence(n) {
 }
 
 // print the first 100 fibonacci numbers
-print fibonacci_sequence(100);
+print(fibonacci_sequence(100));

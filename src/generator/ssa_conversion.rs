@@ -2,7 +2,7 @@ use super::cfg::{CFG, BasicBlock, BlockID, PhiNode};
 use std::collections::{HashMap, HashSet};
 use super::liveness_dfa::LivenessDFA;
 use super::dfa::DFA;
-use super::tac::{Var, VerID, VarID};
+use super::tac::{Tac, Var, VerID, VarID};
 
 const INIT_VERSION: usize = 0;
 
@@ -124,6 +124,23 @@ impl SSAConverter {
             if let Some(dest) = code.dest_var_mut() {
                 self.apply_dest_versioning(dest);
             }
+
+            if let Tac::Call { .. } = code {
+                self.kill_globals();
+            }
+        }
+
+    }
+
+    fn kill_globals(&mut self) {
+        for stack in self.version_stacks.iter_mut().rev() {
+            stack.retain(|var, _| { 
+                if let VarID::Global(_) = var {
+                    false
+                } else {
+                    true
+                }
+            });
         }
     }
 

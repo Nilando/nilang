@@ -1,3 +1,4 @@
+use super::gvn::gvn_pass;
 use super::dom_tree::compute_dom_tree;
 use super::ssa_conversion::convert_cfg_to_ssa;
 use crate::parser::PackedSpans;
@@ -85,18 +86,21 @@ impl CFG {
     pub fn new(tac_func: TacFunc) -> Self {
         let mut cfg = CFGBuilder::build(tac_func);
 
+        if cfg.blocks.is_empty() {
+            return cfg;
+        }
+
         compute_dom_tree(&mut cfg);
-        
+
         convert_cfg_to_ssa(&mut cfg);
 
         cfg
     }
 
     pub fn optimize(&mut self) {
-        // GVN pass
+        gvn_pass(self);
         // dead code elimination
         // jump threading
-        // do this until convergence
     }
 
     pub fn get_block_from_label(&self, label: LabelID) -> BlockID {
