@@ -34,6 +34,21 @@ pub enum Op {
     Modulo
 }
 
+impl Op {
+    pub fn is_commutative(&self) -> bool {
+        // TODO: And and Or are commutative BUT they can't always be treated
+        // as such due to short circuiting and the possibility for side effects
+        match self {
+            Op::Plus |
+            Op::Multiply |
+            Op::Equal |
+            Op::NotEqual
+            => true,
+            _ => false
+        }
+    }
+}
+
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum LexError {
     Unknown,

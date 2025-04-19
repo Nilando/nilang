@@ -10,7 +10,7 @@ pub fn convert_cfg_to_ssa(cfg: &mut CFG) {
     SSAConverter::convert(cfg);
 }
 
-fn find_phi_nodes(cfg: &CFG) -> HashMap<BlockID, Vec<PhiNode>> {
+fn find_phi_nodes(cfg: &mut CFG) -> HashMap<BlockID, Vec<PhiNode>> {
     let liveness = LivenessDFA::run(cfg);
     let mut phi_nodes: HashMap<BlockID, Vec<PhiNode>> = HashMap::new();
 
@@ -129,7 +129,6 @@ impl SSAConverter {
                 self.kill_globals();
             }
         }
-
     }
 
     fn kill_globals(&mut self) {

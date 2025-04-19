@@ -21,20 +21,10 @@ pub enum VarID {
 
 pub type VerID = usize;
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct Var {
     pub id: VarID,
     pub ver: Option<VerID>,
-    //last_use: Option<usize>,
-    //live: Option<bool>
-}
-
-impl Hash for Var {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.id.hash(state);
-        self.ver.hash(state);
-        // don't use last use and liveness to hash
-    }
 }
 
 impl Var {
@@ -82,6 +72,7 @@ pub enum TacConst {
     Float(f64),
     Bool(bool),
     Func(FuncID),
+    //Sym(SymID),
     Null,
 }
 

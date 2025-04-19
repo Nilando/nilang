@@ -5,13 +5,13 @@ pub trait DFA: Sized {
     type Item: PartialEq;
     const BACKWARDS: bool = false;
 
-    fn run(cfg: &CFG) -> Self {
+    fn run(cfg: &mut CFG) -> Self {
         Self::from_result(run_executor::<Self>(cfg))
     }
     fn from_result(result: DFAResult<Self::Item>) -> Self;
     fn init(block: &BasicBlock) -> (Self::Item, Self::Item); // (Input, Output)
     fn merge(values: &[&Self::Item]) -> Self::Item; 
-    fn transfer(block: &BasicBlock, value: &Self::Item) -> Self::Item;
+    fn transfer(block: &mut BasicBlock, value: &Self::Item) -> Self::Item;
 }
 
 pub struct DFAResult<T> {
@@ -19,7 +19,7 @@ pub struct DFAResult<T> {
     pub outputs: HashMap<BlockID, T>,
 }
 
-fn run_executor<T: DFA>(cfg: &CFG) -> DFAResult<<T as DFA>::Item>{
+fn run_executor<T: DFA>(cfg: &mut CFG) -> DFAResult<<T as DFA>::Item>{
     let mut executor = DFAExecutor::<T>::new(cfg);
 
     executor.exec(cfg);
@@ -59,9 +59,9 @@ impl<T: DFA> DFAExecutor<T> {
         }
     }
 
-    fn exec(&mut self, cfg: &CFG) {
+    fn exec(&mut self, cfg: &mut CFG) {
         while let Some(block_id) = self.work_list.pop() {
-            let block = &cfg[block_id];
+            let block = &mut cfg[block_id];
 
             if T::BACKWARDS {
                 self.propagate_backward(block)
@@ -71,7 +71,7 @@ impl<T: DFA> DFAExecutor<T> {
         }
     }
 
-    fn propagate_backward(&mut self, block: &BasicBlock) {
+    fn propagate_backward(&mut self, block: &mut BasicBlock) {
         let successor_inputs = block.successors.iter().map(|succ_id| {
             self.result.inputs.get(&*succ_id).unwrap()
         }).collect::<Vec<&<T as DFA>::Item>>();
@@ -91,7 +91,7 @@ impl<T: DFA> DFAExecutor<T> {
         }
     }
 
-    fn propagate_forward(&mut self, block: &BasicBlock) {
+    fn propagate_forward(&mut self, block: &mut BasicBlock) {
         let predecessors_outputs = block.predecessors.iter().map(|succ_id| {
             self.result.outputs.get(&*succ_id).unwrap()
         }).collect::<Vec<&<T as DFA>::Item>>();

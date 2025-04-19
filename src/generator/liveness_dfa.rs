@@ -34,7 +34,7 @@ impl DFA for LivenessDFA {
         (HashSet::new(), HashSet::new())
     }
 
-    fn transfer(block: &BasicBlock, live_out: &Self::Item) -> Self::Item {
+    fn transfer(block: &mut BasicBlock, live_out: &Self::Item) -> Self::Item {
         let mut defined: HashSet<Var> = HashSet::new();
         let mut live_in: HashSet<Var> = HashSet::new();
 
