@@ -1,7 +1,7 @@
 use crate::parser::Op;
 use crate::symbol_map::SymbolMap;
 use super::cfg::{CFG, BasicBlock, BlockID};
-use super::tac::{Key, VarID, Var, Tac, TacConst, MAIN_FUNC_ID};
+use super::tac::{VarID, Var, Tac, TacConst, MAIN_FUNC_ID};
 
 struct CFGPrinter<'a> {
     cfg: &'a CFG,
@@ -185,16 +185,14 @@ impl<'a> CFGPrinter<'a> {
             TacConst::Null => format!("null"),
             TacConst::Func(func_id) => format!("fn({func_id})"),
             TacConst::Float(f) => format!("{}", f),
+            TacConst::Sym(s) => format!("sym.{s:?}"),
         };
 
         self.result.push_str(&s);
     }
 
-    fn push_key_access(&mut self, key: &Key) {
-        let s = match key {
-            Key::Sym(id) => format!(".{}", self.syms.get_str(*id)),
-            Key::Var(var) => format!("[{}]", self.var_str(var)),
-        };
+    fn push_key_access(&mut self, key: &Var) {
+        let s = format!("[{}]", self.var_str(key));
 
         self.result.push_str(&s);
     }

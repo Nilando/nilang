@@ -72,14 +72,8 @@ pub enum TacConst {
     Float(f64),
     Bool(bool),
     Func(FuncID),
-    //Sym(SymID),
-    Null,
-}
-
-#[derive(Debug, PartialEq)]
-pub enum Key {
-    Var(Var),
     Sym(SymID),
+    Null,
 }
 
 #[derive(Debug, PartialEq)]
@@ -109,12 +103,12 @@ pub enum Tac {
     KeyStore {
         store: Var,
         src: Var,
-        key: Key,
+        key: Var,
     },
     KeyLoad {
         dest: Var,
         store: Var,
-        key: Key,
+        key: Var,
     },
     LoadConst {
         dest: Var,
@@ -171,25 +165,10 @@ impl Tac {
             Tac::LoadArg { src, .. } |
             Tac::Call { src, .. } |
             Tac::Return { src, .. } |
-            Tac::Jnt { src, .. } | Tac::Jit { src, .. }
-                => (Some(src), None, None),
-
-            Tac::KeyLoad { store, key, .. } => {
-                if let Key::Var(var) = key {
-                    (Some(store), Some(var), None)
-                } else {
-                    (Some(store), None, None)
-                }
-            }
-
-            Tac::KeyStore { store, key, src } => {
-                if let Key::Var(var) = key {
-                    (Some(store), Some(src), Some(var))
-                } else {
-                    (Some(store), Some(src), None)
-                }
-            }
-
+            Tac::Jnt { src, .. } | 
+            Tac::Jit { src, .. } => (Some(src), None, None),
+            Tac::KeyLoad { store, key, .. } => (Some(store), Some(key), None),
+            Tac::KeyStore { store, key, src } => (Some(store), Some(key), Some(src)),
             _ => (None, None, None)
         }
     }
@@ -202,25 +181,10 @@ impl Tac {
             Tac::LoadArg { src, .. } |
             Tac::Call { src, .. } |
             Tac::Return { src, .. } |
-            Tac::Jnt { src, .. } | Tac::Jit { src, .. }
-                => (Some(src), None, None),
-
-            Tac::KeyLoad { store, key, .. } => {
-                if let Key::Var(var) = key {
-                    (Some(store), Some(var), None)
-                } else {
-                    (Some(store), None, None)
-                }
-            }
-
-            Tac::KeyStore { store, key, src } => {
-                if let Key::Var(var) = key {
-                    (Some(store), Some(src), Some(var))
-                } else {
-                    (Some(store), Some(src), None)
-                }
-            }
-
+            Tac::Jnt { src, .. } | 
+            Tac::Jit { src, .. } => (Some(src), None, None),
+            Tac::KeyLoad { store, key, .. } => (Some(store), Some(key), None),
+            Tac::KeyStore { store, key, src } => (Some(store), Some(key), Some(src)),
             _ => (None, None, None)
         }
     }
@@ -353,12 +317,13 @@ impl<'a> TacGenCtx<'a> {
                 let store = self.generate_expr(*store);
                 let key = self.generate_expr(*key);
 
-                self.generate_key_store(store, Key::Var(key), src, span);
+                self.generate_key_store(store, key, src, span);
             }
             LhsExpr::Access { store, key } => {
                 let store = self.generate_expr(*store);
+                let key = self.load_const(TacConst::Sym(key));
 
-                self.generate_key_store(store, Key::Sym(key), src, span);
+                self.generate_key_store(store, key, src, span);
             }
             LhsExpr::Local(sym_id) => {
                 self.define_var(sym_id);
@@ -408,14 +373,15 @@ impl<'a> TacGenCtx<'a> {
             }
             Expr::Access { store, key } => {
                 let var = self.generate_expr(*store);
+                let key = self.load_const(TacConst::Sym(key));
 
-                self.generate_key_load(var, Key::Sym(key), span)
+                self.generate_key_load(var, key, span)
             }
             Expr::Index { store, key } => {
                 let store_val = self.generate_expr(*store);
                 let key_val = self.generate_expr(*key);
 
-                self.generate_key_load(store_val, Key::Var(key_val), span)
+                self.generate_key_load(store_val, key_val, span)
             }
             Expr::Call { calle, args } => {
                 let arg_vals = args.into_iter().map(|a| self.generate_expr(a)).collect();
@@ -507,7 +473,7 @@ impl<'a> TacGenCtx<'a> {
         temp
     }
 
-    fn generate_key_store(&mut self, store: Var, key: Key, src: Var, span: Span) {
+    fn generate_key_store(&mut self, store: Var, key: Var, src: Var, span: Span) {
         self.emit_spanned(
             Tac::KeyStore {
                 store,
@@ -518,7 +484,7 @@ impl<'a> TacGenCtx<'a> {
         );
     }
 
-    fn generate_key_load(&mut self, store: Var, key: Key, span: Span) -> Var {
+    fn generate_key_load(&mut self, store: Var, key: Var, span: Span) -> Var {
         let temp = self.new_temp();
 
         self.emit_spanned(
@@ -674,8 +640,8 @@ impl<'a> TacGenCtx<'a> {
         for (k, value) in pairs.into_iter() {
             let key = 
             match k {
-                MapKey::Sym(sym) => Key::Sym(sym),
-                MapKey::Expr(expr) => Key::Var(self.generate_expr(expr))
+                MapKey::Sym(sym) => self.load_const(TacConst::Sym(sym)),
+                MapKey::Expr(expr) => self.generate_expr(expr)
             };
 
             let src = self.generate_expr(value);
@@ -709,7 +675,7 @@ impl<'a> TacGenCtx<'a> {
                 Tac::KeyStore {
                     store,
                     src,
-                    key: Key::Var(key),
+                    key,
                 }
             );
         }
@@ -976,9 +942,9 @@ pub mod tests {
                 Tac::NewList { dest: Var::temp(2) },
                 Tac::LoadConst { dest: Var::temp(3), src: TacConst::Int(1) },
                 Tac::LoadConst { dest: Var::temp(4), src: TacConst::Int(0) },
-                Tac::KeyStore { store: Var::temp(2), src: Var::temp(3), key: Key::Var(Var::temp(4)) },
+                Tac::KeyStore { store: Var::temp(2), src: Var::temp(3), key: Var::temp(4) },
                 Tac::LoadConst { dest: Var::temp(5), src: TacConst::Int(0) },
-                Tac::KeyStore { store: Var::temp(2), key: Key::Var(Var::temp(5)), src: Var::temp(1) },
+                Tac::KeyStore { store: Var::temp(2), key: Var::temp(5), src: Var::temp(1) },
             ]
         ];
         let input = "[1][0] = 1;";
@@ -992,7 +958,8 @@ pub mod tests {
         let tac = vec![
             vec![
                 Tac::LoadConst { dest: Var::temp(1), src: TacConst::Int(1) },
-                Tac::KeyStore { store: Var::local(syms.get_id("a")), key: Key::Sym(syms.get_id("b")), src: Var::temp(1) },
+                Tac::LoadConst { dest: Var::temp(2), src: TacConst::Sym(syms.get_id("b")) },
+                Tac::KeyStore { store: Var::local(syms.get_id("a")), key: Var::temp(2), src: Var::temp(1) },
             ]
         ];
         let input = "a.b = 1;";
@@ -1151,7 +1118,8 @@ pub mod tests {
         let mut syms = SymbolMap::new();
         let tac = vec![
             vec![
-              Tac::KeyLoad { dest: Var::local(syms.get_id("a")), store: Var::local(syms.get_id("b")), key: Key::Sym(syms.get_id("c")) }, 
+              Tac::LoadConst { dest: Var::temp(1), src: TacConst::Sym(syms.get_id("c")) }, 
+              Tac::KeyLoad { dest: Var::local(syms.get_id("a")), store: Var::local(syms.get_id("b")), key: Var::temp(1) }, 
             ]
         ];
         let input = "a = b.c;";
@@ -1165,7 +1133,7 @@ pub mod tests {
         let tac = vec![
             vec![
               Tac::LoadConst { dest: Var::temp(1), src: TacConst::Int(0) }, 
-              Tac::KeyLoad { dest: Var::local(syms.get_id("a")), store: Var::local(syms.get_id("b")), key: Key::Var(Var::temp(1)) }, 
+              Tac::KeyLoad { dest: Var::local(syms.get_id("a")), store: Var::local(syms.get_id("b")), key: Var::temp(1) }, 
             ]
         ];
         let input = "a = b[0];";
@@ -1192,8 +1160,9 @@ pub mod tests {
         let tac = vec![
             vec![
               Tac::NewMap { dest: Var::temp(1) },
-              Tac::LoadConst { dest: Var::temp(2), src: TacConst::Int(0) },
-              Tac::KeyStore { store: Var::temp(1), key: Key::Sym(syms.get_id("b")), src: Var::temp(2) },
+              Tac::LoadConst { dest: Var::temp(2), src: TacConst::Sym(syms.get_id("b")) },
+              Tac::LoadConst { dest: Var::temp(3), src: TacConst::Int(0) },
+              Tac::KeyStore { store: Var::temp(1), key: Var::temp(2), src: Var::temp(3) },
               Tac::Copy { dest: Var::local(syms.get_id("a")), src: Var::temp(1) },
             ]
         ];
