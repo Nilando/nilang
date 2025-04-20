@@ -7,15 +7,17 @@ mod dfa;
 mod liveness_dfa;
 mod dom_tree;
 mod gvn;
+mod memory_ssa;
+mod memory_location;
+mod walker;
 // mod dce;
-// mod jump_threading;
 
 use crate::symbol_map::SymbolMap;
 use crate::parser::Stmt;
 
 use cfg::CFG;
 use cfg_printer::cfg_to_string;
-use tac::stream_tac_from_stmts;
+use walker::stream_tac_from_stmts;
 
 pub struct Program;
 
@@ -24,7 +26,7 @@ pub fn compile_ast(ast: Vec<Stmt>, syms: &mut SymbolMap) -> Program {
         let mut cfg = CFG::new(func);
 
         cfg.optimize();
-        println!("{:#?}", cfg);
+        //println!("{:#?}", cfg);
 
         // run the register allocator on the cfg to get a program
 

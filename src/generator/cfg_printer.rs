@@ -1,7 +1,8 @@
 use crate::parser::Op;
 use crate::symbol_map::SymbolMap;
 use super::cfg::{CFG, BasicBlock, BlockID};
-use super::tac::{VarID, Var, Tac, TacConst, MAIN_FUNC_ID};
+use super::tac::{VarID, Var, Tac, TacConst};
+use super::walker::MAIN_FUNC_ID;
 
 struct CFGPrinter<'a> {
     cfg: &'a CFG,
@@ -51,15 +52,15 @@ impl<'a> CFGPrinter<'a> {
                     self.push_var(dest);
                     self.result.push_str(" = new_map");
                 }
-                Tac::KeyLoad { dest, store, key } => {
+                Tac::MemLoad { dest, mem } => {
                     self.push_var(dest);
                     self.result.push_str(" = ");
-                    self.push_var(store);
-                    self.push_key_access(key);
+                    self.push_var(&mem.store);
+                    self.push_key_access(&mem.key);
                 }
-                Tac::KeyStore { store, key, src } => {
-                    self.push_var(store);
-                    self.push_key_access(key);
+                Tac::MemStore { mem, src } => {
+                    self.push_var(&mem.store);
+                    self.push_key_access(&mem.key);
                     self.result.push_str(" = ");
                     self.push_var(src);
                 }
@@ -185,7 +186,7 @@ impl<'a> CFGPrinter<'a> {
             TacConst::Null => format!("null"),
             TacConst::Func(func_id) => format!("fn({func_id})"),
             TacConst::Float(f) => format!("{}", f),
-            TacConst::Sym(s) => format!("sym.{s:?}"),
+            TacConst::Sym(s) => format!("{:?}", s),
         };
 
         self.result.push_str(&s);

@@ -174,7 +174,7 @@ mod tests {
     use super::*;
     use super::super::{
         tac::{TacConst, Var},
-        tac::tests::fabricate_tac_func,
+        walker::tests::fabricate_tac_func,
         cfg::ENTRY_BLOCK_ID,
     };
 

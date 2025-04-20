@@ -3,7 +3,7 @@ while true {
   while true {
     b = a;
     while true {
-      print b;
+      print(b);
     }
   }
 }
