@@ -62,6 +62,13 @@ impl Var {
             _ => false
         }
     }
+
+    pub fn is_global(&self) -> bool {
+        match self.id {
+            VarID::Global(_) => true,
+            _ => false
+        }
+    }
 }
 
 #[derive(Debug, PartialEq)]

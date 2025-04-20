@@ -1,13 +1,13 @@
+use crate::parser::PackedSpans;
+use crate::symbol_map::SymID;
 use super::gvn::gvn_pass;
 use super::dom_tree::compute_dom_tree;
 use super::ssa_conversion::convert_cfg_to_ssa;
-use crate::parser::PackedSpans;
-use crate::symbol_map::SymID;
 use super::tac::{Tac, TacFunc, FuncID, LabelID, Var};
+use super::cfg_builder::CFGBuilder;
 use std::fmt::Debug;
 use std::ops::{Index, IndexMut};
 use std::collections::{HashMap, HashSet};
-use super::cfg_builder::CFGBuilder;
 
 pub type BlockID = usize;
 pub const ENTRY_BLOCK_ID: usize = 0;
@@ -98,9 +98,9 @@ impl CFG {
     }
 
     pub fn optimize(&mut self) {
-        gvn_pass(self);
-        // dead code elimination
-        // jump threading
+        // memory ssa
+        // gvn_pass
+        // dce
     }
 
     pub fn get_block_from_label(&self, label: LabelID) -> BlockID {

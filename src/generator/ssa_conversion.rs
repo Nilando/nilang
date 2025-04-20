@@ -11,7 +11,8 @@ pub fn convert_cfg_to_ssa(cfg: &mut CFG) {
 }
 
 fn find_phi_nodes(cfg: &mut CFG) -> HashMap<BlockID, Vec<PhiNode>> {
-    let liveness = LivenessDFA::run(cfg);
+    let mut liveness = LivenessDFA::new();
+    liveness.exec(cfg);
     let mut phi_nodes: HashMap<BlockID, Vec<PhiNode>> = HashMap::new();
 
     for block in cfg.blocks.iter() {

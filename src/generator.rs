@@ -5,10 +5,10 @@ mod cfg_builder;
 mod ssa_conversion;
 mod dfa;
 mod liveness_dfa;
+mod escape_dfa;
 mod dom_tree;
 mod gvn;
 mod memory_ssa;
-mod memory_location;
 mod walker;
 // mod dce;
 

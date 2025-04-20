@@ -2,111 +2,96 @@ use super::cfg::{CFG, BlockID, BasicBlock};
 use std::collections::HashMap;
 
 pub trait DFA: Sized {
-    type Item: PartialEq;
+    type Data;
+
     const BACKWARDS: bool = false;
 
-    fn run(cfg: &mut CFG) -> Self {
-        Self::from_result(run_executor::<Self>(cfg))
+    fn exec(&mut self, cfg: &mut CFG) {
+        let mut executor = DFAExecutor::<Self>::new(cfg);
+
+        executor.init(self, cfg);
+        executor.exec(self, cfg);
+
+        self.complete(executor.inputs, executor.outputs);
     }
-    fn from_result(result: DFAResult<Self::Item>) -> Self;
-    fn init(block: &BasicBlock) -> (Self::Item, Self::Item); // (Input, Output)
-    fn merge(values: &[&Self::Item]) -> Self::Item; 
-    fn transfer(block: &mut BasicBlock, value: &Self::Item) -> Self::Item;
-}
-
-pub struct DFAResult<T> {
-    pub inputs: HashMap<BlockID, T>,
-    pub outputs: HashMap<BlockID, T>,
-}
-
-fn run_executor<T: DFA>(cfg: &mut CFG) -> DFAResult<<T as DFA>::Item>{
-    let mut executor = DFAExecutor::<T>::new(cfg);
-
-    executor.exec(cfg);
-
-    executor.result
+    fn init_block(&mut self, block: &BasicBlock) -> (Self::Data, Self::Data);
+    fn complete(&mut self, inputs: HashMap<BlockID, Self::Data>, outputs: HashMap<BlockID, Self::Data>);
+    fn merge(&mut self, updating: &mut Self::Data, merge: &Self::Data);
+    fn transfer(&mut self, block: &mut BasicBlock, start: &Self::Data, end: &mut Self::Data) -> bool;
 }
 
 struct DFAExecutor<T> 
-where T: DFA,
+where T: DFA
 {
-    result: DFAResult<<T as DFA>::Item>,
+    inputs: HashMap<BlockID, <T as DFA>::Data>,
+    outputs: HashMap<BlockID, <T as DFA>::Data>,
     work_list: Vec<BlockID>
 }
 
 impl<T: DFA> DFAExecutor<T> {
     fn new(cfg: &CFG) -> Self {
         Self {
-            result: Self::init_result(cfg),
+            inputs: HashMap::with_capacity(cfg.blocks.len()),
+            outputs: HashMap::with_capacity(cfg.blocks.len()),
             work_list: cfg.get_block_ids()
         }
     }
 
-    fn init_result(cfg: &CFG) -> DFAResult<<T as DFA>::Item> {
-        let mut inputs = HashMap::with_capacity(cfg.blocks.len());
-        let mut outputs = HashMap::with_capacity(cfg.blocks.len());
-
+    fn init(&mut self, dfa: &mut T, cfg: &CFG) {
         for block in cfg.blocks.iter() {
-            let (init_input, init_output) = T::init(block);
+            let (init_input, init_output) = dfa.init_block(block);
 
-            inputs.insert(block.id, init_input);
-            outputs.insert(block.id, init_output);
-        }
-
-        DFAResult {
-            inputs,
-            outputs
+            self.inputs.insert(block.id, init_input);
+            self.outputs.insert(block.id, init_output);
         }
     }
 
-    fn exec(&mut self, cfg: &mut CFG) {
+    fn exec(&mut self, dfa: &mut T, cfg: &mut CFG) {
         while let Some(block_id) = self.work_list.pop() {
             let block = &mut cfg[block_id];
 
             if T::BACKWARDS {
-                self.propagate_backward(block)
+                self.propagate_backward(dfa, block)
             } else {
-                self.propagate_forward(block)
+                self.propagate_forward(dfa, block)
             }
         }
     }
 
-    fn propagate_backward(&mut self, block: &mut BasicBlock) {
-        let successor_inputs = block.successors.iter().map(|succ_id| {
-            self.result.inputs.get(&*succ_id).unwrap()
-        }).collect::<Vec<&<T as DFA>::Item>>();
-        let existing_output = self.result.outputs.get(&block.id).unwrap();
-        let successor_ouput = T::merge(successor_inputs.as_slice());
-        let new_output = T::merge(&[&existing_output, &successor_ouput]);
-        let new_input = T::transfer(block, &new_output);
+    fn propagate_backward(&mut self, dfa: &mut T, block: &mut BasicBlock) {
+        let output = self.outputs.get_mut(&block.id).unwrap();
+        for succ_id in block.successors.iter() {
+            let succ_input = self.inputs.get(succ_id).unwrap();
 
-        self.result.outputs.insert(block.id, new_output);
+            dfa.merge(output, succ_input);
+        }
 
-        if self.result.inputs.get(&block.id).unwrap() != &new_input {
-            self.result.inputs.insert(block.id, new_input);
+        let input = self.inputs.get_mut(&block.id).unwrap();
+        let output = self.outputs.get(&block.id).unwrap();
+        let update_flag = dfa.transfer(block, output, input);
 
+        if update_flag {
             for pred_id in block.predecessors.iter() {
                 self.work_list.push(*pred_id);
             }
         }
     }
 
-    fn propagate_forward(&mut self, block: &mut BasicBlock) {
-        let predecessors_outputs = block.predecessors.iter().map(|succ_id| {
-            self.result.outputs.get(&*succ_id).unwrap()
-        }).collect::<Vec<&<T as DFA>::Item>>();
-        let existing_input = self.result.inputs.get(&block.id).unwrap();
-        let predecessor_input = T::merge(predecessors_outputs.as_slice());
-        let new_input = T::merge(&[&existing_input, &predecessor_input]);
-        let new_output = T::transfer(block, &new_input);
+    fn propagate_forward(&mut self, dfa: &mut T, block: &mut BasicBlock) {
+        let input = self.inputs.get_mut(&block.id).unwrap();
+        for pred_id in block.predecessors.iter() {
+            let pred_output = self.outputs.get(pred_id).unwrap();
 
-        self.result.inputs.insert(block.id, new_input);
+            dfa.merge(input, pred_output);
+        }
 
-        if self.result.outputs.get(&block.id).unwrap() != &new_output {
-            self.result.outputs.insert(block.id, new_output);
+        let output = self.outputs.get_mut(&block.id).unwrap();
+        let input = self.inputs.get(&block.id).unwrap();
+        let update_flag = dfa.transfer(block, input, output);
 
-            for pred_id in block.successors.iter() {
-                self.work_list.push(*pred_id);
+        if update_flag {
+            for succ_id in block.successors.iter() {
+                self.work_list.push(*succ_id);
             }
         }
     }

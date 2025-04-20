@@ -1,5 +1,5 @@
 use super::cfg::{BlockID, BasicBlock};
-use super::dfa::{DFA, DFAResult};
+use super::dfa::DFA;
 use super::tac::Var;
 use std::collections::{HashSet, HashMap};
 
@@ -12,21 +12,27 @@ impl LivenessDFA {
     pub fn is_live_on_entry(&self, block_id: BlockID, var: &Var) -> bool {
         self.live_in.get(&block_id).unwrap().get(&var).is_some()
     }
+
+    pub fn new() -> Self { 
+        Self {
+            live_in: HashMap::new(),
+            live_out: HashMap::new(),
+        }
+    }
 }
 
 impl DFA for LivenessDFA {
     const BACKWARDS: bool = true;
 
-    type Item = HashSet<Var>;
+    type Data = HashSet<Var>;
 
-    fn from_result(result: DFAResult<Self::Item>) -> Self {
-        Self {
-            live_in: result.inputs,
-            live_out: result.outputs,
-        }
+
+    fn complete(&mut self, inputs: HashMap<BlockID, Self::Data>, outputs: HashMap<BlockID, Self::Data>) {
+        self.live_in = inputs;
+        self.live_out = outputs;
     }
 
-    fn init(block: &BasicBlock) -> (Self::Item, Self::Item) {
+    fn init_block(&mut self, block: &BasicBlock) -> (Self::Data, Self::Data) {
         if let Some(var_id) = block.get_return_var_id() {
             return (HashSet::new(), HashSet::from([var_id]));
         }
@@ -34,9 +40,9 @@ impl DFA for LivenessDFA {
         (HashSet::new(), HashSet::new())
     }
 
-    fn transfer(block: &mut BasicBlock, live_out: &Self::Item) -> Self::Item {
+    fn transfer(&mut self, block: &mut BasicBlock, live_out: &Self::Data, live_in: &mut Self::Data) -> bool {
         let mut defined: HashSet<Var> = HashSet::new();
-        let mut live_in: HashSet<Var> = HashSet::new();
+        let mut updated_flag = false;
 
         for instr in block.code.iter() {
             let (u1, u2, u3) = instr.used_vars();
@@ -48,7 +54,7 @@ impl DFA for LivenessDFA {
                     }
 
                     if defined.get(&var).is_none() {
-                        live_in.insert(*var);
+                        updated_flag = updated_flag || live_in.insert(*var);
                     }
                 }
             }
@@ -64,19 +70,15 @@ impl DFA for LivenessDFA {
 
         // LIVE IN = USED VARS THAT WEREN'T DEFINED + LIVE OUT VARS THAT WEREN'T DEFINED
         for var in live_out.difference(&defined) {
-            live_in.insert(*var);
+            updated_flag = updated_flag || live_in.insert(*var);
         }
 
-        live_in
+        updated_flag
     }
 
-    fn merge(values: &[&Self::Item]) -> Self::Item {
-        let mut merged = HashSet::new();
-
-        for set in values.iter() {
-            merged = merged.union(set).map(|v| *v).collect();
+    fn merge(&mut self, updating: &mut Self::Data, merge: &Self::Data) {
+        for var in merge.iter() {
+            updating.insert(*var);
         }
-
-        merged
     }
 }
