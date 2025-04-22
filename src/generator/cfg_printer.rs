@@ -121,9 +121,9 @@ impl<'a> CFGPrinter<'a> {
                     self.result.push_str("return ");
                     self.push_var(src);
                 }
-                Tac::UpvalueStore { store, src } => {
-                    self.push_var(store);
-                    self.result.push_str(".upvalues << ");
+                Tac::StoreUpvalue { dest, src } => {
+                    self.push_var(dest);
+                    self.result.push_str(" UPVAL ");
                     self.result.push_str(self.syms.get_str(*src));
                 }
                 Tac::Label { .. } => {

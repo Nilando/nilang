@@ -220,7 +220,7 @@ impl<'a> TacGenCtx<'a> {
             Value::Ident(sym_id) => self.generate_ident(sym_id),
             Value::Map(map) => self.generate_map(map),
             Value::List(list) => self.generate_list(list),
-            Value::InlineFunc { inputs, stmts } => self.generate_func(inputs, stmts),
+            Value::InlineFunc { inputs, stmts } => self.generate_func(inputs, stmts, None),
         }
     }
 
@@ -287,20 +287,21 @@ impl<'a> TacGenCtx<'a> {
     fn generate_func_decl(&mut self, ident: SymID, inputs: Spanned<Vec<SymID>>, stmts: Vec<Stmt>) {
         self.define_var(ident);
 
-        self.generate_func(inputs, stmts);
-
-        self.update_prev_dest(Var::local(ident));
+        self.generate_func(inputs, stmts, Some(ident));
     }
 
-    fn generate_func(&mut self, inputs: Spanned<Vec<SymID>>, stmts: Vec<Stmt>) -> Var {
-        let temp = self.new_temp();
-
+    fn generate_func(&mut self, inputs: Spanned<Vec<SymID>>, stmts: Vec<Stmt>, ident: Option<SymID>) -> Var {
+        let dest = if let Some(sym) = ident {
+            Var::local(sym)
+        } else {
+            self.new_temp()
+        };
 
         let (func_id, upvalues) = self.new_func(inputs, stmts);
 
         self.emit(
             Tac::LoadConst {
-                dest: temp,
+                dest,
                 src: TacConst::Func(func_id),
             }
         );
@@ -308,14 +309,14 @@ impl<'a> TacGenCtx<'a> {
 
         for upvalue in upvalues.iter() {
             self.emit(
-                Tac::UpvalueStore {
-                    store: temp,
+                Tac::StoreUpvalue {
+                    dest,
                     src: *upvalue
                 }
             );
         }
 
-        temp
+        dest
     }
 
     fn new_func(&mut self, inputs: Spanned<Vec<SymID>>, stmts: Vec<Stmt>) -> (FuncID, HashSet<SymID>) {

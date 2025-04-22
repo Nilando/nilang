@@ -159,8 +159,8 @@ pub enum Tac {
         dest: Var,
         src: TacConst,
     },
-    UpvalueStore {
-        store: Var,
+    StoreUpvalue {
+        dest: Var,
         src: SymID,
     },
     LoadArg {
@@ -243,6 +243,7 @@ impl Tac {
             Tac::Read { dest, .. } |
             Tac::NewMap { dest, .. } |
             Tac::NewList { dest, .. } |
+            Tac::StoreUpvalue { dest, .. } |
             Tac::Binop { dest, .. } => Some(dest),
             _ => None
         }
@@ -257,6 +258,7 @@ impl Tac {
             Tac::Read { dest, .. } |
             Tac::NewMap { dest, .. } |
             Tac::NewList { dest, .. } |
+            Tac::StoreUpvalue { dest, .. } |
             Tac::Binop { dest, .. } => Some(dest),
             _ => None
         }
