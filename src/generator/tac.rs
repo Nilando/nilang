@@ -1,3 +1,4 @@
+use super::escape_dfa::MemId;
 use crate::parser::{PackedSpans, Op};
 use crate::symbol_map::SymID;
 use std::hash::Hash;
@@ -85,7 +86,7 @@ pub enum TacConst {
 #[derive(Debug, PartialEq)]
 struct MemLocMetaData {
     key_value: Option<TacConst>,
-    tracked_store_id: Option<usize>,
+    mem_id: Option<MemId>,
     version: Option<usize>,
 }
 
@@ -93,7 +94,7 @@ impl MemLocMetaData {
     pub fn new() -> Self {
         Self {
             key_value: None,
-            tracked_store_id: None,
+            mem_id: None,
             version: None
         }
     }
@@ -115,6 +116,10 @@ impl MemoryLocation {
             key,
             meta_data: Box::new(meta_data)
         }
+    }
+
+    pub fn set_mem_id(&mut self, mem_id: Option<MemId>) {
+        self.meta_data.mem_id = mem_id;
     }
 }
 
