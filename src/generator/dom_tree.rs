@@ -8,7 +8,8 @@ pub fn compute_dom_tree(cfg: &mut CFG) {
 
     while let Some(block_id) = work_list.pop() {
         let block = &cfg[block_id];
-        let dominated_blocks = cfg.compute_dominated_blocks(block);
+        let mut dominated_blocks = cfg.compute_dominated_blocks(block);
+        dominated_blocks.remove(&block_id);
 
         for (_, blocks)  in dom_tree.iter_mut() {
             blocks.retain(|b| !dominated_blocks.contains(b));

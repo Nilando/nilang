@@ -26,7 +26,7 @@ pub fn compile_ast(ast: Vec<Stmt>, syms: &mut SymbolMap) -> Program {
         let mut cfg = CFG::new(func);
 
         cfg.optimize();
-        //println!("{:#?}", cfg);
+        println!("{:#?}", cfg);
 
         // run the register allocator on the cfg to get a program
 

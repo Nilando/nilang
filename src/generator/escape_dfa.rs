@@ -6,40 +6,41 @@ use super::dfa::DFA;
 #[derive(Clone, Eq, PartialEq, Hash, Copy, Debug)]
 pub struct MemId(usize);
 
-pub struct EscapeDFA {
-    mem_counter: usize,
+#[derive(Debug)]
+pub struct EscapeDFAState {
     mem_ids: HashMap<MemId, Vec<Var>>,
     vars: HashMap<Var, MemId>,
+    escaped_vars: HashSet<Var>,
 }
 
-impl EscapeDFA {
+impl EscapeDFAState {
     fn new() -> Self {
         Self {
             mem_ids: HashMap::new(),
             vars: HashMap::new(),
-            mem_counter: 0
+            escaped_vars: HashSet::new(),
         }
     }
 
-    fn escape_var(&mut self, escaped_vars: &mut HashSet<Var>, var: &Var) -> bool {
-        if escaped_vars.contains(var) {
+    fn escape_var(&mut self, var: &Var) -> bool {
+        if self.escaped_vars.contains(var) {
             return false;
         }
 
         if let Some(mem_id) = self.vars.get(var) {
             if let Some(vars) = self.mem_ids.get(mem_id) {
                 for v in vars.iter() {
-                    escaped_vars.insert(*v);
+                    self.escaped_vars.insert(*v);
                 }
             }
 
-            escaped_vars.insert(*var);
+            self.escaped_vars.insert(*var);
         }
 
         true
     }
 
-    fn copy(&mut self, escaped_vars: &mut HashSet<Var>, dest: Var, src: &Var) {
+    fn copy(&mut self, dest: Var, src: &Var) {
         if let Some(mem_id) = self.vars.get(src) {
             if let Some(vars) = self.mem_ids.get_mut(mem_id) {
                 vars.push(dest);
@@ -48,24 +49,26 @@ impl EscapeDFA {
             self.vars.insert(dest, *mem_id);
         }
 
-        if escaped_vars.contains(src) {
-            escaped_vars.insert(dest);
+        if self.escaped_vars.contains(src) {
+            self.escaped_vars.insert(dest);
         } else {
-            escaped_vars.remove(&dest);
+            self.escaped_vars.remove(&dest);
         }
     }
 
-    fn track(&mut self, escaped_vars: &mut HashSet<Var>, var: &Var, mem_id: MemId) {
+    fn track(&mut self, var: &Var, mem_id: MemId) -> bool  {
         if self.vars.get(var).is_none() {
             self.mem_ids.insert(mem_id, vec![*var]);
             self.vars.insert(*var, mem_id);
+            self.escaped_vars.remove(var);
+            return true;
+        } else {
+            self.escaped_vars.remove(var)
         }
-
-        escaped_vars.remove(var);
     }
 
-    fn get_mem_id(&self, escaped_vars:&mut HashSet<Var>, var: &Var) -> Option<MemId> {
-        if escaped_vars.contains(var) {
+    fn get_mem_id(&self, var: &Var) -> Option<MemId> {
+        if self.escaped_vars.contains(var) {
             return None;
         }
 
@@ -76,11 +79,53 @@ impl EscapeDFA {
         }
     }
 
-    fn track_mem_location(&self, escaped_vars: &mut HashSet<Var>, mem_location: &mut MemoryLocation) {
-        if let Some(mem_id) = self.get_mem_id(escaped_vars, &mem_location.store) {
+    fn track_mem_location(&self, mem_location: &mut MemoryLocation) {
+        if let Some(mem_id) = self.get_mem_id(&mem_location.store) {
             mem_location.set_mem_id(Some(mem_id));
         } else {
             mem_location.set_mem_id(None);
+        }
+    }
+
+    fn merge(&mut self, other: &Self) -> bool {
+        let mut update_flag = false;
+
+        // merge the escaped vars
+        for var in other.escaped_vars.iter() {
+            update_flag = update_flag || self.escaped_vars.insert(*var);
+        }
+
+        // merge the mem_id to vars map
+        for (var, mem_id) in other.vars.iter() {
+            if self.vars.get(var).is_none() {
+                update_flag = update_flag || self.vars.insert(*var, *mem_id).is_none();
+                self.mem_ids.insert(*mem_id, vec![*var]);
+            }
+        }
+
+        // merge the vars that are matched with every memid
+        for (mem_id, other_vars) in other.mem_ids.iter() {
+            let this_vars = self.mem_ids.get_mut(mem_id).unwrap();
+
+            for v in other_vars {
+                if !this_vars.contains(v) {
+                    this_vars.push(*v);
+                }
+            }
+        }
+
+        update_flag
+    }
+}
+
+pub struct EscapeDFA {
+    mem_counter: usize,
+}
+
+impl EscapeDFA {
+    pub fn new() -> Self {
+        Self {
+            mem_counter: 0
         }
     }
 
@@ -92,32 +137,26 @@ impl EscapeDFA {
 }
 
 impl DFA for EscapeDFA {
-    type Data = HashSet<Var>;
+    type Data = EscapeDFAState;
 
     fn complete(&mut self, _: HashMap<BlockID, Self::Data>, _: HashMap<BlockID, Self::Data>) {}
 
     fn init_block(&mut self, _: &BasicBlock) -> (Self::Data, Self::Data) {
-        (HashSet::new(), HashSet::new())
+        (EscapeDFAState::new(), EscapeDFAState::new())
     }
 
     fn merge(&mut self, updating: &mut Self::Data, merge: &Self::Data) {
-        for var in merge.iter() {
-            updating.insert(*var);
-        }
+        updating.merge(merge);
     }
 
-    fn transfer(&mut self, block: &mut BasicBlock, escape_in: &HashSet<Var>, escape_out: &mut HashSet<Var>) -> bool {
-        let mut update_flag = false;
-
-        for var in escape_in.iter() {
-            escape_out.insert(*var);
-        }
+    fn transfer(&mut self, block: &mut BasicBlock, escape_in: &Self::Data, escape_out: &mut Self::Data) -> bool {
+        let mut update_flag = escape_out.merge(escape_in);
         
         for phi_node in block.phi_nodes.iter() {
             let mut owned = true;
 
             for (_, src) in phi_node.srcs.iter() {
-                if self.get_mem_id(escape_out, src).is_none() {
+                if escape_out.get_mem_id(src).is_none() {
                     owned = false;
 
                     break;
@@ -126,37 +165,42 @@ impl DFA for EscapeDFA {
 
             if owned {
                 let mem_id = self.new_mem_id();
-                self.track(escape_out, &phi_node.dest, mem_id);
+                escape_out.track(&phi_node.dest, mem_id);
             }
         }
 
         for instr in block.code.iter_mut() {
+            let change_flag =
             match instr {
                 Tac::NewMap { dest } |
                 Tac::NewList { dest } => {
                     let mem_id = self.new_mem_id();
-                    self.track(escape_out, dest, mem_id);
+
+                    escape_out.track(dest, mem_id)
                 }
                 Tac::Copy { dest, src } => {
                     if dest.is_global() {
-                        update_flag = update_flag || self.escape_var(escape_out, src);
+                        escape_out.escape_var(src)
                     } else {
-                        self.copy(escape_out, *dest, src);
+                        escape_out.copy(*dest, src);
+                        false
                     }
                 }
                 Tac::MemStore { ref mut mem, src } => {
-                    self.track_mem_location(escape_out, mem);
-
-                    update_flag = update_flag || self.escape_var(escape_out, src);
+                    escape_out.track_mem_location(mem);
+                    escape_out.escape_var(src)
                 }
                 Tac::MemLoad { ref mut mem, .. } => {
-                    self.track_mem_location(escape_out, mem);
+                    escape_out.track_mem_location(mem);
+                    false
                 }
                 Tac::LoadArg { src } => {
-                    update_flag = update_flag || self.escape_var(escape_out, src);
+                    escape_out.escape_var(src)
                 }
-                _ => {}
-            }
+                _ => false,
+            };
+
+            update_flag = update_flag || change_flag;
         }
 
         update_flag

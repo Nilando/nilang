@@ -1,3 +1,5 @@
+use super::dfa::DFA;
+use super::escape_dfa::EscapeDFA;
 use crate::parser::PackedSpans;
 use crate::symbol_map::SymID;
 use super::gvn::gvn_pass;
@@ -98,6 +100,8 @@ impl CFG {
     }
 
     pub fn optimize(&mut self) {
+        EscapeDFA::new().exec(self);
+        // escape dfa
         // memory ssa
         // gvn_pass
         // dce
