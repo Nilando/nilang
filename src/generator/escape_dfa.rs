@@ -2,15 +2,12 @@ use std::collections::{HashMap, HashSet};
 use super::tac::{Tac, Var};
 use super::cfg::{BasicBlock, BlockID};
 use super::dfa::DFA;
-use super::memory_ssa::MemoryAccess;
-
-#[derive(Clone, Eq, PartialEq, Hash, Copy, Debug)]
-pub struct MemId(usize);
+use super::memory_ssa::{MemoryAccess, MemStoreId};
 
 #[derive(Debug)]
 pub struct EscapeDFAState {
-    mem_ids: HashMap<MemId, Vec<Var>>,
-    vars: HashMap<Var, MemId>,
+    mem_ids: HashMap<MemStoreId, Vec<Var>>,
+    vars: HashMap<Var, MemStoreId>,
     escaped_vars: HashSet<Var>,
 }
 
@@ -57,7 +54,7 @@ impl EscapeDFAState {
         }
     }
 
-    fn track(&mut self, var: &Var, mem_id: MemId) -> bool  {
+    fn track(&mut self, var: &Var, mem_id: MemStoreId) -> bool  {
         if self.vars.get(var).is_none() {
             self.mem_ids.insert(mem_id, vec![*var]);
             self.vars.insert(*var, mem_id);
@@ -68,7 +65,7 @@ impl EscapeDFAState {
         }
     }
 
-    fn get_mem_id(&self, var: &Var) -> Option<MemId> {
+    fn get_mem_id(&self, var: &Var) -> Option<MemStoreId> {
         if self.escaped_vars.contains(var) {
             return None;
         }
@@ -82,9 +79,9 @@ impl EscapeDFAState {
 
     fn track_mem_location(&self, mem_acc: &mut MemoryAccess) {
         if let Some(mem_id) = self.get_mem_id(&mem_acc.store) {
-            mem_acc.set_mem_id(mem_id);
+            mem_acc.set_mem_store_id(mem_id);
         } else {
-            //mem_acc.set_mem_id(None);
+            //mem_acc.set_mem_store_id(None);
         }
     }
 
@@ -104,7 +101,7 @@ impl EscapeDFAState {
             }
         }
 
-        // merge the vars that are matched with every memid
+        // merge the vars that are matched with every MemStoreId
         for (mem_id, other_vars) in other.mem_ids.iter() {
             let this_vars = self.mem_ids.get_mut(mem_id).unwrap();
 
@@ -130,10 +127,10 @@ impl EscapeDFA {
         }
     }
 
-    fn new_mem_id(&mut self) -> MemId {
+    fn new_mem_id(&mut self) -> MemStoreId {
         self.mem_counter += 1;
 
-        MemId(self.mem_counter)
+        MemStoreId(self.mem_counter)
     }
 }
 

@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use super::tac::{Var, TacConst, VerID, Tac};
 use super::cfg::{CFG, BlockID};
-use super::escape_dfa::MemId;
 use super::gvn::ValueId;
 
 // The purpose of this code in this file is to apply versions to Memory
@@ -21,9 +20,6 @@ use super::gvn::ValueId;
 // The tracking and escape information is provided by the escape dfa.
 // The key constant information is provided by the GVN pass.
 //
-// Refresher:
-//  - a memory location consists of a store and a key
-//  - a memory location can have a tracking ID or be escaped
 //
 // Memory Conflict Rules:
 //  - a memory conflict may happen during a MemStore instruction
@@ -42,6 +38,9 @@ use super::gvn::ValueId;
 //      current version for that location
 //  - the algorithm propagates changes to memory location versions through the 
 //      CFG until it reaches convergence
+//
+#[derive(Clone, Eq, PartialEq, Hash, Copy, Debug)]
+pub struct MemStoreId(pub usize);
 
 #[derive(Debug, PartialEq)]
 pub struct MemoryAccess {
@@ -59,23 +58,40 @@ impl MemoryAccess {
         }
     }
 
-    pub fn set_mem_id(&mut self, mem_id: MemId) {
-        self.ssa_data.canon_store = Some(CanonMemStore::MemId(mem_id));
+    pub fn set_mem_store_id(&mut self, mem_id: MemStoreId) {
+        self.ssa_data.store_id = Some(mem_id);
+    }
+
+    pub fn get_canonical_access(&self) -> CanonicalMemoryAccess {
+        CanonicalMemoryAccess {
+            store: self.get_canonical_store(),
+            key: self.get_canonical_key(),
+        }
+    }
+
+    fn get_canonical_store(&self) -> CanonMemStore {
+        todo!()
+    }
+
+    fn get_canonical_key(&self) -> CanonMemKey {
+        todo!()
     }
 }
 
 #[derive(Debug, PartialEq)]
 struct MemoryAccessSSAData {
-    canon_store: Option<CanonMemStore>,
-    canon_key: Option<CanonMemKey>,
+    store_id: Option<MemStoreId>,
+    store_val: Option<ValueId>,
+    key_val: Option<ValueId>,
     ssa_version: Option<usize>,
 }
 
 impl MemoryAccessSSAData {
     fn new() -> Self {
         Self {
-            canon_store: None,
-            canon_key: None,
+            store_id: None,
+            store_val: None,
+            key_val: None,
             ssa_version: None,
         }
     }
@@ -100,7 +116,7 @@ impl CanonicalMemoryAccess {
 enum CanonMemStore {
     Var(Var),
     Value(ValueId),
-    MemId(MemId)
+    MemStoreId(MemStoreId)
 }
 
 #[derive(Debug, PartialEq)]
@@ -124,5 +140,19 @@ struct MemorySSADFA {
 pub fn apply_memory_ssa(cfg: &mut CFG) {
     // create a worklist of blocks
     // get block A from the worklist
-    // for 
+    // for instruction I in A
+    //  if I is a memory access
+    //      CA = canonical access for I
+    //      I.memory_version = current_version.get(CA)
+    //      continue
+    //
+    //  if I is a memory store
+    //      CA = canonical access for I
+    //      update the current_version of CA
+    //      I.memory_version = current_version.get(CA)
+    //      for every versioned canoncial access G
+    //          if G conflicts with CA 
+    //              update the current version for CA
+    //
+    //  propagate the versions to the successors
 }
