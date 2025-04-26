@@ -1,13 +1,14 @@
 use crate::parser::PackedSpans;
+use super::block::{BlockId, Block};
 use super::tac::{Tac, TacFunc, LabelID};
-use super::cfg::{CFG, BlockID, BasicBlock};
+use super::cfg::CFG;
 use std::collections::HashMap;
 
 pub struct CFGBuilder {
-    blocks:  Vec<BasicBlock>,
-    block_jump_map: HashMap<LabelID, Vec<BlockID>>, // label is jumped to by the block id
-    non_jump_edges: Vec<(BlockID, BlockID)>, // 0 -> 1
-    current_block: Option<BasicBlock>,
+    blocks:  Vec<Block>,
+    block_jump_map: HashMap<LabelID, Vec<BlockId>>, // label is jumped to by the block id
+    non_jump_edges: Vec<(BlockId, BlockId)>, // 0 -> 1
+    current_block: Option<Block>,
     non_jump_edge_flag: bool,
     spans: PackedSpans,
     tac_counter: usize,
@@ -65,19 +66,19 @@ impl CFGBuilder {
 
     fn link_blocks(&mut self) {
         for labeled_block in 0..self.blocks.len() {
-            if let Some(label) = self.blocks[labeled_block].label {
+            if let Some(label) = self.blocks[labeled_block].get_label() {
                 if let Some(jumping_blocks) = self.block_jump_map.get(&label) {
                     for jumping_block in jumping_blocks.iter() {
-                        self.blocks[*jumping_block].successors.push(labeled_block);
-                        self.blocks[labeled_block].predecessors.push(*jumping_block);
+                        self.blocks[*jumping_block].add_successor(labeled_block);
+                        self.blocks[labeled_block].add_predecessor(*jumping_block);
                     }
                 }
             }
         }
 
         for (first_block, then_block) in self.non_jump_edges.iter() {
-            self.blocks[*first_block].successors.push(*then_block);
-            self.blocks[*then_block].predecessors.push(*first_block);
+            self.blocks[*first_block].add_successor(*then_block);
+            self.blocks[*then_block].add_predecessor(*first_block);
         }
     }
 
@@ -122,13 +123,11 @@ impl CFGBuilder {
         self.tac_counter += 1;
 
         let block = self.take_or_init_current_block();
-        if tac.needs_span() && current_span.is_some() {
-            block.spans.push(current_span.unwrap(), i);
-        }
-        block.code.push(tac);
+
+        block.push_instr(tac, current_span);
     }
 
-    fn take_or_init_current_block(&mut self) -> &mut BasicBlock {
+    fn take_or_init_current_block(&mut self) -> &mut Block {
         if self.current_block.is_none() {
             let block = self.init_block(None);
             self.current_block = Some(block);
@@ -144,22 +143,22 @@ impl CFGBuilder {
         }
     }
 
-    fn set_current(&mut self, block: BasicBlock) {
+    fn set_current(&mut self, block: Block) {
         self.current_block = Some(block);
     }
 
-    fn init_block(&mut self, label: Option<LabelID>) -> BasicBlock {
+    fn init_block(&mut self, label: Option<LabelID>) -> Block {
         let id = self.blocks.len();
 
         if self.non_jump_edge_flag {
             self.non_jump_edges.push((id - 1, id));
         }
 
-        BasicBlock::new(id, label)
+        Block::new(id, label)
     }
 
     fn insert_jump_mapping(&mut self, label: LabelID) {
-        let block_id = self.take_or_init_current_block().id;
+        let block_id = self.take_or_init_current_block().get_id();
 
         if let Some(block_ids) = self.block_jump_map.get_mut(&label) {
             block_ids.push(block_id);
@@ -194,11 +193,11 @@ mod tests {
         let cfg = CFG::new(func);
 
         assert!(cfg.blocks.len() == 1);
-        assert!(cfg.blocks[0].id == ENTRY_BLOCK_ID);
-        assert!(cfg.blocks[0].code.len() == 1);
-        assert!(cfg.blocks[0].predecessors.is_empty());
-        assert!(cfg.blocks[0].successors.is_empty());
-        assert!(cfg.blocks[0].label.is_none());
+        assert!(cfg.blocks[0].get_id() == ENTRY_BLOCK_ID);
+        assert!(cfg.blocks[0].get_instrs().len() == 1);
+        assert!(cfg.blocks[0].get_predecessors().is_empty());
+        assert!(cfg.blocks[0].get_successors().is_empty());
+        assert!(cfg.blocks[0].get_label().is_none());
     }
 
     #[test]
@@ -219,20 +218,20 @@ mod tests {
 
         assert!(cfg.blocks.len() == 3);
 
-        assert!(b0.code.len() == 2);
-        assert!(b0.label.is_none());
-        assert!(b0.predecessors.is_empty());
-        assert!(b0.successors == vec![2, 1]);
+        assert!(b0.get_instrs().len() == 2);
+        assert!(b0.get_label().is_none());
+        assert!(b0.get_predecessors().is_empty());
+        assert!(b0.get_successors() == &vec![2, 1]);
 
-        assert!(b1.code.len() == 2);
-        assert!(b1.label.is_none());
-        assert!(b1.predecessors == vec![0]);
-        assert!(b1.successors == vec![2]);
+        assert!(b1.get_instrs().len() == 2);
+        assert!(b1.get_label().is_none());
+        assert!(b1.get_predecessors() == &vec![0]);
+        assert!(b1.get_successors() == &vec![2]);
 
-        assert!(b2.code.len() == 2);
-        assert!(b2.label == Some(1));
-        assert!(b2.predecessors == vec![0, 1]);
-        assert!(b2.successors.is_empty());
+        assert!(b2.get_instrs().len() == 2);
+        assert!(b2.get_label() == Some(1));
+        assert!(b2.get_predecessors() == &vec![0, 1]);
+        assert!(b2.get_successors().is_empty());
     }
 
     #[test]
@@ -258,19 +257,19 @@ mod tests {
 
         assert!(cfg.blocks.len() == 3);
 
-        assert!(b0.code.len() == 2);
-        assert!(b0.label == Some(1));
-        assert!(b0.predecessors == vec![1]);
-        assert!(b0.successors == vec![2, 1]);
+        assert!(b0.get_instrs().len() == 2);
+        assert!(b0.get_label() == Some(1));
+        assert!(b0.get_predecessors() == &vec![1]);
+        assert!(b0.get_successors() == &vec![2, 1]);
 
-        assert!(b1.code.len() == 3);
-        assert!(b1.label.is_none());
-        assert!(b1.predecessors == vec![0]);
-        assert!(b1.successors == vec![0]);
+        assert!(b1.get_instrs().len() == 3);
+        assert!(b1.get_label().is_none());
+        assert!(b1.get_predecessors() == &vec![0]);
+        assert!(b1.get_successors() == &vec![0]);
 
-        assert!(b2.code.len() == 2);
-        assert!(b2.label == Some(2));
-        assert!(b2.predecessors == vec![0]);
-        assert!(b2.successors.is_empty());
+        assert!(b2.get_instrs().len() == 2);
+        assert!(b2.get_label() == Some(2));
+        assert!(b2.get_predecessors() == &vec![0]);
+        assert!(b2.get_successors().is_empty());
     }
 }

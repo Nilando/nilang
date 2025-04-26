@@ -1,4 +1,5 @@
-use super::cfg::{CFG, BlockID, BasicBlock};
+use super::cfg::CFG;
+use super::block::{ BlockId, Block};
 use std::collections::HashMap;
 
 pub trait DFA: Sized {
@@ -14,18 +15,18 @@ pub trait DFA: Sized {
 
         self.complete(executor.inputs, executor.outputs);
     }
-    fn init_block(&mut self, block: &BasicBlock) -> (Self::Data, Self::Data);
-    fn complete(&mut self, inputs: HashMap<BlockID, Self::Data>, outputs: HashMap<BlockID, Self::Data>);
+    fn init_block(&mut self, block: &Block) -> (Self::Data, Self::Data);
+    fn complete(&mut self, inputs: HashMap<BlockId, Self::Data>, outputs: HashMap<BlockId, Self::Data>);
     fn merge(&mut self, updating: &mut Self::Data, merge: &Self::Data);
-    fn transfer(&mut self, block: &mut BasicBlock, start: &Self::Data, end: &mut Self::Data) -> bool;
+    fn transfer(&mut self, block: &mut Block, start: &Self::Data, end: &mut Self::Data) -> bool;
 }
 
 struct DFAExecutor<T> 
 where T: DFA
 {
-    inputs: HashMap<BlockID, <T as DFA>::Data>,
-    outputs: HashMap<BlockID, <T as DFA>::Data>,
-    work_list: Vec<BlockID>
+    inputs: HashMap<BlockId, <T as DFA>::Data>,
+    outputs: HashMap<BlockId, <T as DFA>::Data>,
+    work_list: Vec<BlockId>
 }
 
 impl<T: DFA> DFAExecutor<T> {
@@ -41,8 +42,8 @@ impl<T: DFA> DFAExecutor<T> {
         for block in cfg.blocks.iter() {
             let (init_input, init_output) = dfa.init_block(block);
 
-            self.inputs.insert(block.id, init_input);
-            self.outputs.insert(block.id, init_output);
+            self.inputs.insert(block.get_id(), init_input);
+            self.outputs.insert(block.get_id(), init_output);
         }
     }
 
@@ -58,39 +59,41 @@ impl<T: DFA> DFAExecutor<T> {
         }
     }
 
-    fn propagate_backward(&mut self, dfa: &mut T, block: &mut BasicBlock) {
-        let output = self.outputs.get_mut(&block.id).unwrap();
-        for succ_id in block.successors.iter() {
+    fn propagate_backward(&mut self, dfa: &mut T, block: &mut Block) {
+        let id = block.get_id();
+        let output = self.outputs.get_mut(&id).unwrap();
+        for succ_id in block.get_successors().iter() {
             let succ_input = self.inputs.get(succ_id).unwrap();
 
             dfa.merge(output, succ_input);
         }
 
-        let input = self.inputs.get_mut(&block.id).unwrap();
-        let output = self.outputs.get(&block.id).unwrap();
+        let input = self.inputs.get_mut(&id).unwrap();
+        let output = self.outputs.get(&id).unwrap();
         let update_flag = dfa.transfer(block, output, input);
 
         if update_flag {
-            for pred_id in block.predecessors.iter() {
+            for pred_id in block.get_predecessors().iter() {
                 self.work_list.push(*pred_id);
             }
         }
     }
 
-    fn propagate_forward(&mut self, dfa: &mut T, block: &mut BasicBlock) {
-        let input = self.inputs.get_mut(&block.id).unwrap();
-        for pred_id in block.predecessors.iter() {
+    fn propagate_forward(&mut self, dfa: &mut T, block: &mut Block) {
+        let id = block.get_id();
+        let input = self.inputs.get_mut(&id).unwrap();
+        for pred_id in block.get_predecessors().iter() {
             let pred_output = self.outputs.get(pred_id).unwrap();
 
             dfa.merge(input, pred_output);
         }
 
-        let output = self.outputs.get_mut(&block.id).unwrap();
-        let input = self.inputs.get(&block.id).unwrap();
+        let output = self.outputs.get_mut(&id).unwrap();
+        let input = self.inputs.get(&id).unwrap();
         let update_flag = dfa.transfer(block, input, output);
 
         if update_flag {
-            for succ_id in block.successors.iter() {
+            for succ_id in block.get_successors().iter() {
                 self.work_list.push(*succ_id);
             }
         }

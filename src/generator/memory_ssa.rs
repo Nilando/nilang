@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use super::tac::{Var, TacConst, VerID, Tac};
-use super::cfg::{CFG, BlockID};
+use super::cfg::CFG;
+use super::block::BlockId;
 use super::gvn::ValueId;
 
 // The purpose of this code in this file is to apply versions to Memory
@@ -134,7 +135,7 @@ struct MemorySSASnapshot {
 
 struct MemorySSADFA {
     version_counter: usize,
-    resolved_entry_versions: HashMap<BlockID, HashMap<CanonicalMemoryAccess, usize>>,
+    resolved_entry_versions: HashMap<BlockId, HashMap<CanonicalMemoryAccess, usize>>,
 }
 
 pub fn apply_memory_ssa(cfg: &mut CFG) {

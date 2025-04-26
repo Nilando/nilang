@@ -1,15 +1,15 @@
-use super::cfg::{BlockID, BasicBlock};
+use super::block::{BlockId, Block};
 use super::dfa::DFA;
 use super::tac::Var;
 use std::collections::{HashSet, HashMap};
 
 pub struct LivenessDFA {
-    live_in: HashMap<BlockID, HashSet<Var>>,
-    live_out: HashMap<BlockID, HashSet<Var>>,
+    live_in: HashMap<BlockId, HashSet<Var>>,
+    live_out: HashMap<BlockId, HashSet<Var>>,
 }
 
 impl LivenessDFA {
-    pub fn is_live_on_entry(&self, block_id: BlockID, var: &Var) -> bool {
+    pub fn is_live_on_entry(&self, block_id: BlockId, var: &Var) -> bool {
         self.live_in.get(&block_id).unwrap().get(&var).is_some()
     }
 
@@ -27,12 +27,12 @@ impl DFA for LivenessDFA {
     type Data = HashSet<Var>;
 
 
-    fn complete(&mut self, inputs: HashMap<BlockID, Self::Data>, outputs: HashMap<BlockID, Self::Data>) {
+    fn complete(&mut self, inputs: HashMap<BlockId, Self::Data>, outputs: HashMap<BlockId, Self::Data>) {
         self.live_in = inputs;
         self.live_out = outputs;
     }
 
-    fn init_block(&mut self, block: &BasicBlock) -> (Self::Data, Self::Data) {
+    fn init_block(&mut self, block: &Block) -> (Self::Data, Self::Data) {
         if let Some(var_id) = block.get_return_var_id() {
             return (HashSet::new(), HashSet::from([var_id]));
         }
@@ -40,11 +40,11 @@ impl DFA for LivenessDFA {
         (HashSet::new(), HashSet::new())
     }
 
-    fn transfer(&mut self, block: &mut BasicBlock, live_out: &Self::Data, live_in: &mut Self::Data) -> bool {
+    fn transfer(&mut self, block: &mut Block, live_out: &Self::Data, live_in: &mut Self::Data) -> bool {
         let mut defined: HashSet<Var> = HashSet::new();
         let mut updated_flag = false;
 
-        for instr in block.code.iter() {
+        for instr in block.get_instrs().iter() {
             let (u1, u2, u3) = instr.used_vars();
 
             for v in [u1, u2, u3] {

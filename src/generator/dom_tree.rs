@@ -1,10 +1,11 @@
-use super::cfg::{BlockID, CFG};
+use super::cfg::CFG;
+use super::block::BlockId;
 use std::collections::{HashSet, HashMap};
 
 pub fn compute_dom_tree(cfg: &mut CFG) {
-    let mut work_list = vec![cfg.get_entry_block().id];
-    let mut visited = HashSet::from([cfg.get_entry_block().id]);
-    let mut dom_tree: HashMap<BlockID, Vec<BlockID>> = HashMap::new();
+    let mut work_list = vec![cfg.get_entry_block().get_id()];
+    let mut visited = HashSet::from([cfg.get_entry_block().get_id()]);
+    let mut dom_tree: HashMap<BlockId, Vec<BlockId>> = HashMap::new();
 
     while let Some(block_id) = work_list.pop() {
         let block = &cfg[block_id];
@@ -15,10 +16,10 @@ pub fn compute_dom_tree(cfg: &mut CFG) {
             blocks.retain(|b| !dominated_blocks.contains(b));
         }
 
-        dom_tree.insert(block.id, dominated_blocks.into_iter().collect());
+        dom_tree.insert(block.get_id(), dominated_blocks.into_iter().collect());
 
 
-        for succ in block.successors.iter() {
+        for succ in block.get_successors().iter() {
             if visited.contains(&succ) {
                 continue;
             }

@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use super::tac::{Tac, Var};
-use super::cfg::{BasicBlock, BlockID};
+use super::block::{Block, BlockId};
 use super::dfa::DFA;
 use super::memory_ssa::{MemoryAccess, MemStoreId};
 
@@ -137,9 +137,9 @@ impl EscapeDFA {
 impl DFA for EscapeDFA {
     type Data = EscapeDFAState;
 
-    fn complete(&mut self, _: HashMap<BlockID, Self::Data>, _: HashMap<BlockID, Self::Data>) {}
+    fn complete(&mut self, _: HashMap<BlockId, Self::Data>, _: HashMap<BlockId, Self::Data>) {}
 
-    fn init_block(&mut self, _: &BasicBlock) -> (Self::Data, Self::Data) {
+    fn init_block(&mut self, _: &Block) -> (Self::Data, Self::Data) {
         (EscapeDFAState::new(), EscapeDFAState::new())
     }
 
@@ -147,10 +147,10 @@ impl DFA for EscapeDFA {
         updating.merge(merge);
     }
 
-    fn transfer(&mut self, block: &mut BasicBlock, escape_in: &Self::Data, escape_out: &mut Self::Data) -> bool {
+    fn transfer(&mut self, block: &mut Block, escape_in: &Self::Data, escape_out: &mut Self::Data) -> bool {
         let mut update_flag = escape_out.merge(escape_in);
         
-        for phi_node in block.phi_nodes.iter() {
+        for phi_node in block.get_phi_nodes().iter() {
             let mut owned = true;
 
             for (_, src) in phi_node.srcs.iter() {
@@ -167,7 +167,7 @@ impl DFA for EscapeDFA {
             }
         }
 
-        for instr in block.code.iter_mut() {
+        for instr in block.get_instrs_mut().iter_mut() {
             let change_flag =
             match instr {
                 Tac::NewMap { dest } |

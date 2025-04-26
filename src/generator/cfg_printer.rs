@@ -1,6 +1,7 @@
 use crate::parser::Op;
 use crate::symbol_map::SymbolMap;
-use super::cfg::{CFG, BasicBlock, BlockID};
+use super::cfg::CFG;
+use super::block::{Block, BlockId};
 use super::tac::{VarID, Var, Tac, TacConst};
 use super::walker::MAIN_FUNC_ID;
 
@@ -33,10 +34,10 @@ impl<'a> CFGPrinter<'a> {
         self.result
     }
 
-    fn stringify_block(&mut self, block: &BasicBlock) {
+    fn stringify_block(&mut self, block: &Block) {
         self.push_block_header(block);
 
-        for tac in block.code.iter() {
+        for tac in block.get_instrs().iter() {
             self.result.push_str("  ");
             match tac {
                 Tac::Copy { dest, src } => {
@@ -97,7 +98,7 @@ impl<'a> CFGPrinter<'a> {
                     let succ_id = self.cfg.get_block_from_label(*label);
                     self.result.push_str(&format!("jump block{succ_id}"));
 
-                    self.print_block_args(block.id, succ_id);
+                    self.print_block_args(block.get_id(), succ_id);
                 }
                 Tac::Jnt { label, src } => {
                     self.result.push_str("jnt ");
@@ -106,7 +107,7 @@ impl<'a> CFGPrinter<'a> {
                     let succ_id = self.cfg.get_block_from_label(*label);
                     self.result.push_str(&format!(" block{succ_id}"));
 
-                    self.print_block_args(block.id, succ_id);
+                    self.print_block_args(block.get_id(), succ_id);
                 }
                 Tac::Jit { label, src } => {
                     self.result.push_str("jit ");
@@ -115,7 +116,7 @@ impl<'a> CFGPrinter<'a> {
                     let succ_id = self.cfg.get_block_from_label(*label);
                     self.result.push_str(&format!(" block{succ_id}"));
 
-                    self.print_block_args(block.id, succ_id);
+                    self.print_block_args(block.get_id(), succ_id);
                 }
                 Tac::Return { src } => {
                     self.result.push_str("return ");
@@ -134,9 +135,11 @@ impl<'a> CFGPrinter<'a> {
         }
 
         if block.continues() {
-            if self.cfg.blocks.len() > block.id + 1 {
-                self.result.push_str(&format!("  next block{}", block.id + 1));
-                self.print_block_args(block.id, block.id + 1);
+            // TODO: this logic is wrong, the next block may not have id + 1 
+            let id = block.get_id();
+            if self.cfg.blocks.len() > id + 1 {
+                self.result.push_str(&format!("  next block{}", id + 1));
+                self.print_block_args(id, id + 1);
                 self.result.push_str("\n");
             }
         }
@@ -144,13 +147,15 @@ impl<'a> CFGPrinter<'a> {
         self.result.push_str("\n");
     }
 
-    fn print_block_args(&mut self, caller_id: BlockID, calle_id: BlockID) {
-        if !self.cfg[calle_id].phi_nodes.is_empty() {
+    fn print_block_args(&mut self, caller_id: BlockId, calle_id: BlockId) {
+        let phi_nodes = self.cfg[calle_id].get_phi_nodes();
+
+        if !phi_nodes.is_empty() {
             self.result.push_str(&format!("("));
-            for (i, node) in self.cfg[calle_id].phi_nodes.iter().enumerate() {
+            for (i, node) in phi_nodes.iter().enumerate() {
                 self.push_var(node.srcs.get(&caller_id).unwrap());
 
-                if  i + 1 < self.cfg[calle_id].phi_nodes.len() {
+                if  i + 1 < phi_nodes.len() {
                     self.result.push_str(", ");
                 }
             }
@@ -198,18 +203,20 @@ impl<'a> CFGPrinter<'a> {
         self.result.push_str(&s);
     }
 
-    fn push_block_header(&mut self, block: &BasicBlock) {
-        if block.phi_nodes.is_empty() {
-            let block_def = format!("block{}:\n", block.id);
+    fn push_block_header(&mut self, block: &Block) {
+        let phi_nodes = block.get_phi_nodes();
+
+        if phi_nodes.is_empty() {
+            let block_def = format!("block{}:\n", block.get_id());
             self.result.push_str(&block_def);
         } else {
-            let block_def = format!("block{}(", block.id, );
+            let block_def = format!("block{}(", block.get_id(), );
             self.result.push_str(&block_def);
 
-            for (idx, node) in block.phi_nodes.iter().enumerate() {
+            for (idx, node) in phi_nodes.iter().enumerate() {
                 self.push_var(&node.dest);
 
-                if idx + 1 < block.phi_nodes.len() {
+                if idx + 1 < phi_nodes.len() {
                     self.result.push_str(", ");
                 }
             }

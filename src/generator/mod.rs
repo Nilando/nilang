@@ -10,8 +10,8 @@ mod dom_tree;
 mod gvn;
 mod memory_ssa;
 mod walker;
-mod graph_viz;
-// mod dce;
+mod cfg_vizualizer;
+mod block;
 
 use crate::symbol_map::SymbolMap;
 use crate::parser::Stmt;
@@ -33,7 +33,7 @@ pub fn compile_ast(ast: Vec<Stmt>, syms: &mut SymbolMap) -> Program {
 
         println!("{}", cfg_to_string(&cfg, syms));
 
-        graph_viz::cfg_to_svg(&cfg);
+        //graph_viz::cfg_to_svg(&cfg);
     });
 
     todo!("build program")

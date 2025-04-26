@@ -1,4 +1,5 @@
-use super::cfg::{CFG, BasicBlock, BlockID, PhiNode};
+use super::cfg::{CFG, PhiNode};
+use super::block::{Block, BlockId};
 use std::collections::{HashMap, HashSet};
 use super::liveness_dfa::LivenessDFA;
 use super::dfa::DFA;
@@ -10,47 +11,33 @@ pub fn convert_cfg_to_ssa(cfg: &mut CFG) {
     SSAConverter::convert(cfg);
 }
 
-fn find_phi_nodes(cfg: &mut CFG) -> HashMap<BlockID, Vec<PhiNode>> {
+fn insert_phi_nodes(cfg: &mut CFG) {
     let mut liveness = LivenessDFA::new();
     liveness.exec(cfg);
-    let mut phi_nodes: HashMap<BlockID, Vec<PhiNode>> = HashMap::new();
 
-    for block in cfg.blocks.iter() {
-        for df_block_id in cfg.compute_dominance_frontier(block).iter() {
+    for block_id in cfg.get_block_ids() {
+        let dominance_frontier = cfg.compute_dominance_frontier(&cfg[block_id]);
+        let block = &mut cfg[block_id];
+
+        for df_block_id in dominance_frontier.iter() {
             for var in block.defined_vars() {
-                if let Some(nodes) = phi_nodes.get(&df_block_id) {
-                    if nodes.iter().find(|node| node.dest == var).is_some() {
-                        continue;
-                    }
+                // we've already inserted a node for this var
+                if block.get_phi_nodes().iter().find(|node| node.dest == var).is_some() {
+                    continue;
                 }
 
+                // var is not live on entry so it doesn't need a phi node
                 if !liveness.is_live_on_entry(*df_block_id, &var) {
                     continue;
                 }
 
-                let new_phi = PhiNode {
+                let phi = PhiNode {
                     dest: var,
                     srcs: HashMap::new()
                 };
 
-                if let Some(nodes) = phi_nodes.get_mut(&df_block_id) {
-                    nodes.push(new_phi);
-                } else {
-                    phi_nodes.insert(*df_block_id, vec![new_phi]);
-                }
+                block.push_phi_node(phi);
             }
-        }
-    }
-
-    phi_nodes
-}
-
-fn insert_phi_nodes(cfg: &mut CFG) {
-    let mut phi_nodes = find_phi_nodes(cfg);
-
-    for block in cfg.blocks.iter_mut() {
-        if let Some(nodes) = phi_nodes.remove(&block.id) {
-            block.phi_nodes = nodes;
         }
     }
 }
@@ -58,7 +45,7 @@ fn insert_phi_nodes(cfg: &mut CFG) {
 struct SSAConverter {
     version_counters: HashMap<VarID, usize>,
     version_stacks: Vec<HashMap<VarID, VerID>>,
-    visited: HashSet<BlockID>
+    visited: HashSet<BlockId>
 }
 
 impl SSAConverter {
@@ -77,18 +64,18 @@ impl SSAConverter {
     fn convert_cfg(&mut self, cfg: &mut CFG) {
         let entry_block = cfg.get_entry_block();
 
-        self.convert_block(cfg, entry_block.id);
+        self.convert_block(cfg, entry_block.get_id());
     }
 
-    fn convert_block(&mut self, cfg: &mut CFG, block_id: BlockID) {
+    fn convert_block(&mut self, cfg: &mut CFG, block_id: BlockId) {
         let block = &mut cfg[block_id];
-        let successor_ids = block.successors.clone();
+        let successor_ids = block.get_successors().to_vec();
 
         self.visited.insert(block_id);
         self.version_stacks.push(HashMap::new());
         self.version_self_phi_nodes(block);
         self.version_instructions(block);
-        self.version_successor_phi_nodes(block.id, successor_ids.clone(), cfg);
+        self.version_successor_phi_nodes(block.get_id(), successor_ids.clone(), cfg);
 
         for succ_id in successor_ids.iter() {
             if self.visited.contains(&succ_id) { continue; }
@@ -99,11 +86,11 @@ impl SSAConverter {
         self.version_stacks.pop();
     }
 
-    fn version_successor_phi_nodes(&mut self, predecessor_id: BlockID, successor_ids: Vec<BlockID>, cfg: &mut CFG) {
+    fn version_successor_phi_nodes(&mut self, predecessor_id: BlockId, successor_ids: Vec<BlockId>, cfg: &mut CFG) {
         for succ_id in successor_ids.iter() {
             let succ = &mut cfg[*succ_id];
 
-            for phi_node in succ.phi_nodes.iter_mut() {
+            for phi_node in succ.get_phi_nodes_mut().iter_mut() {
                 let version = self.get_version(phi_node.dest.id);
                 let mut var = phi_node.dest;
 
@@ -113,8 +100,8 @@ impl SSAConverter {
         }
     }
 
-    fn version_instructions(&mut self, block: &mut BasicBlock) {
-        for code in block.code.iter_mut() {
+    fn version_instructions(&mut self, block: &mut Block) {
+        for code in block.get_instrs_mut().iter_mut() {
             let (u1, u2, u3) = code.used_vars_mut();
             for uv in [u1, u2, u3].into_iter() {
                 if let Some(used_var) = uv {
@@ -144,8 +131,8 @@ impl SSAConverter {
         }
     }
 
-    fn version_self_phi_nodes(&mut self, block: &mut BasicBlock) {
-        for phi_node in block.phi_nodes.iter_mut() {
+    fn version_self_phi_nodes(&mut self, block: &mut Block) {
+        for phi_node in block.get_phi_nodes_mut().iter_mut() {
             self.apply_dest_versioning(&mut phi_node.dest);
         }
     }
