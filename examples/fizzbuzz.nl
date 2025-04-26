@@ -32,3 +32,4 @@ print(fizzbuzz(17)); // buzz
 print(fizzbuzz(14)); // buzz
 print(fizzbuzz(70)); // fizzbuzz
 print(fizzbuzz(35)); // fizzbuzz
+print(fizzbuzz(57)); // fizzbuzz

@@ -101,7 +101,6 @@ impl CFG {
 
     pub fn optimize(&mut self) {
         EscapeDFA::new().exec(self);
-        // escape dfa
         // memory ssa
         // gvn_pass
         // dce

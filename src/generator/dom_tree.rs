@@ -1,4 +1,4 @@
-use super::cfg::{BlockID, BasicBlock, CFG};
+use super::cfg::{BlockID, CFG};
 use std::collections::{HashSet, HashMap};
 
 pub fn compute_dom_tree(cfg: &mut CFG) {

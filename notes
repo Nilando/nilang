@@ -1,44 +1,66 @@
 VERSION 0.1.0
-- display syntax and runtime errors nicely
-- custom bytecode format
-- functions are first class citizens
-- function closures
-- global variables
-- simple read & print io
-- working repl
-- concurrent garbage collection
-- standard library
-- lsp
-- interop with rust
-- import and export files
-- async and await
-- type type
-- error throwing and catching
-- dependency manager
-- basic static analysis
-  - dead code warnings
-  - unused variable warnings
-  - unused expression warnings
 
 BUGS:
 - only allow one of each sym in func input
 
-fn create_user(params) {
-  this = params;
+SPIKES:
+- remove unreachable blocks from cfg
+  - requires refactor to cfg
+- build graph vizualization
+  - cfg printer needs to be refactored
+- remove String from TacConst ?? this is unclear
+  - might need to separate logic of const string an mutable string
 
-  this.get_name = fn() {
-    return this.name;
-  }
+BACKLOG:
+0. Build Dom Tree -- DONE (needs tests)
+1. Escape Analysis -- DONE (needs tests)
+2. Memory SSA -- in progress
+3. GVN pass
+4. DCE pass
+5. Jump threading pass
+6. Loop Invariant Code Motion (Maybe)
+7. register allocation over SSA => HUGE MILESTONE !!! CELEBRATE !!!
+8. String Interpolation
+9. For loops on strings, lists, and maps
+10. importing and exporting
 
-  this.set_name = fn(name) {
-    this.name = name;
-  }
+GOALS
+- complete AOC 2025 with this language
+- functions are first class citizens
+- function closures
+- global variables
+- display syntax and runtime errors nicely
+- simple read & print io
+- repl
+- concurrent garbage collection
+- debugger
+- export and import files
 
-  this.say_name = fn() {
-    print this.name;
-  }
-  
-  this.is_confirmed = fn() {
-    return this.name;
-  }
-}
+NON GOALS 
+- async and await
+- LSP
+- dependency manager
+- static analysis
+- interop with rust
+
+DECEMBER -> COMPLETE AOC
+NOVEMBER
+OCTOBER
+AUGUST
+JULY
+JUNE
+MAY -> be done with register allocation
+
+APRIL
+- implemented CFG creation from TAC
+- implemented converting CFG to SSA form
+- added boolean shortcircuiting
+- symbol map can convert 2 ways
+- completed escape DFA
+- CFG printing and graph vizualization
+
+MARCH
+- refactored the lexer to be much more functional
+- completely redesigned the parser by using parser combinators
+  - this gave a huge improvement in readability
+- started redesign of the TAC generator

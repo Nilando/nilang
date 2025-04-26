@@ -1,7 +1,8 @@
 use std::collections::{HashMap, HashSet};
-use super::tac::{MemoryLocation, Tac, Var};
+use super::tac::{Tac, Var};
 use super::cfg::{BasicBlock, BlockID};
 use super::dfa::DFA;
+use super::memory_ssa::MemoryAccess;
 
 #[derive(Clone, Eq, PartialEq, Hash, Copy, Debug)]
 pub struct MemId(usize);
@@ -79,11 +80,11 @@ impl EscapeDFAState {
         }
     }
 
-    fn track_mem_location(&self, mem_location: &mut MemoryLocation) {
-        if let Some(mem_id) = self.get_mem_id(&mem_location.store) {
-            mem_location.set_mem_id(Some(mem_id));
+    fn track_mem_location(&self, mem_acc: &mut MemoryAccess) {
+        if let Some(mem_id) = self.get_mem_id(&mem_acc.store) {
+            mem_acc.set_mem_id(mem_id);
         } else {
-            mem_location.set_mem_id(None);
+            //mem_acc.set_mem_id(None);
         }
     }
 

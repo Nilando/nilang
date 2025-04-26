@@ -10,6 +10,7 @@ mod dom_tree;
 mod gvn;
 mod memory_ssa;
 mod walker;
+mod graph_viz;
 // mod dce;
 
 use crate::symbol_map::SymbolMap;
@@ -26,11 +27,13 @@ pub fn compile_ast(ast: Vec<Stmt>, syms: &mut SymbolMap) -> Program {
         let mut cfg = CFG::new(func);
 
         cfg.optimize();
-        println!("{:#?}", cfg);
+        // println!("{:#?}", cfg);
 
         // run the register allocator on the cfg to get a program
 
         println!("{}", cfg_to_string(&cfg, syms));
+
+        graph_viz::cfg_to_svg(&cfg);
     });
 
     todo!("build program")
