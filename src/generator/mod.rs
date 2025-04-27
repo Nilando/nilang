@@ -7,7 +7,7 @@ mod dfa;
 mod liveness_dfa;
 mod escape_dfa;
 mod dom_tree;
-mod gvn;
+//mod gvn;
 mod memory_ssa;
 mod walker;
 mod cfg_vizualizer;

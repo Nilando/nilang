@@ -2,7 +2,10 @@ use std::collections::HashMap;
 use super::tac::{Var, TacConst, VerID, Tac};
 use super::cfg::CFG;
 use super::block::BlockId;
-use super::gvn::ValueId;
+//use super::gvn::ValueId;
+
+
+type ValueId = usize; // PLACEHOLDER
 
 // The purpose of this code in this file is to apply versions to Memory
 // which applies versions to "MemoryLocation"s in such a way that a versioned 
