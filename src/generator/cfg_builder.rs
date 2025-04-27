@@ -173,7 +173,7 @@ mod tests {
     use super::*;
     use super::super::{
         tac::{TacConst, Var},
-        walker::tests::fabricate_tac_func,
+        lowering::tests::fabricate_tac_func,
         cfg::ENTRY_BLOCK_ID,
     };
 

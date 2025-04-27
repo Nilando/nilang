@@ -3,7 +3,7 @@ use crate::symbol_map::SymbolMap;
 use super::cfg::CFG;
 use super::block::{Block, BlockId};
 use super::tac::{VarID, Var, Tac, TacConst};
-use super::walker::MAIN_FUNC_ID;
+use super::lowering::MAIN_FUNC_ID;
 
 struct CFGPrinter<'a> {
     cfg: &'a CFG,

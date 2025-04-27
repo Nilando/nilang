@@ -42,7 +42,7 @@ impl FuncLoweringCtx {
 
 struct LoweringCtx<'a> {
     func_counter: usize,
-    generators: Vec<FuncLoweringCtx>,
+    funcs: Vec<FuncLoweringCtx>,
     streaming_callback: Box<dyn FnMut(TacFunc) + 'a>
 }
 
@@ -52,7 +52,7 @@ impl<'a> LoweringCtx<'a> {
 
         Self {
             func_counter: 0,
-            generators: vec![main_func],
+            funcs: vec![main_func],
             streaming_callback: Box::new(callback)
         }
     } 
@@ -324,11 +324,11 @@ impl<'a> LoweringCtx<'a> {
         let func_id = self.new_func_id();
         let generator = FuncLoweringCtx::new(func_id, HashSet::from_iter(inputs.item));
 
-        self.generators.push(generator);
+        self.funcs.push(generator);
 
         self.generate_stmts(stmts);
 
-        let upvalues = self.generators.last().unwrap().func.upvalues.clone();
+        let upvalues = self.funcs.last().unwrap().func.upvalues.clone();
 
         self.stream_current_func();
 
@@ -336,7 +336,7 @@ impl<'a> LoweringCtx<'a> {
     }
 
     fn stream_current_func(&mut self) {
-        let func = self.generators.pop().unwrap().func;
+        let func = self.funcs.pop().unwrap().func;
 
         (self.streaming_callback)(func);
     }
@@ -517,33 +517,33 @@ impl<'a> LoweringCtx<'a> {
         self.emit(Tac::Jump { label })
     }
 
-    fn last_instr_has_dest(&mut self) -> bool {
-        self.generators.last().unwrap().func.tac.last().unwrap().dest_var().is_some()
+    fn last_instr_has_dest(&self) -> bool {
+        self.get_current_func().func.tac.last().unwrap().dest_var().is_some()
     }
 
     fn update_prev_dest(&mut self, var: Var) {
-        // This isn't needed but makes the printed CFG a little more readable
-        self.generators.last_mut().unwrap().temp_counter -= 1; 
+        let f = self.get_current_func_mut();
 
-        let dest = self.generators.last_mut().unwrap().func.tac.last_mut().unwrap().dest_var_mut().unwrap();
+        f.temp_counter -= 1; // This isn't needed but makes the printed CFG a little more readable
+
+        let dest = f.func.tac.last_mut().unwrap().dest_var_mut().unwrap();
 
         *dest = var;
-        // if the last instr was a keystore
     }
 
     fn emit(&mut self, tac: Tac) {
-        self.generators.last_mut().unwrap().func.tac.push(tac);
+        self.funcs.last_mut().unwrap().func.tac.push(tac);
     }
 
     fn emit_spanned(&mut self, tac: Tac, span: Span) {
-        let func = &mut self.generators.last_mut().unwrap().func;
+        let func = &mut self.funcs.last_mut().unwrap().func;
 
         func.tac.push(tac);
         func.spans.push(span, func.tac.len() - 1);
     }
 
     fn push_loop_ctx(&mut self, ctx: LoopCtx) {
-        self.generators.last_mut().as_mut().unwrap().loop_ctxs.push(ctx);
+        self.get_current_func_mut().loop_ctxs.push(ctx);
     }
 
     fn new_func_id(&mut self) -> FuncID {
@@ -552,46 +552,49 @@ impl<'a> LoweringCtx<'a> {
     }
 
     fn new_temp(&mut self) -> Var {
-        self.generators.last_mut().unwrap().temp_counter += 1;
+        let f = self.get_current_func_mut();
 
-        Var::temp(self.generators.last().unwrap().temp_counter)
+        f.temp_counter += 1;
+        Var::temp(f.temp_counter)
     }
 
     fn new_long_temp(&mut self) -> Var {
-        self.generators.last_mut().unwrap().temp_counter += 1;
+        let f = self.get_current_func_mut();
 
-        Var::long_temp(self.generators.last().unwrap().temp_counter)
+        f.temp_counter += 1;
+        Var::long_temp(f.temp_counter)
     }
 
     fn new_label(&mut self) -> LabelID {
-        self.generators.last_mut().unwrap().label_counter += 1;
+        let f = self.get_current_func_mut();
 
-        self.generators.last().unwrap().label_counter
+        f.label_counter += 1;
+        f.label_counter
     }
 
     fn get_loop_start(&mut self) -> LabelID {
-        self.generators.last_mut().unwrap().loop_ctxs.last().unwrap().start
+        self.get_current_func_mut().loop_ctxs.last().unwrap().start
     }
 
     fn get_loop_end(&mut self) -> LabelID {
-        self.generators.last_mut().unwrap().loop_ctxs.last().unwrap().end
+        self.get_current_func_mut().loop_ctxs.last().unwrap().end
     }
 
     fn define_var(&mut self, sym: SymID) {
-        self.generators.last_mut().unwrap().defined_variables.insert(sym);
+        self.get_current_func_mut().defined_variables.insert(sym);
     }
 
     fn set_upvalue(&mut self, sym: SymID) {
-        self.generators.last_mut().unwrap().func.upvalues.insert(sym);
+        self.get_current_func_mut().func.upvalues.insert(sym);
     }
 
     fn defined_local(&self, sym: SymID) -> bool {
-        self.generators.last().unwrap().defined_variables.contains(&sym)
+        self.get_current_func().defined_variables.contains(&sym)
     }
 
     fn defined_upvalue(&self, sym: SymID) -> bool {
-        for i in 0..(self.generators.len() - 1) {
-            if self.generators[i].defined_variables.contains(&sym) {
+        for i in 0..(self.funcs.len() - 1) {
+            if self.funcs[i].defined_variables.contains(&sym) {
                 return true;
             }
         }
@@ -603,6 +606,14 @@ impl<'a> LoweringCtx<'a> {
         for stmt in stmts.into_iter() {
             self.generate_stmt(stmt);
         }
+    }
+
+    fn get_current_func_mut(&mut self) -> &mut FuncLoweringCtx {
+        self.funcs.last_mut().unwrap()
+    }
+
+    fn get_current_func(&self) -> &FuncLoweringCtx {
+        self.funcs.last().unwrap()
     }
 }
 
@@ -649,8 +660,8 @@ pub mod tests {
 
         ctx.generate_value(Value::Int(69));
 
-        assert!(ctx.generators[0].func.tac[0] == Tac::LoadConst { dest: Var::temp(1), src: TacConst::Int(69) });
-        assert!(ctx.generators[0].func.spans.is_empty());
+        assert!(ctx.funcs[0].func.tac[0] == Tac::LoadConst { dest: Var::temp(1), src: TacConst::Int(69) });
+        assert!(ctx.funcs[0].func.spans.is_empty());
     }
 
     #[test]
@@ -659,7 +670,7 @@ pub mod tests {
 
         ctx.generate_value(Value::String("test".to_string()));
 
-        assert!(ctx.generators[0].func.tac[0] == Tac::LoadConst { dest: Var::temp(1), src: TacConst::String("test".to_string()) });
+        assert!(ctx.funcs[0].func.tac[0] == Tac::LoadConst { dest: Var::temp(1), src: TacConst::String("test".to_string()) });
     }
 
     #[test]
@@ -668,7 +679,7 @@ pub mod tests {
 
         ctx.generate_value(Value::Float(612357.234532));
 
-        assert!(ctx.generators[0].func.tac[0] == Tac::LoadConst { dest: Var::temp(1), src: TacConst::Float(612357.234532) })
+        assert!(ctx.funcs[0].func.tac[0] == Tac::LoadConst { dest: Var::temp(1), src: TacConst::Float(612357.234532) })
     }
 
     #[test]
@@ -677,8 +688,8 @@ pub mod tests {
 
         ctx.generate_expr(Spanned::new(Expr::Read, (0, 1)));
 
-        assert!(ctx.generators[0].func.tac[0] == Tac::Read { dest: Var::temp(1) });
-        assert!(ctx.generators[0].func.spans.is_empty());
+        assert!(ctx.funcs[0].func.tac[0] == Tac::Read { dest: Var::temp(1) });
+        assert!(ctx.funcs[0].func.spans.is_empty());
     }
 
     #[test]
