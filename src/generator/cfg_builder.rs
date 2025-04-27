@@ -1,10 +1,14 @@
 use crate::parser::PackedSpans;
 use super::block::{BlockId, Block};
-use super::tac::{Tac, TacFunc, LabelID};
+use super::tac::{Tac, TacFunc, FuncID, LabelID};
 use super::cfg::CFG;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+use crate::symbol_map::SymID;
 
 pub struct CFGBuilder {
+    id: FuncID,
+    inputs: HashSet<SymID>,
+    upvalues: HashSet<SymID>,
     blocks:  Vec<Block>,
     block_jump_map: HashMap<LabelID, Vec<BlockId>>, // label is jumped to by the block id
     non_jump_edges: Vec<(BlockId, BlockId)>, // 0 -> 1
@@ -15,53 +19,48 @@ pub struct CFGBuilder {
 }
 
 impl CFGBuilder {
-    fn new(spans: PackedSpans) -> Self {
+    pub fn new(id: FuncID, inputs: HashSet<SymID>) -> Self {
         Self {
+            id, 
+            inputs,
+            upvalues: HashSet::new(),
             blocks: vec![],
             block_jump_map: HashMap::new(),
             non_jump_edges: vec![],
             current_block: None,
             non_jump_edge_flag: false,
             tac_counter: 0,
-            spans
+            spans: PackedSpans::new()
         }
     }
 
-    pub fn build(tac_func: TacFunc) -> CFG {
-        let func_id = tac_func.id;
-        let mut builder = Self::new(tac_func.spans);
-
-        let inputs = tac_func.inputs;
-        builder.blocks_from_tac(tac_func.tac);
-        builder.link_blocks();
+    pub fn build(mut self) -> CFG {
+        self.insert_current();
+        self.link_blocks();
 
         CFG {
-            func_id,
-            entry_arguments: inputs,
-            blocks: builder.blocks,
+            func_id: self.id,
+            entry_arguments: self.inputs,
+            blocks: self.blocks,
             dom_tree: HashMap::new()
         }
     }
 
-    fn blocks_from_tac(&mut self, tacs: Vec<Tac>) {
-        for tac in tacs.into_iter() {
-            let flag = match tac {
-                Tac::Jump { .. } | Tac::Return { .. } => false,
-                _ => true,
-            };
+    pub fn push_instr(&mut self, instr: Tac) {
+        let flag = match instr {
+            Tac::Jump { .. } | Tac::Return { .. } => false,
+            _ => true,
+        };
 
-            match tac {
-                Tac::Label { label } => self.process_label(label),
-                Tac::Jump { label } => self.process_jump(label),
-                Tac::Return { .. } => self.process_return(tac),
-                Tac::Jnt { label, .. } | Tac::Jit { label, .. } => self.process_cond_jump(tac, label),
-                _ => self.process_basic_tac(tac),
-            }
-
-            self.non_jump_edge_flag = flag;
+        match instr {
+            Tac::Label { label } => self.process_label(label),
+            Tac::Jump { label } => self.process_jump(label),
+            Tac::Return { .. } => self.process_return(instr),
+            Tac::Jnt { label, .. } | Tac::Jit { label, .. } => self.process_cond_jump(instr, label),
+            _ => self.process_basic_tac(instr),
         }
 
-        self.insert_current();
+        self.non_jump_edge_flag = flag;
     }
 
     fn link_blocks(&mut self) {
@@ -173,24 +172,34 @@ mod tests {
     use super::*;
     use super::super::{
         tac::{TacConst, Var},
-        lowering::tests::fabricate_tac_func,
         cfg::ENTRY_BLOCK_ID,
     };
 
+    use super::super::cfg_builder::CFGBuilder;
+    use super::super::cfg::CFG;
+
+    pub fn instrs_to_func(instrs: Vec<Tac>) -> CFG {
+        let mut builder = CFGBuilder::new(0, HashSet::new());
+
+        for instr in instrs.into_iter() {
+            builder.push_instr(instr);
+        }
+
+        builder.build()
+    }
+
     #[test]
     fn empty_cfg() {
-        let func = fabricate_tac_func(vec![]);
-        let cfg = CFG::new(func);
+        let cfg = instrs_to_func(vec![]);
 
         assert!(cfg.blocks.len() == 0);
     }
 
     #[test]
     fn single_block_cfg() {
-        let func = fabricate_tac_func(vec![
+        let cfg = instrs_to_func(vec![
             Tac::LoadConst { dest: Var::temp(1), src: TacConst::Null}
         ]);
-        let cfg = CFG::new(func);
 
         assert!(cfg.blocks.len() == 1);
         assert!(cfg.blocks[0].get_id() == ENTRY_BLOCK_ID);
@@ -202,7 +211,7 @@ mod tests {
 
     #[test]
     fn cfg_for_a_mock_if_stmt() {
-        let func = fabricate_tac_func(vec![
+        let cfg = instrs_to_func(vec![
             Tac::LoadConst { dest: Var::temp(1), src: TacConst::Null },
             Tac::Jnt { src: Var::temp(1), label: 1 },
             Tac::LoadConst { dest: Var::temp(2), src: TacConst::Int(420) },
@@ -211,7 +220,7 @@ mod tests {
             Tac::LoadConst { dest: Var::temp(3), src: TacConst::Int(69) },
             Tac::Return { src: Var::temp(3) }
         ]);
-        let cfg = CFG::new(func);
+
         let b0 = &cfg.blocks[0];
         let b1 = &cfg.blocks[1];
         let b2 = &cfg.blocks[2];
@@ -236,7 +245,7 @@ mod tests {
 
     #[test]
     fn cfg_for_a_mock_while_stmt() {
-        let func = fabricate_tac_func(vec![
+        let cfg = instrs_to_func(vec![
             Tac::Label { label: 1 },
             Tac::LoadConst { dest: Var::temp(1), src: TacConst::Null },
             Tac::Jnt { src: Var::temp(1), label: 2 },
@@ -250,7 +259,6 @@ mod tests {
             Tac::Return { src: Var::temp(3) }
         ]);
 
-        let cfg = CFG::new(func);
         let b0 = &cfg.blocks[0];
         let b1 = &cfg.blocks[1];
         let b2 = &cfg.blocks[2];

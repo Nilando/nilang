@@ -27,27 +27,6 @@ pub struct PhiNode {
 }
 
 impl CFG {
-    pub fn new(tac_func: TacFunc) -> Self {
-        let mut cfg = CFGBuilder::build(tac_func);
-
-        if cfg.blocks.is_empty() {
-            return cfg;
-        }
-
-        compute_dom_tree(&mut cfg);
-
-        convert_cfg_to_ssa(&mut cfg);
-
-        cfg
-    }
-
-    pub fn optimize(&mut self) {
-        EscapeDFA::new().exec(self);
-        // memory ssa
-        // gvn_pass
-        // dce
-    }
-
     pub fn get_block_from_label(&self, label: LabelID) -> BlockId {
         self.blocks.iter().find(|block| block.get_label() == Some(label)).unwrap().get_id()
     }

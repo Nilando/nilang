@@ -630,13 +630,17 @@ pub mod tests {
     use super::*;
     use crate::parser::parse_program;
     use crate::symbol_map::SymbolMap;
+    use super::super::cfg_builder::CFGBuilder;
+    use super::super::cfg::CFG;
 
-    pub fn fabricate_tac_func(tac: Vec<Tac>) -> TacFunc {
-        let mut func = TacFunc::new(0, HashSet::new());
+    pub fn instrs_to_func(instrs: Vec<Tac>) -> CFG {
+        let mut builder = CFGBuilder::new(0, HashSet::new());
 
-        func.tac = tac;
+        for instr in instrs.into_iter() {
+            builder.push_instr(instr);
+        }
 
-        func
+        builder.build()
     }
 
     fn expect_tac(input: &str, expected_code: Vec<Vec<Tac>>) {

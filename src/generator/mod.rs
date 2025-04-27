@@ -24,14 +24,14 @@ pub struct Program;
 
 pub fn compile_ast(ast: Vec<Stmt>, syms: &mut SymbolMap) -> Program {
     stream_tac_from_stmts(ast, |func| {
-        let mut cfg = CFG::new(func);
+        // let mut cfg = CFG::new(func);
 
-        cfg.optimize();
+        //cfg.optimize();
         // println!("{:#?}", cfg);
 
         // run the register allocator on the cfg to get a program
 
-        println!("{}", cfg_to_string(&cfg, syms));
+        //println!("{}", cfg_to_string(&cfg, syms));
 
         //graph_viz::cfg_to_svg(&cfg);
     });
