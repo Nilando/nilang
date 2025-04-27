@@ -1,3 +1,5 @@
+use super::cfg::CFG;
+use super::cfg_builder::CFGBuilder;
 use crate::parser::{Span, Spanned, Stmt, Expr, Value, Op, MapKey, LhsExpr};
 use crate::symbol_map::SymID;
 use std::collections::HashSet;
@@ -5,7 +7,6 @@ use std::collections::HashSet;
 use super::memory_ssa::MemoryAccess;
 use super::tac::{
     LabelID,
-    TacFunc,
     Tac,
     Var,
     TacConst,
@@ -20,18 +21,17 @@ struct LoopCtx {
 }
 
 struct FuncLoweringCtx {
-    func: TacFunc,
     temp_counter: usize,
     label_counter: usize,
     defined_variables: HashSet<SymID>,
-    loop_ctxs: Vec<LoopCtx>
-    //builder: FuncBuilder
+    loop_ctxs: Vec<LoopCtx>,
+    builder: CFGBuilder
 }
 
 impl FuncLoweringCtx {
     fn new(id: FuncID, inputs: HashSet<SymID>) -> Self {
         Self {
-            func: TacFunc::new(id, inputs.clone()),
+            builder: CFGBuilder::new(id, inputs.clone()),
             temp_counter: 0,
             label_counter: 0,
             defined_variables: inputs,
@@ -43,11 +43,11 @@ impl FuncLoweringCtx {
 struct LoweringCtx<'a> {
     func_counter: usize,
     funcs: Vec<FuncLoweringCtx>,
-    streaming_callback: Box<dyn FnMut(TacFunc) + 'a>
+    streaming_callback: Box<dyn FnMut(CFG) + 'a>
 }
 
 impl<'a> LoweringCtx<'a> {
-    pub fn new(callback: impl FnMut(TacFunc) + 'a) -> Self {
+    pub fn new(callback: impl FnMut(CFG) + 'a) -> Self {
         let main_func = FuncLoweringCtx::new(MAIN_FUNC_ID, HashSet::new());
 
         Self {
@@ -328,7 +328,7 @@ impl<'a> LoweringCtx<'a> {
 
         self.generate_stmts(stmts);
 
-        let upvalues = self.funcs.last().unwrap().func.upvalues.clone();
+        let upvalues = self.funcs.last().unwrap().builder.upvalues.clone();
 
         self.stream_current_func();
 
@@ -336,7 +336,8 @@ impl<'a> LoweringCtx<'a> {
     }
 
     fn stream_current_func(&mut self) {
-        let func = self.funcs.pop().unwrap().func;
+        let builder = self.funcs.pop().unwrap().builder;
+        let func = builder.build();
 
         (self.streaming_callback)(func);
     }
@@ -391,6 +392,7 @@ impl<'a> LoweringCtx<'a> {
         );
         self.generate_stmts(stmts);
         self.emit_jump(start);
+        println!("EMITTING LABEL: {}",end);
         self.emit_label(end);
     }
 
@@ -518,7 +520,7 @@ impl<'a> LoweringCtx<'a> {
     }
 
     fn last_instr_has_dest(&self) -> bool {
-        self.get_current_func().func.tac.last().unwrap().dest_var().is_some()
+        self.get_current_func().builder.last_instr().unwrap().dest_var().is_some()
     }
 
     fn update_prev_dest(&mut self, var: Var) {
@@ -526,20 +528,17 @@ impl<'a> LoweringCtx<'a> {
 
         f.temp_counter -= 1; // This isn't needed but makes the printed CFG a little more readable
 
-        let dest = f.func.tac.last_mut().unwrap().dest_var_mut().unwrap();
+        let dest = f.builder.last_instr_mut().unwrap().dest_var_mut().unwrap();
 
         *dest = var;
     }
 
-    fn emit(&mut self, tac: Tac) {
-        self.funcs.last_mut().unwrap().func.tac.push(tac);
+    fn emit(&mut self, instr: Tac) {
+        self.funcs.last_mut().unwrap().builder.push_instr(instr, None);
     }
 
-    fn emit_spanned(&mut self, tac: Tac, span: Span) {
-        let func = &mut self.funcs.last_mut().unwrap().func;
-
-        func.tac.push(tac);
-        func.spans.push(span, func.tac.len() - 1);
+    fn emit_spanned(&mut self, instr: Tac, span: Span) {
+        self.funcs.last_mut().unwrap().builder.push_instr(instr, Some(span));
     }
 
     fn push_loop_ctx(&mut self, ctx: LoopCtx) {
@@ -585,7 +584,7 @@ impl<'a> LoweringCtx<'a> {
     }
 
     fn set_upvalue(&mut self, sym: SymID) {
-        self.get_current_func_mut().func.upvalues.insert(sym);
+        self.get_current_func_mut().builder.upvalues.insert(sym);
     }
 
     fn defined_local(&self, sym: SymID) -> bool {
@@ -617,7 +616,7 @@ impl<'a> LoweringCtx<'a> {
     }
 }
 
-pub fn stream_tac_from_stmts(stmts: Vec<Stmt>, callback: impl FnMut(TacFunc)) {
+pub fn stream_tac_from_stmts(stmts: Vec<Stmt>, callback: impl FnMut(CFG)) {
     let mut ctx = LoweringCtx::new(callback);
 
     ctx.generate_stmts(stmts);
@@ -630,18 +629,6 @@ pub mod tests {
     use super::*;
     use crate::parser::parse_program;
     use crate::symbol_map::SymbolMap;
-    use super::super::cfg_builder::CFGBuilder;
-    use super::super::cfg::CFG;
-
-    pub fn instrs_to_func(instrs: Vec<Tac>) -> CFG {
-        let mut builder = CFGBuilder::new(0, HashSet::new());
-
-        for instr in instrs.into_iter() {
-            builder.push_instr(instr);
-        }
-
-        builder.build()
-    }
 
     fn expect_tac(input: &str, expected_code: Vec<Vec<Tac>>) {
         let mut syms = SymbolMap::new();
@@ -653,47 +640,11 @@ pub mod tests {
         let parse_result = parse_program(input, syms);
         assert!(parse_result.errors.is_empty());
 
-        stream_tac_from_stmts(parse_result.value.unwrap(), |tac_func| {
-            assert_eq!(tac_func.tac, expected_code.pop().unwrap())
+        stream_tac_from_stmts(parse_result.value.unwrap(), |cfg| {
+            let instrs: Vec<Tac> = cfg.instrs().map(|i| i.clone()).collect();
+
+            assert_eq!(instrs, expected_code.pop().unwrap())
         });
-    }
-
-    #[test]
-    fn load_int_value() {
-        let mut ctx = LoweringCtx::new(|_| {});
-
-        ctx.generate_value(Value::Int(69));
-
-        assert!(ctx.funcs[0].func.tac[0] == Tac::LoadConst { dest: Var::temp(1), src: TacConst::Int(69) });
-        assert!(ctx.funcs[0].func.spans.is_empty());
-    }
-
-    #[test]
-    fn load_string_value() {
-        let mut ctx = LoweringCtx::new(|_| {});
-
-        ctx.generate_value(Value::String("test".to_string()));
-
-        assert!(ctx.funcs[0].func.tac[0] == Tac::LoadConst { dest: Var::temp(1), src: TacConst::String("test".to_string()) });
-    }
-
-    #[test]
-    fn load_float_value() {
-        let mut ctx = LoweringCtx::new(|_| {});
-
-        ctx.generate_value(Value::Float(612357.234532));
-
-        assert!(ctx.funcs[0].func.tac[0] == Tac::LoadConst { dest: Var::temp(1), src: TacConst::Float(612357.234532) })
-    }
-
-    #[test]
-    fn emit_read() {
-        let mut ctx = LoweringCtx::new(|_| {});
-
-        ctx.generate_expr(Spanned::new(Expr::Read, (0, 1)));
-
-        assert!(ctx.funcs[0].func.tac[0] == Tac::Read { dest: Var::temp(1) });
-        assert!(ctx.funcs[0].func.spans.is_empty());
     }
 
     #[test]

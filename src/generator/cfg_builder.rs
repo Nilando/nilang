@@ -1,6 +1,6 @@
-use crate::parser::PackedSpans;
+use crate::parser::{PackedSpans, Span};
 use super::block::{BlockId, Block};
-use super::tac::{Tac, TacFunc, FuncID, LabelID};
+use super::tac::{Tac, FuncID, LabelID};
 use super::cfg::CFG;
 use std::collections::{HashMap, HashSet};
 use crate::symbol_map::SymID;
@@ -8,14 +8,12 @@ use crate::symbol_map::SymID;
 pub struct CFGBuilder {
     id: FuncID,
     inputs: HashSet<SymID>,
-    upvalues: HashSet<SymID>,
+    pub upvalues: HashSet<SymID>,
     blocks:  Vec<Block>,
     block_jump_map: HashMap<LabelID, Vec<BlockId>>, // label is jumped to by the block id
     non_jump_edges: Vec<(BlockId, BlockId)>, // 0 -> 1
     current_block: Option<Block>,
     non_jump_edge_flag: bool,
-    spans: PackedSpans,
-    tac_counter: usize,
 }
 
 impl CFGBuilder {
@@ -29,8 +27,6 @@ impl CFGBuilder {
             non_jump_edges: vec![],
             current_block: None,
             non_jump_edge_flag: false,
-            tac_counter: 0,
-            spans: PackedSpans::new()
         }
     }
 
@@ -46,8 +42,40 @@ impl CFGBuilder {
         }
     }
 
-    pub fn push_instr(&mut self, instr: Tac) {
-        let flag = match instr {
+    pub fn last_instr(&self) -> Option<&Tac> {
+        if let Some(ref block) = self.current_block {
+            if let Some(instr) = block.get_instrs().last() {
+                return Some(instr);
+            }
+        }
+
+        for block in self.blocks.iter().rev() {
+            if let Some(instr) = block.get_instrs().last() {
+                return Some(instr);
+            }
+        }
+
+        None
+    }
+
+    pub fn last_instr_mut(&mut self) -> Option<&mut Tac> {
+        if let Some(ref mut block) = self.current_block {
+            if let Some(instr) = block.get_instrs_mut().last_mut() {
+                return Some(instr);
+            }
+        }
+
+        for block in self.blocks.iter_mut().rev() {
+            if let Some(instr) = block.get_instrs_mut().last_mut() {
+                return Some(instr);
+            }
+        }
+
+        None
+    }
+
+    pub fn push_instr(&mut self, instr: Tac, span: Option<Span>) {
+        let non_jump_edge_flag = match instr {
             Tac::Jump { .. } | Tac::Return { .. } => false,
             _ => true,
         };
@@ -57,10 +85,10 @@ impl CFGBuilder {
             Tac::Jump { label } => self.process_jump(label),
             Tac::Return { .. } => self.process_return(instr),
             Tac::Jnt { label, .. } | Tac::Jit { label, .. } => self.process_cond_jump(instr, label),
-            _ => self.process_basic_tac(instr),
+            _ => self.process_basic_tac(instr, span),
         }
 
-        self.non_jump_edge_flag = flag;
+        self.non_jump_edge_flag = non_jump_edge_flag;
     }
 
     fn link_blocks(&mut self) {
@@ -81,8 +109,8 @@ impl CFGBuilder {
         }
     }
 
-    fn process_basic_tac(&mut self, tac: Tac) {
-        self.push_tac(tac);
+    fn process_basic_tac(&mut self, tac: Tac, span: Option<Span>) {
+        self.push_tac_spanned(tac, span);
     }
 
     fn process_cond_jump(&mut self, tac: Tac, label: LabelID) {
@@ -111,19 +139,21 @@ impl CFGBuilder {
         self.insert_current();
 
         let block = self.init_block(Some(label));
-
         self.set_current(block);
+
+        self.push_tac(Tac::Label { label });
     }
 
     fn push_tac(&mut self, tac: Tac) {
-        let i = self.tac_counter;
-
-        let current_span = self.spans.get(i).map(|s| *s);
-        self.tac_counter += 1;
-
         let block = self.take_or_init_current_block();
 
-        block.push_instr(tac, current_span);
+        block.push_instr(tac, None);
+    }
+
+    fn push_tac_spanned(&mut self, tac: Tac, span: Option<Span>) {
+        let block = self.take_or_init_current_block();
+
+        block.push_instr(tac, span);
     }
 
     fn take_or_init_current_block(&mut self) -> &mut Block {
@@ -182,7 +212,7 @@ mod tests {
         let mut builder = CFGBuilder::new(0, HashSet::new());
 
         for instr in instrs.into_iter() {
-            builder.push_instr(instr);
+            builder.push_instr(instr, None);
         }
 
         builder.build()
@@ -237,7 +267,7 @@ mod tests {
         assert!(b1.get_predecessors() == &vec![0]);
         assert!(b1.get_successors() == &vec![2]);
 
-        assert!(b2.get_instrs().len() == 2);
+        assert!(b2.get_instrs().len() == 3);
         assert!(b2.get_label() == Some(1));
         assert!(b2.get_predecessors() == &vec![0, 1]);
         assert!(b2.get_successors().is_empty());
@@ -265,7 +295,7 @@ mod tests {
 
         assert!(cfg.blocks.len() == 3);
 
-        assert!(b0.get_instrs().len() == 2);
+        assert!(b0.get_instrs().len() == 3);
         assert!(b0.get_label() == Some(1));
         assert!(b0.get_predecessors() == &vec![1]);
         assert!(b0.get_successors() == &vec![2, 1]);
@@ -275,7 +305,7 @@ mod tests {
         assert!(b1.get_predecessors() == &vec![0]);
         assert!(b1.get_successors() == &vec![0]);
 
-        assert!(b2.get_instrs().len() == 2);
+        assert!(b2.get_instrs().len() == 3);
         assert!(b2.get_label() == Some(2));
         assert!(b2.get_predecessors() == &vec![0]);
         assert!(b2.get_successors().is_empty());

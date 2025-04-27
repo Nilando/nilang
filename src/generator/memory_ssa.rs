@@ -46,7 +46,7 @@ type ValueId = usize; // PLACEHOLDER
 #[derive(Clone, Eq, PartialEq, Hash, Copy, Debug)]
 pub struct MemStoreId(pub usize);
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct MemoryAccess {
     pub store: Var,
     pub key: Var,
@@ -82,7 +82,7 @@ impl MemoryAccess {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 struct MemoryAccessSSAData {
     store_id: Option<MemStoreId>,
     store_val: Option<ValueId>,

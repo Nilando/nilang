@@ -1,14 +1,10 @@
-use super::dfa::DFA;
-use super::escape_dfa::EscapeDFA;
 use crate::symbol_map::SymID;
-use super::dom_tree::compute_dom_tree;
-use super::ssa_conversion::convert_cfg_to_ssa;
-use super::tac::{Tac, TacFunc, FuncID, LabelID, Var};
-use super::cfg_builder::CFGBuilder;
+use super::tac::{FuncID, LabelID, Var};
 use super::block::{Block, BlockId};
 use std::fmt::Debug;
 use std::ops::{Index, IndexMut};
 use std::collections::{HashMap, HashSet};
+use std::iter::Iterator;
 
 pub const ENTRY_BLOCK_ID: usize = 0;
 
@@ -108,6 +104,42 @@ impl CFG {
         }
 
         dominance_frontier
+    }
+
+    #[cfg(test)]
+    pub fn instrs(&self) -> FuncIter {
+        FuncIter {
+            blocks: self.blocks.iter(),
+            instrs: None
+        }
+    }
+}
+
+use core::slice::Iter;
+
+pub struct FuncIter<'a> {
+    blocks: Iter<'a, Block>,
+    instrs: Option<Iter<'a, Tac>>,
+}
+
+use super::tac::Tac;
+impl<'a> Iterator for FuncIter<'a> {
+    type Item = &'a Tac;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(ref mut instrs) = self.instrs {
+            if let Some(instr) = instrs.next() {
+                return Some(instr);
+            }
+        }
+
+        if let Some(block) = self.blocks.next() {
+            self.instrs = Some(block.get_instrs().iter());
+
+            return self.next();
+        } else {
+            return None;
+        }
     }
 }
 

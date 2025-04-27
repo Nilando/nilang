@@ -72,7 +72,7 @@ impl Var {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum TacConst {
     String(String),
     Int(isize),
@@ -83,7 +83,7 @@ pub enum TacConst {
     Null,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Tac {
     Binop { 
         dest: Var,
@@ -221,27 +221,6 @@ impl Tac {
             Tac::StoreUpvalue { dest, .. } |
             Tac::Binop { dest, .. } => Some(dest),
             _ => None
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct TacFunc {
-    pub id: FuncID,
-    pub inputs: HashSet<SymID>,
-    pub tac: Vec<Tac>,
-    pub spans: PackedSpans,
-    pub upvalues: HashSet<SymID>,
-}
-
-impl TacFunc {
-    pub fn new(id: FuncID, inputs: HashSet<SymID>) -> Self {
-        Self {
-            id,
-            inputs,
-            tac: vec![],
-            spans: PackedSpans::new(),
-            upvalues: HashSet::new(),
         }
     }
 }
