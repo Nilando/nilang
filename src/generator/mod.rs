@@ -9,7 +9,7 @@ mod escape_dfa;
 mod dom_tree;
 //mod gvn;
 mod memory_ssa;
-mod walker;
+mod lowering;
 mod cfg_vizualizer;
 mod block;
 
@@ -18,7 +18,7 @@ use crate::parser::Stmt;
 
 use cfg::CFG;
 use cfg_printer::cfg_to_string;
-use walker::stream_tac_from_stmts;
+use lowering::stream_tac_from_stmts;
 
 pub struct Program;
 
