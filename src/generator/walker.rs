@@ -40,13 +40,13 @@ impl FuncLoweringCtx {
     }
 }
 
-struct TacGenCtx<'a> {
+struct LoweringCtx<'a> {
     func_counter: usize,
     generators: Vec<FuncLoweringCtx>,
     streaming_callback: Box<dyn FnMut(TacFunc) + 'a>
 }
 
-impl<'a> TacGenCtx<'a> {
+impl<'a> LoweringCtx<'a> {
     pub fn new(callback: impl FnMut(TacFunc) + 'a) -> Self {
         let main_func = FuncLoweringCtx::new(MAIN_FUNC_ID, HashSet::new());
 
@@ -607,7 +607,7 @@ impl<'a> TacGenCtx<'a> {
 }
 
 pub fn stream_tac_from_stmts(stmts: Vec<Stmt>, callback: impl FnMut(TacFunc)) {
-    let mut ctx = TacGenCtx::new(callback);
+    let mut ctx = LoweringCtx::new(callback);
 
     ctx.generate_stmts(stmts);
 
@@ -645,7 +645,7 @@ pub mod tests {
 
     #[test]
     fn load_int_value() {
-        let mut ctx = TacGenCtx::new(|_| {});
+        let mut ctx = LoweringCtx::new(|_| {});
 
         ctx.generate_value(Value::Int(69));
 
@@ -655,7 +655,7 @@ pub mod tests {
 
     #[test]
     fn load_string_value() {
-        let mut ctx = TacGenCtx::new(|_| {});
+        let mut ctx = LoweringCtx::new(|_| {});
 
         ctx.generate_value(Value::String("test".to_string()));
 
@@ -664,7 +664,7 @@ pub mod tests {
 
     #[test]
     fn load_float_value() {
-        let mut ctx = TacGenCtx::new(|_| {});
+        let mut ctx = LoweringCtx::new(|_| {});
 
         ctx.generate_value(Value::Float(612357.234532));
 
@@ -673,7 +673,7 @@ pub mod tests {
 
     #[test]
     fn emit_read() {
-        let mut ctx = TacGenCtx::new(|_| {});
+        let mut ctx = LoweringCtx::new(|_| {});
 
         ctx.generate_expr(Spanned::new(Expr::Read, (0, 1)));
 
