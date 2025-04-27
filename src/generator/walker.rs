@@ -19,15 +19,16 @@ struct LoopCtx {
     end: LabelID,
 }
 
-struct TacFuncGenerator {
+struct FuncLoweringCtx {
     func: TacFunc,
     temp_counter: usize,
     label_counter: usize,
     defined_variables: HashSet<SymID>,
     loop_ctxs: Vec<LoopCtx>
+    //builder: FuncBuilder
 }
 
-impl TacFuncGenerator {
+impl FuncLoweringCtx {
     fn new(id: FuncID, inputs: HashSet<SymID>) -> Self {
         Self {
             func: TacFunc::new(id, inputs.clone()),
@@ -41,13 +42,13 @@ impl TacFuncGenerator {
 
 struct TacGenCtx<'a> {
     func_counter: usize,
-    generators: Vec<TacFuncGenerator>,
+    generators: Vec<FuncLoweringCtx>,
     streaming_callback: Box<dyn FnMut(TacFunc) + 'a>
 }
 
 impl<'a> TacGenCtx<'a> {
     pub fn new(callback: impl FnMut(TacFunc) + 'a) -> Self {
-        let main_func = TacFuncGenerator::new(MAIN_FUNC_ID, HashSet::new());
+        let main_func = FuncLoweringCtx::new(MAIN_FUNC_ID, HashSet::new());
 
         Self {
             func_counter: 0,
@@ -321,7 +322,7 @@ impl<'a> TacGenCtx<'a> {
 
     fn new_func(&mut self, inputs: Spanned<Vec<SymID>>, stmts: Vec<Stmt>) -> (FuncID, HashSet<SymID>) {
         let func_id = self.new_func_id();
-        let generator = TacFuncGenerator::new(func_id, HashSet::from_iter(inputs.item));
+        let generator = FuncLoweringCtx::new(func_id, HashSet::from_iter(inputs.item));
 
         self.generators.push(generator);
 
