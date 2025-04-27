@@ -1,11 +1,11 @@
-use crate::parser::{PackedSpans, Span};
+use crate::parser::Span;
 use super::block::{BlockId, Block};
 use super::tac::{Tac, FuncID, LabelID};
 use super::cfg::CFG;
 use std::collections::{HashMap, HashSet};
 use crate::symbol_map::SymID;
 
-pub struct CFGBuilder {
+pub struct FuncBuilder {
     id: FuncID,
     inputs: HashSet<SymID>,
     pub upvalues: HashSet<SymID>,
@@ -16,7 +16,7 @@ pub struct CFGBuilder {
     non_jump_edge_flag: bool,
 }
 
-impl CFGBuilder {
+impl FuncBuilder {
     pub fn new(id: FuncID, inputs: HashSet<SymID>) -> Self {
         Self {
             id, 
@@ -202,14 +202,11 @@ mod tests {
     use super::*;
     use super::super::{
         tac::{TacConst, Var},
-        cfg::ENTRY_BLOCK_ID,
+        cfg::{ENTRY_BLOCK_ID, CFG},
     };
 
-    use super::super::cfg_builder::CFGBuilder;
-    use super::super::cfg::CFG;
-
     pub fn instrs_to_func(instrs: Vec<Tac>) -> CFG {
-        let mut builder = CFGBuilder::new(0, HashSet::new());
+        let mut builder = FuncBuilder::new(0, HashSet::new());
 
         for instr in instrs.into_iter() {
             builder.push_instr(instr, None);

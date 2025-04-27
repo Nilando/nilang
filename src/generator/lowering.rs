@@ -1,5 +1,5 @@
 use super::cfg::CFG;
-use super::cfg_builder::CFGBuilder;
+use super::func_builder::FuncBuilder;
 use crate::parser::{Span, Spanned, Stmt, Expr, Value, Op, MapKey, LhsExpr};
 use crate::symbol_map::SymID;
 use std::collections::HashSet;
@@ -25,13 +25,13 @@ struct FuncLoweringCtx {
     label_counter: usize,
     defined_variables: HashSet<SymID>,
     loop_ctxs: Vec<LoopCtx>,
-    builder: CFGBuilder
+    builder: FuncBuilder
 }
 
 impl FuncLoweringCtx {
     fn new(id: FuncID, inputs: HashSet<SymID>) -> Self {
         Self {
-            builder: CFGBuilder::new(id, inputs.clone()),
+            builder: FuncBuilder::new(id, inputs.clone()),
             temp_counter: 0,
             label_counter: 0,
             defined_variables: inputs,
