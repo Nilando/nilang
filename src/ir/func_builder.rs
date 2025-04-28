@@ -34,13 +34,12 @@ impl FuncBuilder {
     pub fn build(mut self) -> Func {
         self.insert_current();
         self.link_blocks();
-        // self.remove_dead_blocks();
 
-        let mut func = Func {
-            func_id: self.id,
-            entry_arguments: self.inputs,
-            blocks: self.blocks,
-        };
+        let mut func = Func::new(
+            self.id,
+            self.inputs,
+            self.blocks,
+        );
 
         convert_to_ssa(&mut func);
 
@@ -222,28 +221,30 @@ pub mod tests {
 
     #[test]
     fn empty_cfg() {
-        let cfg = instrs_to_func(vec![]);
+        let func = instrs_to_func(vec![]);
+        let blocks = func.get_blocks();
 
-        assert!(cfg.blocks.len() == 1);
+        assert!(blocks.len() == 1);
     }
 
     #[test]
     fn single_block_cfg() {
-        let cfg = instrs_to_func(vec![
+        let func = instrs_to_func(vec![
             Tac::LoadConst { dest: Var::temp(1), src: TacConst::Null}
         ]);
+        let blocks = func.get_blocks();
 
-        assert!(cfg.blocks.len() == 1);
-        // assert!(cfg.blocks[0].get_id() == ENTRY_BLOCK_ID);
-        assert!(cfg.blocks[0].get_instrs().len() == 1);
-        assert!(cfg.blocks[0].get_predecessors().is_empty());
-        assert!(cfg.blocks[0].get_successors().is_empty());
-        assert!(cfg.blocks[0].get_label().is_none());
+        assert!(blocks.len() == 1);
+        // assert!(blocks[0].get_id() == ENTRY_BLOCK_ID);
+        assert!(blocks[0].get_instrs().len() == 1);
+        assert!(blocks[0].get_predecessors().is_empty());
+        assert!(blocks[0].get_successors().is_empty());
+        assert!(blocks[0].get_label().is_none());
     }
 
     #[test]
     fn cfg_for_a_mock_if_stmt() {
-        let cfg = instrs_to_func(vec![
+        let func = instrs_to_func(vec![
             Tac::LoadConst { dest: Var::temp(1), src: TacConst::Null },
             Tac::Jnt { src: Var::temp(1), label: 1 },
             Tac::LoadConst { dest: Var::temp(2), src: TacConst::Int(420) },
@@ -253,11 +254,12 @@ pub mod tests {
             Tac::Return { src: Var::temp(3) }
         ]);
 
-        let b0 = &cfg.blocks[0];
-        let b1 = &cfg.blocks[1];
-        let b2 = &cfg.blocks[2];
+        let blocks = func.get_blocks();
+        let b0 = &blocks[0];
+        let b1 = &blocks[1];
+        let b2 = &blocks[2];
 
-        assert!(cfg.blocks.len() == 3);
+        assert!(blocks.len() == 3);
 
         assert!(b0.get_instrs().len() == 2);
         assert!(b0.get_label().is_none());
@@ -277,7 +279,7 @@ pub mod tests {
 
     #[test]
     fn cfg_for_a_mock_while_stmt() {
-        let cfg = instrs_to_func(vec![
+        let func = instrs_to_func(vec![
             Tac::Label { label: 1 },
             Tac::LoadConst { dest: Var::temp(1), src: TacConst::Null },
             Tac::Jnt { src: Var::temp(1), label: 2 },
@@ -291,12 +293,13 @@ pub mod tests {
             Tac::Return { src: Var::temp(3) }
         ]);
 
-        let b0 = &cfg.blocks[0];
-        let b1 = &cfg.blocks[1];
-        let b2 = &cfg.blocks[2];
-        let b3 = &cfg.blocks[3];
+        let blocks = func.get_blocks();
+        let b0 = &blocks[0];
+        let b1 = &blocks[1];
+        let b2 = &blocks[2];
+        let b3 = &blocks[3];
 
-        assert!(cfg.blocks.len() == 4);
+        assert!(blocks.len() == 4);
 
         assert!(b0.get_instrs().len() == 0);
         assert!(b0.get_predecessors() == &vec![]);

@@ -6,14 +6,14 @@ use super::tac::{VarID, Var, Tac, TacConst};
 use super::lowering::MAIN_FUNC_ID;
 
 struct FuncPrinter<'a> {
-    cfg: &'a Func,
+    func: &'a Func,
     syms: &'a mut SymbolMap,
     result: String
 }
 
-pub fn cfg_to_string(cfg: &Func, syms: &mut SymbolMap) -> String {
+pub fn func_to_string(func: &Func, syms: &mut SymbolMap) -> String {
     let stringifier = FuncPrinter {
-        cfg,
+        func,
         syms,
         result: String::new()
     };
@@ -25,7 +25,7 @@ impl<'a> FuncPrinter<'a> {
     fn stringify(mut self) -> String {
         self.push_first_line();
 
-        for block in self.cfg.blocks.iter() {
+        for block in self.func.get_blocks().iter() {
             self.stringify_block(block);
         }
 
@@ -95,7 +95,7 @@ impl<'a> FuncPrinter<'a> {
                     self.result.push_str(" = read");
                 }
                 Tac::Jump { label } => {
-                    let succ_id = self.cfg.get_block_from_label(*label);
+                    let succ_id = self.func.get_block_from_label(*label);
                     self.result.push_str(&format!("jump block{succ_id}"));
 
                     self.print_block_args(block.get_id(), succ_id);
@@ -104,7 +104,7 @@ impl<'a> FuncPrinter<'a> {
                     self.result.push_str("jnt ");
                     self.push_var(src);
 
-                    let succ_id = self.cfg.get_block_from_label(*label);
+                    let succ_id = self.func.get_block_from_label(*label);
                     self.result.push_str(&format!(" block{succ_id}"));
 
                     self.print_block_args(block.get_id(), succ_id);
@@ -113,7 +113,7 @@ impl<'a> FuncPrinter<'a> {
                     self.result.push_str("jit ");
                     self.push_var(src);
 
-                    let succ_id = self.cfg.get_block_from_label(*label);
+                    let succ_id = self.func.get_block_from_label(*label);
                     self.result.push_str(&format!(" block{succ_id}"));
 
                     self.print_block_args(block.get_id(), succ_id);
@@ -137,7 +137,7 @@ impl<'a> FuncPrinter<'a> {
         if block.continues() {
             // TODO: this logic is wrong, the next block may not have id + 1 
             let id = block.get_id();
-            if self.cfg.blocks.len() > id + 1 {
+            if self.func.get_blocks().len() > id + 1 {
                 self.result.push_str(&format!("  next block{}", id + 1));
                 self.print_block_args(id, id + 1);
                 self.result.push_str("\n");
@@ -148,7 +148,7 @@ impl<'a> FuncPrinter<'a> {
     }
 
     fn print_block_args(&mut self, caller_id: BlockId, calle_id: BlockId) {
-        let phi_nodes = self.cfg.get_block(calle_id).get_phi_nodes();
+        let phi_nodes = self.func.get_block(calle_id).get_phi_nodes();
 
         if !phi_nodes.is_empty() {
             self.result.push_str(&format!("("));
@@ -242,16 +242,16 @@ impl<'a> FuncPrinter<'a> {
     }
 
     fn push_first_line(&mut self) {
-        if self.cfg.func_id == MAIN_FUNC_ID {
+        if self.func.get_id() == MAIN_FUNC_ID {
             self.result.push_str("MAIN (");
         } else {
-            self.result.push_str(&format!("fn{} (", self.cfg.func_id));
+            self.result.push_str(&format!("fn{} (", self.func.get_id()));
         }
 
-        for (idx, sym) in self.cfg.entry_arguments.iter().enumerate() {
+        for (idx, sym) in self.func.get_args().iter().enumerate() {
             self.result.push_str(&format!("{}", self.syms.get_str(*sym)));
 
-            if idx + 1 < self.cfg.entry_arguments.len() {
+            if idx + 1 < self.func.get_args().len() {
                 self.result.push_str(", ");
             }
         }

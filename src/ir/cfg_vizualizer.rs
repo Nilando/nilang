@@ -9,10 +9,10 @@ use graphviz_rust::{
 use super::func::Func;
 
 pub fn func_to_svg(func: &Func) {
-    let name = format!("func_{}", func.func_id);
+    let name = format!("func_{}", func.get_id());
     let mut g = graph!(strict di id!(name));
 
-    for block in func.blocks.iter() {
+    for block in func.get_blocks().iter() {
         let id = block.get_id();
 
         g.add_stmt(stmt!(node!(id; attr!("shape", "box"), attr!("label", id))));

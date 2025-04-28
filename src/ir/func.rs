@@ -7,12 +7,32 @@ use std::iter::Iterator;
 
 #[derive(Debug)]
 pub struct Func {
-    pub func_id: FuncID,
-    pub entry_arguments: HashSet<SymID>,
-    pub blocks: Vec<Block>,
+    id: FuncID,
+    args: HashSet<SymID>,
+    blocks: Vec<Block>,
 }
 
 impl Func {
+    pub fn new(id: FuncID, args: HashSet<SymID>, blocks: Vec<Block>) -> Self {
+        Self {
+            id,
+            args,
+            blocks
+        }
+    }
+
+    pub fn get_id(&self) -> FuncID {
+        self.id
+    }
+
+    pub fn get_args(&self) -> &HashSet<SymID> {
+        &self.args
+    }
+
+    pub fn get_blocks(&self) -> &Vec<Block> {
+        &self.blocks
+    }
+
     pub fn get_block_from_label(&self, label: LabelID) -> BlockId {
         self.blocks.iter().find(|block| block.get_label() == Some(label)).unwrap().get_id()
     }

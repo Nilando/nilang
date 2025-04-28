@@ -7,11 +7,11 @@ pub trait DFA: Sized {
 
     const BACKWARDS: bool = false;
 
-    fn exec(&mut self, cfg: &mut Func) {
-        let mut executor = DFAExecutor::<Self>::new(cfg);
+    fn exec(&mut self, func: &mut Func) {
+        let mut executor = DFAExecutor::<Self>::new(func);
 
-        executor.init(self, cfg);
-        executor.exec(self, cfg);
+        executor.init(self, func);
+        executor.exec(self, func);
 
         self.complete(executor.inputs, executor.outputs);
     }
@@ -30,16 +30,16 @@ where T: DFA
 }
 
 impl<T: DFA> DFAExecutor<T> {
-    fn new(cfg: &Func) -> Self {
+    fn new(func: &Func) -> Self {
         Self {
-            inputs: HashMap::with_capacity(cfg.blocks.len()),
-            outputs: HashMap::with_capacity(cfg.blocks.len()),
-            work_list: cfg.get_block_ids()
+            inputs: HashMap::with_capacity(func.get_blocks().len()),
+            outputs: HashMap::with_capacity(func.get_blocks().len()),
+            work_list: func.get_block_ids()
         }
     }
 
-    fn init(&mut self, dfa: &mut T, cfg: &Func) {
-        for block in cfg.blocks.iter() {
+    fn init(&mut self, dfa: &mut T, func: &Func) {
+        for block in func.get_blocks().iter() {
             let (init_input, init_output) = dfa.init_block(block);
 
             self.inputs.insert(block.get_id(), init_input);
