@@ -1,8 +1,8 @@
 mod config;
 
-use crate::parser::{parse_program, ParseError, Spanned, Stmt};
+use crate::parser::{parse_program, ParseError, Spanned};
 use crate::symbol_map::SymbolMap;
-use crate::generator::compile_ast;
+use crate::ir::compile_ast;
 
 pub use config::Config;
 

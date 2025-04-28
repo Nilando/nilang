@@ -1,9 +1,8 @@
-use super::cfg::CFG;
-use super::func_builder::FuncBuilder;
 use crate::parser::{Span, Spanned, Stmt, Expr, Value, Op, MapKey, LhsExpr};
 use crate::symbol_map::SymID;
 use std::collections::HashSet;
-
+use super::cfg::CFG;
+use super::func_builder::FuncBuilder;
 use super::memory_ssa::MemoryAccess;
 use super::tac::{
     LabelID,

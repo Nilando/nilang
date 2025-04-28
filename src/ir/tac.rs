@@ -1,14 +1,11 @@
 use super::memory_ssa::MemoryAccess;
-use crate::parser::{PackedSpans, Op};
+use crate::parser::Op;
 use crate::symbol_map::SymID;
 use std::hash::Hash;
-use std::collections::HashSet;
 
 pub type LabelID = usize;
-pub type UpvalueID = usize;
 pub type TempID = usize;
 pub type FuncID = usize;
-pub type VersionID = usize;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum VarID {
