@@ -1,12 +1,11 @@
-mod tac;
-mod func; 
-mod cfg_printer; 
-mod func_builder;
-mod ssa;
-//mod gvn;
 mod lowering;
-mod cfg_vizualizer;
+mod func; 
 mod block;
+mod tac;
+mod func_builder;
+mod func_printer; 
+mod func_vizualizer;
+mod ssa;
 mod analysis;
 
 use crate::symbol_map::SymbolMap;
@@ -20,6 +19,7 @@ pub fn compile_ast(ast: Vec<Stmt>, syms: &mut SymbolMap) -> Program {
     stream_tac_from_stmts(ast, |func| {
         // let mut cfg = Func::new(func);
 
+        func_vizualizer::func_to_svg(&func);
         //cfg.optimize();
         // println!("{:#?}", cfg);
 
