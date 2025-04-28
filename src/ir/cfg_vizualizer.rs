@@ -7,9 +7,9 @@ use graphviz_rust::{
     printer::{DotPrinter, PrinterContext},
 };
 
-use super::cfg::CFG;
+use super::func::Func;
 
-pub fn cfg_to_svg(cfg: &CFG) {
+pub fn cfg_to_svg(cfg: &Func) {
     let name = format!("func_{}", cfg.func_id);
     let mut g = graph!(strict di id!(name));
 

@@ -1,16 +1,22 @@
-use super::cfg::{CFG, PhiNode};
+use super::func::Func;
 use super::block::{Block, BlockId};
-use std::collections::{HashMap, HashSet};
 use super::analysis::{DFA, LivenessDFA};
 use super::tac::{Tac, Var, VerID, VarID};
+use std::collections::{HashMap, HashSet};
 
 const INIT_VERSION: usize = 0;
 
-pub fn convert_cfg_to_ssa(cfg: &mut CFG) {
+#[derive(Debug)]
+pub struct PhiNode {
+    pub dest: Var,
+    pub srcs: HashMap<BlockId, Var>
+}
+
+pub fn convert_to_ssa(cfg: &mut Func) {
     SSAConverter::convert(cfg);
 }
 
-fn insert_phi_nodes(cfg: &mut CFG) {
+fn insert_phi_nodes(cfg: &mut Func) {
     let mut liveness = LivenessDFA::new();
     liveness.exec(cfg);
 
@@ -48,7 +54,7 @@ struct SSAConverter {
 }
 
 impl SSAConverter {
-    fn convert(cfg: &mut CFG) {
+    fn convert(cfg: &mut Func) {
         insert_phi_nodes(cfg);
 
         let mut converter = Self {
@@ -60,13 +66,13 @@ impl SSAConverter {
         converter.convert_cfg(cfg);
     }
 
-    fn convert_cfg(&mut self, cfg: &mut CFG) {
-        let entry_block = cfg.get_entry_block();
-
-        self.convert_block(cfg, entry_block.get_id());
+    fn convert_cfg(&mut self, cfg: &mut Func) {
+        if let Some(block) = cfg.get_entry_block() {
+            self.convert_block(cfg, block.get_id());
+        }
     }
 
-    fn convert_block(&mut self, cfg: &mut CFG, block_id: BlockId) {
+    fn convert_block(&mut self, cfg: &mut Func, block_id: BlockId) {
         let block = &mut cfg[block_id];
         let successor_ids = block.get_successors().to_vec();
 
@@ -85,7 +91,7 @@ impl SSAConverter {
         self.version_stacks.pop();
     }
 
-    fn version_successor_phi_nodes(&mut self, predecessor_id: BlockId, successor_ids: Vec<BlockId>, cfg: &mut CFG) {
+    fn version_successor_phi_nodes(&mut self, predecessor_id: BlockId, successor_ids: Vec<BlockId>, cfg: &mut Func) {
         for succ_id in successor_ids.iter() {
             let succ = &mut cfg[*succ_id];
 

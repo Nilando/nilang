@@ -1,7 +1,8 @@
+use super::ssa::convert_to_ssa;
 use crate::parser::Span;
 use super::block::{BlockId, Block};
 use super::tac::{Tac, FuncID, LabelID};
-use super::cfg::CFG;
+use super::func::Func;
 use std::collections::{HashMap, HashSet};
 use crate::symbol_map::SymID;
 
@@ -30,16 +31,19 @@ impl FuncBuilder {
         }
     }
 
-    pub fn build(mut self) -> CFG {
+    pub fn build(mut self) -> Func {
         self.insert_current();
         self.link_blocks();
 
-        CFG {
+        let mut func = Func {
             func_id: self.id,
             entry_arguments: self.inputs,
             blocks: self.blocks,
-            dom_tree: HashMap::new()
-        }
+        };
+
+        convert_to_ssa(&mut func);
+
+        func
     }
 
     pub fn last_instr(&self) -> Option<&Tac> {
@@ -202,10 +206,10 @@ mod tests {
     use super::*;
     use super::super::{
         tac::{TacConst, Var},
-        cfg::{ENTRY_BLOCK_ID, CFG},
+        func::{ENTRY_BLOCK_ID, Func},
     };
 
-    pub fn instrs_to_func(instrs: Vec<Tac>) -> CFG {
+    pub fn instrs_to_func(instrs: Vec<Tac>) -> Func {
         let mut builder = FuncBuilder::new(0, HashSet::new());
 
         for instr in instrs.into_iter() {

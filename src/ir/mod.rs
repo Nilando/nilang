@@ -1,5 +1,5 @@
 mod tac;
-mod cfg; 
+mod func; 
 mod cfg_printer; 
 mod func_builder;
 mod ssa;
@@ -18,7 +18,7 @@ pub struct Program;
 
 pub fn compile_ast(ast: Vec<Stmt>, syms: &mut SymbolMap) -> Program {
     stream_tac_from_stmts(ast, |func| {
-        // let mut cfg = CFG::new(func);
+        // let mut cfg = Func::new(func);
 
         //cfg.optimize();
         // println!("{:#?}", cfg);

@@ -1,9 +1,9 @@
 use crate::symbol_map::SymID;
-use super::tac::{FuncID, LabelID, Var};
+use super::tac::{FuncID, LabelID};
 use super::block::{Block, BlockId};
 use std::fmt::Debug;
 use std::ops::{Index, IndexMut};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::iter::Iterator;
 
 pub const ENTRY_BLOCK_ID: usize = 0;

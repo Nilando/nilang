@@ -1,4 +1,4 @@
-use super::super::cfg::CFG;
+use super::super::func::Func;
 use super::super::block::{ BlockId, Block};
 use std::collections::HashMap;
 
@@ -7,7 +7,7 @@ pub trait DFA: Sized {
 
     const BACKWARDS: bool = false;
 
-    fn exec(&mut self, cfg: &mut CFG) {
+    fn exec(&mut self, cfg: &mut Func) {
         let mut executor = DFAExecutor::<Self>::new(cfg);
 
         executor.init(self, cfg);
@@ -30,7 +30,7 @@ where T: DFA
 }
 
 impl<T: DFA> DFAExecutor<T> {
-    fn new(cfg: &CFG) -> Self {
+    fn new(cfg: &Func) -> Self {
         Self {
             inputs: HashMap::with_capacity(cfg.blocks.len()),
             outputs: HashMap::with_capacity(cfg.blocks.len()),
@@ -38,7 +38,7 @@ impl<T: DFA> DFAExecutor<T> {
         }
     }
 
-    fn init(&mut self, dfa: &mut T, cfg: &CFG) {
+    fn init(&mut self, dfa: &mut T, cfg: &Func) {
         for block in cfg.blocks.iter() {
             let (init_input, init_output) = dfa.init_block(block);
 
@@ -47,7 +47,7 @@ impl<T: DFA> DFAExecutor<T> {
         }
     }
 
-    fn exec(&mut self, dfa: &mut T, cfg: &mut CFG) {
+    fn exec(&mut self, dfa: &mut T, cfg: &mut Func) {
         while let Some(block_id) = self.work_list.pop() {
             let block = &mut cfg[block_id];
 

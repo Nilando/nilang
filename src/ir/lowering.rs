@@ -1,7 +1,7 @@
 use crate::parser::{Span, Spanned, Stmt, Expr, Value, Op, MapKey, LhsExpr};
 use crate::symbol_map::SymID;
 use std::collections::HashSet;
-use super::cfg::CFG;
+use super::func::Func;
 use super::func_builder::FuncBuilder;
 use super::analysis::MemoryAccess;
 use super::tac::{
@@ -42,11 +42,11 @@ impl FuncLoweringCtx {
 struct LoweringCtx<'a> {
     func_counter: usize,
     funcs: Vec<FuncLoweringCtx>,
-    streaming_callback: Box<dyn FnMut(CFG) + 'a>
+    streaming_callback: Box<dyn FnMut(Func) + 'a>
 }
 
 impl<'a> LoweringCtx<'a> {
-    pub fn new(callback: impl FnMut(CFG) + 'a) -> Self {
+    pub fn new(callback: impl FnMut(Func) + 'a) -> Self {
         let main_func = FuncLoweringCtx::new(MAIN_FUNC_ID, HashSet::new());
 
         Self {
@@ -525,7 +525,7 @@ impl<'a> LoweringCtx<'a> {
     fn update_prev_dest(&mut self, var: Var) {
         let f = self.get_current_func_mut();
 
-        f.temp_counter -= 1; // This isn't needed but makes the printed CFG a little more readable
+        f.temp_counter -= 1; // This isn't needed but makes the printed Func a little more readable
 
         let dest = f.builder.last_instr_mut().unwrap().dest_var_mut().unwrap();
 
@@ -615,7 +615,7 @@ impl<'a> LoweringCtx<'a> {
     }
 }
 
-pub fn stream_tac_from_stmts(stmts: Vec<Stmt>, callback: impl FnMut(CFG)) {
+pub fn stream_tac_from_stmts(stmts: Vec<Stmt>, callback: impl FnMut(Func)) {
     let mut ctx = LoweringCtx::new(callback);
 
     ctx.generate_stmts(stmts);

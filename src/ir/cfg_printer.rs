@@ -1,18 +1,18 @@
 use crate::parser::Op;
 use crate::symbol_map::SymbolMap;
-use super::cfg::CFG;
+use super::func::Func;
 use super::block::{Block, BlockId};
 use super::tac::{VarID, Var, Tac, TacConst};
 use super::lowering::MAIN_FUNC_ID;
 
-struct CFGPrinter<'a> {
-    cfg: &'a CFG,
+struct FuncPrinter<'a> {
+    cfg: &'a Func,
     syms: &'a mut SymbolMap,
     result: String
 }
 
-pub fn cfg_to_string(cfg: &CFG, syms: &mut SymbolMap) -> String {
-    let stringifier = CFGPrinter {
+pub fn cfg_to_string(cfg: &Func, syms: &mut SymbolMap) -> String {
+    let stringifier = FuncPrinter {
         cfg,
         syms,
         result: String::new()
@@ -21,7 +21,7 @@ pub fn cfg_to_string(cfg: &CFG, syms: &mut SymbolMap) -> String {
     stringifier.stringify()
 }
 
-impl<'a> CFGPrinter<'a> {
+impl<'a> FuncPrinter<'a> {
     fn stringify(mut self) -> String {
         self.push_first_line();
 
@@ -128,7 +128,7 @@ impl<'a> CFGPrinter<'a> {
                     self.result.push_str(self.syms.get_str(*src));
                 }
                 Tac::Label { .. } => {
-                    panic!("CFG contained label TAC! Labels should have been removed during CFG building process")
+                    panic!("Func contained label TAC! Labels should have been removed during Func building process")
                 }
             }
             self.result.push_str("\n");

@@ -1,10 +1,16 @@
-use super::super::cfg::CFG;
+use super::super::func::Func;
 use super::super::block::BlockId;
 use std::collections::{HashSet, HashMap};
 
-pub fn compute_dom_tree(cfg: &mut CFG) {
-    let mut work_list = vec![cfg.get_entry_block().get_id()];
-    let mut visited = HashSet::from([cfg.get_entry_block().get_id()]);
+pub fn compute_dom_tree(cfg: &mut Func) {
+    let entry_block = if let Some(block) = cfg.get_entry_block() {
+        block
+    } else {
+        return;
+    };
+
+    let mut work_list = vec![entry_block.get_id()];
+    let mut visited = HashSet::from([entry_block.get_id()]);
     let mut dom_tree: HashMap<BlockId, Vec<BlockId>> = HashMap::new();
 
     while let Some(block_id) = work_list.pop() {
@@ -29,5 +35,6 @@ pub fn compute_dom_tree(cfg: &mut CFG) {
         }
     }
 
-    cfg.dom_tree = dom_tree;
+    todo!() // save the tree somewhere
+    // cfg.dom_tree = dom_tree;
 }

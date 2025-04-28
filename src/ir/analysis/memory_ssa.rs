@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use super::super::tac::{Var, TacConst, VerID, Tac};
-use super::super::cfg::CFG;
+use super::super::func::Func;
 use super::super::block::BlockId;
 //use super::gvn::ValueId;
 
@@ -41,7 +41,7 @@ type ValueId = usize; // PLACEHOLDER
 //  - when a memory location is stored/loaded the algorithm will apply the 
 //      current version for that location
 //  - the algorithm propagates changes to memory location versions through the 
-//      CFG until it reaches convergence
+//      Func until it reaches convergence
 //
 #[derive(Clone, Eq, PartialEq, Hash, Copy, Debug)]
 pub struct MemStoreId(pub usize);
@@ -141,7 +141,7 @@ struct MemorySSADFA {
     resolved_entry_versions: HashMap<BlockId, HashMap<CanonicalMemoryAccess, usize>>,
 }
 
-pub fn apply_memory_ssa(cfg: &mut CFG) {
+pub fn apply_memory_ssa(cfg: &mut Func) {
     // create a worklist of blocks
     // get block A from the worklist
     // for instruction I in A
