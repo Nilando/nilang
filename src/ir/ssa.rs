@@ -1,6 +1,6 @@
 use super::func::Func;
 use super::block::{Block, BlockId};
-use super::analysis::{DFA, LivenessDFA};
+use super::analysis::{DFA, LivenessDFA, compute_dominance_frontier};
 use super::tac::{Tac, Var, VerID, VarID};
 use std::collections::{HashMap, HashSet};
 
@@ -21,7 +21,7 @@ fn insert_phi_nodes(cfg: &mut Func) {
     liveness.exec(cfg);
 
     for block_id in cfg.get_block_ids() {
-        let dominance_frontier = cfg.compute_dominance_frontier(&cfg[block_id]);
+        let dominance_frontier = compute_dominance_frontier(cfg, &cfg[block_id]);
         let block = &mut cfg[block_id];
 
         for df_block_id in dominance_frontier.iter() {
