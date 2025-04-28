@@ -628,30 +628,33 @@ pub mod tests {
     use super::*;
     use crate::parser::parse_program;
     use crate::symbol_map::SymbolMap;
+    use super::super::func_builder::tests::instrs_to_func;
 
-    fn expect_tac(input: &str, expected_code: Vec<Vec<Tac>>) {
+    fn expect_tac(input: &str, expected_code: Vec<Tac>) {
         let mut syms = SymbolMap::new();
 
         expect_tac_with_syms(input, expected_code, &mut syms);
     }
 
-    fn expect_tac_with_syms(input: &str, mut expected_code: Vec<Vec<Tac>>, syms: &mut SymbolMap) {
+    fn expect_tac_with_syms(input: &str, expected_code: Vec<Tac>, syms: &mut SymbolMap) {
         let parse_result = parse_program(input, syms);
-        assert!(parse_result.errors.is_empty());
+        let expected_func = instrs_to_func(expected_code);
+        let mut top_level_func = None;
 
-        stream_tac_from_stmts(parse_result.value.unwrap(), |cfg| {
-            let instrs: Vec<Tac> = cfg.instrs().map(|i| i.clone()).collect();
-
-            assert_eq!(instrs, expected_code.pop().unwrap())
+        stream_tac_from_stmts(parse_result.value.unwrap(), |func| {
+            top_level_func = Some(func);
         });
+
+        let expected_instrs: Vec<Tac> = expected_func.instrs().map(|i| i.clone()).collect();
+        let found_instrs: Vec<Tac> = top_level_func.unwrap().instrs().map(|i| i.clone()).collect();
+
+        assert_eq!(expected_instrs, found_instrs);
     }
 
     #[test]
     fn expr_stmt_tac() {
         let tac = vec![
-            vec![
-                Tac::LoadConst { dest: Var::temp(1), src: TacConst::Int(1) }
-            ]
+            Tac::LoadConst { dest: Var::temp(1), src: TacConst::Int(1) }
         ];
         let input = "1;";
 
@@ -661,13 +664,11 @@ pub mod tests {
     #[test]
     fn generates_expr_tac() {
         let tac = vec![
-            vec![
-                Tac::LoadConst { dest: Var::temp(1), src: TacConst::Int(1) },
-                Tac::LoadConst { dest: Var::temp(2), src: TacConst::Int(1) },
-                Tac::LoadConst { dest: Var::temp(3), src: TacConst::Int(1) },
-                Tac::Binop { dest: Var::temp(4), lhs: Var::temp(2), op: Op::Multiply, rhs: Var::temp(3) },
-                Tac::Binop { dest: Var::temp(5), lhs: Var::temp(1), op: Op::Multiply, rhs: Var::temp(4) }
-            ]
+            Tac::LoadConst { dest: Var::temp(1), src: TacConst::Int(1) },
+            Tac::LoadConst { dest: Var::temp(2), src: TacConst::Int(1) },
+            Tac::LoadConst { dest: Var::temp(3), src: TacConst::Int(1) },
+            Tac::Binop { dest: Var::temp(4), lhs: Var::temp(2), op: Op::Multiply, rhs: Var::temp(3) },
+            Tac::Binop { dest: Var::temp(5), lhs: Var::temp(1), op: Op::Multiply, rhs: Var::temp(4) }
         ];
         let input = "1 * 1 * 1;";
 
@@ -677,15 +678,13 @@ pub mod tests {
     #[test]
     fn index_assignment_tac() {
         let tac = vec![
-            vec![
-                Tac::LoadConst { dest: Var::temp(1), src: TacConst::Int(1) },
-                Tac::NewList { dest: Var::temp(2) },
-                Tac::LoadConst { dest: Var::temp(3), src: TacConst::Int(1) },
-                Tac::LoadConst { dest: Var::temp(4), src: TacConst::Int(0) },
-                Tac::MemStore { src: Var::temp(3), mem: MemoryAccess::new(Var::temp(2), Var::temp(4)) }, 
-                Tac::LoadConst { dest: Var::temp(5), src: TacConst::Int(0) },
-                Tac::MemStore { src: Var::temp(1), mem: MemoryAccess::new(Var::temp(2), Var::temp(5)) }, 
-            ]
+            Tac::LoadConst { dest: Var::temp(1), src: TacConst::Int(1) },
+            Tac::NewList { dest: Var::temp(2) },
+            Tac::LoadConst { dest: Var::temp(3), src: TacConst::Int(1) },
+            Tac::LoadConst { dest: Var::temp(4), src: TacConst::Int(0) },
+            Tac::MemStore { src: Var::temp(3), mem: MemoryAccess::new(Var::temp(2), Var::temp(4)) }, 
+            Tac::LoadConst { dest: Var::temp(5), src: TacConst::Int(0) },
+            Tac::MemStore { src: Var::temp(1), mem: MemoryAccess::new(Var::temp(2), Var::temp(5)) }, 
         ];
         let input = "[1][0] = 1;";
 
@@ -696,11 +695,9 @@ pub mod tests {
     fn access_assignment_tac() {
         let mut syms = SymbolMap::new();
         let tac = vec![
-            vec![
-                Tac::LoadConst { dest: Var::temp(1), src: TacConst::Int(1) },
-                Tac::LoadConst { dest: Var::temp(2), src: TacConst::Sym(syms.get_id("b")) },
-                Tac::MemStore { src: Var::temp(1), mem: MemoryAccess::new(Var::local(syms.get_id("a")), Var::temp(2)) }, 
-            ]
+            Tac::LoadConst { dest: Var::temp(1), src: TacConst::Int(1) },
+            Tac::LoadConst { dest: Var::temp(2), src: TacConst::Sym(syms.get_id("b")) },
+            Tac::MemStore { src: Var::temp(1), mem: MemoryAccess::new(Var::local(syms.get_id("a")), Var::temp(2)) }, 
         ];
         let input = "a.b = 1;";
 
@@ -711,9 +708,7 @@ pub mod tests {
     fn assign_local() {
         let mut syms = SymbolMap::new();
         let tac = vec![
-            vec![
-                Tac::LoadConst { dest: Var::local(syms.get_id("a")), src: TacConst::Int(1) },
-            ]
+            Tac::LoadConst { dest: Var::local(syms.get_id("a")), src: TacConst::Int(1) },
         ];
         let input = "a = 1;";
 
@@ -724,10 +719,8 @@ pub mod tests {
     fn assign_global() {
         let mut syms = SymbolMap::new();
         let tac = vec![
-            vec![
-                Tac::LoadConst { dest: Var::temp(1), src: TacConst::Int(1) },
-                Tac::Copy { dest: Var::global(syms.get_id("a")), src: Var::temp(1) },
-            ]
+            Tac::LoadConst { dest: Var::temp(1), src: TacConst::Int(1) },
+            Tac::Copy { dest: Var::global(syms.get_id("a")), src: Var::temp(1) },
         ];
         let input = "@a = 1;";
 
@@ -737,10 +730,8 @@ pub mod tests {
     #[test]
     fn generates_return_with_value() {
         let tac = vec![
-            vec![
-                Tac::LoadConst { dest: Var::temp(1), src: TacConst::Bool(true) },
-                Tac::Return { src: Var::temp(1) },
-            ]
+            Tac::LoadConst { dest: Var::temp(1), src: TacConst::Bool(true) },
+            Tac::Return { src: Var::temp(1) },
         ];
         let input = "return true;";
 
@@ -750,9 +741,7 @@ pub mod tests {
     #[test]
     fn generates_return_with_no_value() {
         let tac = vec![
-            vec![
-                Tac::Return { src: Var::temp(1) },
-            ]
+            Tac::Return { src: Var::temp(1) },
         ];
         let input = "return;";
 
@@ -762,10 +751,8 @@ pub mod tests {
     #[test]
     fn generates_print_expr() {
         let tac = vec![
-            vec![
-                Tac::LoadConst { dest: Var::temp(1), src: TacConst::String("Hello World".to_string()) },
-                Tac::Print { src: Var::temp(1) },
-            ]
+            Tac::LoadConst { dest: Var::temp(1), src: TacConst::String("Hello World".to_string()) },
+            Tac::Print { src: Var::temp(1) },
         ];
         let input = "print(\"Hello World\");";
 
@@ -775,15 +762,13 @@ pub mod tests {
     #[test]
     fn generates_break_and_continue_stmts() {
         let tac = vec![
-            vec![
-                Tac::Label { label: 1 },
-                Tac::LoadConst { dest: Var::temp(1), src: TacConst::Bool(true) },
-                Tac::Jnt { src: Var::temp(1), label: 2 },
-                Tac::Jump { label: 1 },
-                Tac::Jump { label: 2 },
-                Tac::Jump { label: 1 },
-                Tac::Label { label: 2 },
-            ]
+            Tac::Label { label: 1 },
+            Tac::LoadConst { dest: Var::temp(1), src: TacConst::Bool(true) },
+            Tac::Jnt { src: Var::temp(1), label: 2 },
+            Tac::Jump { label: 1 },
+            Tac::Jump { label: 2 },
+            Tac::Jump { label: 1 },
+            Tac::Label { label: 2 },
         ];
         let input = "while true { continue; break; }";
 
@@ -794,15 +779,13 @@ pub mod tests {
     fn call_multiple_args() {
         let mut syms = SymbolMap::new();
         let tac = vec![
-            vec![
-                Tac::LoadConst { dest: Var::temp(1), src: TacConst::Int(0) },
-                Tac::LoadConst { dest: Var::temp(2), src: TacConst::Int(1) },
-                Tac::LoadConst { dest: Var::temp(3), src: TacConst::Int(2) },
-                Tac::LoadArg { src: Var::temp(1), },
-                Tac::LoadArg { src: Var::temp(2), },
-                Tac::LoadArg { src: Var::temp(3), },
-                Tac::Call { dest: Var::temp(4), src: Var::local(syms.get_id("a")), },
-            ]
+            Tac::LoadConst { dest: Var::temp(1), src: TacConst::Int(0) },
+            Tac::LoadConst { dest: Var::temp(2), src: TacConst::Int(1) },
+            Tac::LoadConst { dest: Var::temp(3), src: TacConst::Int(2) },
+            Tac::LoadArg { src: Var::temp(1), },
+            Tac::LoadArg { src: Var::temp(2), },
+            Tac::LoadArg { src: Var::temp(3), },
+            Tac::Call { dest: Var::temp(4), src: Var::local(syms.get_id("a")), },
         ];
         let input = "a(0, 1, 2);";
 
@@ -813,10 +796,8 @@ pub mod tests {
     fn use_defined_local() {
         let mut syms = SymbolMap::new();
         let tac = vec![
-            vec![
-                Tac::LoadConst { dest: Var::local(syms.get_id("a")), src: TacConst::Int(1) },
-                Tac::Copy { dest: Var::local(syms.get_id("b")), src: Var::local(syms.get_id("a")) },
-            ]
+            Tac::LoadConst { dest: Var::local(syms.get_id("a")), src: TacConst::Int(1) },
+            Tac::Copy { dest: Var::local(syms.get_id("b")), src: Var::local(syms.get_id("a")) },
         ];
         let input = "a = 1; b = a;";
 
@@ -827,13 +808,11 @@ pub mod tests {
     fn simple_if_stmt() {
         let mut syms = SymbolMap::new();
         let tac = vec![
-            vec![
-                Tac::LoadConst { dest: Var::temp(1), src: TacConst::Bool(true) }, 
-                Tac::Jnt { label: 1, src: Var::temp(1) }, 
-                Tac::LoadConst { dest: Var::temp(2), src: TacConst::String(String::from("test")) }, 
-                Tac::Print { src: Var::temp(2) }, 
-                Tac::Label { label: 1 }
-            ]
+            Tac::LoadConst { dest: Var::temp(1), src: TacConst::Bool(true) }, 
+            Tac::Jnt { label: 1, src: Var::temp(1) }, 
+            Tac::LoadConst { dest: Var::temp(2), src: TacConst::String(String::from("test")) }, 
+            Tac::Print { src: Var::temp(2) }, 
+            Tac::Label { label: 1 }
         ];
         let input = "if true { print(\"test\"); }";
 
@@ -844,9 +823,7 @@ pub mod tests {
     fn load_null() {
         let mut syms = SymbolMap::new();
         let tac = vec![
-            vec![
-                Tac::LoadConst { dest: Var::local(syms.get_id("a")), src: TacConst::Null }, 
-            ]
+            Tac::LoadConst { dest: Var::local(syms.get_id("a")), src: TacConst::Null }, 
         ];
         let input = "a = null;";
 
@@ -857,10 +834,8 @@ pub mod tests {
     fn sym_key_load() {
         let mut syms = SymbolMap::new();
         let tac = vec![
-            vec![
-              Tac::LoadConst { dest: Var::temp(1), src: TacConst::Sym(syms.get_id("c")) }, 
-              Tac::MemLoad { dest: Var::local(syms.get_id("a")), mem: MemoryAccess::new(Var::local(syms.get_id("b")), Var::temp(1)) }, 
-            ]
+          Tac::LoadConst { dest: Var::temp(1), src: TacConst::Sym(syms.get_id("c")) }, 
+          Tac::MemLoad { dest: Var::local(syms.get_id("a")), mem: MemoryAccess::new(Var::local(syms.get_id("b")), Var::temp(1)) }, 
         ];
         let input = "a = b.c;";
 
@@ -871,10 +846,8 @@ pub mod tests {
     fn val_key_load() {
         let mut syms = SymbolMap::new();
         let tac = vec![
-            vec![
-              Tac::LoadConst { dest: Var::temp(1), src: TacConst::Int(0) }, 
-              Tac::MemLoad { dest: Var::local(syms.get_id("a")), mem: MemoryAccess::new(Var::local(syms.get_id("b")), Var::temp(1)) }, 
-            ]
+            Tac::LoadConst { dest: Var::temp(1), src: TacConst::Int(0) }, 
+            Tac::MemLoad { dest: Var::local(syms.get_id("a")), mem: MemoryAccess::new(Var::local(syms.get_id("b")), Var::temp(1)) }, 
         ];
         let input = "a = b[0];";
 
@@ -885,9 +858,7 @@ pub mod tests {
     fn load_global() {
         let mut syms = SymbolMap::new();
         let tac = vec![
-            vec![
-              Tac::Copy { dest: Var::local(syms.get_id("a")), src: Var::global(syms.get_id("b")) }
-            ]
+            Tac::Copy { dest: Var::local(syms.get_id("a")), src: Var::global(syms.get_id("b")) }
         ];
         let input = "a = @b;";
 
@@ -898,17 +869,14 @@ pub mod tests {
     fn map_assignment() {
         let mut syms = SymbolMap::new();
         let tac = vec![
-            vec![
               Tac::NewMap { dest: Var::temp(1) },
               Tac::LoadConst { dest: Var::temp(2), src: TacConst::Sym(syms.get_id("b")) },
               Tac::LoadConst { dest: Var::temp(3), src: TacConst::Int(0) },
               Tac::MemStore { mem: MemoryAccess::new(Var::temp(1), Var::temp(2)), src: Var::temp(3) },
               Tac::Copy { dest: Var::local(syms.get_id("a")), src: Var::temp(1) },
-            ]
         ];
         let input = "a = { b: 0 };";
 
         expect_tac_with_syms(input, tac, &mut syms);
     }
-
 }

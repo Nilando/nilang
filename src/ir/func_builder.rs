@@ -202,7 +202,7 @@ impl FuncBuilder {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::*;
     use super::super::{
         tac::{TacConst, Var},
