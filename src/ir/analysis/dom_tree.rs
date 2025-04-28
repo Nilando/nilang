@@ -1,5 +1,5 @@
-use super::cfg::CFG;
-use super::block::BlockId;
+use super::super::cfg::CFG;
+use super::super::block::BlockId;
 use std::collections::{HashSet, HashMap};
 
 pub fn compute_dom_tree(cfg: &mut CFG) {

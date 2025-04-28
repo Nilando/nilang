@@ -3,7 +3,6 @@ mod cfg;
 mod cfg_printer; 
 mod func_builder;
 mod ssa;
-mod dom_tree;
 //mod gvn;
 mod lowering;
 mod cfg_vizualizer;

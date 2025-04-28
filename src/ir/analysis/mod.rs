@@ -2,6 +2,7 @@ mod dfa;
 mod escape_dfa;
 mod liveness_dfa;
 mod memory_ssa;
+mod dom_tree;
 
 pub use liveness_dfa::LivenessDFA;
 pub use dfa::DFA;
