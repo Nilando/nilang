@@ -2,7 +2,7 @@ mod tac;
 mod cfg; 
 mod cfg_printer; 
 mod func_builder;
-mod ssa_conversion;
+mod ssa;
 mod dom_tree;
 //mod gvn;
 mod lowering;
