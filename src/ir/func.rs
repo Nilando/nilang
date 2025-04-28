@@ -2,11 +2,8 @@ use crate::symbol_map::SymID;
 use super::tac::{FuncID, LabelID};
 use super::block::{Block, BlockId};
 use std::fmt::Debug;
-use std::ops::{Index, IndexMut};
 use std::collections::HashSet;
 use std::iter::Iterator;
-
-pub const ENTRY_BLOCK_ID: usize = 0;
 
 #[derive(Debug)]
 pub struct Func {
@@ -20,19 +17,31 @@ impl Func {
         self.blocks.iter().find(|block| block.get_label() == Some(label)).unwrap().get_id()
     }
 
+    pub fn get_entry_block(&self) -> &Block {
+        self.blocks.first().unwrap()
+    }
+
     pub fn get_block_ids(&self) -> Vec<BlockId> {
         self.blocks.iter().map(|block| block.get_id()).collect()
     }
 
-    pub fn get_entry_block(&self) -> Option<&Block> {
-        self.get_block(ENTRY_BLOCK_ID)
+    pub fn get_block(&self, block_id: BlockId) -> &Block {
+        self.try_get_block(block_id).unwrap()
     }
 
-    pub fn get_block(&self, block_id: BlockId) -> Option<&Block> {
+    pub fn try_get_block(&self, block_id: BlockId) -> Option<&Block> {
         self.blocks.iter().find(|block| block.get_id() == block_id)
     }
 
-    pub fn get_block_mut(&mut self, block_id: BlockId) -> Option<&mut Block> {
+    pub fn try_get_nth_block(&self, i: usize) -> Option<&Block> {
+        self.blocks.get(i)
+    }
+
+    pub fn get_block_mut(&mut self, block_id: BlockId) -> &mut Block {
+        self.try_get_block_mut(block_id).unwrap()
+    }
+
+    pub fn try_get_block_mut(&mut self, block_id: BlockId) -> Option<&mut Block> {
         self.blocks.iter_mut().find(|block| block.get_id() == block_id)
     }
 
@@ -69,19 +78,5 @@ impl<'a> Iterator for FuncIter<'a> {
         } else {
             return None;
         }
-    }
-}
-
-impl Index<BlockId> for Func {
-    type Output = Block;
-
-    fn index<'a>(&'a self, i: usize) -> &'a Block {
-        self.get_block(i).unwrap()
-    }
-}
-
-impl IndexMut<BlockId> for Func {
-    fn index_mut<'a>(&'a mut self, i: usize) -> &'a mut Block {
-        self.get_block_mut(i).unwrap()
     }
 }

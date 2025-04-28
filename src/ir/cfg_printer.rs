@@ -148,7 +148,7 @@ impl<'a> FuncPrinter<'a> {
     }
 
     fn print_block_args(&mut self, caller_id: BlockId, calle_id: BlockId) {
-        let phi_nodes = self.cfg[calle_id].get_phi_nodes();
+        let phi_nodes = self.cfg.get_block(calle_id).get_phi_nodes();
 
         if !phi_nodes.is_empty() {
             self.result.push_str(&format!("("));

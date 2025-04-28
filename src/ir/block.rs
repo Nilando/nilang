@@ -5,6 +5,7 @@ use crate::parser::PackedSpans;
 use std::collections::HashSet;
 
 pub type BlockId =usize;
+const ENTRY_BLOCK_ID: usize = 0;
 
 #[derive(Debug)]
 pub struct Block {
@@ -18,6 +19,10 @@ pub struct Block {
 }
 
 impl Block {
+    pub fn new_entry_block() -> Self {
+        Self::new(ENTRY_BLOCK_ID, None)
+    }
+
     pub fn new(id: BlockId, label: Option<LabelID>) -> Self {
         Self {
             id,
@@ -36,6 +41,14 @@ impl Block {
 
     pub fn get_label(&self) -> Option<LabelID> {
         self.label
+    }
+
+    pub fn set_label(&mut self, label: LabelID) {
+        self.label = Some(label)
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.instrs.is_empty()
     }
 
     pub fn get_instrs(&self) -> &Vec<Tac> {

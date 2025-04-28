@@ -47,9 +47,9 @@ impl<T: DFA> DFAExecutor<T> {
         }
     }
 
-    fn exec(&mut self, dfa: &mut T, cfg: &mut Func) {
+    fn exec(&mut self, dfa: &mut T, func: &mut Func) {
         while let Some(block_id) = self.work_list.pop() {
-            let block = &mut cfg[block_id];
+            let block = func.get_block_mut(block_id);
 
             if T::BACKWARDS {
                 self.propagate_backward(dfa, block)

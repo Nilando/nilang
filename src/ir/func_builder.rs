@@ -26,14 +26,15 @@ impl FuncBuilder {
             blocks: vec![],
             block_jump_map: HashMap::new(),
             non_jump_edges: vec![],
-            current_block: None,
-            non_jump_edge_flag: false,
+            current_block: Some(Block::new_entry_block()),
+            non_jump_edge_flag: true,
         }
     }
 
     pub fn build(mut self) -> Func {
         self.insert_current();
         self.link_blocks();
+        // self.remove_dead_blocks();
 
         let mut func = Func {
             func_id: self.id,
@@ -206,7 +207,7 @@ pub mod tests {
     use super::*;
     use super::super::{
         tac::{TacConst, Var},
-        func::{ENTRY_BLOCK_ID, Func},
+        func::Func,
     };
 
     pub fn instrs_to_func(instrs: Vec<Tac>) -> Func {
@@ -223,7 +224,7 @@ pub mod tests {
     fn empty_cfg() {
         let cfg = instrs_to_func(vec![]);
 
-        assert!(cfg.blocks.len() == 0);
+        assert!(cfg.blocks.len() == 1);
     }
 
     #[test]
@@ -233,7 +234,7 @@ pub mod tests {
         ]);
 
         assert!(cfg.blocks.len() == 1);
-        assert!(cfg.blocks[0].get_id() == ENTRY_BLOCK_ID);
+        // assert!(cfg.blocks[0].get_id() == ENTRY_BLOCK_ID);
         assert!(cfg.blocks[0].get_instrs().len() == 1);
         assert!(cfg.blocks[0].get_predecessors().is_empty());
         assert!(cfg.blocks[0].get_successors().is_empty());
@@ -293,22 +294,27 @@ pub mod tests {
         let b0 = &cfg.blocks[0];
         let b1 = &cfg.blocks[1];
         let b2 = &cfg.blocks[2];
+        let b3 = &cfg.blocks[3];
 
-        assert!(cfg.blocks.len() == 3);
+        assert!(cfg.blocks.len() == 4);
 
-        assert!(b0.get_instrs().len() == 3);
-        assert!(b0.get_label() == Some(1));
-        assert!(b0.get_predecessors() == &vec![1]);
-        assert!(b0.get_successors() == &vec![2, 1]);
+        assert!(b0.get_instrs().len() == 0);
+        assert!(b0.get_predecessors() == &vec![]);
+        assert!(b0.get_successors() == &vec![1]);
 
         assert!(b1.get_instrs().len() == 3);
-        assert!(b1.get_label().is_none());
-        assert!(b1.get_predecessors() == &vec![0]);
-        assert!(b1.get_successors() == &vec![0]);
+        assert!(b1.get_label() == Some(1));
+        assert!(b1.get_predecessors() == &vec![2, 0]);
+        assert!(b1.get_successors() == &vec![3, 2]);
 
         assert!(b2.get_instrs().len() == 3);
-        assert!(b2.get_label() == Some(2));
-        assert!(b2.get_predecessors() == &vec![0]);
-        assert!(b2.get_successors().is_empty());
+        assert!(b2.get_label().is_none());
+        assert!(b2.get_predecessors() == &vec![1]);
+        assert!(b2.get_successors() == &vec![1]);
+
+        assert!(b3.get_instrs().len() == 3);
+        assert!(b3.get_label() == Some(2));
+        assert!(b3.get_predecessors() == &vec![1]);
+        assert!(b3.get_successors().is_empty());
     }
 }

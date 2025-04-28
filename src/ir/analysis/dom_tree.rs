@@ -4,18 +4,13 @@ use super::super::block::BlockId;
 use std::collections::{HashSet, HashMap};
 
 pub fn compute_dom_tree(func: &mut Func) {
-    let entry_block = if let Some(block) = func.get_entry_block() {
-        block
-    } else {
-        return;
-    };
-
+    let entry_block = func.get_entry_block();
     let mut work_list = vec![entry_block.get_id()];
     let mut visited = HashSet::from([entry_block.get_id()]);
     let mut dom_tree: HashMap<BlockId, Vec<BlockId>> = HashMap::new();
 
     while let Some(block_id) = work_list.pop() {
-        let block = &func[block_id];
+        let block = &func.get_block(block_id);
         let mut dominated_blocks = compute_dominated_blocks(func, block);
         dominated_blocks.remove(&block_id);
 
@@ -51,7 +46,7 @@ pub fn compute_reachable_blocks(func: &Func, block: &Block) -> HashSet<BlockId> 
 
         reachable_blocks.insert(id);
 
-        let successor = &func[id];
+        let successor = &func.get_block(id);
 
         work_list.append(&mut successor.get_successors().to_vec())
     }
@@ -68,7 +63,7 @@ pub fn compute_dominated_blocks(func: &Func, seed_block: &Block) -> HashSet<Bloc
             continue;
         }
 
-        let block = &func[id];
+        let block = func.get_block(id);
 
         if block.get_predecessors().iter().find(|id| dominated_blocks.get(&id).is_none()).is_some() {
             dominated_blocks.remove(&id);
@@ -89,7 +84,7 @@ pub fn compute_dominance_frontier(func: &Func, seed_block: &Block) -> HashSet<Bl
     let dominated_blocks = compute_dominated_blocks(func, seed_block);
 
     for id in dominated_blocks.iter() {
-        let block = &func[*id];
+        let block = func.get_block(*id);
 
         for successor_id in block.get_successors().iter() {
             if dominated_blocks.get(successor_id).is_none() {

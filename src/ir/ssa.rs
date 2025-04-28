@@ -21,8 +21,8 @@ fn insert_phi_nodes(cfg: &mut Func) {
     liveness.exec(cfg);
 
     for block_id in cfg.get_block_ids() {
-        let dominance_frontier = compute_dominance_frontier(cfg, &cfg[block_id]);
-        let block = &mut cfg[block_id];
+        let dominance_frontier = compute_dominance_frontier(cfg, cfg.get_block(block_id));
+        let block = cfg.get_block_mut(block_id);
 
         for df_block_id in dominance_frontier.iter() {
             for var in block.defined_vars() {
@@ -67,13 +67,13 @@ impl SSAConverter {
     }
 
     fn convert_cfg(&mut self, cfg: &mut Func) {
-        if let Some(block) = cfg.get_entry_block() {
-            self.convert_block(cfg, block.get_id());
-        }
+        let block = cfg.get_entry_block();
+
+        self.convert_block(cfg, block.get_id());
     }
 
     fn convert_block(&mut self, cfg: &mut Func, block_id: BlockId) {
-        let block = &mut cfg[block_id];
+        let block = cfg.get_block_mut(block_id);
         let successor_ids = block.get_successors().to_vec();
 
         self.visited.insert(block_id);
@@ -93,7 +93,7 @@ impl SSAConverter {
 
     fn version_successor_phi_nodes(&mut self, predecessor_id: BlockId, successor_ids: Vec<BlockId>, cfg: &mut Func) {
         for succ_id in successor_ids.iter() {
-            let succ = &mut cfg[*succ_id];
+            let succ = cfg.get_block_mut(*succ_id);
 
             for phi_node in succ.get_phi_nodes_mut().iter_mut() {
                 let version = self.get_version(phi_node.dest.id);
