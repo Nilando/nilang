@@ -21,27 +21,28 @@ fn insert_phi_nodes(cfg: &mut Func) {
     liveness.exec(cfg);
 
     for block_id in cfg.get_block_ids() {
+        let dominating_block = cfg.get_block(block_id);
+        let defined_vars = dominating_block.defined_vars();
         let dominance_frontier = compute_dominance_frontier(cfg, cfg.get_block(block_id));
-        let block = cfg.get_block_mut(block_id);
-
-        for df_block_id in dominance_frontier.iter() {
-            for var in block.defined_vars() {
+        for phi_block_id in dominance_frontier.iter() {
+            for var in defined_vars.iter() {
+                let phi_block = cfg.get_block_mut(*phi_block_id);
                 // we've already inserted a node for this var
-                if block.get_phi_nodes().iter().find(|node| node.dest == var).is_some() {
+                if phi_block.get_phi_nodes().iter().find(|node| node.dest == *var).is_some() {
                     continue;
                 }
 
                 // var is not live on entry so it doesn't need a phi node
-                if !liveness.is_live_on_entry(*df_block_id, &var) {
+                if !liveness.is_live_on_entry(*phi_block_id, &var) {
                     continue;
                 }
 
                 let phi = PhiNode {
-                    dest: var,
+                    dest: *var,
                     srcs: HashMap::new()
                 };
 
-                block.push_phi_node(phi);
+                phi_block.push_phi_node(phi);
             }
         }
     }

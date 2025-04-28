@@ -127,8 +127,9 @@ impl<'a> FuncPrinter<'a> {
                     self.result.push_str(" UPVAL ");
                     self.result.push_str(self.syms.get_str(*src));
                 }
-                Tac::Label { .. } => {
-                    panic!("Func contained label TAC! Labels should have been removed during Func building process")
+                Tac::Label { label } => {
+                    //self.result.push_str(&format!("label {}", label));
+                    continue;
                 }
             }
             self.result.push_str("\n");
