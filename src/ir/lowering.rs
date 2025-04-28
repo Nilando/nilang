@@ -3,7 +3,7 @@ use crate::symbol_map::SymID;
 use std::collections::HashSet;
 use super::cfg::CFG;
 use super::func_builder::FuncBuilder;
-use super::memory_ssa::MemoryAccess;
+use super::analysis::MemoryAccess;
 use super::tac::{
     LabelID,
     Tac,

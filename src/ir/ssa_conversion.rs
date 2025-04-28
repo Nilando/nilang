@@ -1,8 +1,7 @@
 use super::cfg::{CFG, PhiNode};
 use super::block::{Block, BlockId};
 use std::collections::{HashMap, HashSet};
-use super::liveness_dfa::LivenessDFA;
-use super::dfa::DFA;
+use super::analysis::{DFA, LivenessDFA};
 use super::tac::{Tac, Var, VerID, VarID};
 
 const INIT_VERSION: usize = 0;

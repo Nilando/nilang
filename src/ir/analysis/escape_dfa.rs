@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
-use super::tac::{Tac, Var};
-use super::block::{Block, BlockId};
+use super::super::tac::{Tac, Var};
+use super::super::block::{Block, BlockId};
 use super::dfa::DFA;
 use super::memory_ssa::{MemoryAccess, MemStoreId};
 

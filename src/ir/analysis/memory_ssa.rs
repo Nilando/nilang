@@ -1,7 +1,7 @@
 use std::collections::HashMap;
-use super::tac::{Var, TacConst, VerID, Tac};
-use super::cfg::CFG;
-use super::block::BlockId;
+use super::super::tac::{Var, TacConst, VerID, Tac};
+use super::super::cfg::CFG;
+use super::super::block::BlockId;
 //use super::gvn::ValueId;
 
 

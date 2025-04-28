@@ -1,6 +1,6 @@
-use super::block::{BlockId, Block};
+use super::super::block::{BlockId, Block};
+use super::super::tac::Var;
 use super::dfa::DFA;
-use super::tac::Var;
 use std::collections::{HashSet, HashMap};
 
 pub struct LivenessDFA {

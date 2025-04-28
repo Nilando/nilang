@@ -1,4 +1,4 @@
-use super::memory_ssa::MemoryAccess;
+use super::analysis::MemoryAccess;
 use crate::parser::Op;
 use crate::symbol_map::SymID;
 use std::hash::Hash;

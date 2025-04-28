@@ -1,5 +1,5 @@
-use super::cfg::CFG;
-use super::block::{ BlockId, Block};
+use super::super::cfg::CFG;
+use super::super::block::{ BlockId, Block};
 use std::collections::HashMap;
 
 pub trait DFA: Sized {

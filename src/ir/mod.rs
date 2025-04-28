@@ -3,15 +3,12 @@ mod cfg;
 mod cfg_printer; 
 mod func_builder;
 mod ssa_conversion;
-mod dfa;
-mod liveness_dfa;
-mod escape_dfa;
 mod dom_tree;
 //mod gvn;
-mod memory_ssa;
 mod lowering;
 mod cfg_vizualizer;
 mod block;
+mod analysis;
 
 use crate::symbol_map::SymbolMap;
 use crate::parser::Stmt;
