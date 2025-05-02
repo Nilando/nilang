@@ -6,7 +6,7 @@ mod value;
 
 pub use expr::{Expr, LhsExpr};
 pub use lexer::{LexError, Lexer, Op, Ctrl, Token, KeyWord};
-pub use spanned::{Spanned, Span};
+pub use spanned::{PackedSpans, Spanned, Span};
 pub use stmt::Stmt;
 pub use value::{Value, MapKey};
 

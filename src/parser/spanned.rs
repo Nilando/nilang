@@ -1,3 +1,8 @@
+#[derive(Clone, Debug, PartialEq)]
+pub struct PackedSpans {
+    spans: Vec<(Span, usize)>,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Spanned<T> {
     pub item: T,
@@ -35,6 +40,43 @@ impl<T> Spanned<T> {
         let item = f(self.item);
 
         Spanned { item, span }
+    }
+}
+
+impl PackedSpans {
+    pub fn new() -> Self {
+        Self {
+            spans: vec![],
+        }
+    }
+
+    pub fn push(&mut self, span: Span, item_number: usize) {
+        if let Some(prev_span) = self.spans.last() {
+            if prev_span.0 != span {
+                self.spans.push((span, item_number))
+            }
+        } else {
+            self.spans.push((span, item_number))
+        }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.spans.is_empty()
+    }
+
+    pub fn get(&self, i: usize) -> Option<&Span> {
+        for k in 0..self.spans.len() {
+            let (span, span_start) = &self.spans[k];
+            if k + 1 == self.spans.len() {
+                return Some(&span);
+            }
+            let span_end = &self.spans[k + 1].1;
+            if i >= *span_start && i < *span_end {
+                return Some(&span);
+            }
+        }
+
+        None
     }
 }
 

@@ -2,7 +2,7 @@ mod config;
 
 use crate::parser::{parse_program, ParseError, Spanned};
 use crate::symbol_map::SymbolMap;
-use crate::tac::stream_tac_from_stmts;
+use crate::ir::compile_ast;
 
 pub use config::Config;
 
@@ -12,6 +12,7 @@ use termion::color;
 use termion::event::{Event, Key};
 use termion::input::TermRead;
 use termion::raw::IntoRawMode;
+use termion::cursor::DetectCursorPos;
 
 pub fn execute(config: Config) {
     if config.repl_mode() {
@@ -27,7 +28,7 @@ fn run_script(mut config: Config) {
     let parse_result = parse_program(input.as_str(), &mut symbols);
 
     if !parse_result.errors.is_empty() {
-        display_parse_errors(&mut stdout(), &input, &parse_result.errors, config.file);
+        display_parse_errors(&input, &parse_result.errors, config.file);
 
         return;
     }
@@ -47,27 +48,9 @@ fn run_script(mut config: Config) {
         }
     }
 
-    use crate::cfg::CFG;
-    use crate::ssa_conversion::convert_cfg_to_ssa;
-    stream_tac_from_stmts(ast, |func| {
-        let mut cfg = CFG::new(func);
-        convert_cfg_to_ssa(&mut cfg);
+    let program = compile_ast(ast, &mut symbols);
 
-        println!("{:#?}", cfg);
-    });
-
-
-    /*
-    optimize_ast(&mut ast);
-
-    if ast_output_path {
-        output the ast
-    }
-
-    let tac = ast_to_tac(ast);
-    */
-
-    todo!("generate bytecode")
+    todo!("run the program")
 }
 
 fn run_repl(_config: Config) {
@@ -78,6 +61,7 @@ fn run_repl(_config: Config) {
     let mut symbols = SymbolMap::new();
     let mut inputs: Vec<String> = vec![];
     let mut history_index = None;
+    let mut input_pos = 0;
 
     write!(stdout, "> ").unwrap();
     stdout.flush().unwrap();
@@ -87,6 +71,7 @@ fn run_repl(_config: Config) {
         match evt {
             Event::Key(Key::Char('\n')) if input.trim().is_empty() => {
                 write!(stdout, "\r\n> ").unwrap();
+                input_pos = 0;
             }
             Event::Key(Key::Char('\n')) => {
                 write!(stdout, "\r\n").unwrap();
@@ -94,14 +79,19 @@ fn run_repl(_config: Config) {
 
                 let parse_result = parse_program(&input, &mut symbols);
 
+                let _ = stdout.suspend_raw_mode();
                 if !parse_result.errors.is_empty() {
-                    display_parse_errors(&mut stdout, &input, &parse_result.errors, None);
+                    display_parse_errors(&input, &parse_result.errors, None);
                 }
+
+                compile_ast(parse_result.value.unwrap(), &mut symbols);
+                let _ = stdout.activate_raw_mode();
 
                 inputs.push(input.clone());
                 history_index = Some(inputs.len());
                 input.clear();
                 write!(stdout, "\r\n> ").unwrap();
+                input_pos = 0;
             }
             Event::Key(Key::Up) => {
                 if let Some(idx) = history_index {
@@ -114,6 +104,7 @@ fn run_repl(_config: Config) {
                     input = inputs.last().unwrap().clone();
                 }
                 write!(stdout, "\r{}\r> {}", " ".repeat(80), input).unwrap();
+                input_pos = input.len();
             }
             Event::Key(Key::Down) => {
                 if let Some(idx) = history_index {
@@ -126,26 +117,58 @@ fn run_repl(_config: Config) {
                     }
                 }
                 write!(stdout, "\r{}\r> {}", " ".repeat(80), input).unwrap();
+                input_pos = input.len();
+            }
+            Event::Key(Key::Left) => {
+                let left = termion::cursor::Left(1);
+                let (x, _) = stdout.cursor_pos().expect("failed to get cursor position");
+
+                if x <= 3 { continue; }
+
+                write!(stdout, "{}", left).unwrap();
+                input_pos -= 1;
+            }
+            Event::Key(Key::Right) => {
+                let right = termion::cursor::Right(1);
+                write!(stdout, "{}", right).unwrap();
+                input_pos += 1;
+                if input_pos >= input.len() {
+                    input.push(' ');
+                }
             }
             Event::Key(Key::Char(c)) => {
-                input.push(c);
-                write!(stdout, "{}", c).unwrap();
+                if let Some((i, _)) = input.char_indices().nth(input_pos) {
+                    input.insert(i, c);
+                } else {
+                    input.push(c);
+                }
+
+                input_pos += 1;
+
+                write!(stdout, "\r{}\r> {} {}", " ".repeat(80), input, termion::cursor::Left(((input.len() + 1) - input_pos) as u16)).unwrap();
             }
             Event::Key(Key::Backspace) => {
                 if !input.is_empty() {
-                    input.pop();
-                    write!(
-                        stdout,
-                        "\r> {} \r> {}",
-                        " ".repeat(80),
-                        input
-                    )
-                    .unwrap();
+                    input_pos -= 1;
+                    if let Some((i, _)) = input.char_indices().nth(input_pos) {
+                        input.remove(i);
+                    } else {
+                        input.pop();
+                    }
+                    write!(stdout, "\r{}\r> {} {}", " ".repeat(80), input, termion::cursor::Left(((input.len() + 1) - input_pos) as u16)).unwrap();
                 }
             }
             Event::Key(Key::Ctrl('c')) | Event::Key(Key::Ctrl('d')) => {
                 writeln!(stdout, "\nExiting REPL").unwrap();
                 break;
+            }
+            Event::Key(Key::Ctrl('e')) => {
+                input_pos = input.len();
+                write!(stdout, "\r{}\r> {}", " ".repeat(80), input).unwrap();
+            }
+            Event::Key(Key::Ctrl('a')) => {
+                input_pos = 0;
+                write!(stdout, "\r{}\r> {} {}", " ".repeat(80), input, termion::cursor::Left(((input.len() + 1) - input_pos) as u16)).unwrap();
             }
             _ => {}
         }
@@ -154,7 +177,6 @@ fn run_repl(_config: Config) {
 }
 
 fn display_parse_errors(
-    stdout: &mut std::io::Stdout,
     input: &str,
     errors: &[Spanned<ParseError>],
     file_name: Option<String>,
@@ -173,24 +195,22 @@ fn display_parse_errors(
         while error_idx < errors.len() && errors[error_idx].span.0 < line_end {
             let error = &errors[error_idx];
             if error.span.0 >= line_start && error.span.0 < line_end {
-                write!(stdout, "{}parser error{}: {:?}\r\n", red, reset, error.item).unwrap();
+                println!("{}parser error{}: {:?}", red, reset, error.item);
 
                 if let Some(ref file_name) = file_name {
-                    write!(
-                        stdout,
-                        "{}-->{} {}:{}:{}\r\n",
+                    println!(
+                        "{}-->{} {}:{}:{}",
                         blue,
                         reset,
                         file_name,
                         line_num,
                         error.span.0 - line_start
-                    )
-                    .unwrap();
-                    write!(stdout, "   {}|{}\r\n", blue, reset).unwrap();
-                    write!(stdout, "{}{} |{} {}\r\n", blue, line_num, reset, line).unwrap();
+                    );
+                    println!("   {}|{}", blue, reset);
+                    println!("{}{} |{} {}", blue, line_num, reset, line);
                 } else {
-                    write!(stdout, "   {}|{}\r\n", blue, reset).unwrap();
-                    write!(stdout, "   | {}\r\n", line).unwrap();
+                    println!("   {}|{}", blue, reset);
+                    println!("   | {}", line);
                 }
 
                 let mut highlight_line = format!("   {}|{} ", blue, reset);
@@ -203,8 +223,8 @@ fn display_parse_errors(
                     }
                 }
 
-                write!(stdout, "{}\r\n", highlight_line).unwrap();
-                writeln!(stdout).unwrap();
+                println!("{}", highlight_line);
+                println!();
             }
             error_idx += 1;
         }

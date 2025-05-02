@@ -10,6 +10,6 @@ fn new_counter() {
 
 my_counter = new_counter();
 
-print my_counter(); // 1
-print my_counter(); // 2
-print my_counter(); // 3
+print(my_counter()); // 1
+print(my_counter()); // 2
+print(my_counter()); // 3

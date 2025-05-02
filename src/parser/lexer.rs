@@ -34,6 +34,21 @@ pub enum Op {
     Modulo
 }
 
+impl Op {
+    pub fn is_commutative(&self) -> bool {
+        // TODO: And and Or are commutative BUT they can't always be treated
+        // as such due to short circuiting and the possibility for side effects
+        match self {
+            Op::Plus |
+            Op::Multiply |
+            Op::Equal |
+            Op::NotEqual
+            => true,
+            _ => false
+        }
+    }
+}
+
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum LexError {
     Unknown,
@@ -56,6 +71,7 @@ pub enum KeyWord {
     True,
     Print,
     Read,
+    // Eval
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -136,6 +152,7 @@ impl<'a> Lexer<'a> {
         if self.peek.is_none() {
             n += 1;
         }
+
 
         for _ in 1..n {
             let _ = self.lex_token(syms);
@@ -244,6 +261,10 @@ impl<'a> Lexer<'a> {
                     }
                 }
             }
+
+            // Go back! this might be a dividing op '/'
+            self.pos -= 1;
+            self.reset_iter();
         }
 
         Ok(false)
@@ -497,6 +518,10 @@ impl<'a> Lexer<'a> {
                 self.eof = true;
             }
         }
+    }
+
+    fn reset_iter(&mut self) {
+        self.chars = self.input[self.pos..self.input.len()].chars().peekable();
     }
 
     fn end_token(&self) -> Token<'a> {

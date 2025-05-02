@@ -232,7 +232,7 @@ mod tests {
     #[test]
     fn if_stmt() {
         let mut syms = SymbolMap::new();
-        match parse_stmt_with_syms("if true { print true; }", &mut syms).value {
+        match parse_stmt_with_syms("if true { print(true); }", &mut syms).value {
             Some(Stmt::If { cond, stmts}) => {
                 assert!(cond.item == Expr::Value(Value::Bool(true)));
                 assert!(stmts.len() == 1);
@@ -244,7 +244,7 @@ mod tests {
     #[test]
     fn if_else_stmt() {
         let mut syms = SymbolMap::new();
-        match parse_stmt_with_syms("if true { print true; } else { print false; }", &mut syms).value {
+        match parse_stmt_with_syms("if true { print(true); } else { print(false); }", &mut syms).value {
             Some(Stmt::IfElse { cond, stmts, else_stmts }) => {
                 assert!(cond.item == Expr::Value(Value::Bool(true)));
                 assert!(stmts.len() == 1);
