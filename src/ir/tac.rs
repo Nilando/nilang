@@ -1,4 +1,3 @@
-use super::analysis::MemoryAccess;
 use crate::parser::Op;
 use crate::symbol_map::SymID;
 use std::hash::Hash;
@@ -105,12 +104,14 @@ pub enum Tac {
         src: Var,
     },
     MemStore {
-        mem: MemoryAccess,
+        store: Var,
+        key: Var,
         src: Var,
     },
     MemLoad {
         dest: Var,
-        mem: MemoryAccess,
+        store: Var,
+        key: Var,
     },
     LoadConst {
         dest: Var,
@@ -169,8 +170,8 @@ impl Tac {
             Tac::Return { src, .. } |
             Tac::Jnt { src, .. } | 
             Tac::Jit { src, .. } => (Some(src), None, None),
-            Tac::MemLoad { mem, .. } => (Some(&mem.store), Some(&mem.key), None),
-            Tac::MemStore { mem, src } => (Some(&mem.store), Some(&mem.key), Some(src)),
+            Tac::MemLoad { store, key, .. } => (Some(&store), Some(&key), None),
+            Tac::MemStore { store, key, src } => (Some(&store), Some(&key), Some(src)),
             _ => (None, None, None)
         }
     }
@@ -185,8 +186,8 @@ impl Tac {
             Tac::Return { src, .. } |
             Tac::Jnt { src, .. } | 
             Tac::Jit { src, .. } => (Some(src), None, None),
-            Tac::MemLoad { mem, .. } => (Some(&mut mem.store), Some(&mut mem.key), None),
-            Tac::MemStore { mem, src } => (Some(&mut mem.store), Some(&mut mem.key), Some(src)),
+            Tac::MemLoad { store, key, .. } => (Some(store), Some(key), None),
+            Tac::MemStore { store, key, src } => (Some(store), Some(key), Some(src)),
             _ => (None, None, None)
         }
     }

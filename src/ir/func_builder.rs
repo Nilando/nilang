@@ -302,7 +302,7 @@ pub mod tests {
         assert!(blocks.len() == 4);
 
         assert!(b0.get_instrs().len() == 0);
-        assert!(b0.get_predecessors() == &vec![]);
+        assert!(b0.get_predecessors().is_empty());
         assert!(b0.get_successors() == &vec![1]);
 
         assert!(b1.get_instrs().len() == 3);

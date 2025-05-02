@@ -13,18 +13,22 @@ use crate::symbol_map::SymbolMap;
 use crate::parser::Stmt;
 
 use lowering::stream_tac_from_stmts;
-use optimizer::Optimizer;
+use optimizer::optimize_func;
 
 pub struct Program;
 
+// compiles one module at a time
+// somehow the modules will need to be combined
 pub fn compile_ast(ast: Vec<Stmt>, syms: &mut SymbolMap) -> Program {
+    // create program
+
     stream_tac_from_stmts(ast, |mut func| {
         // func_vizualizer::func_to_svg(&func);
-        println!("{}", func_printer::func_to_string(&func, syms));
+        // println!("{}", func_printer::func_to_string(&func, syms));
 
-        let mut optimizer = Optimizer::new();
+        optimize_func(&mut func);
 
-        optimizer.optimize(&mut func);
+        // code_gen(func)
 
         // run the register allocator on the cfg to get a program
     });

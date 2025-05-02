@@ -53,15 +53,15 @@ impl<'a> FuncPrinter<'a> {
                     self.push_var(dest);
                     self.result.push_str(" = new_map");
                 }
-                Tac::MemLoad { dest, mem } => {
+                Tac::MemLoad { dest, store, key } => {
                     self.push_var(dest);
                     self.result.push_str(" = ");
-                    self.push_var(&mem.store);
-                    self.push_key_access(&mem.key);
+                    self.push_var(store);
+                    self.push_key_access(key);
                 }
-                Tac::MemStore { mem, src } => {
-                    self.push_var(&mem.store);
-                    self.push_key_access(&mem.key);
+                Tac::MemStore { store, key, src } => {
+                    self.push_var(store);
+                    self.push_key_access(key);
                     self.result.push_str(" = ");
                     self.push_var(src);
                 }

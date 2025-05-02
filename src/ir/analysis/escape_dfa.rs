@@ -77,9 +77,9 @@ impl EscapeDFAState {
         }
     }
 
-    fn track_mem_location(&self, mem_acc: &mut MemoryAccess) {
-        if let Some(mem_id) = self.get_mem_id(&mem_acc.store) {
-            mem_acc.set_mem_store_id(mem_id);
+    fn track_mem_location(&self, store: Var) {
+        if let Some(mem_id) = self.get_mem_id(&store) {
+            // mem_acc.set_mem_store_id(mem_id);
         } else {
             //mem_acc.set_mem_store_id(None);
         }
@@ -184,12 +184,12 @@ impl DFA for EscapeDFA {
                         false
                     }
                 }
-                Tac::MemStore { ref mut mem, src } => {
-                    escape_out.track_mem_location(mem);
+                Tac::MemStore { store, key, src } => {
+                    //escape_out.track_mem_location(mem);
                     escape_out.escape_var(src)
                 }
-                Tac::MemLoad { ref mut mem, .. } => {
-                    escape_out.track_mem_location(mem);
+                Tac::MemLoad { store, key, .. } => {
+                    //escape_out.track_mem_location(mem);
                     false
                 }
                 Tac::LoadArg { src } => {

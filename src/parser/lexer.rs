@@ -71,6 +71,7 @@ pub enum KeyWord {
     True,
     Print,
     Read,
+    // Eval
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]

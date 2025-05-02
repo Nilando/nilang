@@ -3,7 +3,6 @@ use crate::symbol_map::SymID;
 use std::collections::HashSet;
 use super::func::Func;
 use super::func_builder::FuncBuilder;
-use super::analysis::MemoryAccess;
 use super::tac::{
     LabelID,
     Tac,
@@ -247,10 +246,10 @@ impl<'a> LoweringCtx<'a> {
     }
 
     fn generate_key_store(&mut self, store: Var, key: Var, src: Var, span: Span) {
-        let mem = MemoryAccess::new(store, key);
         self.emit_spanned(
             Tac::MemStore {
-                mem, 
+                store,
+                key, 
                 src
             },
             span
@@ -259,12 +258,12 @@ impl<'a> LoweringCtx<'a> {
 
     fn generate_key_load(&mut self, store: Var, key: Var, span: Span) -> Var {
         let temp = self.new_temp();
-        let mem = MemoryAccess::new(store, key);
 
         self.emit_spanned(
             Tac::MemLoad {
                 dest: temp,
-                mem,
+                store,
+                key,
             },
             span
         );
@@ -421,13 +420,13 @@ impl<'a> LoweringCtx<'a> {
             };
 
             let src = self.generate_expr(value);
-            let mem = MemoryAccess::new(store, key);
 
             // this doesn't need to be spanned since we are sure we are storing into a map this
             // can't fail so we don't need spanning info
             self.emit(
                 Tac::MemStore {
-                    mem,
+                    store,
+                    key,
                     src
                 },
             );
@@ -446,11 +445,11 @@ impl<'a> LoweringCtx<'a> {
 
             let key = self.new_temp();
             self.emit(Tac::LoadConst { dest: key, src: TacConst::Int(i as isize)});
-            let mem = MemoryAccess::new(store, key);
 
             self.emit(
                 Tac::MemStore {
-                    mem,
+                    store,
+                    key,
                     src,
                 }
             );
@@ -682,9 +681,9 @@ pub mod tests {
             Tac::NewList { dest: Var::temp(2) },
             Tac::LoadConst { dest: Var::temp(3), src: TacConst::Int(1) },
             Tac::LoadConst { dest: Var::temp(4), src: TacConst::Int(0) },
-            Tac::MemStore { src: Var::temp(3), mem: MemoryAccess::new(Var::temp(2), Var::temp(4)) }, 
+            Tac::MemStore { src: Var::temp(3), store: Var::temp(2), key: Var::temp(4) }, 
             Tac::LoadConst { dest: Var::temp(5), src: TacConst::Int(0) },
-            Tac::MemStore { src: Var::temp(1), mem: MemoryAccess::new(Var::temp(2), Var::temp(5)) }, 
+            Tac::MemStore { src: Var::temp(1), store: Var::temp(2), key: Var::temp(5) }, 
         ];
         let input = "[1][0] = 1;";
 
@@ -697,7 +696,7 @@ pub mod tests {
         let tac = vec![
             Tac::LoadConst { dest: Var::temp(1), src: TacConst::Int(1) },
             Tac::LoadConst { dest: Var::temp(2), src: TacConst::Sym(syms.get_id("b")) },
-            Tac::MemStore { src: Var::temp(1), mem: MemoryAccess::new(Var::local(syms.get_id("a")), Var::temp(2)) }, 
+            Tac::MemStore { src: Var::temp(1), store: Var::local(syms.get_id("a")), key: Var::temp(2) }, 
         ];
         let input = "a.b = 1;";
 
@@ -835,7 +834,7 @@ pub mod tests {
         let mut syms = SymbolMap::new();
         let tac = vec![
           Tac::LoadConst { dest: Var::temp(1), src: TacConst::Sym(syms.get_id("c")) }, 
-          Tac::MemLoad { dest: Var::local(syms.get_id("a")), mem: MemoryAccess::new(Var::local(syms.get_id("b")), Var::temp(1)) }, 
+          Tac::MemLoad { dest: Var::local(syms.get_id("a")), store: Var::local(syms.get_id("b")), key: Var::temp(1) }, 
         ];
         let input = "a = b.c;";
 
@@ -847,7 +846,7 @@ pub mod tests {
         let mut syms = SymbolMap::new();
         let tac = vec![
             Tac::LoadConst { dest: Var::temp(1), src: TacConst::Int(0) }, 
-            Tac::MemLoad { dest: Var::local(syms.get_id("a")), mem: MemoryAccess::new(Var::local(syms.get_id("b")), Var::temp(1)) }, 
+            Tac::MemLoad { dest: Var::local(syms.get_id("a")), store: Var::local(syms.get_id("b")), key: Var::temp(1) }, 
         ];
         let input = "a = b[0];";
 
@@ -872,7 +871,7 @@ pub mod tests {
               Tac::NewMap { dest: Var::temp(1) },
               Tac::LoadConst { dest: Var::temp(2), src: TacConst::Sym(syms.get_id("b")) },
               Tac::LoadConst { dest: Var::temp(3), src: TacConst::Int(0) },
-              Tac::MemStore { mem: MemoryAccess::new(Var::temp(1), Var::temp(2)), src: Var::temp(3) },
+              Tac::MemStore { store: Var::temp(1), key: Var::temp(2), src: Var::temp(3) },
               Tac::Copy { dest: Var::local(syms.get_id("a")), src: Var::temp(1) },
         ];
         let input = "a = { b: 0 };";
