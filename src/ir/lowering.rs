@@ -390,7 +390,6 @@ impl<'a> LoweringCtx<'a> {
         );
         self.generate_stmts(stmts);
         self.emit_jump(start);
-        println!("EMITTING LABEL: {}",end);
         self.emit_label(end);
     }
 

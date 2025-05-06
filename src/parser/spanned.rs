@@ -78,6 +78,29 @@ impl PackedSpans {
 
         None
     }
+
+    pub fn remove(&mut self, i: usize) {
+        let mut remove_span = None;
+        for k in 0..self.spans.len() {
+            let (_, mut span_start) = &mut self.spans[k];
+            if span_start < i {
+                span_start -= 1;
+            }
+
+            if k + 1 == self.spans.len() {
+                continue;
+            }
+
+            let span_end = &mut self.spans[k + 1].1;
+            if span_start + 1 == *span_end {
+                remove_span = Some(k);
+            }
+        }
+
+        if let Some(i) = remove_span {
+            self.spans.remove(i);
+        }
+    }
 }
 
 /*

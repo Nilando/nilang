@@ -59,6 +59,28 @@ impl Block {
         &mut self.instrs
     }
 
+    pub fn rev_retain_instrs(&mut self, mut f: impl FnMut(&Tac) -> bool) {
+        let mut dead_indexes = vec![];
+
+        // find which instructions are dead
+        for (idx, instr) in self.instrs.iter().enumerate().rev()  {
+            let retain = f(instr);
+
+            if !retain {
+                self.spans.remove(idx);
+                dead_indexes.push(idx);
+            }
+        }
+
+        // dont retain the dead instructions
+        let mut k = 0;
+        self.instrs.retain(|_| {
+            let retain = !dead_indexes.contains(&k);
+            k += 1;
+            retain
+        });
+    }
+
     pub fn get_phi_nodes(&self) -> &Vec<PhiNode> {
         &self.phi_nodes
     }

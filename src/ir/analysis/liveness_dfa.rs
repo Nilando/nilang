@@ -3,6 +3,11 @@ use super::super::tac::Var;
 use super::dfa::DFA;
 use std::collections::{HashSet, HashMap};
 
+
+// This works whether or not the IR is in SSA form.
+// That is helpful b/c a liveness analysis is needed to put the IR into SSA form,
+// and also is used by several analysis/optimizations when SSA is already applied.
+
 pub struct LivenessDFA {
     live_in: HashMap<BlockId, HashSet<Var>>,
     live_out: HashMap<BlockId, HashSet<Var>>,
@@ -11,6 +16,10 @@ pub struct LivenessDFA {
 impl LivenessDFA {
     pub fn is_live_on_entry(&self, block_id: BlockId, var: &Var) -> bool {
         self.live_in.get(&block_id).unwrap().get(&var).is_some()
+    }
+
+    pub fn get_live_out(&mut self, block_id: BlockId) -> &mut HashSet<Var> {
+        self.live_out.get_mut(&block_id).unwrap()
     }
 
     pub fn new() -> Self { 

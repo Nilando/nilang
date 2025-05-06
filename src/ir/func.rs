@@ -33,6 +33,10 @@ impl Func {
         &self.blocks
     }
 
+    pub fn get_blocks_mut(&mut self) -> &mut Vec<Block> {
+        &mut self.blocks
+    }
+
     pub fn get_block_from_label(&self, label: LabelID) -> BlockId {
         self.blocks.iter().find(|block| block.get_label() == Some(label)).unwrap().get_id()
     }
