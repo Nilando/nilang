@@ -37,4 +37,9 @@ fn dce_inner(block: &mut Block, live_vars: &mut HashSet<Var>) {
         // keep this instruction
         return true;
     });
+
+    // remove dead phi nodes
+    block.get_phi_nodes_mut().retain(|node| {
+        live_vars.contains(&node.dest)
+    });
 }

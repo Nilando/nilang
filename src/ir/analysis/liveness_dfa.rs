@@ -3,7 +3,6 @@ use super::super::tac::Var;
 use super::dfa::DFA;
 use std::collections::{HashSet, HashMap};
 
-
 // This works whether or not the IR is in SSA form.
 // That is helpful b/c a liveness analysis is needed to put the IR into SSA form,
 // and also is used by several analysis/optimizations when SSA is already applied.
@@ -42,11 +41,22 @@ impl DFA for LivenessDFA {
     }
 
     fn init_block(&mut self, block: &Block) -> (Self::Data, Self::Data) {
-        if let Some(var_id) = block.get_return_var_id() {
-            return (HashSet::new(), HashSet::from([var_id]));
+        let mut live_in = HashSet::new();
+        let mut live_out = HashSet::new();
+
+        // set phi node args as live in
+        for node in block.get_phi_nodes().iter() {
+            for (_, var) in node.srcs.iter() {
+                live_in.insert(var.clone());
+            }
         }
 
-        (HashSet::new(), HashSet::new())
+        // set return var as live out
+        if let Some(var_id) = block.get_return_var_id() {
+            live_out.insert(var_id);
+        }
+
+        (live_in, live_out)
     }
 
     fn transfer(&mut self, block: &mut Block, live_out: &Self::Data, live_in: &mut Self::Data) -> bool {
