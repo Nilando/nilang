@@ -12,9 +12,8 @@ SPIKES:
   - might need to separate logic of const string an mutable string
 
 BACKLOG:
-0. Build Dom Tree -- DONE (needs tests)
-1. Escape Analysis -- DONE (needs tests)
-2. Memory SSA -- in progress
+1. Memory SSA -- in progress
+
 3. GVN pass
 4. DCE pass
 5. Jump threading pass

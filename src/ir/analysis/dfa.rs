@@ -16,14 +16,12 @@ pub trait DFA: Sized {
         self.complete(executor.inputs, executor.outputs);
     }
     fn init_block(&mut self, block: &Block) -> (Self::Data, Self::Data);
-    fn complete(&mut self, inputs: HashMap<BlockId, Self::Data>, outputs: HashMap<BlockId, Self::Data>);
-    fn merge(&mut self, updating: &mut Self::Data, merge: &Self::Data);
+    fn complete(&mut self, _inputs: HashMap<BlockId, Self::Data>, _outputs: HashMap<BlockId, Self::Data>) {}
+    fn merge(&mut self, updating: &mut Self::Data, merge: &Self::Data, count: usize);
     fn transfer(&mut self, block: &mut Block, start: &Self::Data, end: &mut Self::Data) -> bool;
 }
 
-struct DFAExecutor<T> 
-where T: DFA
-{
+struct DFAExecutor<T> where T: DFA {
     inputs: HashMap<BlockId, <T as DFA>::Data>,
     outputs: HashMap<BlockId, <T as DFA>::Data>,
     work_list: Vec<BlockId>
@@ -62,10 +60,10 @@ impl<T: DFA> DFAExecutor<T> {
     fn propagate_backward(&mut self, dfa: &mut T, block: &mut Block) {
         let id = block.get_id();
         let output = self.outputs.get_mut(&id).unwrap();
-        for succ_id in block.get_successors().iter() {
+        for (i, succ_id) in block.get_successors().iter().enumerate() {
             let succ_input = self.inputs.get(succ_id).unwrap();
 
-            dfa.merge(output, succ_input);
+            dfa.merge(output, succ_input, i);
         }
 
         let input = self.inputs.get_mut(&id).unwrap();
@@ -82,10 +80,10 @@ impl<T: DFA> DFAExecutor<T> {
     fn propagate_forward(&mut self, dfa: &mut T, block: &mut Block) {
         let id = block.get_id();
         let input = self.inputs.get_mut(&id).unwrap();
-        for pred_id in block.get_predecessors().iter() {
+        for (i, pred_id) in block.get_predecessors().iter().enumerate() {
             let pred_output = self.outputs.get(pred_id).unwrap();
 
-            dfa.merge(input, pred_output);
+            dfa.merge(input, pred_output, i);
         }
 
         let output = self.outputs.get_mut(&id).unwrap();

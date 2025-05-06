@@ -45,9 +45,7 @@ impl DFA for LivenessDFA {
         let mut updated_flag = false;
 
         for instr in block.get_instrs().iter() {
-            let (u1, u2, u3) = instr.used_vars();
-
-            for v in [u1, u2, u3] {
+            for v in instr.used_vars() {
                 if let Some(var) = v {
                     if var.is_temp() {
                         continue;
@@ -76,7 +74,7 @@ impl DFA for LivenessDFA {
         updated_flag
     }
 
-    fn merge(&mut self, updating: &mut Self::Data, merge: &Self::Data) {
+    fn merge(&mut self, updating: &mut Self::Data, merge: &Self::Data, _: usize) {
         for var in merge.iter() {
             updating.insert(*var);
         }

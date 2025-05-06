@@ -1,9 +1,9 @@
 use super::func::Func;
+use super::analysis::{memory_ssa_dfa, ValueMap};
 
 pub fn optimize_func(func: &mut Func) {
     let mut optimizer = Optimizer::new(func);
 
-    // compact the cfg
     optimizer.dead_code_elimination();
     optimizer.global_value_numbering();
     optimizer.dead_code_elimination();
@@ -11,12 +11,17 @@ pub fn optimize_func(func: &mut Func) {
     optimizer.dead_code_elimination();
 }
 
-pub struct Optimizer {
+pub struct Optimizer<'a> {
+    func: &'a mut Func,
+    value_map: ValueMap
 }
 
-impl Optimizer {
-    pub fn new(func: &mut Func) -> Self {
-        todo!()
+impl<'a> Optimizer<'a> {
+    pub fn new(func: &'a mut Func) -> Self {
+        Self {
+            func,
+            value_map: ValueMap::new()
+        }
     }
 
     fn dead_code_elimination(&mut self) {
@@ -24,6 +29,7 @@ impl Optimizer {
     }
 
     fn global_value_numbering(&mut self) {
-        // escape analysis 
+        let memory_access_versions = memory_ssa_dfa(self.func, &mut self.value_map);
+        // let pass_result = gvn_pass(self.func, memory_access_versions, self.value_map);
     }
 }

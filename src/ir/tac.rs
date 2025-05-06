@@ -159,9 +159,9 @@ impl Tac {
         }
     }
 
-    pub fn used_vars(&self) -> (Option<&Var>, Option<&Var>, Option<&Var>) {
+    pub fn used_vars(&self) -> [Option<&Var>; 3] {
         match self {
-            Tac::Binop { lhs, rhs, .. } => (Some(lhs), Some(rhs), None),
+            Tac::Binop { lhs, rhs, .. } => [Some(lhs), Some(rhs), None],
 
             Tac::Copy { src, .. } |
             Tac::Print { src, .. } |
@@ -169,15 +169,15 @@ impl Tac {
             Tac::Call { src, .. } |
             Tac::Return { src, .. } |
             Tac::Jnt { src, .. } | 
-            Tac::Jit { src, .. } => (Some(src), None, None),
-            Tac::MemLoad { store, key, .. } => (Some(&store), Some(&key), None),
-            Tac::MemStore { store, key, src } => (Some(&store), Some(&key), Some(src)),
-            _ => (None, None, None)
+            Tac::Jit { src, .. } => [Some(src), None, None],
+            Tac::MemLoad { store, key, .. } => [Some(store), Some(key), None],
+            Tac::MemStore { store, key, src } => [Some(store), Some(key), Some(src)],
+            _ => [None, None, None]
         }
     }
-    pub fn used_vars_mut(&mut self) -> (Option<&mut Var>, Option<&mut Var>, Option<&mut Var>) {
+    pub fn used_vars_mut(&mut self) -> [Option<&mut Var>; 3] {
         match self {
-            Tac::Binop { lhs, rhs, .. } => (Some(lhs), Some(rhs), None),
+            Tac::Binop { lhs, rhs, .. } => [Some(lhs), Some(rhs), None],
 
             Tac::Copy { src, .. } |
             Tac::Print { src, .. } |
@@ -185,10 +185,10 @@ impl Tac {
             Tac::Call { src, .. } |
             Tac::Return { src, .. } |
             Tac::Jnt { src, .. } | 
-            Tac::Jit { src, .. } => (Some(src), None, None),
-            Tac::MemLoad { store, key, .. } => (Some(store), Some(key), None),
-            Tac::MemStore { store, key, src } => (Some(store), Some(key), Some(src)),
-            _ => (None, None, None)
+            Tac::Jit { src, .. } => [Some(src), None, None],
+            Tac::MemLoad { store, key, .. } => [Some(store), Some(key), None],
+            Tac::MemStore { store, key, src } => [Some(store), Some(key), Some(src)],
+            _ => [None, None, None]
         }
     }
 

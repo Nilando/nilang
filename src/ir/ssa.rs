@@ -49,7 +49,7 @@ fn insert_phi_nodes(cfg: &mut Func) {
 }
 
 struct SSAConverter {
-    version_counters: HashMap<VarID, usize>,
+    version_counters: HashMap<VarID, VerID>,
     version_stacks: Vec<HashMap<VarID, VerID>>,
     visited: HashSet<BlockId>
 }
@@ -108,8 +108,7 @@ impl SSAConverter {
 
     fn version_instructions(&mut self, block: &mut Block) {
         for code in block.get_instrs_mut().iter_mut() {
-            let (u1, u2, u3) = code.used_vars_mut();
-            for uv in [u1, u2, u3].into_iter() {
+            for uv in code.used_vars_mut() {
                 if let Some(used_var) = uv {
                     self.apply_use_versioning(used_var);
                 }
