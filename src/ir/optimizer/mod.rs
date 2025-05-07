@@ -10,7 +10,8 @@ pub fn optimize_func(func: &mut Func) {
     let mut optimizer = Optimizer::new(func);
 
     remove_dead_blocks(func);
-    remove_dead_instructions(func);
+    let removed_instructions = remove_dead_instructions(func);
+    println!("DEAD INSTRS: {}", removed_instructions);
     // let value_map = global_value_numbering();
     // GVN without memory ssa
     // dead code elimination

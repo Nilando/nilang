@@ -1,28 +1,39 @@
 use super::super::block::Block;
 use super::super::tac::Var;
 use super::super::func::Func;
-use super::super::analysis::{LivenessDFA, DFA};
+use super::super::analysis::{LivenessDFA, DFA, compute_unreachable_blocks};
 use std::collections::HashSet;
 
 pub fn remove_dead_blocks(func: &mut Func) {
-    // find blocks that aren't reachable
-    // and remove them
-}
+    let dead_blocks = compute_unreachable_blocks(func);
 
-pub fn remove_dead_instructions(func: &mut Func) {
-    let mut liveness = LivenessDFA::new();
-    liveness.exec(func);
-
-    for block in func.get_blocks_mut().iter_mut() {
-        dce_inner(block, liveness.get_live_out(block.get_id()));
+    for block_id in dead_blocks.into_iter() {
+        func.remove_block(block_id);
     }
 }
 
-fn dce_inner(block: &mut Block, live_vars: &mut HashSet<Var>) {
+pub fn remove_dead_instructions(func: &mut Func) -> usize {
+    let mut liveness = LivenessDFA::new();
+    liveness.exec(func);
+
+    let mut removed_instructions = 0;
+
+    for block in func.get_blocks_mut().iter_mut() {
+        removed_instructions += dce_inner(block, liveness.get_live_out(block.get_id()));
+    }
+
+    removed_instructions
+}
+
+fn dce_inner(block: &mut Block, live_vars: &mut HashSet<Var>) -> usize {
+    let mut removed_instructions = 0;
+
     block.rev_retain_instrs(|instr| {
         // first check if this is a dead instruction, and remove if so
         if let Some(dest) = instr.dest_var() {
             if !live_vars.contains(dest) && !instr.has_side_effects() {
+                removed_instructions += 1;
+                println!("{:?}", instr);
                 return false;
             }
         }
@@ -42,4 +53,6 @@ fn dce_inner(block: &mut Block, live_vars: &mut HashSet<Var>) {
     block.get_phi_nodes_mut().retain(|node| {
         live_vars.contains(&node.dest)
     });
+
+    removed_instructions
 }

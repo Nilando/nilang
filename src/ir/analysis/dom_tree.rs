@@ -95,13 +95,10 @@ pub fn compute_dominance_frontier(func: &Func, seed_block: &Block) -> HashSet<Bl
     dominance_frontier
 }
 
-/*
-pub fn compute_unreachable_blocks(&self) -> HashSet<BlockID> {
-    let entry_block = self.get_entry_block();
-    let reachable_blocks = self.compute_reachable_blocks(entry_block);
-    let all_blocks = self.blocks.iter().map(|b| b.id).collect::<HashSet<BlockID>>();
+pub fn compute_unreachable_blocks(func: &Func) -> HashSet<BlockId> {
+    let entry_block = func.get_entry_block();
+    let reachable_blocks = compute_reachable_blocks(func, entry_block);
+    let all_blocks = func.get_blocks().iter().map(|b| b.get_id()).collect::<HashSet<BlockId>>();
 
     all_blocks.difference(&reachable_blocks).map(|id| *id).collect()
 }
-*/
-

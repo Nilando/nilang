@@ -24,10 +24,9 @@ pub fn compile_ast(ast: Vec<Stmt>, syms: &mut SymbolMap) -> Program {
 
     stream_tac_from_stmts(ast, |mut func| {
         // func_vizualizer::func_to_svg(&func);
-        // println!("{}", func_printer::func_to_string(&func, syms));
-
         optimize_func(&mut func);
 
+        println!("{}", func_printer::func_to_string(&func, syms));
         // code_gen(func)
 
         // run the register allocator on the cfg to get a program

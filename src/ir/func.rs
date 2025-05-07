@@ -37,6 +37,12 @@ impl Func {
         &mut self.blocks
     }
 
+    pub fn remove_block(&mut self, block_id: BlockId) {
+        self.blocks.retain(|block| {
+            block.get_id() != block_id
+        });
+    }
+
     pub fn get_block_from_label(&self, label: LabelID) -> BlockId {
         self.blocks.iter().find(|block| block.get_label() == Some(label)).unwrap().get_id()
     }

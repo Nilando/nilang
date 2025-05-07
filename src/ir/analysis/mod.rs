@@ -6,4 +6,4 @@ mod dom_tree;
 
 pub use liveness_dfa::LivenessDFA;
 pub use dfa::DFA;
-pub use dom_tree::{compute_dominance_frontier, compute_dom_tree};
+pub use dom_tree::{compute_dominance_frontier, compute_dom_tree, compute_unreachable_blocks};
