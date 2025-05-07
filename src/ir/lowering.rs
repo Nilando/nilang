@@ -402,8 +402,12 @@ impl<'a> LoweringCtx<'a> {
 
             Var::upvalue(sym_id)
         } else {
-            // this local will be dead, probably can optimize here to keep this info
-            Var::local(sym_id)
+            // this is an uninitialized variable
+            let uninit_var = Var::local(sym_id);
+
+            self.emit(Tac::LoadConst { dest: uninit_var, src: TacConst::Null });
+
+            uninit_var
         }
     }
 

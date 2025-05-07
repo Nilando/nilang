@@ -1,15 +1,3 @@
-fn quicksort(numbers) {
-  inner_quicksort(numbers, 0, len(numbers) - 1);
-}
-
-fn inner_quicksort(A, lo, hi) {
-  if (lo >= 0) && (hi >= 0) && (lo < hi) {
-    p = partition(A, lo, hi);
-    inner_quicksort(A, lo, p);
-    inner_quicksort(A, p + 1, hi);
-  }
-}
-
 fn partition(A, lo, hi) {
   pivot = A[lo];
 
@@ -36,6 +24,18 @@ fn partition(A, lo, hi) {
     A[i] = A[k];
     A[k] = t;
   }
+}
+
+fn inner_quicksort(A, lo, hi) {
+  if (lo >= 0) && (hi >= 0) && (lo < hi) {
+    p = partition(A, lo, hi);
+    inner_quicksort(A, lo, p);
+    inner_quicksort(A, p + 1, hi);
+  }
+}
+
+fn quicksort(numbers) {
+  inner_quicksort(numbers, 0, len(numbers) - 1);
 }
 
 unsorted_list = [6, 3, 5, 9, 0, 8, 7, 4, 6, 2, 1];

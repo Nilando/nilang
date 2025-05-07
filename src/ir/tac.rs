@@ -171,6 +171,7 @@ impl Tac {
             Tac::Jit { src, .. } => [Some(src), None, None],
             Tac::MemLoad { store, key, .. } => [Some(store), Some(key), None],
             Tac::MemStore { store, key, src } => [Some(store), Some(key), Some(src)],
+            Tac::StoreUpvalue { dest, src } => [Some(dest), Some(src), None],
             _ => [None, None, None]
         }
     }
@@ -187,6 +188,8 @@ impl Tac {
             Tac::Jit { src, .. } => [Some(src), None, None],
             Tac::MemLoad { store, key, .. } => [Some(store), Some(key), None],
             Tac::MemStore { store, key, src } => [Some(store), Some(key), Some(src)],
+            Tac::StoreUpvalue { dest, src } => [Some(dest), Some(src), None],
+
             _ => [None, None, None]
         }
     }
@@ -200,7 +203,6 @@ impl Tac {
             Tac::Read { dest, .. } |
             Tac::NewMap { dest, .. } |
             Tac::NewList { dest, .. } |
-            Tac::StoreUpvalue { dest, .. } |
             Tac::Binop { dest, .. } => Some(dest),
             _ => None
         }
@@ -215,7 +217,6 @@ impl Tac {
             Tac::Read { dest, .. } |
             Tac::NewMap { dest, .. } |
             Tac::NewList { dest, .. } |
-            Tac::StoreUpvalue { dest, .. } |
             Tac::Binop { dest, .. } => Some(dest),
             _ => None
         }
