@@ -1,8 +1,9 @@
 mod dce;
+mod gvn;
 
 use super::func::Func;
-use super::analysis::ValueMap;
 use dce::{remove_dead_instructions, remove_dead_blocks};
+use gvn::{ValueMap, global_value_numbering};
 
 
 pub fn optimize_func(func: &mut Func) {
@@ -10,6 +11,7 @@ pub fn optimize_func(func: &mut Func) {
 
     remove_dead_blocks(func);
     remove_dead_instructions(func);
+    // let value_map = global_value_numbering();
     // GVN without memory ssa
     // dead code elimination
     // memory ssa

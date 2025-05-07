@@ -125,11 +125,13 @@ impl<'a> FuncPrinter<'a> {
                 Tac::StoreUpvalue { dest, src } => {
                     self.push_var(dest);
                     self.result.push_str(" UPVAL ");
-                    self.result.push_str(self.syms.get_str(*src));
+                    self.push_var(src);
                 }
-                Tac::Label { label } => {
-                    //self.result.push_str(&format!("label {}", label));
+                Tac::Label { .. } => {
                     continue;
+                }
+                Tac::Noop => {
+                    self.result.push_str("NOOP\n");
                 }
             }
             self.result.push_str("\n");

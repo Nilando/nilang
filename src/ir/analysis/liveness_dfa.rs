@@ -71,7 +71,7 @@ impl DFA for LivenessDFA {
                     }
 
                     if defined.get(&var).is_none() {
-                        updated_flag = updated_flag || live_in.insert(*var);
+                        updated_flag |= live_in.insert(*var);
                     }
                 }
             }
@@ -81,13 +81,14 @@ impl DFA for LivenessDFA {
                 if var.is_temp() {
                     continue;
                 }
+
                 defined.insert(*var);
             }
         }
 
         // LIVE IN = USED VARS THAT WEREN'T DEFINED + LIVE OUT VARS THAT WEREN'T DEFINED
         for var in live_out.difference(&defined) {
-            updated_flag = updated_flag || live_in.insert(*var);
+            updated_flag |= live_in.insert(*var);
         }
 
         updated_flag

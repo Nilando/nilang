@@ -48,8 +48,6 @@ impl Var {
         Self {
             id,
             ver: None,
-            //last_use: None,
-            //live: None,
         }
     }
 
@@ -119,7 +117,7 @@ pub enum Tac {
     },
     StoreUpvalue {
         dest: Var,
-        src: SymID,
+        src: Var,
     },
     LoadArg {
         src: Var
@@ -145,6 +143,7 @@ pub enum Tac {
     Label {
         label: LabelID,
     },
+    Noop,
 }
 
 impl Tac {

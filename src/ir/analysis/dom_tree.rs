@@ -3,7 +3,7 @@ use super::super::func::Func;
 use super::super::block::BlockId;
 use std::collections::{HashSet, HashMap};
 
-pub fn compute_dom_tree(func: &mut Func) {
+pub fn compute_dom_tree(func: &mut Func) -> HashMap<BlockId, Vec<BlockId>> {
     let entry_block = func.get_entry_block();
     let mut work_list = vec![entry_block.get_id()];
     let mut visited = HashSet::from([entry_block.get_id()]);
@@ -31,8 +31,7 @@ pub fn compute_dom_tree(func: &mut Func) {
         }
     }
 
-    todo!() // save the tree somewhere
-    // cfg.dom_tree = dom_tree;
+    dom_tree
 }
 
 pub fn compute_reachable_blocks(func: &Func, block: &Block) -> HashSet<BlockId> {

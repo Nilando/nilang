@@ -305,12 +305,13 @@ impl<'a> LoweringCtx<'a> {
             }
         );
 
+        for sym_id in upvalues.iter() {
+            let upvalue = self.generate_ident(*sym_id);
 
-        for upvalue in upvalues.iter() {
             self.emit(
                 Tac::StoreUpvalue {
                     dest,
-                    src: *upvalue
+                    src: upvalue
                 }
             );
         }
