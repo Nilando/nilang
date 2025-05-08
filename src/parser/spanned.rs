@@ -83,7 +83,7 @@ impl PackedSpans {
         let mut remove_span = None;
         for k in 0..self.spans.len() {
             let (_, mut span_start) = &mut self.spans[k];
-            if span_start < i {
+            if span_start > i {
                 span_start -= 1;
             }
 

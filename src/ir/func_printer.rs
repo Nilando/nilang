@@ -38,7 +38,12 @@ impl<'a> FuncPrinter<'a> {
         self.push_block_header(block);
 
         for tac in block.get_instrs().iter() {
+            if let Tac::Label { .. } = tac {
+                continue;
+            }
+
             self.result.push_str("  ");
+
             match tac {
                 Tac::Copy { dest, src } => {
                     self.push_var(dest);
@@ -131,7 +136,7 @@ impl<'a> FuncPrinter<'a> {
                     continue;
                 }
                 Tac::Noop => {
-                    self.result.push_str("NOOP\n");
+                    self.result.push_str("NOOP");
                 }
             }
             self.result.push_str("\n");
