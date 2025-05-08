@@ -699,6 +699,7 @@ pub mod tests {
         let mut syms = SymbolMap::new();
         let tac = vec![
             Tac::LoadConst { dest: Var::temp(1), src: TacConst::Int(1) },
+            Tac::LoadConst { dest: Var::local(syms.get_id("a")), src: TacConst::Null },
             Tac::LoadConst { dest: Var::temp(2), src: TacConst::Sym(syms.get_id("b")) },
             Tac::MemStore { src: Var::temp(1), store: Var::local(syms.get_id("a")), key: Var::temp(2) }, 
         ];
@@ -785,6 +786,7 @@ pub mod tests {
             Tac::LoadConst { dest: Var::temp(1), src: TacConst::Int(0) },
             Tac::LoadConst { dest: Var::temp(2), src: TacConst::Int(1) },
             Tac::LoadConst { dest: Var::temp(3), src: TacConst::Int(2) },
+            Tac::LoadConst { dest: Var::local(syms.get_id("a")), src: TacConst::Null },
             Tac::LoadArg { src: Var::temp(1), },
             Tac::LoadArg { src: Var::temp(2), },
             Tac::LoadArg { src: Var::temp(3), },
@@ -837,8 +839,9 @@ pub mod tests {
     fn sym_key_load() {
         let mut syms = SymbolMap::new();
         let tac = vec![
-          Tac::LoadConst { dest: Var::temp(1), src: TacConst::Sym(syms.get_id("c")) }, 
-          Tac::MemLoad { dest: Var::local(syms.get_id("a")), store: Var::local(syms.get_id("b")), key: Var::temp(1) }, 
+            Tac::LoadConst { dest: Var::local(syms.get_id("b")), src: TacConst::Null },
+            Tac::LoadConst { dest: Var::temp(1), src: TacConst::Sym(syms.get_id("c")) }, 
+            Tac::MemLoad { dest: Var::local(syms.get_id("a")), store: Var::local(syms.get_id("b")), key: Var::temp(1) }, 
         ];
         let input = "a = b.c;";
 
@@ -849,6 +852,7 @@ pub mod tests {
     fn val_key_load() {
         let mut syms = SymbolMap::new();
         let tac = vec![
+            Tac::LoadConst { dest: Var::local(syms.get_id("b")), src: TacConst::Null },
             Tac::LoadConst { dest: Var::temp(1), src: TacConst::Int(0) }, 
             Tac::MemLoad { dest: Var::local(syms.get_id("a")), store: Var::local(syms.get_id("b")), key: Var::temp(1) }, 
         ];

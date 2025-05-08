@@ -242,6 +242,12 @@ impl GVNC {
 }
 
 #[derive(PartialEq)]
+enum Value {
+    Binop(CanonicalBinop),
+    Const(TacConst),
+}
+
+#[derive(PartialEq)]
 enum ValueLocation {
     Var(Var),
     Memory(MemoryAccessId),
@@ -296,10 +302,4 @@ impl CanonicalBinop {
             }
         }
     }
-}
-
-#[derive(PartialEq)]
-enum Value {
-    Binop(CanonicalBinop),
-    Const(TacConst),
 }
