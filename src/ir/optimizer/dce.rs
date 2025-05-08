@@ -1,5 +1,5 @@
 use super::super::block::Block;
-use super::super::tac::Var;
+use super::super::tac::{Tac, Var};
 use super::super::func::Func;
 use super::super::analysis::{LivenessDFA, DFA, compute_unreachable_blocks};
 use std::collections::HashSet;
@@ -29,11 +29,14 @@ fn dce_inner(block: &mut Block, live_vars: &mut HashSet<Var>) -> usize {
     let mut removed_instructions = 0;
 
     block.rev_retain_instrs(|instr| {
+        if instr == &Tac::Noop {
+            removed_instructions += 1;
+            return false;
+        }
         // first check if this is a dead instruction, and remove if so
         if let Some(dest) = instr.dest_var() {
             if !live_vars.contains(dest) && !instr.has_side_effects() {
                 removed_instructions += 1;
-                println!("{:?}", instr);
                 return false;
             }
         }
