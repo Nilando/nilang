@@ -9,6 +9,9 @@ mod ssa;
 mod analysis;
 mod optimizer;
 
+#[cfg(test)]
+mod tests;
+
 use crate::symbol_map::SymbolMap;
 use crate::parser::Stmt;
 
