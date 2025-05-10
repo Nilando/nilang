@@ -3,6 +3,16 @@
   This file is generated programatically by golden_test_generator.rb
 */
 #[test]
+fn dead_code() {
+  super::test_golden_ir("./src/ir/tests/golden/dead_code.golden")
+}
+
+#[test]
+fn lucky_number() {
+  super::test_golden_ir("./src/ir/tests/golden/lucky_number.golden")
+}
+
+#[test]
 fn if_else() {
   super::test_golden_ir("./src/ir/tests/golden/if_else.golden")
 }
@@ -20,9 +30,4 @@ fn lowering_no_input() {
 #[test]
 fn lowering_closure() {
   super::test_golden_ir("./src/ir/tests/golden/lowering_closure.golden")
-}
-
-#[test]
-fn read() {
-  super::test_golden_ir("./src/ir/tests/golden/read.golden")
 }

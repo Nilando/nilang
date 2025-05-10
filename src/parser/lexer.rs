@@ -208,7 +208,6 @@ impl<'a> Lexer<'a> {
         }
 
         if let Some(token) = self.lex_ctrl()? {
-            println!("{:?}", self.chars.peek());
             return Ok(token);
         }
 
@@ -722,5 +721,16 @@ mod tests {
         ];
 
         assert_src_tokens(source, tokens, symbol_map);
+    }
+
+    #[test]
+    fn lex_unexpected_token() {
+        let mut syms = SymbolMap::new();
+        let source = r#"~"#;
+        let mut lexer = Lexer::new(source);
+        let result = lexer.get_token(&mut syms);
+        let error = result.unwrap_err().item;
+
+        assert_eq!(error, LexError::Unknown);
     }
 }

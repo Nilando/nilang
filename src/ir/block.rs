@@ -105,6 +105,10 @@ impl Block {
         self.predecessors.push(block_id);
     }
 
+    pub fn remove_predecessor(&mut self, block_id: BlockId) {
+        self.predecessors.retain(|id| *id != block_id);
+    }
+
     pub fn push_phi_node(&mut self, phi: PhiNode) {
         self.phi_nodes.push(phi);
     }

@@ -1,3 +1,7 @@
+OPT=true
+
+%%%%
+
 lucky_number = "42";
 
 while true {
@@ -39,9 +43,6 @@ block2:
 
 block3:
   jump block10
-
-block4:
-  jump block9
 
 block5:
   t5 = guess_0 > lucky_number_1

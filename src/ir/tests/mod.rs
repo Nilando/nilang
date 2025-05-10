@@ -5,6 +5,7 @@ use crate::parser::parse_program;
 use crate::symbol_map::SymbolMap;
 use super::super::ir::lower_ast;
 use super::super::ir::func_printer::func_to_string;
+use super::optimize_func;
 use pretty_assertions::assert_eq;
 
 pub(self) fn test_golden_ir(filename: &str) {
@@ -14,7 +15,7 @@ pub(self) fn test_golden_ir(filename: &str) {
     let expected_ir = split_contents.pop().unwrap().trim();
     let input = split_contents.pop().unwrap().trim();
     let opt_flags = split_contents.pop();
-    let (mut dce, mut gvn, mut mssa) = (false, false, false);
+    let (mut opt, mut dce, mut gvn, mut mssa) = (false, false, false, false);
     if let Some(flags) = opt_flags { 
         for line in flags.lines() {
             let flag = line.trim();
@@ -24,8 +25,7 @@ pub(self) fn test_golden_ir(filename: &str) {
             let setting = flag_setting.next().unwrap();
 
             match flag {
-                "DCE" => dce = true,
-                "GVN" => gvn = true,
+                "OPT" => opt = true,
                 _ => panic!("unrecognized optimization flag")
             }
         }
@@ -35,10 +35,15 @@ pub(self) fn test_golden_ir(filename: &str) {
     let mut syms = SymbolMap::new();
     let parse_result = parse_program(input, &mut syms);
     let ast = parse_result.value.unwrap();
-    let ir = lower_ast(ast);
+    let mut ir = lower_ast(ast);
 
-    for func in ir.iter() {
+    for func in ir.iter_mut() {
+        if opt == true {
+            optimize_func(func);
+        }
+
         let func_ir = func_to_string(&func, &mut syms);
+
         actual_ir.push_str(&func_ir);
     }
 

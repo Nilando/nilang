@@ -38,7 +38,8 @@ impl Func {
     }
 
     pub fn remove_block(&mut self, block_id: BlockId) {
-        self.blocks.retain(|block| {
+        self.blocks.retain_mut(|block| {
+            block.remove_predecessor(block_id);
             block.get_id() != block_id
         });
     }
