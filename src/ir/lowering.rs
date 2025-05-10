@@ -23,7 +23,7 @@ struct FuncLoweringCtx {
     label_counter: usize,
     defined_variables: HashSet<SymID>,
     loop_ctxs: Vec<LoopCtx>,
-    builder: FuncBuilder
+    builder: FuncBuilder,
 }
 
 impl FuncLoweringCtx {
@@ -38,20 +38,20 @@ impl FuncLoweringCtx {
     }
 }
 
-struct LoweringCtx<'a> {
+struct LoweringCtx {
     func_counter: usize,
     funcs: Vec<FuncLoweringCtx>,
-    streaming_callback: Box<dyn FnMut(Func) + 'a>
+    lowered_funcs: Vec<Func>,
 }
 
-impl<'a> LoweringCtx<'a> {
-    pub fn new(callback: impl FnMut(Func) + 'a) -> Self {
+impl LoweringCtx {
+    pub fn new() -> Self {
         let main_func = FuncLoweringCtx::new(MAIN_FUNC_ID, HashSet::new());
 
         Self {
             func_counter: 0,
             funcs: vec![main_func],
-            streaming_callback: Box::new(callback)
+            lowered_funcs: vec![]
         }
     } 
 
@@ -327,18 +327,19 @@ impl<'a> LoweringCtx<'a> {
 
         self.generate_stmts(stmts);
 
-        let upvalues = self.funcs.last().unwrap().builder.upvalues.clone();
+        let func_builder = &self.funcs.last().unwrap().builder;
+        let upvalues = func_builder.upvalues.clone();
 
-        self.stream_current_func();
+        self.push_current_func();
 
         (func_id, upvalues)
     }
 
-    fn stream_current_func(&mut self) {
+    fn push_current_func(&mut self) {
         let builder = self.funcs.pop().unwrap().builder;
         let func = builder.build();
 
-        (self.streaming_callback)(func);
+        self.lowered_funcs.push(func);
     }
 
     fn generate_if_block(&mut self, cond: Spanned<Expr>, stmts: Vec<Stmt>) {
@@ -618,12 +619,14 @@ impl<'a> LoweringCtx<'a> {
     }
 }
 
-pub fn stream_tac_from_stmts(stmts: Vec<Stmt>, callback: impl FnMut(Func)) {
-    let mut ctx = LoweringCtx::new(callback);
+pub fn lower_ast(stmts: Vec<Stmt>) -> Vec<Func> {
+    let mut ctx = LoweringCtx::new();
 
     ctx.generate_stmts(stmts);
 
-    ctx.stream_current_func();
+    ctx.push_current_func();
+
+    ctx.lowered_funcs
 }
 
 #[cfg(test)]
@@ -642,12 +645,8 @@ pub mod tests {
     fn expect_tac_with_syms(input: &str, expected_code: Vec<Tac>, syms: &mut SymbolMap) {
         let parse_result = parse_program(input, syms);
         let expected_func = instrs_to_func(expected_code);
-        let mut top_level_func = None;
-
-        stream_tac_from_stmts(parse_result.value.unwrap(), |func| {
-            top_level_func = Some(func);
-        });
-
+        let ast = parse_result.value.unwrap();
+        let top_level_func = lower_ast(ast).pop();
         let expected_instrs: Vec<Tac> = expected_func.instrs().map(|i| i.clone()).collect();
         let found_instrs: Vec<Tac> = top_level_func.unwrap().instrs().map(|i| i.clone()).collect();
 
