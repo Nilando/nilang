@@ -1,0 +1,23 @@
+OPT=true
+
+%%%%
+
+a = 1;           // 1
+b = a + a;       // 2
+c = 4;           // 4
+d = c * b;       // 8
+e = d * 2;       // 16
+f = b * e;       // 32
+g = f * (1 + 1); // 64
+h = g == 64;     // true
+
+print(h);
+
+%%%%
+
+MAIN () {
+block0:
+  h_0 = true
+  print h_0
+
+}

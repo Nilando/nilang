@@ -3,6 +3,11 @@
   This file is generated programatically by golden_test_generator.rb
 */
 #[test]
+fn constant_folding() {
+  super::test_golden_ir("./src/ir/tests/golden/constant_folding.golden")
+}
+
+#[test]
 fn dead_code() {
   super::test_golden_ir("./src/ir/tests/golden/dead_code.golden")
 }
