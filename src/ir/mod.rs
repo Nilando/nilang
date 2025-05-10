@@ -14,3 +14,4 @@ mod tests;
 
 pub use lowering::lower_ast;
 pub use func_printer::func_to_string;
+pub use optimizer::optimize_func;

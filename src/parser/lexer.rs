@@ -208,6 +208,7 @@ impl<'a> Lexer<'a> {
         }
 
         if let Some(token) = self.lex_ctrl()? {
+            println!("{:?}", self.chars.peek());
             return Ok(token);
         }
 
@@ -408,16 +409,16 @@ impl<'a> Lexer<'a> {
                     self.advance();
 
                     if self.read('=') {
-                        Token::Op(Op::Equal)
+                        return Ok(Some(Token::Op(Op::Equal)));
                     } else {
-                        Token::Ctrl(Ctrl::Equal)
+                        return Ok(Some(Token::Ctrl(Ctrl::Equal)));
                     }
                 }
                 '!' => {
                     self.advance();
 
                     if self.read('=') {
-                        Token::Op(Op::NotEqual)
+                        return Ok(Some(Token::Op(Op::NotEqual)));
                     } else {
                         return Err(LexError::Unknown);
                     }
@@ -426,7 +427,7 @@ impl<'a> Lexer<'a> {
                     self.advance();
 
                     if self.read('|') {
-                        Token::Op(Op::Or)
+                        return Ok(Some(Token::Op(Op::Or)));
                     } else {
                         return Err(LexError::Unknown);
                     }
@@ -435,7 +436,7 @@ impl<'a> Lexer<'a> {
                     self.advance();
 
                     if self.read('&') {
-                        Token::Op(Op::And)
+                        return Ok(Some(Token::Op(Op::And)));
                     } else {
                         return Err(LexError::Unknown);
                     }
@@ -444,7 +445,7 @@ impl<'a> Lexer<'a> {
                     self.advance();
 
                     if self.read('=') {
-                        Token::Op(Op::Lte)
+                        return Ok(Some(Token::Op(Op::Lte)))
                     } else {
                         return Ok(Some(Token::Op(Op::Lt)));
                     }
@@ -453,7 +454,7 @@ impl<'a> Lexer<'a> {
                     self.advance();
 
                     if self.read('=') {
-                        Token::Op(Op::Gte)
+                        return Ok(Some(Token::Op(Op::Gte)));
                     } else {
                         return Ok(Some(Token::Op(Op::Gt)));
                     }
@@ -535,17 +536,23 @@ impl<'a> Lexer<'a> {
 
 #[cfg(test)]
 mod tests {
+    use pretty_assertions::assert_eq;
     use super::*;
 
     fn assert_src_tokens(source: &str, tokens: Vec<Token>, mut symbol_map: SymbolMap) {
         let mut lexer = Lexer::new(source);
 
-        for expected_token in tokens {
-            let spanned_token = lexer.get_token(&mut symbol_map);
-            let token = spanned_token.unwrap().item;
+        let mut expected_tokens = vec![];
+        while let Ok(spanned_token) = lexer.get_token(&mut symbol_map) {
+            let token = spanned_token.item;
+            if token == Token::Ctrl(Ctrl::End) {
+                break;
+            }
 
-            assert_eq!(token, expected_token);
+            expected_tokens.push(token);
         }
+
+        assert_eq!(tokens, expected_tokens);
     }
 
     #[test]
@@ -596,7 +603,6 @@ mod tests {
             Token::Ctrl(Ctrl::SemiColon),
             Token::Ctrl(Ctrl::RightCurly),
             Token::Ctrl(Ctrl::RightCurly),
-            Token::Ctrl(Ctrl::End),
         ];
 
         assert_src_tokens(source, tokens, symbol_map);
@@ -661,7 +667,7 @@ mod tests {
         "#;
 
         let tokens = vec![
-            Token::Int(69)
+            Token::Int(69),
         ];
 
         assert_src_tokens(source, tokens, syms);
@@ -697,6 +703,22 @@ mod tests {
             Token::Op(Op::Gte),
             Token::Op(Op::Equal),
             Token::Op(Op::NotEqual),
+        ];
+
+        assert_src_tokens(source, tokens, symbol_map);
+    }
+
+    #[test]
+    fn lex_simple_addition() {
+        let mut symbol_map = SymbolMap::new();
+        let source = r#"a=1+1;"#;
+        let tokens = vec![
+            Token::Ident(symbol_map.get_id("a")),
+            Token::Ctrl(Ctrl::Equal),
+            Token::Int(1),
+            Token::Op(Op::Plus),
+            Token::Int(1),
+            Token::Ctrl(Ctrl::SemiColon),
         ];
 
         assert_src_tokens(source, tokens, symbol_map);

@@ -2,7 +2,7 @@ mod config;
 
 use crate::parser::{parse_program, ParseError, Spanned};
 use crate::symbol_map::SymbolMap;
-use crate::ir::{lower_ast, func_to_string};
+use crate::ir::{func_to_string, lower_ast, optimize_func};
 
 pub use config::Config;
 
@@ -41,7 +41,11 @@ fn run_script(mut config: Config) {
         output_string(ast_string, path);
     }
 
-    let ir = lower_ast(ast);
+    let mut ir = lower_ast(ast);
+
+    for func in ir.iter_mut() {
+        optimize_func(func);
+    }
 
     if let Some(path) = config.ir_output_path.as_ref() {
         let mut ir_string = String::new();
