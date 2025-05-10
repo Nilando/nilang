@@ -19,7 +19,6 @@ pub(self) fn test_golden_ir(filename: &str) {
     stream_tac_from_stmts(parse_result.value.unwrap(), |func| {
         let func_ir = func_to_string(&func, &mut syms);
         actual_ir.push_str(&func_ir);
-        actual_ir.push_str("\n");
     });
 
     actual_ir.pop();

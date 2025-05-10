@@ -268,6 +268,6 @@ impl<'a> FuncPrinter<'a> {
     }
 
     fn push_last_line(&mut self) {
-        self.result.push_str("}");
+        self.result.push_str("}\n");
     }
 }
