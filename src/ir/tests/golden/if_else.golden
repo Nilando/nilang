@@ -1,0 +1,35 @@
+a = 1;
+b = 2;
+
+if a == b {
+  x = 1;
+  msg = "uh oh";
+} else {
+  msg = "things seem to be working?";
+}
+
+print(msg);
+
+%%%%
+
+MAIN () {
+block0:
+  a_0 = 1
+  b_0 = 2
+  t1 = a_0 == b_0
+  jnt t1 block2
+  next block1
+
+block1:
+  x_0 = 1
+  msg_2 = "uh oh"
+  jump block3(msg_2)
+
+block2:
+  msg_0 = "things seem to be working?"
+  next block3(msg_0)
+
+block3(msg_1):
+  print msg_1
+
+}

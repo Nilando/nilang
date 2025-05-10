@@ -3,6 +3,26 @@
   This file is generated programatically by golden_test_generator.rb
 */
 #[test]
+fn if_else() {
+  super::test_golden_ir("./src/ir/tests/golden/if_else.golden")
+}
+
+#[test]
+fn shortcircuit() {
+  super::test_golden_ir("./src/ir/tests/golden/shortcircuit.golden")
+}
+
+#[test]
 fn lowering_no_input() {
   super::test_golden_ir("./src/ir/tests/golden/lowering_no_input.golden")
+}
+
+#[test]
+fn lowering_closure() {
+  super::test_golden_ir("./src/ir/tests/golden/lowering_closure.golden")
+}
+
+#[test]
+fn read() {
+  super::test_golden_ir("./src/ir/tests/golden/read.golden")
 }

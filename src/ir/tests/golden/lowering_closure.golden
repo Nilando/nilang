@@ -1,0 +1,55 @@
+fn new_counter() {
+  count = { val: 0 };
+
+  return fn() {
+    count.val = count.val + 1;
+
+    return count.val;
+  };
+}
+
+my_counter = new_counter();
+
+print(my_counter()); // 1
+print(my_counter()); // 2
+print(my_counter()); // 3
+
+%%%%
+
+fn2 () {
+block0:
+  t1 = SymID(4)
+  t2 = ^count[t1]
+  t3 = 1
+  t4 = t2 + t3
+  t5 = SymID(4)
+  ^count[t5] = t4
+  t6 = SymID(4)
+  t7 = ^count[t6]
+  return t7
+
+}
+fn1 () {
+block0:
+  t1 = new_map
+  t2 = SymID(4)
+  t3 = 0
+  t1[t2] = t3
+  count_0 = t1
+  t4 = fn(2)
+  t4 UPVAL count_0
+  return t4
+
+}
+MAIN () {
+block0:
+  new_counter_0 = fn(1)
+  my_counter_0 = call new_counter_0
+  t1 = call my_counter_0
+  print t1
+  t3 = call my_counter_0
+  print t3
+  t5 = call my_counter_0
+  print t5
+
+}

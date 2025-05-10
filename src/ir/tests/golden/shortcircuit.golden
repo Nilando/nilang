@@ -1,0 +1,45 @@
+if ((a == b) && (c == d)) || (e == f) {
+  return true;
+}
+
+%%%%
+
+MAIN () {
+block0:
+  a_0 = null
+  b_0 = null
+  t3 = a_0 == b_0
+  l2_0 = t3
+  jnt l2_0 block2(l2_0)
+  next block1
+
+block1:
+  c_0 = null
+  d_0 = null
+  t4 = c_0 == d_0
+  l2_2 = t4
+  next block2(l2_2)
+
+block2(l2_1):
+  l1_0 = l2_1
+  jit l1_0 block4(l1_0)
+  next block3
+
+block3:
+  e_0 = null
+  f_0 = null
+  t5 = e_0 == f_0
+  l1_2 = t5
+  next block4(l1_2)
+
+block4(l1_1):
+  jnt l1_1 block6
+  next block5
+
+block5:
+  t6 = true
+  return t6
+
+block6:
+
+}
