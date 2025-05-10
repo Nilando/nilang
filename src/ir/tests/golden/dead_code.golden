@@ -1,5 +1,7 @@
 OPT=true
+
 %%%%
+
 // these instructions are all dead
 a = 12345;
 a = "foo";

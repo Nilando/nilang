@@ -51,8 +51,12 @@ pub(self) fn test_golden_ir(filename: &str) {
 
     if std::env::var("GOLDEN_UPDATE").is_ok() {
         let mut new_file = File::create(filename).expect("test file exists");
-        let mut new_contents = input.to_string();
-
+        let mut new_contents = String::new();
+        if let Some(flags) = opt_flags {
+            new_contents.push_str(&flags);
+            new_contents.push_str("%%%%\n\n");
+        }
+        new_contents.push_str(&input);
         new_contents.push_str("\n\n%%%%\n\n");
         new_contents.push_str(&actual_ir);
 
