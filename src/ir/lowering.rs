@@ -635,6 +635,7 @@ pub mod tests {
     use crate::parser::parse_program;
     use crate::symbol_map::SymbolMap;
     use super::super::func_builder::tests::instrs_to_func;
+    use super::super::func_to_string;
 
     fn expect_tac(input: &str, expected_code: Vec<Tac>) {
         let mut syms = SymbolMap::new();
@@ -646,11 +647,9 @@ pub mod tests {
         let parse_result = parse_program(input, syms);
         let expected_func = instrs_to_func(expected_code);
         let ast = parse_result.value.unwrap();
-        let top_level_func = lower_ast(ast).pop();
-        let expected_instrs: Vec<Tac> = expected_func.instrs().map(|i| i.clone()).collect();
-        let found_instrs: Vec<Tac> = top_level_func.unwrap().instrs().map(|i| i.clone()).collect();
+        let top_level_func = lower_ast(ast).pop().unwrap();
 
-        assert_eq!(expected_instrs, found_instrs);
+        assert_eq!(func_to_string(&expected_func, syms), func_to_string(&top_level_func, syms));
     }
 
     #[test]

@@ -64,50 +64,11 @@ impl Func {
         self.blocks.iter().find(|block| block.get_id() == block_id)
     }
 
-    pub fn try_get_nth_block(&self, i: usize) -> Option<&Block> {
-        self.blocks.get(i)
-    }
-
     pub fn get_block_mut(&mut self, block_id: BlockId) -> &mut Block {
         self.try_get_block_mut(block_id).unwrap()
     }
 
     pub fn try_get_block_mut(&mut self, block_id: BlockId) -> Option<&mut Block> {
         self.blocks.iter_mut().find(|block| block.get_id() == block_id)
-    }
-
-    pub fn instrs(&self) -> FuncIter {
-        FuncIter {
-            blocks: self.blocks.iter(),
-            instrs: None
-        }
-    }
-}
-
-use core::slice::Iter;
-
-pub struct FuncIter<'a> {
-    blocks: Iter<'a, Block>,
-    instrs: Option<Iter<'a, Tac>>,
-}
-
-use super::tac::Tac;
-impl<'a> Iterator for FuncIter<'a> {
-    type Item = &'a Tac;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if let Some(ref mut instrs) = self.instrs {
-            if let Some(instr) = instrs.next() {
-                return Some(instr);
-            }
-        }
-
-        if let Some(block) = self.blocks.next() {
-            self.instrs = Some(block.get_instrs().iter());
-
-            return self.next();
-        } else {
-            return None;
-        }
     }
 }
