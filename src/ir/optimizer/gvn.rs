@@ -338,6 +338,22 @@ fn fold_constants(op: Op, lhs: &TacConst, rhs: &TacConst) -> Option<TacConst> {
                 _ => None
             }
         }
+        Op::And => {
+            match (lhs, rhs) {
+                (TacConst::Bool(false), _) => Some(TacConst::Bool(false)),
+                (TacConst::Null, _) => Some(TacConst::Null),
+                (_, rhs) => Some(rhs.clone())
+            }
+        }
+        Op::Or => {
+            match (lhs, rhs) {
+                (TacConst::Bool(false), rhs) |
+                (TacConst::Null, rhs) => Some(rhs.clone()),
+                (lhs, _) => Some(lhs.clone())
+            }
+        }
+        Op::Equal => Some(TacConst::Bool(lhs == rhs)),
+        Op::NotEqual => Some(TacConst::Bool(lhs != rhs)),
         _ => None,
     }
 }
