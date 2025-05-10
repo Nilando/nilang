@@ -52,38 +52,34 @@ fn gvn_inner(func: &mut Func, dom_tree: &HashMap<BlockId, Vec<BlockId>>, current
                     id
                 };
 
-                let value = Value::Binop(CanonicalBinop::new(*op, left_id, right_id));
+                let lhs_entry = value_map.get_entry(left_id);
+                let rhs_entry = value_map.get_entry(right_id);
 
-                // its really just a series of steps
-                //
-                // first create the canonical binop
-                //
-                //  check can it be converted to a const?
-                //
-                // if the value already exists (either a binop or const)
-                //  leave this instruction as is
-                // else
-                //  
-                // end
-                //
-                // theres a missing case here
-                //
-                // CASE 1:
-                // a = b + c; // we can't do anything
-                //
-                // CASE 2:
-                // a = b + c;
-                // d = b + c; // remove this
-                //
-                // CASE 2:
-                // a = 1 + 1; // transform to a = 2;
+                let value = 
+                if let (Some(lhs_const), Some(rhs_const)) = (lhs_entry.const_value(), rhs_entry.const_value()) {
+                    if let Some(val) = fold_constants(*op, lhs_const, rhs_const) {
+                        Value::Const(val)
+                    } else {
+                        Value::Binop(CanonicalBinop::new(*op, left_id, right_id))
+                    }
+                } else {
+                    Value::Binop(CanonicalBinop::new(*op, left_id, right_id))
+                };
 
                 if let Some((_, entry)) = value_map.find_val_entry_mut(&value) {
                     entry.push_loc(ValueLocation::Var(dest.clone()));
 
                     *instr = Tac::Noop;
                 } else {
-                    let new_entry = ValueEntry::new(*dest, Some(value));
+                    let new_entry = 
+                    if let Value::Const(val) = value {
+                        let new_entry = ValueEntry::new(*dest, Some(Value::Const(val.clone())));
+                        *instr = Tac::LoadConst { dest: *dest, src: val };
+
+                        new_entry
+                    } else {
+                        ValueEntry::new(*dest, Some(value))
+                    };
 
                     new_value_ids.push(value_map.insert_entry(new_entry));
                 }
@@ -192,6 +188,10 @@ impl GVNC {
         }
     }
 
+    fn get_entry(&self, id: ValueId) -> &ValueEntry {
+        self.value_table.get(&id).unwrap()
+    }
+
     fn remove_entry(&mut self, value: &ValueId) {
         self.value_table.remove(&value);
     }
@@ -277,6 +277,14 @@ impl ValueEntry {
             unreachable!("an entry's first location must be a var")
         }
     }
+
+    fn const_value(&self) -> Option<&TacConst> {
+        if let Some(Value::Const(val)) = &self.value {
+            Some(val)
+        } else {
+            None
+        }
+    }
 }
 
 #[derive(PartialEq)]
@@ -301,5 +309,35 @@ impl CanonicalBinop {
                 rhs
             }
         }
+    }
+}
+
+fn fold_constants(op: Op, lhs: &TacConst, rhs: &TacConst) -> Option<TacConst> {
+    match op {
+        Op::Plus => {
+            match (lhs, rhs) {
+                (TacConst::Int(i1), TacConst::Int(i2)) => Some(TacConst::Int(i1 + i2)),
+                (TacConst::Float(f1), TacConst::Float(f2)) => Some(TacConst::Float(f1 + f2)),
+                (TacConst::Int(i), TacConst::Float(f)) |
+                (TacConst::Float(f), TacConst::Int(i))
+                => {
+                    Some(TacConst::Float(*i as f64 + f))
+                }
+                _ => None
+            }
+        }
+        Op::Multiply => {
+            match (lhs, rhs) {
+                (TacConst::Int(i1), TacConst::Int(i2)) => Some(TacConst::Int(i1 * i2)),
+                (TacConst::Float(f1), TacConst::Float(f2)) => Some(TacConst::Float(f1 * f2)),
+                (TacConst::Int(i), TacConst::Float(f)) |
+                (TacConst::Float(f), TacConst::Int(i))
+                => {
+                    Some(TacConst::Float(*i as f64 * f))
+                }
+                _ => None
+            }
+        }
+        _ => None,
     }
 }
