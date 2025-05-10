@@ -2,11 +2,12 @@ mod config;
 
 use crate::parser::{parse_program, ParseError, Spanned};
 use crate::symbol_map::SymbolMap;
-use crate::ir::compile_ast;
+use crate::ir::{lower_ast, func_to_string};
 
 pub use config::Config;
 
 use std::io::{stdin, stdout, Write};
+use std::fs::File;
 
 use termion::color;
 use termion::event::{Event, Key};
@@ -35,22 +36,27 @@ fn run_script(mut config: Config) {
 
     let ast = parse_result.value.unwrap();
 
-
-    if let Some(output_path) = config.ast_output_path {
+    if let Some(path) = config.ast_output_path.as_ref() {
         let ast_string = format!("{:#?}", ast);
-
-        if output_path == std::path::Path::new("stdout") {
-            println!("{}", ast_string);
-        } else {
-            let mut file = std::fs::File::create(output_path).expect("Failed to create file");
-
-            file.write_all(ast_string.as_bytes()).expect("Failed to write to file");
-        }
+        output_string(ast_string, path);
     }
 
-    let program = compile_ast(ast, &mut symbols);
+    let ir = lower_ast(ast);
 
-    todo!("run the program")
+    if let Some(path) = config.ir_output_path.as_ref() {
+        let mut ir_string = String::new();
+
+        for f in ir.iter() {
+            ir_string.push_str(&func_to_string(f, &mut symbols));
+
+        }
+
+        output_string(ir_string, path);
+    }
+
+    // let program = generate_bytecode(ir);
+    
+    todo!("codegen")
 }
 
 fn run_repl(_config: Config) {
@@ -84,7 +90,7 @@ fn run_repl(_config: Config) {
                     display_parse_errors(&input, &parse_result.errors, None);
                 }
 
-                compile_ast(parse_result.value.unwrap(), &mut symbols);
+                lower_ast(parse_result.value.unwrap());
                 let _ = stdout.activate_raw_mode();
 
                 inputs.push(input.clone());
@@ -231,5 +237,15 @@ fn display_parse_errors(
 
         line_start = line_end + 1;
         line_num += 1;
+    }
+}
+
+fn output_string(output: String, path: &Option<String>) {
+    if let Some(path) = path.as_ref() {
+        let mut file = File::create(path).expect("Failed to create file");
+
+        file.write_all(output.as_bytes()).expect("Failed to write to file");
+    } else {
+        println!("{}", output);
     }
 }

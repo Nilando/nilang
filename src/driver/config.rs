@@ -1,5 +1,4 @@
 use clap::{ArgGroup, Parser};
-use std::path::PathBuf;
 
 #[derive(Parser, Debug, Clone)]
 #[command(version, about, long_about = None)]
@@ -10,18 +9,24 @@ pub struct Config {
         short = 'a',
         long = "ast_output",
         requires = "input",
-        default_missing_value = "stdout"
     )]
-    pub ast_output_path: Option<PathBuf>,
+    pub ast_output_path: Option<Option<String>>,
+
+    /// Optionally output ir to stdout or to a file if provided
+    #[clap(
+        short = 'r',
+        long = "ir_output",
+        requires = "input",
+    )]
+    pub ir_output_path: Option<Option<String>>,
 
     /// Optionally output bytecode to stdout or to a file if provided
     #[clap(
         short = 'b',
         long = "bytecode_output",
         requires = "input",
-        default_missing_value = "stdout"
     )]
-    pub bytecode_output_path: Option<PathBuf>,
+    pub bytecode_output_path: Option<String>,
 
     /// Optionally read program as an arg
     #[clap(short, long, conflicts_with_all = &["file", "stdin"])]
@@ -31,7 +36,7 @@ pub struct Config {
     #[clap(short, long, conflicts_with_all = &["file", "inline"])]
     pub stdin: bool,
 
-    /// Only build AST and bytecode.
+    /// Don't execute the program only compile it.
     #[clap(short, long)]
     pub dry_run: bool,
 

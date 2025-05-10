@@ -147,17 +147,6 @@ pub enum Tac {
 }
 
 impl Tac {
-    pub fn needs_span(&self) -> bool {
-        match self {
-            Tac::Binop { .. } |
-            Tac::MemStore { .. }  |
-            Tac::MemLoad { .. } |
-            Tac::Call { .. } |
-            Tac::Read { .. } =>  true,
-            _ => false
-        }
-    }
-
     pub fn used_vars(&self) -> [Option<&Var>; 3] {
         match self {
             Tac::Binop { lhs, rhs, .. } => [Some(lhs), Some(rhs), None],
