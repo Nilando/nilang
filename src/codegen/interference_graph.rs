@@ -54,9 +54,11 @@ impl InterferenceGraph {
         self.nodes.get(var).unwrap().as_ref().borrow().reg.unwrap()
     }
 
-    fn max_clique_size(&self) -> usize {
+    fn max_clique_search(&self) -> Vec<Var> {
         let mut remaining_vars = HashMap::<Var, usize>::new();
         let mut max = 0;
+        let mut elimination_ordering: Vec<Var> = vec![];
+        let mut max_clique_start = 0;
 
         for (var, _) in self.nodes.iter() {
             remaining_vars.insert(var.clone(), 0);
@@ -64,9 +66,11 @@ impl InterferenceGraph {
 
         while let Some((var, label)) = remaining_vars.iter().max_by(|n1, n2| n1.1.cmp(n2.1)).map(|(v, l)| (v.clone(), *l)) {
             remaining_vars.remove(&var);
+            elimination_ordering.push(var.clone());
 
             if label > max {
                 max = label;
+                max_clique_start = elimination_ordering.len() - (max + 1)
             }
 
             let node = self.nodes.get(&var).unwrap();
@@ -77,7 +81,13 @@ impl InterferenceGraph {
             }
         }
 
-        max + 1
+        let mut max_clique = vec![];
+        let max_clique_size = max + 1;
+        for i in max_clique_start..(max_clique_start + max_clique_size) {
+            max_clique.push(elimination_ordering[i]);
+        }
+
+        max_clique
     }
 
     fn greedy_coloring(&mut self) {
