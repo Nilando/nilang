@@ -1,4 +1,4 @@
-use nilang::driver::{execute, Config};
+use nilang::{execute, Config};
 
 use clap::Parser as CliParser;
 
