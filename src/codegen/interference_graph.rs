@@ -46,7 +46,7 @@ impl InterferenceGraph {
         self.nodes.insert(var, Rc::new(RefCell::new(Node::new(var.clone()))));
     }
 
-    fn degree(&self, var: &Var) -> usize {
+    pub fn degree(&self, var: &Var) -> usize {
         self.nodes.get(var).unwrap().as_ref().borrow().neighbors.len()
     }
 

@@ -354,6 +354,7 @@ fn fold_constants(op: Op, lhs: &TacConst, rhs: &TacConst) -> Option<TacConst> {
         }
         Op::Equal => Some(TacConst::Bool(lhs == rhs)),
         Op::NotEqual => Some(TacConst::Bool(lhs != rhs)),
+        // TODO: more constatn folding can be added, I just got lazy and stopeed here
         _ => None,
     }
 }

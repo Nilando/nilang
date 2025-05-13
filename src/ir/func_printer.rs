@@ -138,6 +138,15 @@ impl<'a> FuncPrinter<'a> {
                 Tac::Noop => {
                     self.result.push_str("NOOP");
                 }
+                Tac::SpillVar { src } => {
+                    self.result.push_str("SPILL ");
+                    self.push_var(src);
+                }
+                Tac::ReloadVar { dest, src } => {
+                    self.result.push_str("RELOAD ");
+                    self.push_var(dest);
+                    self.push_var(src);
+                }
             }
             self.result.push_str("\n");
         }

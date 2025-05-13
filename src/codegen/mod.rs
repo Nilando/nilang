@@ -1,11 +1,22 @@
 mod interference_graph;
+mod spilling;
 
-use interference_graph::InterferenceGraph;
+pub use interference_graph::InterferenceGraph;
 
 // ir = ...
 // graph = ir.build_graph
-// while graph.needs_spilling()? {
-//  ir.spill(graph)
+// loop {
+//  let max_clique = graph.find_max_clique();
+//  if max_clique.len() < 256 {
+//      break;
+//  }
+//
+//  spill_vars = find_spill_vars(func, clique, graph)
+//
+//  for var in spill_vars.iter() {
+//      ir.spill(var);
+//  }
+//
 //  graph = ir.build_graph
 // }
 // graph.color();
@@ -19,8 +30,15 @@ use interference_graph::InterferenceGraph;
 //
 //
 // 1. GEN GRAPH    (TODO) !!!
+//
 // 2. MAX CLIQUE   (DONE)
-// 3. SPILL        (TODO) !!!
+//
+// 3. SPILL        (IN PROGRESS) 
+//  part 1: identify which variables to spill (DONE)
+//  part 2: insert spill instructions (IN PROGRESS)
+//
 // 4. COLOR        (DONE)
+//
 // 5. COALESCE     (DONE)
+//
 // 6. GEN BYTECODE (TODO) !!!

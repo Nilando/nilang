@@ -15,3 +15,7 @@ mod tests;
 pub use lowering::lower_ast;
 pub use func_printer::func_to_string;
 pub use optimizer::optimize_func;
+pub use tac::Var;
+pub use func::Func;
+pub use block::{BlockId, Block};
+pub use analysis::find_loops;

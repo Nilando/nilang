@@ -3,7 +3,7 @@ use super::super::func::Func;
 use super::super::block::BlockId;
 use std::collections::{HashSet, HashMap};
 
-pub fn compute_dom_tree(func: &mut Func) -> HashMap<BlockId, Vec<BlockId>> {
+pub fn compute_dom_tree(func: &Func) -> HashMap<BlockId, Vec<BlockId>> {
     let entry_block = func.get_entry_block();
     let mut work_list = vec![entry_block.get_id()];
     let mut visited = HashSet::from([entry_block.get_id()]);
@@ -101,4 +101,40 @@ pub fn compute_unreachable_blocks(func: &Func) -> HashSet<BlockId> {
     let all_blocks = func.get_blocks().iter().map(|b| b.get_id()).collect::<HashSet<BlockId>>();
 
     all_blocks.difference(&reachable_blocks).map(|id| *id).collect()
+}
+
+pub fn find_loops(func: &Func) -> HashMap<BlockId, HashSet<BlockId>> {
+    let mut loops: HashMap<BlockId, HashSet<BlockId>> = HashMap::new();
+    let mut back_edges = vec![];
+
+    for block in func.get_blocks().iter() {
+        for dominated_block in compute_dominated_blocks(func, block) {
+            if func.get_block(dominated_block).get_successors().contains(&block.get_id()) {
+                back_edges.push((block.get_id(), dominated_block));
+            }
+        }
+    }
+
+    for (header, back_edge) in back_edges.iter() {
+        let mut worklist = vec![back_edge];
+        let mut body = HashSet::from([*header]);
+
+        while let Some(block_id) = worklist.pop() {
+            if body.insert(*block_id) {
+                for pred in func.get_block(*block_id).get_predecessors() {
+                    worklist.push(pred);
+                }
+            }
+        }
+
+        if let Some(loop_body) = loops.get_mut(header) {
+            for block_id in body.iter() {
+                loop_body.insert(*block_id);
+            }
+        } else {
+            loops.insert(*header, body);
+        }
+    }
+
+    loops
 }

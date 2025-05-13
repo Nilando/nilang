@@ -144,6 +144,13 @@ pub enum Tac {
         label: LabelID,
     },
     Noop,
+    SpillVar {
+        src: Var,
+    },
+    ReloadVar {
+        dest: Var,
+        src: Var,
+    }
 }
 
 impl Tac {
@@ -151,6 +158,7 @@ impl Tac {
         match self {
             Tac::Binop { lhs, rhs, .. } => [Some(lhs), Some(rhs), None],
 
+            Tac::SpillVar { src } |
             Tac::Copy { src, .. } |
             Tac::Print { src, .. } |
             Tac::LoadArg { src, .. } |
@@ -168,6 +176,7 @@ impl Tac {
         match self {
             Tac::Binop { lhs, rhs, .. } => [Some(lhs), Some(rhs), None],
 
+            Tac::SpillVar { src } |
             Tac::Copy { src, .. } |
             Tac::Print { src, .. } |
             Tac::LoadArg { src, .. } |
@@ -185,6 +194,7 @@ impl Tac {
 
     pub fn dest_var(&self) -> Option<&Var> {
         match self {
+            Tac::ReloadVar { dest, .. } |
             Tac::Call { dest, .. } |
             Tac::LoadConst { dest, .. } |
             Tac::MemLoad { dest, .. } |
@@ -199,6 +209,7 @@ impl Tac {
 
     pub fn dest_var_mut(&mut self) -> Option<&mut Var> {
         match self {
+            Tac::ReloadVar { dest, .. } |
             Tac::Call { dest, .. } |
             Tac::LoadConst { dest, .. } |
             Tac::MemLoad { dest, .. } |

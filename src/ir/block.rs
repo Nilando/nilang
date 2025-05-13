@@ -153,4 +153,23 @@ impl Block {
 
         defined
     }
+
+    pub fn def_and_use_count(&self, var: &Var) -> usize {
+        let mut count = 0;
+
+        for instr in self.instrs.iter() {
+            if let Some(v) = instr.dest_var() {
+                if v == var {
+                    count += 1;
+                }
+                continue;
+            }
+
+            if instr.used_vars().contains(&Some(var)) {
+                count += 1;
+            }
+        }
+
+        count
+    }
 }
