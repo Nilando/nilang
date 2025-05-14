@@ -7,7 +7,7 @@ pub trait DFA: Sized {
 
     const BACKWARDS: bool = false;
 
-    fn exec(&mut self, func: &mut Func) {
+    fn exec(&mut self, func: &Func) {
         let mut executor = DFAExecutor::<Self>::new(func);
 
         executor.init(self, func);
@@ -18,7 +18,7 @@ pub trait DFA: Sized {
     fn init_block(&mut self, block: &Block) -> (Self::Data, Self::Data);
     fn complete(&mut self, _inputs: HashMap<BlockId, Self::Data>, _outputs: HashMap<BlockId, Self::Data>) {}
     fn merge(&mut self, updating: &mut Self::Data, merge: &Self::Data, count: usize);
-    fn transfer(&mut self, block: &mut Block, start: &Self::Data, end: &mut Self::Data) -> bool;
+    fn transfer(&mut self, block: &Block, start: &Self::Data, end: &mut Self::Data) -> bool;
 }
 
 struct DFAExecutor<T> where T: DFA {
@@ -45,9 +45,9 @@ impl<T: DFA> DFAExecutor<T> {
         }
     }
 
-    fn exec(&mut self, dfa: &mut T, func: &mut Func) {
+    fn exec(&mut self, dfa: &mut T, func: &Func) {
         while let Some(block_id) = self.work_list.pop() {
-            let block = func.get_block_mut(block_id);
+            let block = func.get_block(block_id);
 
             if T::BACKWARDS {
                 self.propagate_backward(dfa, block)
@@ -57,7 +57,7 @@ impl<T: DFA> DFAExecutor<T> {
         }
     }
 
-    fn propagate_backward(&mut self, dfa: &mut T, block: &mut Block) {
+    fn propagate_backward(&mut self, dfa: &mut T, block: &Block) {
         let id = block.get_id();
         let output = self.outputs.get_mut(&id).unwrap();
         for (i, succ_id) in block.get_successors().iter().enumerate() {
@@ -77,7 +77,7 @@ impl<T: DFA> DFAExecutor<T> {
         }
     }
 
-    fn propagate_forward(&mut self, dfa: &mut T, block: &mut Block) {
+    fn propagate_forward(&mut self, dfa: &mut T, block: &Block) {
         let id = block.get_id();
         let input = self.inputs.get_mut(&id).unwrap();
         for (i, pred_id) in block.get_predecessors().iter().enumerate() {

@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::cell::RefCell;
 use std::rc::Rc;
-use crate::ir::Var;
+use crate::ir::{Func, LivenessDFA, Tac, Var, DFA};
 
 type Reg = usize;
 
@@ -190,5 +190,58 @@ impl InterferenceGraph {
         let rc = self.nodes.get(vy).unwrap().clone();
         self.nodes.insert(*vx, rc);
     }
+}
 
+fn build_interference_graph(func: &Func) -> InterferenceGraph {
+    let mut graph = InterferenceGraph::new();
+    let mut liveness = LivenessDFA::new();
+    liveness.exec(func);
+
+    for block in func.get_blocks().iter().rev() {
+        let live_vars = liveness.get_live_out(block.get_id());
+
+        for var in live_vars.iter() {
+            graph.add_node(*var);
+        }
+
+        for v1 in live_vars.iter() {
+            for v2 in live_vars.iter() {
+                if v1 != v2 {
+                    graph.add_edge(v1, v2);
+                }
+            }
+        }
+
+        for instr in block.get_instrs().iter().rev() {
+            if let Tac::ReloadVar { .. } = instr {
+                continue;
+            }
+
+            if let Some(new_var) = instr.dest_var() {
+                // if this var wasn't live when we remove it, we unfortunately
+                // still need a register to store the dead value
+                if !live_vars.remove(new_var) {
+                    graph.add_node(*new_var);
+
+                    for var in live_vars.iter() {
+                        graph.add_edge(new_var, var);
+                    }
+                }
+            }
+
+            for u in instr.used_vars() {
+                if let Some(new_var) = u {
+                    if live_vars.insert(*new_var) {
+                        graph.add_node(*new_var);
+
+                        for var in live_vars.iter() {
+                            graph.add_edge(new_var, var);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    graph
 }

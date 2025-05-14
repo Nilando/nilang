@@ -59,7 +59,7 @@ impl DFA for LivenessDFA {
         (live_in, live_out)
     }
 
-    fn transfer(&mut self, block: &mut Block, live_out: &Self::Data, live_in: &mut Self::Data) -> bool {
+    fn transfer(&mut self, block: &Block, live_out: &Self::Data, live_in: &mut Self::Data) -> bool {
         let mut defined: HashSet<Var> = HashSet::new();
         let mut updated_flag = false;
 
