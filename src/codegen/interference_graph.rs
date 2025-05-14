@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::cell::RefCell;
 use std::rc::Rc;
+
 use crate::ir::{Func, LivenessDFA, Tac, Var, DFA};
 
 type Reg = usize;
@@ -44,6 +45,14 @@ impl InterferenceGraph {
 
     fn add_node(&mut self, var: Var) {
         self.nodes.insert(var, Rc::new(RefCell::new(Node::new(var.clone()))));
+    }
+
+    fn remove_node(&mut self, var: &Var) {
+        self.nodes.remove(var);
+
+        for (_, node) in self.nodes.iter() {
+            node.as_ref().borrow_mut().neighbors.remove(var);
+        }
     }
 
     pub fn degree(&self, var: &Var) -> usize {
@@ -213,7 +222,8 @@ fn build_interference_graph(func: &Func) -> InterferenceGraph {
         }
 
         for instr in block.get_instrs().iter().rev() {
-            if let Tac::ReloadVar { .. } = instr {
+            if let Tac::SpillVar { src } = instr {
+                graph.remove_node(src);
                 continue;
             }
 
@@ -227,6 +237,10 @@ fn build_interference_graph(func: &Func) -> InterferenceGraph {
                         graph.add_edge(new_var, var);
                     }
                 }
+            }
+
+            if let Tac::ReloadVar { .. } = instr {
+                continue;
             }
 
             for u in instr.used_vars() {
