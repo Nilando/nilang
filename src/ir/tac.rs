@@ -1,30 +1,9 @@
 use crate::parser::Op;
 use crate::symbol_map::SymID;
-use std::hash::Hash;
 
 pub type LabelID = usize;
-pub type TempID = usize;
 pub type FuncID = usize;
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
-pub enum Var {
-    Temp(TempID), 
-    UpVal(SymID),
-    Local(SymID),
-}
-
-impl Var {
-    pub fn is_temp(&self) -> bool {
-        if let Var::Temp(_) = self {
-            true
-        } else {
-            false
-        }
-    }
-}
-
 pub type VReg = u32;
-pub type UpValId = u16;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum TacConst {
@@ -91,7 +70,7 @@ pub enum Tac {
         id: SymID,
     },
     StoreUpvalue {
-        dest: VReg,
+        func: VReg,
         src: VReg,
     },
 
@@ -149,7 +128,7 @@ impl Tac {
             Tac::Jit { src, .. } => [Some(src), None, None],
             Tac::MemLoad { store, key, .. } => [Some(store), Some(key), None],
             Tac::MemStore { store, key, src } => [Some(store), Some(key), Some(src)],
-            Tac::StoreUpvalue { dest, src } => [Some(dest), Some(src), None],
+            Tac::StoreUpvalue { func, src } => [Some(func), Some(src), None],
             _ => [None, None, None]
         }
     }
@@ -170,7 +149,7 @@ impl Tac {
             Tac::Jit { src, .. } => [Some(src), None, None],
             Tac::MemLoad { store, key, .. } => [Some(store), Some(key), None],
             Tac::MemStore { store, key, src } => [Some(store), Some(key), Some(src)],
-            Tac::StoreUpvalue { dest, src } => [Some(dest), Some(src), None],
+            Tac::StoreUpvalue { func, src } => [Some(func), Some(src), None],
 
             _ => [None, None, None]
         }

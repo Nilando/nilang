@@ -1,6 +1,6 @@
 use super::tac::VReg;
 use crate::parser::Span;
-use super::tac::{Tac, LabelID, Var};
+use super::tac::{Tac, LabelID};
 use super::ssa::PhiNode;
 use crate::parser::PackedSpans;
 use std::collections::HashSet;

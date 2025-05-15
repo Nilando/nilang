@@ -1,23 +1,23 @@
 use crate::parser::Op;
-use crate::symbol_map::SymbolMap;
+use crate::symbol_map::{SymbolMap, SymID};
 use super::func::Func;
 use super::block::{Block, BlockId};
-use super::tac::{VReg, Var, Tac, TacConst};
+use super::tac::{VReg, Tac, TacConst};
 use super::lowering::MAIN_FUNC_ID;
 use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct VRegMap {
-    vars: HashMap<Var, Vec<VReg>>,
-    regs: HashMap<VReg, Var>
+    vars: HashMap<SymID, Vec<VReg>>,
+    regs: HashMap<VReg, SymID>
 }
 
 impl VRegMap {
-    pub fn new(var_reg_map: HashMap<Var, VReg>) -> Self {
+    pub fn new(vreg_map: HashMap<SymID, VReg>) -> Self {
         let mut vars = HashMap::new();
         let mut regs = HashMap::new();
 
-        for (var, reg) in var_reg_map.iter() {
+        for (var, reg) in vreg_map.iter() {
             vars.insert(*var, vec![*reg]);
             regs.insert(*reg, *var);
         }
@@ -29,17 +29,21 @@ impl VRegMap {
     }
 
     pub fn map(&mut self, old: VReg, new: VReg) {
-        let var = *self.regs.get(&old).unwrap();
-
-        self.regs.insert(new, var);
-        self.vars.get_mut(&var).unwrap().push(new);
+        if let Some(v) = self.regs.get(&old) {
+            let var = *v;
+            self.regs.insert(new, var);
+            self.vars.get_mut(&var).unwrap().push(new);
+        }
     }
 
-    fn reg_to_var(&self, reg: &VReg) -> (Var, Option<usize>) {
-        let var = self.regs.get(reg).unwrap();
-        let ver = self.vars.get(var).unwrap().iter().position(|r| r == reg);
+    fn reg_to_var(&self, reg: &VReg) -> Option<(SymID, usize)> {
+        if let Some(var) = self.regs.get(reg) {
+            let ver = self.vars.get(var).unwrap().iter().position(|r| r == reg).unwrap();
 
-        (*var, ver)
+            Some((*var, ver))
+        } else {
+            None
+        }
     }
 }
 
@@ -192,9 +196,9 @@ impl<'a> FuncPrinter<'a> {
                     self.result.push_str(", ");
                     self.push_var(sym);
                 }
-                Tac::StoreUpvalue { dest, src } => {
+                Tac::StoreUpvalue { func, src } => {
                     self.result.push_str("STORE_UPVAL ");
-                    self.push_var(dest);
+                    self.push_var(func);
                     self.result.push_str(", ");
                     self.push_var(src);
                 }
@@ -274,9 +278,11 @@ impl<'a> FuncPrinter<'a> {
     fn push_key_access(&mut self, reg: &VReg) {
         let s = 
         if let Some(vrm) = self.func.get_vreg_map() {
-            let (var, ver) = vrm.reg_to_var(reg);
-
-            self.var_str(&var, ver)
+            if let Some((sym, ver)) = vrm.reg_to_var(reg) {
+                format!("{}_{}", self.syms.get_str(sym), ver)
+            } else {
+                format!("t{reg}")
+            }
         } else {
             self.vreg_str(reg)
         };
@@ -309,9 +315,11 @@ impl<'a> FuncPrinter<'a> {
     fn push_var(&mut self, reg: &VReg) {
         let s = 
         if let Some(vrm) = self.func.get_vreg_map() {
-            let (var, ver) = vrm.reg_to_var(reg);
-
-            self.var_str(&var, ver)
+            if let Some((sym, ver)) = vrm.reg_to_var(reg) {
+                format!("{}_{}", self.syms.get_str(sym), ver)
+            } else {
+                format!("t{reg}")
+            }
         } else {
             self.vreg_str(reg)
         };
@@ -322,14 +330,6 @@ impl<'a> FuncPrinter<'a> {
 
     fn vreg_str(&mut self, var: &VReg) -> String {
         format!("%{}", var)
-    }
-
-    fn var_str(&mut self, var: &Var, ver: Option<usize>) -> String {
-        match var {
-            Var::Local(id) => format!("{}_{}", self.syms.get_str(*id), ver.unwrap()),
-            Var::Temp(id) => format!("t{id}"),
-            Var::UpVal(id) => format!("^{:?}", id),
-        }
     }
 
     fn push_first_line(&mut self) {

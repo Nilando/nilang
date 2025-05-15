@@ -2,7 +2,7 @@ use super::func_printer::VRegMap;
 use super::ssa::convert_to_ssa;
 use crate::parser::Span;
 use super::block::{BlockId, Block};
-use super::tac::{Tac, FuncID, LabelID, Var, VReg};
+use super::tac::{Tac, FuncID, LabelID, VReg};
 use super::func::Func;
 use std::collections::{HashMap, HashSet};
 use crate::symbol_map::SymID;
@@ -17,7 +17,7 @@ pub struct FuncBuilder {
     current_block: Option<Block>,
     non_jump_edge_flag: bool,
     vreg_counter: u32,
-    var_to_vreg: HashMap<Var, VReg>,
+    sym_to_vreg: HashMap<SymID, VReg>,
     pretty_ir: bool
 }
 
@@ -33,18 +33,23 @@ impl FuncBuilder {
             current_block: Some(Block::new_entry_block()),
             non_jump_edge_flag: true,
             vreg_counter: 0,
-            var_to_vreg: HashMap::new(),
+            sym_to_vreg: HashMap::new(),
             pretty_ir 
         }
     }
 
-    pub fn var_to_reg(&mut self, var: &Var) -> VReg {
-        if let Some(r) = self.var_to_vreg.get(var) {
+    pub fn new_reg(&mut self) -> VReg {
+        let r = self.vreg_counter;
+        self.vreg_counter += 1;
+        r
+    }
+
+    pub fn sym_to_reg(&mut self, sym: &SymID) -> VReg {
+        if let Some(r) = self.sym_to_vreg.get(sym) {
             *r
         } else {
-            let r = self.vreg_counter;
-            self.var_to_vreg.insert(*var, r);
-            self.vreg_counter += 1;
+            let r = self.new_reg();
+            self.sym_to_vreg.insert(*sym, r);
             r
         }
     }
@@ -61,7 +66,7 @@ impl FuncBuilder {
         );
 
         if self.pretty_ir {
-            let vreg_map = VRegMap::new(self.var_to_vreg);
+            let vreg_map = VRegMap::new(self.sym_to_vreg);
 
             convert_to_ssa(&mut func, Some(vreg_map));
         } else {
