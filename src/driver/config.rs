@@ -31,6 +31,9 @@ pub struct Config {
     #[clap(short, long)]
     pub pretty_ir: bool,
 
+    #[clap(short, long)]
+    pub no_optimize: bool,
+
     /// Optionally read program as an arg
     #[clap(short, long, conflicts_with_all = &["file", "stdin"])]
     pub inline: Option<String>,

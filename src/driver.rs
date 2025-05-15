@@ -43,8 +43,10 @@ fn run_script(mut config: Config) {
 
     let mut ir = lower_ast(ast, config.pretty_ir);
 
-    for func in ir.iter_mut() {
-        optimize_func(func);
+    if !config.no_optimize {
+        for func in ir.iter_mut() {
+            optimize_func(func);
+        }
     }
 
     if let Some(path) = config.ir_output_path.as_ref() {
