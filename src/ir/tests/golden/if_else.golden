@@ -16,8 +16,8 @@ MAIN () {
 block0:
   a_0 = 1
   b_0 = 2
-  t1 = a_0 == b_0
-  jnt t1 block2
+  t4 = a_0 == b_0
+  jnt t4 block2
   next block1
 
 block1:

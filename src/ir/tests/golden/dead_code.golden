@@ -28,8 +28,8 @@ MAIN () {
 block0:
   b_0 = fn(1)
   b_1 = call b_0
-  t5 = 0
-  b_1[t5] = t5
+  t17 = 0
+  b_1[t17] = t17
   b_2 = read
   print b_2
 

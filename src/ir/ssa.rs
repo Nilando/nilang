@@ -136,15 +136,31 @@ impl SSAConverter {
     fn update_dest_reg(&mut self, old: &mut VReg) {
         // if the reg has yet to be assigned to a dest,
         // we can use this existing vreg
-        let new = self.new_reg();
 
-        self.stack.last_mut().unwrap().insert(*old, new);
-
-        if let Some(vrm) = &mut self.vreg_map {
-            vrm.map(*old, new);
+        // we only really care about this if we are doing pretty printing?
+        // could be worth removing, or optionally running
+        //
+        // it does make the produced tac make much more sense at first glance
+        let mut first_def_flag = true;
+        for stack in self.stack.iter().rev() {
+            if let Some(_) = stack.get(&old) {
+                first_def_flag = false;
+                break
+            }
         }
 
-        *old = new;
+        if first_def_flag {
+            self.stack[0].insert(*old, *old);
+        } else {
+            let new = self.new_reg();
+            self.stack.last_mut().unwrap().insert(*old, new);
+
+            if let Some(vrm) = &mut self.vreg_map {
+                vrm.map(*old, new);
+            }
+
+            *old = new;
+        }
     }
 
     fn update_reg(&mut self, vreg: &mut VReg) -> VReg {
@@ -155,14 +171,15 @@ impl SSAConverter {
         new
     }
 
-    fn map_reg(&self, vreg: &VReg) -> VReg {
+    fn map_reg(&mut self, vreg: &VReg) -> VReg {
         for stack in self.stack.iter().rev() {
             if let Some(ver_id) = stack.get(&vreg) {
                 return *ver_id;
             }
         }
 
-        // TODO: error panic!("THIS WILL NEVER HAPPEN");
+        self.stack[0].insert(*vreg, *vreg);
+
         *vreg
     }
 
