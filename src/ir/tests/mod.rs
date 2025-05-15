@@ -15,17 +15,17 @@ pub(self) fn test_golden_ir(filename: &str) {
     let expected_ir = split_contents.pop().unwrap().trim();
     let input = split_contents.pop().unwrap().trim();
     let opt_flags = split_contents.pop();
-    let (mut opt, mut dce, mut gvn, mut mssa) = (false, false, false, false);
+    let (mut opt, mut dce, mut gvn, mut mssa, mut no_pretty) = (false, false, false, false, true);
     if let Some(flags) = opt_flags { 
         for line in flags.lines() {
             let flag = line.trim();
             if flag.is_empty() { continue; }
             let mut flag_setting = flag.split('=');
             let flag = flag_setting.next().unwrap();
-            let setting = flag_setting.next().unwrap();
 
             match flag {
                 "OPT" => opt = true,
+                "NO_PRETTY" => no_pretty = true,
                 _ => panic!("unrecognized optimization flag")
             }
         }
@@ -35,7 +35,7 @@ pub(self) fn test_golden_ir(filename: &str) {
     let mut syms = SymbolMap::new();
     let parse_result = parse_program(input, &mut syms);
     let ast = parse_result.value.unwrap();
-    let mut ir = lower_ast(ast);
+    let mut ir = lower_ast(ast, !no_pretty);
 
     for func in ir.iter_mut() {
         if opt == true {

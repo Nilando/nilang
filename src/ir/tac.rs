@@ -9,7 +9,7 @@ pub type FuncID = usize;
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum Var {
     Temp(TempID), 
-    UpVal(UpValId),
+    UpVal(SymID),
     Local(SymID),
 }
 
@@ -88,7 +88,7 @@ pub enum Tac {
     // UpValId is a u16
     LoadUpvalue {
         dest: VReg,
-        id: UpValId,
+        id: SymID,
     },
     StoreUpvalue {
         dest: VReg,

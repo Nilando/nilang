@@ -1,6 +1,7 @@
 use super::func::Func;
 use super::block::{Block, BlockId};
 use super::analysis::{DFA, LivenessDFA, compute_dominance_frontier};
+use super::func_printer::VRegMap;
 use super::tac::VReg;
 use std::collections::{HashMap, HashSet};
 
@@ -10,8 +11,8 @@ pub struct PhiNode {
     pub srcs: HashMap<BlockId, VReg>
 }
 
-pub fn convert_to_ssa(func: &mut Func) {
-    SSAConverter::convert(func);
+pub fn convert_to_ssa(func: &mut Func, var_reg_map: Option<VRegMap>) {
+    SSAConverter::convert(func, var_reg_map);
 }
 
 fn insert_phi_nodes(func: &mut Func) {
@@ -55,20 +56,23 @@ struct SSAConverter {
     stack: Vec<HashMap<VReg, VReg>>,
     visited: HashSet<BlockId>,
     reg_counter: u32,
+    vreg_map: Option<VRegMap>
 }
 
 impl SSAConverter {
-    fn convert(func: &mut Func) {
+    fn convert(func: &mut Func, vreg_map: Option<VRegMap>) {
         insert_phi_nodes(func);
 
         let mut converter = Self {
             stack: vec![],
             visited: HashSet::new(),
-            reg_counter: func.get_vreg_counter()
+            reg_counter: func.get_vreg_counter(),
+            vreg_map
         };
 
         converter.convert_func(func);
         func.set_vreg_counter(converter.reg_counter);
+        func.set_vreg_map(converter.vreg_map);
     }
 
     fn convert_func(&mut self, func: &mut Func) {
@@ -132,25 +136,15 @@ impl SSAConverter {
     fn update_dest_reg(&mut self, old: &mut VReg) {
         // if the reg has yet to be assigned to a dest,
         // we can use this existing vreg
-        
-        let mut init_flag = true;
-        for stack in self.stack.iter().rev() {
-            if let Some(_) = stack.get(&old) {
-                init_flag = false;
-            }
+        let new = self.new_reg();
+
+        self.stack.last_mut().unwrap().insert(*old, new);
+
+        if let Some(vrm) = &mut self.vreg_map {
+            vrm.map(*old, new);
         }
 
-        if init_flag {
-            self.stack.last_mut().unwrap().insert(*old, *old);
-        } else {
-            let new = self.new_reg();
-
-            self.stack.last_mut().unwrap().insert(*old, new);
-
-            // TODO: add logic here for mapping the new reg to a var
-
-            *old = new;
-        }
+        *old = new;
     }
 
     fn update_reg(&mut self, vreg: &mut VReg) -> VReg {

@@ -28,9 +28,9 @@ struct FuncLoweringCtx {
 }
 
 impl FuncLoweringCtx {
-    fn new(id: FuncID, inputs: HashSet<SymID>) -> Self {
+    fn new(id: FuncID, inputs: HashSet<SymID>, pretty_ir: bool) -> Self {
         Self {
-            builder: FuncBuilder::new(id, inputs.clone()),
+            builder: FuncBuilder::new(id, inputs.clone(), pretty_ir),
             temp_counter: 0,
             label_counter: 0,
             defined_variables: inputs,
@@ -43,16 +43,18 @@ struct LoweringCtx {
     func_counter: usize,
     funcs: Vec<FuncLoweringCtx>,
     lowered_funcs: Vec<Func>,
+    pretty_ir: bool,
 }
 
 impl LoweringCtx {
-    pub fn new() -> Self {
-        let main_func = FuncLoweringCtx::new(MAIN_FUNC_ID, HashSet::new());
+    pub fn new(pretty_ir: bool) -> Self {
+        let main_func = FuncLoweringCtx::new(MAIN_FUNC_ID, HashSet::new(), pretty_ir);
 
         Self {
             func_counter: 0,
             funcs: vec![main_func],
-            lowered_funcs: vec![]
+            lowered_funcs: vec![],
+            pretty_ir
         }
     } 
 
@@ -341,7 +343,7 @@ impl LoweringCtx {
 
     fn new_func(&mut self, inputs: Spanned<Vec<SymID>>, stmts: Vec<Stmt>) -> (FuncID, HashSet<SymID>) {
         let func_id = self.new_func_id();
-        let generator = FuncLoweringCtx::new(func_id, HashSet::from_iter(inputs.item));
+        let generator = FuncLoweringCtx::new(func_id, HashSet::from_iter(inputs.item), self.pretty_ir);
 
         self.funcs.push(generator);
 
@@ -426,11 +428,10 @@ impl LoweringCtx {
         if self.defined_local(sym_id) {
             Var::Local(sym_id)
         } else if self.defined_upvalue(sym_id) {
-            let id = self.set_upvalue(sym_id);
-            let up_val = Var::UpVal(id);
+            let up_val = Var::UpVal(sym_id);
             let dest = self.var_to_reg(&up_val);
 
-            self.emit(Tac::LoadUpvalue { dest, id });
+            self.emit(Tac::LoadUpvalue { dest, id: sym_id });
             
             up_val
         } else {
@@ -619,18 +620,6 @@ impl LoweringCtx {
         self.get_current_func_mut().defined_variables.insert(sym);
     }
 
-    fn set_upvalue(&mut self, sym: SymID) -> u16 {
-        let upvalues = &mut self.get_current_func_mut().builder.upvalues;
-        let id = upvalues.len();
-
-        upvalues.insert(sym);
-
-        // TODO: check that we don't overflow
-        // larger refactor to return an error
-
-        id as u16
-    }
-
     fn defined_local(&self, sym: SymID) -> bool {
         self.get_current_func().defined_variables.contains(&sym)
     }
@@ -660,8 +649,8 @@ impl LoweringCtx {
     }
 }
 
-pub fn lower_ast(stmts: Vec<Stmt>) -> Vec<Func> {
-    let mut ctx = LoweringCtx::new();
+pub fn lower_ast(stmts: Vec<Stmt>, pretty_ir: bool) -> Vec<Func> {
+    let mut ctx = LoweringCtx::new(pretty_ir);
 
     ctx.generate_stmts(stmts);
 
@@ -677,6 +666,7 @@ pub mod tests {
     use crate::symbol_map::SymbolMap;
     use super::super::func_builder::tests::instrs_to_func;
     use super::super::func_to_string;
+    use pretty_assertions::assert_eq;
     
     fn expect_tac(input: &str, expected_code: Vec<Tac>) {
         let mut syms = SymbolMap::new();
@@ -688,7 +678,7 @@ pub mod tests {
         let parse_result = parse_program(input, syms);
         let expected_func = instrs_to_func(expected_code);
         let ast = parse_result.value.unwrap();
-        let top_level_func = lower_ast(ast).pop().unwrap();
+        let top_level_func = lower_ast(ast, false).pop().unwrap();
 
         assert_eq!(func_to_string(&expected_func, syms), func_to_string(&top_level_func, syms));
     }

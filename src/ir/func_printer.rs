@@ -4,12 +4,49 @@ use super::func::Func;
 use super::block::{Block, BlockId};
 use super::tac::{VReg, Var, Tac, TacConst};
 use super::lowering::MAIN_FUNC_ID;
+use std::collections::HashMap;
+
+#[derive(Debug)]
+pub struct VRegMap {
+    vars: HashMap<Var, Vec<VReg>>,
+    regs: HashMap<VReg, Var>
+}
+
+impl VRegMap {
+    pub fn new(var_reg_map: HashMap<Var, VReg>) -> Self {
+        let mut vars = HashMap::new();
+        let mut regs = HashMap::new();
+
+        for (var, reg) in var_reg_map.iter() {
+            vars.insert(*var, vec![*reg]);
+            regs.insert(*reg, *var);
+        }
+
+        Self {
+            vars,
+            regs
+        }
+    }
+
+    pub fn map(&mut self, old: VReg, new: VReg) {
+        let var = *self.regs.get(&old).unwrap();
+
+        self.regs.insert(new, var);
+        self.vars.get_mut(&var).unwrap().push(new);
+    }
+
+    fn reg_to_var(&self, reg: &VReg) -> (Var, Option<usize>) {
+        let var = self.regs.get(reg).unwrap();
+        let ver = self.vars.get(var).unwrap().iter().position(|r| r == reg);
+
+        (*var, ver)
+    }
+}
 
 struct FuncPrinter<'a> {
     func: &'a Func,
     syms: &'a mut SymbolMap,
     result: String
-    // TODO: optionally provide a VReg->Var Var -> Vec<VReg> 
 }
 
 pub fn func_to_string(func: &Func, syms: &mut SymbolMap) -> String {
@@ -149,18 +186,23 @@ impl<'a> FuncPrinter<'a> {
                     self.push_var(src);
                 }
                 Tac::StoreGlobal { src, sym } => {
-                    self.result.push_str("STORE_G ");
+                    self.result.push_str("STORE_GLB ");
                     self.push_var(sym);
                     self.result.push_str(" , ");
                     self.push_var(src);
                 }
                 Tac::LoadGlobal { dest, sym } => {
-                    self.result.push_str("LOAD_G ");
+                    self.result.push_str("LOAD_GLB ");
                     self.push_var(dest);
                     self.result.push_str(" , ");
                     self.push_var(sym);
                 }
-                _ => todo!()
+                Tac::LoadUpvalue { dest, id } => {
+                    self.result.push_str("LOAD_UPVAL ");
+                    self.push_var(dest);
+                    self.result.push_str(" , ");
+                    self.push_const(&TacConst::Sym(*id));
+                }
             }
             self.result.push_str("\n");
         }
@@ -228,10 +270,17 @@ impl<'a> FuncPrinter<'a> {
         self.result.push_str(&s);
     }
 
-    fn push_key_access(&mut self, key: &VReg) {
-        let s = format!("[{}]", self.var_str(key));
+    fn push_key_access(&mut self, reg: &VReg) {
+        let s = 
+        if let Some(vrm) = self.func.get_vreg_map() {
+            let (var, ver) = vrm.reg_to_var(reg);
 
-        self.result.push_str(&s);
+            self.var_str(&var, ver)
+        } else {
+            self.vreg_str(reg)
+        };
+
+        self.result.push_str(&format!("[{}]", s));
     }
 
     fn push_block_header(&mut self, block: &Block) {
@@ -257,26 +306,29 @@ impl<'a> FuncPrinter<'a> {
     }
 
     fn push_var(&mut self, reg: &VReg) {
-        let s = self.var_str(reg);
+        let s = 
+        if let Some(vrm) = self.func.get_vreg_map() {
+            let (var, ver) = vrm.reg_to_var(reg);
+
+            self.var_str(&var, ver)
+        } else {
+            self.vreg_str(reg)
+        };
+
 
         self.result.push_str(&s)
     }
 
-    fn var_str(&mut self, var: &VReg) -> String {
+    fn vreg_str(&mut self, var: &VReg) -> String {
         format!("%{}", var)
     }
 
-    fn _var_str(&mut self, var: &VReg) -> String {
-        /*
-        match var.id {
-            VarID::Local(id) => format!("{}_{}", self.syms.get_str(id), var),
-            VarID::Temp(id) => format!("t{id}"),
-            VarID::LongTemp(id) => format!("l{id}_{}", var),
-            VarID::Global(id) => format!("@{}_{}", self.syms.get_str(id), var.ver),
-            VarID::Upvalue(id) => format!("^{}", self.syms.get_str(id)),
+    fn var_str(&mut self, var: &Var, ver: Option<usize>) -> String {
+        match var {
+            Var::Local(id) => format!("{}_{}", self.syms.get_str(*id), ver.unwrap()),
+            Var::Temp(id) => format!("t{id}"),
+            Var::UpVal(id) => format!("^{:?}", id),
         }
-        */
-        todo!()
     }
 
     fn push_first_line(&mut self) {

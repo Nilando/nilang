@@ -41,7 +41,7 @@ fn run_script(mut config: Config) {
         output_string(ast_string, path);
     }
 
-    let mut ir = lower_ast(ast);
+    let mut ir = lower_ast(ast, config.pretty_ir);
 
     for func in ir.iter_mut() {
         optimize_func(func);
@@ -94,7 +94,7 @@ fn run_repl(_config: Config) {
                     display_parse_errors(&input, &parse_result.errors, None);
                 }
 
-                lower_ast(parse_result.value.unwrap());
+                lower_ast(parse_result.value.unwrap(), false);
                 let _ = stdout.activate_raw_mode();
 
                 inputs.push(input.clone());

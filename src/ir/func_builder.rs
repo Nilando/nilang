@@ -1,3 +1,4 @@
+use super::func_printer::VRegMap;
 use super::ssa::convert_to_ssa;
 use crate::parser::Span;
 use super::block::{BlockId, Block};
@@ -16,11 +17,12 @@ pub struct FuncBuilder {
     current_block: Option<Block>,
     non_jump_edge_flag: bool,
     vreg_counter: u32,
-    var_to_vreg: HashMap<Var, VReg>
+    var_to_vreg: HashMap<Var, VReg>,
+    pretty_ir: bool
 }
 
 impl FuncBuilder {
-    pub fn new(id: FuncID, inputs: HashSet<SymID>) -> Self {
+    pub fn new(id: FuncID, inputs: HashSet<SymID>, pretty_ir: bool) -> Self {
         Self {
             id, 
             inputs,
@@ -31,7 +33,8 @@ impl FuncBuilder {
             current_block: Some(Block::new_entry_block()),
             non_jump_edge_flag: true,
             vreg_counter: 0,
-            var_to_vreg: HashMap::new()
+            var_to_vreg: HashMap::new(),
+            pretty_ir 
         }
     }
 
@@ -57,7 +60,13 @@ impl FuncBuilder {
             self.vreg_counter
         );
 
-        convert_to_ssa(&mut func);
+        if self.pretty_ir {
+            let vreg_map = VRegMap::new(self.var_to_vreg);
+
+            convert_to_ssa(&mut func, Some(vreg_map));
+        } else {
+            convert_to_ssa(&mut func, None);
+        }
 
         func
     }
@@ -226,7 +235,7 @@ pub mod tests {
     };
 
     pub fn instrs_to_func(instrs: Vec<Tac>) -> Func {
-        let mut builder = FuncBuilder::new(0, HashSet::new());
+        let mut builder = FuncBuilder::new(0, HashSet::new(), false);
 
         for instr in instrs.into_iter() {
             builder.push_instr(instr, None);

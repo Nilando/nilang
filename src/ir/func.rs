@@ -1,4 +1,5 @@
 use crate::symbol_map::SymID;
+use super::func_printer::VRegMap;
 use super::tac::{FuncID, LabelID};
 use super::block::{Block, BlockId};
 use std::fmt::Debug;
@@ -11,6 +12,7 @@ pub struct Func {
     args: HashSet<SymID>,
     blocks: Vec<Block>,
     vreg_counter: u32,
+    vreg_map: Option<VRegMap>
 }
 
 impl Func {
@@ -19,7 +21,8 @@ impl Func {
             id,
             args,
             blocks,
-            vreg_counter
+            vreg_counter,
+            vreg_map: None
         }
     }
 
@@ -29,6 +32,14 @@ impl Func {
 
     pub fn set_vreg_counter(&mut self, n: u32) {
         self.vreg_counter = n;
+    }
+
+    pub fn set_vreg_map(&mut self, vrm: Option<VRegMap>) {
+        self.vreg_map = vrm;
+    }
+
+    pub fn get_vreg_map(&self) -> &Option<VRegMap> {
+        &self.vreg_map
     }
 
     pub fn get_id(&self) -> FuncID {

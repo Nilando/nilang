@@ -28,6 +28,9 @@ pub struct Config {
     )]
     pub bytecode_output_path: Option<String>,
 
+    #[clap(short, long)]
+    pub pretty_ir: bool,
+
     /// Optionally read program as an arg
     #[clap(short, long, conflicts_with_all = &["file", "stdin"])]
     pub inline: Option<String>,
