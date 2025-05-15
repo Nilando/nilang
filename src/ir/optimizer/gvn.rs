@@ -339,6 +339,15 @@ fn fold_constants(op: Op, lhs: &TacConst, rhs: &TacConst) -> Option<TacConst> {
                 _ => None
             }
         }
+        Op::Divide => {
+            match (lhs, rhs) {
+                (TacConst::Int(i1), TacConst::Int(i2)) => Some(TacConst::Int(i1 / i2)),
+                (TacConst::Float(f1), TacConst::Float(f2)) => Some(TacConst::Float(f1 / f2)),
+                (TacConst::Float(f), TacConst::Int(i)) => Some(TacConst::Float(f / *i as f64)),
+                (TacConst::Int(i), TacConst::Float(f)) => Some(TacConst::Float(*i as f64 / f)),
+                _ => None
+            }
+        }
         Op::And => {
             match (lhs, rhs) {
                 (TacConst::Bool(false), _) => Some(TacConst::Bool(false)),
