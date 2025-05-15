@@ -165,11 +165,6 @@ impl<'a> FuncPrinter<'a> {
                     self.result.push_str("return ");
                     self.push_var(src);
                 }
-                Tac::StoreUpvalue { dest, src } => {
-                    self.push_var(dest);
-                    self.result.push_str(" UPVAL ");
-                    self.push_var(src);
-                }
                 Tac::Label { .. } => {
                     continue;
                 }
@@ -188,19 +183,25 @@ impl<'a> FuncPrinter<'a> {
                 Tac::StoreGlobal { src, sym } => {
                     self.result.push_str("STORE_GLB ");
                     self.push_var(sym);
-                    self.result.push_str(" , ");
+                    self.result.push_str(", ");
                     self.push_var(src);
                 }
                 Tac::LoadGlobal { dest, sym } => {
                     self.result.push_str("LOAD_GLB ");
                     self.push_var(dest);
-                    self.result.push_str(" , ");
+                    self.result.push_str(", ");
                     self.push_var(sym);
+                }
+                Tac::StoreUpvalue { dest, src } => {
+                    self.result.push_str("STORE_UPVAL ");
+                    self.push_var(dest);
+                    self.result.push_str(", ");
+                    self.push_var(src);
                 }
                 Tac::LoadUpvalue { dest, id } => {
                     self.result.push_str("LOAD_UPVAL ");
                     self.push_var(dest);
-                    self.result.push_str(" , ");
+                    self.result.push_str(", ");
                     self.push_const(&TacConst::Sym(*id));
                 }
             }

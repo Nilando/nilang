@@ -431,6 +431,8 @@ impl LoweringCtx {
             let up_val = Var::UpVal(sym_id);
             let dest = self.var_to_reg(&up_val);
 
+            self.set_upvalue(sym_id);
+
             self.emit(Tac::LoadUpvalue { dest, id: sym_id });
             
             up_val
@@ -632,6 +634,11 @@ impl LoweringCtx {
         }
 
         return false;
+    }
+
+    fn set_upvalue(&mut self, sym: SymID) {
+        self.get_current_func_mut().builder.upvalues.insert(sym);
+
     }
 
     fn generate_stmts(&mut self, stmts: Vec<Stmt>) {
