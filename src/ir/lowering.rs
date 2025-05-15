@@ -19,7 +19,6 @@ struct LoopCtx {
 }
 
 struct FuncLoweringCtx {
-    temp_counter: usize,
     label_counter: usize,
     defined_variables: HashSet<SymID>,
     loop_ctxs: Vec<LoopCtx>,
@@ -30,7 +29,6 @@ impl FuncLoweringCtx {
     fn new(id: FuncID, inputs: HashSet<SymID>, pretty_ir: bool) -> Self {
         Self {
             builder: FuncBuilder::new(id, inputs.clone(), pretty_ir),
-            temp_counter: 0,
             label_counter: 0,
             defined_variables: inputs,
             loop_ctxs: vec![],
@@ -557,8 +555,6 @@ impl LoweringCtx {
     fn update_prev_dest(&mut self, sym: SymID) {
         let reg = self.sym_to_reg(&sym);
         let f = self.get_current_func_mut();
-
-        f.temp_counter -= 1; // This isn't needed but makes the printed Func a little more readable
         let dest = f.builder.last_instr_mut().unwrap().dest_reg_mut().unwrap();
 
         *dest = reg;
@@ -587,9 +583,6 @@ impl LoweringCtx {
 
     fn new_temp(&mut self) -> VReg {
         let f = self.get_current_func_mut();
-
-        f.temp_counter += 1;
-
         f.builder.new_reg()
     }
 
