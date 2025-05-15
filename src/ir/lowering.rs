@@ -71,34 +71,32 @@ impl LoweringCtx {
     }
 
     fn generate_return(&mut self, return_expr: Option<Spanned<Expr>>) {
-        let var =
+        let (_, src) =
         if let Some(expr) = return_expr {
             self.generate_expr(expr)
         } else {
             self.new_temp()
         };
 
-        let src = self.var_to_reg(&var);
         self.emit(Tac::Return { src });
     }
 
     fn generate_assign(&mut self, lhs_expr: Spanned<LhsExpr>, src: Spanned<Expr>) {
-        let src_var = self.generate_expr(src);
-        let src = self.var_to_reg(&src_var);
+        let (src_var, src) = self.generate_expr(src);
         let span = lhs_expr.get_span();
 
         match lhs_expr.item {
             LhsExpr::Index { store, key } => {
-                let store = self.generate_expr(*store);
-                let key = self.generate_expr(*key);
+                let store = self.generate_expr(*store).1;
+                let key = self.generate_expr(*key).1;
 
-                self.generate_key_store(store, key, src_var, span);
+                self.generate_key_store(store, key, src, span);
             }
             LhsExpr::Access { store, key } => {
-                let store = self.generate_expr(*store);
-                let key = self.load_const(TacConst::Sym(key));
+                let store = self.generate_expr(*store).1;
+                let key = self.load_const(TacConst::Sym(key)).1;
 
-                self.generate_key_store(store, key, src_var, span);
+                self.generate_key_store(store, key, src, span);
             }
             LhsExpr::Local(sym_id) => {
                 self.define_var(sym_id);
@@ -118,8 +116,7 @@ impl LoweringCtx {
                 }
             }
             LhsExpr::Global(sym_id) => {
-                let s = self.load_const(TacConst::Sym(sym_id));
-                let sym = self.var_to_reg(&s);
+                let (_, sym) = self.load_const(TacConst::Sym(sym_id));
 
                 self.emit(
                     Tac::StoreGlobal { src, sym }
@@ -128,13 +125,13 @@ impl LoweringCtx {
         }
     }
 
-    fn generate_expr(&mut self, spanned_expr: Spanned<Expr>) -> Var {
+    fn generate_expr(&mut self, spanned_expr: Spanned<Expr>) -> (Var, VReg) {
         let span = spanned_expr.get_span();
         match spanned_expr.item {
             Expr::Value(value) => self.generate_value(value),
             Expr::Read => self.generate_read(),
             Expr::Print(expr) => {
-                let var = self.generate_expr(*expr);
+                let (_, var) = self.generate_expr(*expr);
 
                 self.generate_print(var)
             }
@@ -142,45 +139,43 @@ impl LoweringCtx {
                 match op {
                     Op::And | Op::Or => self.generate_shortcircuit(*lhs, op, *rhs),
                     _ => {
-                        let v1 = self.generate_expr(*lhs);
-                        let v2 = self.generate_expr(*rhs);
+                        let (_, v1) = self.generate_expr(*lhs);
+                        let (_, v2) = self.generate_expr(*rhs);
 
                         self.generate_binop(v1, op, v2, span)
                     }
                 }
             }
             Expr::Access { store, key } => {
-                let var = self.generate_expr(*store);
-                let key = self.load_const(TacConst::Sym(key));
+                let (_, var) = self.generate_expr(*store);
+                let (_, key) = self.load_const(TacConst::Sym(key));
 
                 self.generate_key_load(var, key, span)
             }
             Expr::Index { store, key } => {
-                let store_val = self.generate_expr(*store);
-                let key_val = self.generate_expr(*key);
+                let (_, store) = self.generate_expr(*store);
+                let (_, key) = self.generate_expr(*key);
 
-                self.generate_key_load(store_val, key_val, span)
+                self.generate_key_load(store, key, span)
             }
             Expr::Call { calle, args } => {
-                let arg_vals = args.into_iter().map(|a| self.generate_expr(a)).collect();
-                let calle_val = self.generate_expr(*calle);
+                let args = args.into_iter().map(|a| self.generate_expr(a).1).collect();
+                let (_, calle) = self.generate_expr(*calle);
 
-                self.generate_call(calle_val, arg_vals, span)
+                self.generate_call(calle, args, span)
             }
         }
     }
 
-    fn generate_shortcircuit(&mut self, lhs: Spanned<Expr>, op: Op, rhs: Spanned<Expr>) -> Var {
+    fn generate_shortcircuit(&mut self, lhs: Spanned<Expr>, op: Op, rhs: Spanned<Expr>) -> (Var, VReg) {
         let label = self.new_label();
-        let temp = self.new_temp();
-        let result_reg = self.var_to_reg(&temp);
-        let lhs = self.generate_expr(lhs);
-        let lhs_reg = self.var_to_reg(&lhs);
+        let (temp, dest) = self.new_temp();
+        let (_, src) = self.generate_expr(lhs);
 
         self.emit(
             Tac::Copy {
-                dest: result_reg,
-                src: lhs_reg
+                dest,
+                src
             }
         );
 
@@ -188,57 +183,42 @@ impl LoweringCtx {
             Op::And => 
                 self.emit(
                     Tac::Jnt {
-                        src: lhs_reg,
+                        src,
                         label,
                     }
                 ),
             Op::Or => 
                 self.emit(
                     Tac::Jit {
-                        src: lhs_reg,
+                        src,
                         label,
                     }
                 ),
             _ => panic!("tried to generated shortcircuit for wrong op"),
         }
 
-        let rhs = self.generate_expr(rhs);
-        let rhs_reg = self.var_to_reg(&rhs);
+        let (_, src) = self.generate_expr(rhs);
 
         self.emit(
             Tac::Copy {
-                dest: result_reg,
-                src: rhs_reg
+                dest,
+                src
             }
         );
 
         self.emit_label(label);
 
-        return temp;
+        (temp, dest)
     }
 
-    fn generate_value(&mut self, value: Value) -> Var {
+    fn generate_value(&mut self, value: Value) -> (Var, VReg) {
         match value {
             Value::Int(i) => self.load_const(TacConst::Int(i)),
             Value::Null => self.load_const(TacConst::Null),
             Value::Float(f) => self.load_const(TacConst::Float(f)),
             Value::Bool(b) => self.load_const(TacConst::Bool(b)),
             Value::String(s) => self.load_const(TacConst::String(s)),
-            Value::Global(sym_id) => {
-                let s = self.load_const(TacConst::Sym(sym_id));
-                let t = self.new_temp();
-                let sym = self.var_to_reg(&s);
-                let dest = self.var_to_reg(&t);
-
-                self.emit(
-                    Tac::LoadGlobal {
-                        dest,
-                        sym
-                    }
-                );
-
-                t
-            },
+            Value::Global(sym_id) => self.load_global(sym_id),
             Value::Ident(sym_id) => self.generate_ident(sym_id),
             Value::Map(map) => self.generate_map(map),
             Value::List(list) => self.generate_list(list),
@@ -246,10 +226,22 @@ impl LoweringCtx {
         }
     }
 
-    fn generate_call(&mut self, calle: Var, args: Vec<Var>, span: Span) -> Var {
-        for src in args.iter() {
-            let src = self.var_to_reg(src);
+    fn load_global(&mut self, sym_id: SymID) -> (Var, VReg) {
+        let (_, reg) = self.load_const(TacConst::Sym(sym_id));
+        let (temp, dest) = self.new_temp();
 
+        self.emit(
+            Tac::LoadGlobal {
+                dest,
+                sym: reg
+            }
+        );
+
+        (temp, dest)
+    }
+
+    fn generate_call(&mut self, calle: VReg, args: Vec<VReg>, span: Span) -> (Var, VReg) {
+        for src in args.into_iter() {
             self.emit(
                 Tac::LoadArg {
                     src
@@ -257,26 +249,20 @@ impl LoweringCtx {
             )
         }
 
-        let temp = self.new_temp();
-        let dest = self.var_to_reg(&temp);
-        let src = self.var_to_reg(&calle);
+        let (temp, dest) = self.new_temp();
 
         self.emit_spanned(
             Tac::Call {
                 dest,
-                src,
+                src: calle,
             },
             span
         );
 
-        temp
+        (temp, dest)
     }
 
-    fn generate_key_store(&mut self, store: Var, key: Var, src: Var, span: Span) {
-        let src = self.var_to_reg(&src);
-        let store = self.var_to_reg(&store);
-        let key = self.var_to_reg(&key);
-
+    fn generate_key_store(&mut self, store: VReg, key: VReg, src: VReg, span: Span) {
         self.emit_spanned(
             Tac::MemStore {
                 store,
@@ -287,11 +273,8 @@ impl LoweringCtx {
         );
     }
 
-    fn generate_key_load(&mut self, store: Var, key: Var, span: Span) -> Var {
-        let temp = self.new_temp();
-        let dest = self.var_to_reg(&temp);
-        let store = self.var_to_reg(&store);
-        let key = self.var_to_reg(&key);
+    fn generate_key_load(&mut self, store: VReg, key: VReg, span: Span) -> (Var, VReg) {
+        let (temp, dest) = self.new_temp();
 
         self.emit_spanned(
             Tac::MemLoad {
@@ -302,7 +285,7 @@ impl LoweringCtx {
             span
         );
 
-        temp
+        (temp, dest)
     }
 
     fn generate_break(&mut self) {
@@ -323,13 +306,15 @@ impl LoweringCtx {
         self.generate_func(inputs, stmts, Some(ident));
     }
 
-    fn generate_func(&mut self, inputs: Spanned<Vec<SymID>>, stmts: Vec<Stmt>, ident: Option<SymID>) -> Var {
-        let dest_var = if let Some(sym) = ident {
-            Var::Local(sym)
+    fn generate_func(&mut self, inputs: Spanned<Vec<SymID>>, stmts: Vec<Stmt>, ident: Option<SymID>) -> (Var, VReg) {
+        let (var, dest) = if let Some(sym) = ident {
+            let var = Var::Local(sym);
+            let dest = self.var_to_reg(&var);
+
+            (var, dest)
         } else {
             self.new_temp()
         };
-        let dest = self.var_to_reg(&dest_var);
 
         let (func_id, upvalues) = self.new_func(inputs, stmts);
 
@@ -341,8 +326,7 @@ impl LoweringCtx {
         );
 
         for sym_id in upvalues.iter() {
-            let upvalue = self.generate_ident(*sym_id);
-            let src = self.var_to_reg(&upvalue);
+            let (_, src) = self.generate_ident(*sym_id);
 
             self.emit(
                 Tac::StoreUpvalue {
@@ -352,7 +336,7 @@ impl LoweringCtx {
             );
         }
 
-        dest_var
+        (var, dest)
     }
 
     fn new_func(&mut self, inputs: Spanned<Vec<SymID>>, stmts: Vec<Stmt>) -> (FuncID, HashSet<SymID>) {
@@ -380,8 +364,7 @@ impl LoweringCtx {
 
     fn generate_if_block(&mut self, cond: Spanned<Expr>, stmts: Vec<Stmt>) {
         let label = self.new_label();
-        let cond = self.generate_expr(cond);
-        let src = self.var_to_reg(&cond);
+        let (_, src) = self.generate_expr(cond);
 
         self.emit(
             Tac::Jnt {
@@ -396,8 +379,7 @@ impl LoweringCtx {
     fn generate_if_else_block(&mut self, cond: Spanned<Expr>, stmts: Vec<Stmt>, else_stmts: Vec<Stmt>) {
         let else_end = self.new_label();
         let else_start = self.new_label();
-        let cond = self.generate_expr(cond);
-        let src = self.var_to_reg(&cond);
+        let (_, src) = self.generate_expr(cond);
 
         self.emit(
             Tac::Jnt {
@@ -420,8 +402,7 @@ impl LoweringCtx {
 
         self.emit_label(start);
 
-        let cond = self.generate_expr(cond);
-        let src = self.var_to_reg(&cond);
+        let (_, src) = self.generate_expr(cond);
 
         self.emit(
             Tac::Jnt {
@@ -434,7 +415,14 @@ impl LoweringCtx {
         self.emit_label(end);
     }
 
-    fn generate_ident(&mut self, sym_id: SymID) -> Var {
+    fn generate_ident(&mut self, sym_id: SymID) -> (Var, VReg) {
+        let var = self.generate_ident_var(sym_id);
+        let reg = self.var_to_reg(&var);
+
+        (var, reg)
+    }
+
+    fn generate_ident_var(&mut self, sym_id: SymID) -> Var {
         if self.defined_local(sym_id) {
             Var::Local(sym_id)
         } else if self.defined_upvalue(sym_id) {
@@ -457,47 +445,41 @@ impl LoweringCtx {
         }
     }
 
-    fn generate_map(&mut self, pairs: Vec<(MapKey, Spanned<Expr>)>) -> Var {
-        let store = self.new_temp();
-        let m = self.var_to_reg(&store);
+    fn generate_map(&mut self, pairs: Vec<(MapKey, Spanned<Expr>)>) -> (Var, VReg) {
+        let (temp, store) = self.new_temp();
 
-        self.emit(Tac::NewMap { dest: m });
+        self.emit(Tac::NewMap { dest: store });
 
         for (k, value) in pairs.into_iter() {
-            let key = 
+            let (_, key) = 
             match k {
                 MapKey::Sym(sym) => self.load_const(TacConst::Sym(sym)),
                 MapKey::Expr(expr) => self.generate_expr(expr)
             };
-            let src = self.generate_expr(value);
-            let k = self.var_to_reg(&key);
-            let s = self.var_to_reg(&src);
+            let (_, src) = self.generate_expr(value);
 
             // this doesn't need to be spanned since we are sure we are storing into a map this
             // can't fail so we don't need spanning info
             self.emit(
                 Tac::MemStore {
-                    store: m,
-                    key: k,
-                    src: s
+                    store,
+                    key,
+                    src,
                 },
             );
         }
 
-        store
+        (temp, store)
     }
 
-    fn generate_list(&mut self, exprs: Vec<Spanned<Expr>>) -> Var {
-        let store = self.new_temp();
-        let l = self.var_to_reg(&store);
+    fn generate_list(&mut self, exprs: Vec<Spanned<Expr>>) -> (Var, VReg) {
+        let (store, l) = self.new_temp();
 
         self.emit(Tac::NewList { dest: l });
 
         for (i, e) in exprs.into_iter().enumerate() {
-            let src = self.generate_expr(e);
-            let key = self.new_temp();
-            let k = self.var_to_reg(&key);
-            let s = self.var_to_reg(&src);
+            let (_, src) = self.generate_expr(e);
+            let (_, k) = self.new_temp();
 
             self.emit(Tac::LoadConst { dest: k, src: TacConst::Int(i as isize)});
 
@@ -505,19 +487,16 @@ impl LoweringCtx {
                 Tac::MemStore {
                     store: l,
                     key: k,
-                    src: s,
+                    src,
                 }
             );
         }
 
-        store
+        (store, l)
     }
 
-    fn generate_binop(&mut self, lhs: Var, op: Op, rhs: Var, span: Span) -> Var {
-        let temp = self.new_temp();
-        let dest = self.var_to_reg(&temp);
-        let lhs = self.var_to_reg(&lhs);
-        let rhs = self.var_to_reg(&rhs);
+    fn generate_binop(&mut self, lhs: VReg, op: Op, rhs: VReg, span: Span) -> (Var, VReg) {
+        let (temp, dest) = self.new_temp();
 
         self.emit_spanned(
             Tac::Binop {
@@ -529,12 +508,10 @@ impl LoweringCtx {
             span
         );
 
-        temp
+        (temp, dest)
     }
 
-    fn generate_print(&mut self, src: Var) -> Var {
-        let src = self.var_to_reg(&src);
-
+    fn generate_print(&mut self, src: VReg) -> (Var, VReg) {
         self.emit(
             Tac::Print {
                 src,
@@ -544,9 +521,8 @@ impl LoweringCtx {
         self.new_temp()
     }
 
-    fn generate_read(&mut self) -> Var {
-        let temp = self.new_temp();
-        let dest = self.var_to_reg(&temp);
+    fn generate_read(&mut self) -> (Var, VReg) {
+        let (temp, dest) = self.new_temp();
 
         self.emit(
             Tac::Read {
@@ -554,12 +530,11 @@ impl LoweringCtx {
             }
         );
 
-        temp
+        (temp, dest)
     }
 
-    fn load_const(&mut self, tac_const: TacConst) -> Var {
-        let temp = self.new_temp();
-        let dest = self.var_to_reg(&temp);
+    fn load_const(&mut self, tac_const: TacConst) -> (Var, VReg) {
+        let (temp, dest) = self.new_temp();
 
         self.emit(
             Tac::LoadConst {
@@ -568,7 +543,7 @@ impl LoweringCtx {
             }
         );
 
-        temp
+        (temp, dest)
     }
 
     fn emit_label(&mut self, label: LabelID) {
@@ -614,11 +589,15 @@ impl LoweringCtx {
         self.func_counter
     }
 
-    fn new_temp(&mut self) -> Var {
+    fn new_temp(&mut self) -> (Var, VReg) {
         let f = self.get_current_func_mut();
 
         f.temp_counter += 1;
-        Var::Temp(f.temp_counter)
+
+        let var = Var::Temp(f.temp_counter);
+        let reg = self.var_to_reg(&var);
+
+        (var, reg)
     }
 
     fn new_label(&mut self) -> LabelID {
