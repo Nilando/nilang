@@ -2,18 +2,18 @@ use std::collections::{HashMap, HashSet};
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use crate::ir::{Func, LivenessDFA, Tac, Var, DFA};
+use crate::ir::{Func, LivenessDFA, Tac, VReg, DFA};
 
 type Reg = usize;
 
 struct Node {
-    vars: HashSet<Var>,
+    vars: HashSet<VReg>,
     reg: Option<Reg>,
-    neighbors: HashSet<Var>,
+    neighbors: HashSet<VReg>,
 }
 
 impl Node {
-    fn new(var: Var) -> Self {
+    fn new(var: VReg) -> Self {
         Self {
             vars: HashSet::from([var]),
             reg: None,
@@ -23,7 +23,7 @@ impl Node {
 }
 
 pub struct InterferenceGraph {
-    nodes: HashMap<Var, Rc<RefCell<Node>>>,
+    nodes: HashMap<VReg, Rc<RefCell<Node>>>,
 }
 
 impl InterferenceGraph {
@@ -33,7 +33,7 @@ impl InterferenceGraph {
         }
     }
 
-    fn add_edge(&mut self, v1: &Var, v2: &Var) {
+    fn add_edge(&mut self, v1: &VReg, v2: &VReg) {
         let r1 = self.nodes.get(v1).unwrap();
         let mut n1 = r1.as_ref().borrow_mut();
         n1.neighbors.insert(v2.clone());
@@ -43,11 +43,11 @@ impl InterferenceGraph {
         n2.neighbors.insert(v1.clone());
     }
 
-    fn add_node(&mut self, var: Var) {
+    fn add_node(&mut self, var: VReg) {
         self.nodes.insert(var, Rc::new(RefCell::new(Node::new(var.clone()))));
     }
 
-    fn remove_node(&mut self, var: &Var) {
+    fn remove_node(&mut self, var: &VReg) {
         self.nodes.remove(var);
 
         for (_, node) in self.nodes.iter() {
@@ -55,18 +55,18 @@ impl InterferenceGraph {
         }
     }
 
-    pub fn degree(&self, var: &Var) -> usize {
+    pub fn degree(&self, var: &VReg) -> usize {
         self.nodes.get(var).unwrap().as_ref().borrow().neighbors.len()
     }
 
-    fn get_reg(&self, var: &Var) -> usize {
+    fn get_reg(&self, var: &VReg) -> usize {
         self.nodes.get(var).unwrap().as_ref().borrow().reg.unwrap()
     }
 
-    fn max_clique_search(&self) -> Vec<Var> {
-        let mut remaining_vars = HashMap::<Var, usize>::new();
+    fn max_clique_search(&self) -> Vec<VReg> {
+        let mut remaining_vars = HashMap::<VReg, usize>::new();
         let mut max = 0;
-        let mut elimination_ordering: Vec<Var> = vec![];
+        let mut elimination_ordering: Vec<VReg> = vec![];
         let mut max_clique_start = 0;
 
         for (var, _) in self.nodes.iter() {
@@ -130,7 +130,7 @@ impl InterferenceGraph {
         }
     }
 
-    fn find_shared_unused_reg(&self, vars1: &HashSet<Var>, vars2: &HashSet<Var>) -> Option<usize> {
+    fn find_shared_unused_reg(&self, vars1: &HashSet<VReg>, vars2: &HashSet<VReg>) -> Option<usize> {
         let mut colors = HashSet::new();
 
         for v in vars1.iter() {
@@ -155,7 +155,7 @@ impl InterferenceGraph {
     }
 
     // no propagation!
-    fn best_effort_coalescence(&mut self, copies: Vec<(Var, Var)>) {
+    fn best_effort_coalescence(&mut self, copies: Vec<(VReg, VReg)>) {
         for (vx, vy) in copies.iter() {
             if let Some(reg) = self.find_coalescing_reg(vx, vy) {
                 self.coalesce_nodes(vx, vy, reg);
@@ -163,7 +163,7 @@ impl InterferenceGraph {
         }
     }
 
-    fn find_coalescing_reg(&self, v1: &Var, v2: &Var) -> Option<usize> {
+    fn find_coalescing_reg(&self, v1: &VReg, v2: &VReg) -> Option<usize> {
         let nx = self.nodes.get(v1).unwrap().as_ref().borrow();
         let ny = self.nodes.get(v2).unwrap().as_ref().borrow();
         let xr = nx.reg;
@@ -180,7 +180,7 @@ impl InterferenceGraph {
         }
     }
 
-    fn coalesce_nodes(&mut self, vx: &Var, vy: &Var, reg: usize) {
+    fn coalesce_nodes(&mut self, vx: &VReg, vy: &VReg, reg: usize) {
         {
             let nx = self.nodes.get(vx).unwrap().as_ref().borrow();
             let mut ny = self.nodes.get(vy).unwrap().as_ref().borrow_mut();
@@ -227,7 +227,7 @@ fn build_interference_graph(func: &Func) -> InterferenceGraph {
                 continue;
             }
 
-            if let Some(new_var) = instr.dest_var() {
+            if let Some(new_var) = instr.dest_reg() {
                 // if this var wasn't live when we remove it, we unfortunately
                 // still need a register to store the dead value
                 if !live_vars.remove(new_var) {
@@ -240,10 +240,11 @@ fn build_interference_graph(func: &Func) -> InterferenceGraph {
             }
 
             if let Tac::ReloadVar { .. } = instr {
+                // no need to add spilled var to graph
                 continue;
             }
 
-            for u in instr.used_vars() {
+            for u in instr.used_regs() {
                 if let Some(new_var) = u {
                     if live_vars.insert(*new_var) {
                         graph.add_node(*new_var);

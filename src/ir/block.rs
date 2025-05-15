@@ -1,3 +1,4 @@
+use super::tac::VReg;
 use crate::parser::Span;
 use super::tac::{Tac, LabelID, Var};
 use super::ssa::PhiNode;
@@ -130,7 +131,7 @@ impl Block {
         }
     }
 
-    pub fn get_return_var_id(&self) -> Option<Var> {
+    pub fn get_return_var_id(&self) -> Option<VReg> {
         if let Some(Tac::Return { src }) = self.instrs.last() {
             Some(*src)
         } else {
@@ -138,15 +139,11 @@ impl Block {
         }
     }
 
-    pub fn defined_vars(&self) -> HashSet<Var> {
+    pub fn defined_vars(&self) -> HashSet<VReg> {
         let mut defined = HashSet::new();
 
         for instr in self.instrs.iter() {
-            if let Some(var) = instr.dest_var() {
-                if var.is_temp() {
-                    continue;
-                }
-
+            if let Some(var) = instr.dest_reg() {
                 defined.insert(*var);
             }
         }
@@ -154,18 +151,18 @@ impl Block {
         defined
     }
 
-    pub fn def_and_use_count(&self, var: &Var) -> usize {
+    pub fn def_and_use_count(&self, var: &VReg) -> usize {
         let mut count = 0;
 
         for instr in self.instrs.iter() {
-            if let Some(v) = instr.dest_var() {
+            if let Some(v) = instr.dest_reg() {
                 if v == var {
                     count += 1;
                 }
                 continue;
             }
 
-            if instr.used_vars().contains(&Some(var)) {
+            if instr.used_regs().contains(&Some(var)) {
                 count += 1;
             }
         }

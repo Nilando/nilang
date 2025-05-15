@@ -1,8 +1,8 @@
-use crate::ir::{Var, Func, Block, BlockId, find_loops};
+use crate::ir::{VReg, Func, Block, BlockId, find_loops};
 use super::interference_graph::InterferenceGraph;
 use std::collections::{HashMap, HashSet};
 
-fn find_spill_vars(func: &mut Func, clique: Vec<Var>, interference_graph: &InterferenceGraph) -> Vec<Var> {
+fn find_spill_vars(func: &mut Func, clique: Vec<VReg>, interference_graph: &InterferenceGraph) -> Vec<VReg> {
     let spill_count = clique.len() - 256;
     let mut spill_costs = vec![];
     let loops = find_loops(func);
@@ -27,7 +27,7 @@ fn find_spill_vars(func: &mut Func, clique: Vec<Var>, interference_graph: &Inter
     spill_costs.into_iter().map(|(v, _)| v).collect()
 }
 
-fn calc_spill_cost(func: &Func, var: &Var, degree: f64, loops: &HashMap<BlockId, HashSet<BlockId>>) -> f64 {
+fn calc_spill_cost(func: &Func, var: &VReg, degree: f64, loops: &HashMap<BlockId, HashSet<BlockId>>) -> f64 {
     let mut cost = 0.0;
 
     for block in func.get_blocks().iter() {
@@ -50,4 +50,15 @@ fn find_loop_factor(block: &Block, loops: &HashMap<BlockId, HashSet<BlockId>>) -
     }
 
     factor
+}
+
+fn spill_var(func: &mut Func, var: VReg) {
+    for block in func.get_blocks_mut().iter() {
+        // if instr's dest == var {
+        // }
+        //      insert a spill instr right after this
+        // if instr's src contains var
+        //      insert a reload instr right after this with a new temp
+        //      replase the use instances with the temp
+    }
 }

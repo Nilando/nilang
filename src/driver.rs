@@ -2,7 +2,7 @@ mod config;
 
 use crate::parser::{parse_program, ParseError, Spanned};
 use crate::symbol_map::SymbolMap;
-use crate::ir::{func_to_string, lower_ast, optimize_func};
+use crate::ir::{Var, func_to_string, lower_ast, optimize_func};
 
 pub use config::Config;
 

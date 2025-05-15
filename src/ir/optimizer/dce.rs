@@ -1,5 +1,7 @@
+use crate::ir::tac::VReg;
+
 use super::super::block::Block;
-use super::super::tac::{Tac, Var};
+use super::super::tac::Tac;
 use super::super::func::Func;
 use super::super::analysis::{LivenessDFA, DFA, compute_unreachable_blocks};
 use std::collections::HashSet;
@@ -25,7 +27,7 @@ pub fn remove_dead_instructions(func: &mut Func) -> usize {
     removed_instructions
 }
 
-fn dce_inner(block: &mut Block, live_vars: &mut HashSet<Var>) -> usize {
+fn dce_inner(block: &mut Block, live_vars: &mut HashSet<VReg>) -> usize {
     let mut removed_instructions = 0;
 
     block.rev_retain_instrs(|instr| {
@@ -34,7 +36,7 @@ fn dce_inner(block: &mut Block, live_vars: &mut HashSet<Var>) -> usize {
             return false;
         }
         // first check if this is a dead instruction, and remove if so
-        if let Some(dest) = instr.dest_var() {
+        if let Some(dest) = instr.dest_reg() {
             if !live_vars.contains(dest) && !instr.has_side_effects() {
                 removed_instructions += 1;
                 return false;
@@ -42,7 +44,7 @@ fn dce_inner(block: &mut Block, live_vars: &mut HashSet<Var>) -> usize {
         }
 
         // this is not a dead instruction, so make sure the args are marked live
-        for var in instr.used_vars() {
+        for var in instr.used_regs() {
             if let Some(v) = var {
                 live_vars.insert(*v);
             }

@@ -1,7 +1,7 @@
 use super::ssa::convert_to_ssa;
 use crate::parser::Span;
 use super::block::{BlockId, Block};
-use super::tac::{Tac, FuncID, LabelID};
+use super::tac::{Tac, FuncID, LabelID, Var, VReg};
 use super::func::Func;
 use std::collections::{HashMap, HashSet};
 use crate::symbol_map::SymID;
@@ -15,6 +15,8 @@ pub struct FuncBuilder {
     non_jump_edges: Vec<(BlockId, BlockId)>, // 0 -> 1
     current_block: Option<Block>,
     non_jump_edge_flag: bool,
+    vreg_counter: u32,
+    var_to_vreg: HashMap<Var, VReg>
 }
 
 impl FuncBuilder {
@@ -28,6 +30,19 @@ impl FuncBuilder {
             non_jump_edges: vec![],
             current_block: Some(Block::new_entry_block()),
             non_jump_edge_flag: true,
+            vreg_counter: 0,
+            var_to_vreg: HashMap::new()
+        }
+    }
+
+    pub fn var_to_reg(&mut self, var: &Var) -> VReg {
+        if let Some(r) = self.var_to_vreg.get(var) {
+            *r
+        } else {
+            let r = self.vreg_counter;
+            self.var_to_vreg.insert(*var, r);
+            self.vreg_counter += 1;
+            r
         }
     }
 
@@ -39,6 +54,7 @@ impl FuncBuilder {
             self.id,
             self.inputs,
             self.blocks,
+            self.vreg_counter
         );
 
         convert_to_ssa(&mut func);
@@ -205,7 +221,7 @@ impl FuncBuilder {
 pub mod tests {
     use super::*;
     use super::super::{
-        tac::{TacConst, Var},
+        tac::TacConst,
         func::Func,
     };
 
@@ -219,6 +235,7 @@ pub mod tests {
         builder.build()
     }
 
+
     #[test]
     fn empty_cfg() {
         let func = instrs_to_func(vec![]);
@@ -230,7 +247,7 @@ pub mod tests {
     #[test]
     fn single_block_cfg() {
         let func = instrs_to_func(vec![
-            Tac::LoadConst { dest: Var::temp(1), src: TacConst::Null}
+            Tac::LoadConst { dest: 0, src: TacConst::Null}
         ]);
         let blocks = func.get_blocks();
 
@@ -245,13 +262,13 @@ pub mod tests {
     #[test]
     fn cfg_for_a_mock_if_stmt() {
         let func = instrs_to_func(vec![
-            Tac::LoadConst { dest: Var::temp(1), src: TacConst::Null },
-            Tac::Jnt { src: Var::temp(1), label: 1 },
-            Tac::LoadConst { dest: Var::temp(2), src: TacConst::Int(420) },
-            Tac::Print { src: Var::temp(2) },
+            Tac::LoadConst { dest: 0, src: TacConst::Null },
+            Tac::Jnt { src: 0, label: 1 },
+            Tac::LoadConst { dest: 1, src: TacConst::Int(420) },
+            Tac::Print { src: 1 },
             Tac::Label { label: 1 },
-            Tac::LoadConst { dest: Var::temp(3), src: TacConst::Int(69) },
-            Tac::Return { src: Var::temp(3) }
+            Tac::LoadConst { dest: 3, src: TacConst::Int(69) },
+            Tac::Return { src: 3 }
         ]);
 
         let blocks = func.get_blocks();
@@ -281,16 +298,16 @@ pub mod tests {
     fn cfg_for_a_mock_while_stmt() {
         let func = instrs_to_func(vec![
             Tac::Label { label: 1 },
-            Tac::LoadConst { dest: Var::temp(1), src: TacConst::Null },
-            Tac::Jnt { src: Var::temp(1), label: 2 },
+            Tac::LoadConst { dest: 0, src: TacConst::Null },
+            Tac::Jnt { src: 0, label: 2 },
 
-            Tac::LoadConst { dest: Var::temp(2), src: TacConst::Int(420) },
-            Tac::Print { src: Var::temp(2) },
+            Tac::LoadConst { dest: 1, src: TacConst::Int(420) },
+            Tac::Print { src: 1 },
             Tac::Jump { label: 1 },
 
             Tac::Label { label: 2 },
-            Tac::LoadConst { dest: Var::temp(3), src: TacConst::Int(69) },
-            Tac::Return { src: Var::temp(3) }
+            Tac::LoadConst { dest: 2, src: TacConst::Int(69) },
+            Tac::Return { src: 2 }
         ]);
 
         let blocks = func.get_blocks();

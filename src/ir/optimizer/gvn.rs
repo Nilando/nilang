@@ -1,8 +1,9 @@
 use super::super::func::Func;
 use super::super::analysis::{compute_dom_tree, InstrLoc, MemoryAccessId};
 use super::super::block::BlockId;
-use super::super::tac::{Tac, Var, TacConst};
+use super::super::tac::{Tac, TacConst};
 use std::collections::HashMap;
+use crate::ir::tac::VReg;
 use crate::parser::Op;
 
 pub type ValueId = usize;
@@ -24,7 +25,7 @@ fn gvn_inner(func: &mut Func, dom_tree: &HashMap<BlockId, Vec<BlockId>>, current
     for (i, instr) in block.get_instrs_mut().iter_mut().enumerate() {
         let instr_loc = (current_block, i);
 
-        for used_var in instr.used_vars_mut() {
+        for used_var in instr.used_regs_mut() {
             if let Some(var) = used_var {
                 value_map.canonize_var(var);
             }
@@ -220,7 +221,7 @@ impl GVNC {
         }).map(|(id, entry)| (*id, entry))
     }
 
-    fn canonize_var(&mut self, var: &mut Var) {
+    fn canonize_var(&mut self, var: &mut VReg) {
         let loc = ValueLocation::Var(*var);
 
         if let Some((_, entry)) = self.find_loc_entry_mut(&loc) {
@@ -249,7 +250,7 @@ enum Value {
 
 #[derive(PartialEq)]
 enum ValueLocation {
-    Var(Var),
+    Var(VReg),
     Memory(MemoryAccessId),
 }
 
@@ -259,7 +260,7 @@ struct ValueEntry {
 }
 
 impl ValueEntry {
-    fn new(canon_loc: Var, value: Option<Value>) -> Self {
+    fn new(canon_loc: VReg, value: Option<Value>) -> Self {
         Self {
             locations: vec![ValueLocation::Var(canon_loc)],
             value,
@@ -270,7 +271,7 @@ impl ValueEntry {
         self.locations.push(loc);
     }
 
-    fn get_canon_var(&self) -> Var {
+    fn get_canon_var(&self) -> VReg {
         if let ValueLocation::Var(var) = self.locations.first().unwrap() {
             *var
         } else {

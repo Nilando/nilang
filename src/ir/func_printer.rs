@@ -2,13 +2,14 @@ use crate::parser::Op;
 use crate::symbol_map::SymbolMap;
 use super::func::Func;
 use super::block::{Block, BlockId};
-use super::tac::{VarID, Var, Tac, TacConst};
+use super::tac::{VReg, Var, Tac, TacConst};
 use super::lowering::MAIN_FUNC_ID;
 
 struct FuncPrinter<'a> {
     func: &'a Func,
     syms: &'a mut SymbolMap,
     result: String
+    // TODO: optionally provide a VReg->Var Var -> Vec<VReg> 
 }
 
 pub fn func_to_string(func: &Func, syms: &mut SymbolMap) -> String {
@@ -147,6 +148,19 @@ impl<'a> FuncPrinter<'a> {
                     self.push_var(dest);
                     self.push_var(src);
                 }
+                Tac::StoreGlobal { src, sym } => {
+                    self.result.push_str("STORE_G ");
+                    self.push_var(sym);
+                    self.result.push_str(" , ");
+                    self.push_var(src);
+                }
+                Tac::LoadGlobal { dest, sym } => {
+                    self.result.push_str("LOAD_G ");
+                    self.push_var(dest);
+                    self.result.push_str(" , ");
+                    self.push_var(sym);
+                }
+                _ => todo!()
             }
             self.result.push_str("\n");
         }
@@ -208,13 +222,13 @@ impl<'a> FuncPrinter<'a> {
             TacConst::Null => format!("null"),
             TacConst::Func(func_id) => format!("fn({func_id})"),
             TacConst::Float(f) => format!("{}", f),
-            TacConst::Sym(s) => format!("{:?}", s),
+            TacConst::Sym(s) => format!("#{}", self.syms.get_str(*s)),
         };
 
         self.result.push_str(&s);
     }
 
-    fn push_key_access(&mut self, key: &Var) {
+    fn push_key_access(&mut self, key: &VReg) {
         let s = format!("[{}]", self.var_str(key));
 
         self.result.push_str(&s);
@@ -242,20 +256,27 @@ impl<'a> FuncPrinter<'a> {
         }
     }
 
-    fn push_var(&mut self, var: &Var) {
-        let s = self.var_str(var);
+    fn push_var(&mut self, reg: &VReg) {
+        let s = self.var_str(reg);
 
         self.result.push_str(&s)
     }
 
-    fn var_str(&mut self, var: &Var) -> String {
+    fn var_str(&mut self, var: &VReg) -> String {
+        format!("%{}", var)
+    }
+
+    fn _var_str(&mut self, var: &VReg) -> String {
+        /*
         match var.id {
-            VarID::Local(id) => format!("{}_{}", self.syms.get_str(id), var.ver.unwrap()),
+            VarID::Local(id) => format!("{}_{}", self.syms.get_str(id), var),
             VarID::Temp(id) => format!("t{id}"),
-            VarID::LongTemp(id) => format!("l{id}_{}", var.ver.unwrap()),
-            VarID::Global(id) => format!("@{}_{}", self.syms.get_str(id), var.ver.unwrap()),
+            VarID::LongTemp(id) => format!("l{id}_{}", var),
+            VarID::Global(id) => format!("@{}_{}", self.syms.get_str(id), var.ver),
             VarID::Upvalue(id) => format!("^{}", self.syms.get_str(id)),
         }
+        */
+        todo!()
     }
 
     fn push_first_line(&mut self) {
