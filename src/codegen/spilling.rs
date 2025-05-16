@@ -2,7 +2,7 @@ use crate::ir::{VReg, Func, Block, BlockId, find_loops};
 use super::interference_graph::InterferenceGraph;
 use std::collections::{HashMap, HashSet};
 
-fn find_spill_vars(func: &mut Func, clique: Vec<VReg>, interference_graph: &InterferenceGraph) -> Vec<VReg> {
+pub fn find_regs_to_spill(func: &Func, clique: Vec<VReg>, interference_graph: &InterferenceGraph) -> Vec<VReg> {
     let spill_count = clique.len() - 256;
     let mut spill_costs = vec![];
     let loops = find_loops(func);
@@ -52,7 +52,7 @@ fn find_loop_factor(block: &Block, loops: &HashMap<BlockId, HashSet<BlockId>>) -
     factor
 }
 
-fn spill_var(func: &mut Func, var: VReg) {
+pub fn spill_reg(func: &mut Func, var: VReg) {
     for block in func.get_blocks_mut().iter() {
         // if instr's dest == var {
         // }

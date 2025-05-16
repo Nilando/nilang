@@ -1,5 +1,6 @@
 mod config;
 
+use crate::codegen::generate_func;
 use crate::parser::{parse_program, ParseError, Spanned};
 use crate::symbol_map::SymbolMap;
 use crate::ir::{func_to_string, lower_ast, optimize_func};
@@ -60,9 +61,13 @@ fn run_script(mut config: Config) {
         output_string(ir_string, path);
     }
 
-    // let program = generate_bytecode(ir);
+    let mut program = vec![];
+    for ir_func in ir.into_iter() {
+        let func = generate_func(ir_func);
+        program.push(func);
+    }
     
-    todo!("codegen")
+    todo!("runtime")
 }
 
 fn run_repl(_config: Config) {

@@ -27,10 +27,64 @@ pub struct InterferenceGraph {
 }
 
 impl InterferenceGraph {
-    fn new() -> Self {
-        Self {
-            nodes: HashMap::new()
+    pub fn build(func: &Func) -> InterferenceGraph {
+        let mut graph = Self { nodes: HashMap::new() };
+        let mut liveness = LivenessDFA::new();
+        liveness.exec(func);
+
+        for block in func.get_blocks().iter().rev() {
+            let live_vars = liveness.get_live_out(block.get_id());
+
+            for var in live_vars.iter() {
+                graph.add_node(*var);
+            }
+
+            for v1 in live_vars.iter() {
+                for v2 in live_vars.iter() {
+                    if v1 != v2 {
+                        graph.add_edge(v1, v2);
+                    }
+                }
+            }
+
+            for instr in block.get_instrs().iter().rev() {
+                if let Tac::SpillVar { src } = instr {
+                    graph.remove_node(src);
+                    continue;
+                }
+
+                if let Some(new_var) = instr.dest_reg() {
+                    // if this var wasn't live when we remove it, we unfortunately
+                    // still need a register to store the dead value
+                    if !live_vars.remove(new_var) {
+                        graph.add_node(*new_var);
+
+                        for var in live_vars.iter() {
+                            graph.add_edge(new_var, var);
+                        }
+                    }
+                }
+
+                if let Tac::ReloadVar { .. } = instr {
+                    // no need to add spilled var to graph
+                    continue;
+                }
+
+                for u in instr.used_regs() {
+                    if let Some(new_var) = u {
+                        if live_vars.insert(*new_var) {
+                            graph.add_node(*new_var);
+
+                            for var in live_vars.iter() {
+                                graph.add_edge(new_var, var);
+                            }
+                        }
+                    }
+                }
+            }
         }
+
+        graph
     }
 
     fn add_edge(&mut self, v1: &VReg, v2: &VReg) {
@@ -63,7 +117,7 @@ impl InterferenceGraph {
         self.nodes.get(var).unwrap().as_ref().borrow().reg.unwrap()
     }
 
-    fn max_clique_search(&self) -> Vec<VReg> {
+    pub fn find_max_clique(&self) -> Vec<VReg> {
         let mut remaining_vars = HashMap::<VReg, usize>::new();
         let mut max = 0;
         let mut elimination_ordering: Vec<VReg> = vec![];
@@ -99,7 +153,7 @@ impl InterferenceGraph {
         max_clique
     }
 
-    fn greedy_coloring(&mut self) {
+    pub fn color(&mut self) {
         for (_, node) in self.nodes.iter() {
             let mut free_reg = true;
 
@@ -155,7 +209,7 @@ impl InterferenceGraph {
     }
 
     // no propagation!
-    fn best_effort_coalescence(&mut self, copies: Vec<(VReg, VReg)>) {
+    pub fn best_effort_coalescence(&mut self, copies: Vec<(VReg, VReg)>) {
         for (vx, vy) in copies.iter() {
             if let Some(reg) = self.find_coalescing_reg(vx, vy) {
                 self.coalesce_nodes(vx, vy, reg);
@@ -201,62 +255,3 @@ impl InterferenceGraph {
     }
 }
 
-fn build_interference_graph(func: &Func) -> InterferenceGraph {
-    let mut graph = InterferenceGraph::new();
-    let mut liveness = LivenessDFA::new();
-    liveness.exec(func);
-
-    for block in func.get_blocks().iter().rev() {
-        let live_vars = liveness.get_live_out(block.get_id());
-
-        for var in live_vars.iter() {
-            graph.add_node(*var);
-        }
-
-        for v1 in live_vars.iter() {
-            for v2 in live_vars.iter() {
-                if v1 != v2 {
-                    graph.add_edge(v1, v2);
-                }
-            }
-        }
-
-        for instr in block.get_instrs().iter().rev() {
-            if let Tac::SpillVar { src } = instr {
-                graph.remove_node(src);
-                continue;
-            }
-
-            if let Some(new_var) = instr.dest_reg() {
-                // if this var wasn't live when we remove it, we unfortunately
-                // still need a register to store the dead value
-                if !live_vars.remove(new_var) {
-                    graph.add_node(*new_var);
-
-                    for var in live_vars.iter() {
-                        graph.add_edge(new_var, var);
-                    }
-                }
-            }
-
-            if let Tac::ReloadVar { .. } = instr {
-                // no need to add spilled var to graph
-                continue;
-            }
-
-            for u in instr.used_regs() {
-                if let Some(new_var) = u {
-                    if live_vars.insert(*new_var) {
-                        graph.add_node(*new_var);
-
-                        for var in live_vars.iter() {
-                            graph.add_edge(new_var, var);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    graph
-}
