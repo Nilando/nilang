@@ -44,14 +44,6 @@ impl Block {
         self.label
     }
 
-    pub fn set_label(&mut self, label: LabelID) {
-        self.label = Some(label)
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.instrs.is_empty()
-    }
-
     pub fn get_instrs(&self) -> &Vec<Tac> {
         &self.instrs
     }
@@ -158,8 +150,8 @@ impl Block {
             if let Some(v) = instr.dest_reg() {
                 if v == var {
                     count += 1;
+                    continue;
                 }
-                continue;
             }
 
             if instr.used_regs().contains(&Some(var)) {

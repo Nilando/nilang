@@ -1,7 +1,7 @@
 mod interference_graph;
 mod spilling;
 
-pub use interference_graph::InterferenceGraph;
+pub use interference_graph::{InterferenceGraph, find_copy_edges};
 pub use crate::ir::Func as IRFunc;
 
 use self::spilling::{find_regs_to_spill, spill_reg};
@@ -15,6 +15,7 @@ pub fn generate_func(mut ir_func: IRFunc) -> Func {
         graph = InterferenceGraph::build(&ir_func);
 
         let max_clique = graph.find_max_clique();
+        println!("MAX CLIQUE: {}", max_clique.len());
         if max_clique.len() <= 256 {
             break;
         }
@@ -27,8 +28,7 @@ pub fn generate_func(mut ir_func: IRFunc) -> Func {
 
     graph.color();
 
-    // TODO: find copy edges these are really just going to be phi nodes
-    let copies = vec![];
+    let copies = find_copy_edges(&ir_func);
     
     graph.best_effort_coalescence(copies);
 

@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, BTreeMap};
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -88,9 +88,11 @@ impl InterferenceGraph {
     }
 
     fn add_edge(&mut self, v1: &VReg, v2: &VReg) {
-        let r1 = self.nodes.get(v1).unwrap();
-        let mut n1 = r1.as_ref().borrow_mut();
-        n1.neighbors.insert(v2.clone());
+        {
+            let r1 = self.nodes.get(v1).unwrap();
+            let mut n1 = r1.as_ref().borrow_mut();
+            n1.neighbors.insert(v2.clone());
+        }
 
         let c2 = self.nodes.get(v2).unwrap();
         let mut n2 = c2.as_ref().borrow_mut();
@@ -118,7 +120,7 @@ impl InterferenceGraph {
     }
 
     pub fn find_max_clique(&self) -> Vec<VReg> {
-        let mut remaining_vars = HashMap::<VReg, usize>::new();
+        let mut remaining_vars = BTreeMap::<VReg, usize>::new();
         let mut max = 0;
         let mut elimination_ordering: Vec<VReg> = vec![];
         let mut max_clique_start = 0;
@@ -240,11 +242,11 @@ impl InterferenceGraph {
             let mut ny = self.nodes.get(vy).unwrap().as_ref().borrow_mut();
 
             for var in nx.neighbors.iter() {
-                ny.neighbors.insert(var.clone());
+                ny.neighbors.insert(*var);
             }
 
             for var in nx.vars.iter() {
-                ny.vars.insert(var.clone());
+                ny.vars.insert(*var);
             }
 
             ny.reg = Some(reg);
@@ -255,3 +257,22 @@ impl InterferenceGraph {
     }
 }
 
+pub fn find_copy_edges(func: &Func) -> Vec<(VReg, VReg)> {
+    let mut copy_edges = vec![];
+
+    for block in func.get_blocks().iter() {
+        for node in block.get_phi_nodes().iter() {
+            let dest = node.dest;
+
+            for src in node.srcs.values() {
+                if dest == *src {
+                    continue;
+                }
+
+                copy_edges.push((dest, *src));
+            }
+        }
+    }
+
+    copy_edges
+}
