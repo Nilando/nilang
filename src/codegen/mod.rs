@@ -32,6 +32,8 @@ pub fn generate_func(mut ir_func: IRFunc) -> Func {
     
     graph.best_effort_coalescence(copies);
 
+    println!("{:#?}", graph);
+
     generate_bytecode(&ir_func, &graph)
 }
 

@@ -6,7 +6,8 @@ use crate::ir::{Func, LivenessDFA, Tac, VReg, DFA};
 
 type Reg = usize;
 
-struct Node {
+#[derive(Debug)]
+pub struct Node {
     vars: HashSet<VReg>,
     reg: Option<Reg>,
     neighbors: HashSet<VReg>,
@@ -22,6 +23,7 @@ impl Node {
     }
 }
 
+#[derive(Debug)]
 pub struct InterferenceGraph {
     nodes: HashMap<VReg, Rc<RefCell<Node>>>,
 }
@@ -88,6 +90,10 @@ impl InterferenceGraph {
     }
 
     fn add_edge(&mut self, v1: &VReg, v2: &VReg) {
+        if v1 == v2 {
+            return;
+        }
+
         {
             let r1 = self.nodes.get(v1).unwrap();
             let mut n1 = r1.as_ref().borrow_mut();
@@ -241,12 +247,17 @@ impl InterferenceGraph {
             let nx = self.nodes.get(vx).unwrap().as_ref().borrow();
             let mut ny = self.nodes.get(vy).unwrap().as_ref().borrow_mut();
 
-            for var in nx.neighbors.iter() {
-                ny.neighbors.insert(*var);
-            }
-
             for var in nx.vars.iter() {
                 ny.vars.insert(*var);
+                ny.neighbors.remove(var);
+            }
+
+            for var in nx.neighbors.iter() {
+                if ny.vars.contains(var) {
+                    continue;
+                }
+
+                ny.neighbors.insert(*var);
             }
 
             ny.reg = Some(reg);
