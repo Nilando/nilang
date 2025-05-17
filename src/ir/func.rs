@@ -1,22 +1,21 @@
-use crate::symbol_map::SymID;
 use super::func_printer::VRegMap;
-use super::tac::{FuncID, LabelID};
+use super::tac::{VReg, FuncID, LabelID};
 use super::block::{Block, BlockId};
 use std::fmt::Debug;
-use std::collections::HashSet;
+use std::collections::BTreeSet;
 use std::iter::Iterator;
 
 #[derive(Debug)]
 pub struct Func {
     id: FuncID,
-    args: HashSet<SymID>,
+    args: BTreeSet<VReg>,
     blocks: Vec<Block>,
     vreg_counter: u32,
     vreg_map: Option<VRegMap>
 }
 
 impl Func {
-    pub fn new(id: FuncID, args: HashSet<SymID>, blocks: Vec<Block>, vreg_counter: u32) -> Self {
+    pub fn new(id: FuncID, args: BTreeSet<VReg>, blocks: Vec<Block>, vreg_counter: u32) -> Self {
         Self {
             id,
             args,
@@ -46,7 +45,7 @@ impl Func {
         self.id
     }
 
-    pub fn get_args(&self) -> &HashSet<SymID> {
+    pub fn get_args(&self) -> &BTreeSet<VReg> {
         &self.args
     }
 

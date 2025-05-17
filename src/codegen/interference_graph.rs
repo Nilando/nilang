@@ -1,24 +1,24 @@
-use std::collections::{HashMap, HashSet, BTreeMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::cell::RefCell;
 use std::rc::Rc;
 
 use crate::ir::{Func, LivenessDFA, Tac, VReg, DFA};
 
-type Reg = usize;
+pub type Reg = u8;
 
 #[derive(Debug)]
 pub struct Node {
-    vars: HashSet<VReg>,
+    vars: BTreeSet<VReg>,
     reg: Option<Reg>,
-    neighbors: HashSet<VReg>,
+    neighbors: BTreeSet<VReg>,
 }
 
 impl Node {
     fn new(var: VReg) -> Self {
         Self {
-            vars: HashSet::from([var]),
+            vars: BTreeSet::from([var]),
             reg: None,
-            neighbors: HashSet::new()
+            neighbors: BTreeSet::new()
         }
     }
 }
@@ -121,7 +121,7 @@ impl InterferenceGraph {
         self.nodes.get(var).unwrap().as_ref().borrow().neighbors.len()
     }
 
-    fn get_reg(&self, var: &VReg) -> usize {
+    pub fn get_reg(&self, var: &VReg) -> u8 {
         self.nodes.get(var).unwrap().as_ref().borrow().reg.unwrap()
     }
 
@@ -161,14 +161,24 @@ impl InterferenceGraph {
         max_clique
     }
 
-    pub fn color(&mut self) {
-        for (_, node) in self.nodes.iter() {
-            let mut free_reg = true;
+    pub fn color(&mut self, func: &Func) {
+        for (idx, arg) in func.get_args().iter().enumerate() {
+            let node = self.nodes.get(&arg).unwrap();
 
-            for r in 0..256 {
+            node.as_ref().borrow_mut().reg = Some(idx as u8);
+        }
+        
+        for (_, n) in self.nodes.iter() {
+            let mut free_reg = true;
+            let mut node = n.as_ref().borrow_mut();
+            if node.reg.is_some() {
+                continue;
+            }
+
+            for r in 0..=255 {
                 free_reg = true;
 
-                for var in node.as_ref().borrow().neighbors.iter() {
+                for var in node.neighbors.iter() {
                     let neighbor = self.nodes.get(var).unwrap();
 
                     if let Some(reg) = neighbor.as_ref().borrow().reg {
@@ -180,7 +190,7 @@ impl InterferenceGraph {
                 }
 
                 if free_reg {
-                    node.as_ref().borrow_mut().reg = Some(r);
+                    node.reg = Some(r);
                     break;
                 }
             }
@@ -192,8 +202,8 @@ impl InterferenceGraph {
         }
     }
 
-    fn find_shared_unused_reg(&self, vars1: &HashSet<VReg>, vars2: &HashSet<VReg>) -> Option<usize> {
-        let mut colors = HashSet::new();
+    fn find_shared_unused_reg(&self, vars1: &BTreeSet<VReg>, vars2: &BTreeSet<VReg>) -> Option<u8> {
+        let mut colors = BTreeSet::new();
 
         for v in vars1.iter() {
             colors.insert(self.get_reg(v));
@@ -206,7 +216,7 @@ impl InterferenceGraph {
         if colors.len() == 256 {
             return None;
         } else {
-            for i in 0..256 {
+            for i in 0..=255 {
                 if !colors.contains(&i) {
                     return Some(i);
                 }
@@ -225,11 +235,15 @@ impl InterferenceGraph {
         }
     }
 
-    fn find_coalescing_reg(&self, v1: &VReg, v2: &VReg) -> Option<usize> {
+    fn find_coalescing_reg(&self, v1: &VReg, v2: &VReg) -> Option<u8> {
         let nx = self.nodes.get(v1).unwrap().as_ref().borrow();
         let ny = self.nodes.get(v2).unwrap().as_ref().borrow();
         let xr = nx.reg;
         let yr = ny.reg;
+
+        if ny.neighbors.contains(v2) {
+            return None;
+        }
 
         if xr == yr {
             xr
@@ -242,7 +256,7 @@ impl InterferenceGraph {
         }
     }
 
-    fn coalesce_nodes(&mut self, vx: &VReg, vy: &VReg, reg: usize) {
+    fn coalesce_nodes(&mut self, vx: &VReg, vy: &VReg, reg: u8) {
         {
             let nx = self.nodes.get(vx).unwrap().as_ref().borrow();
             let mut ny = self.nodes.get(vy).unwrap().as_ref().borrow_mut();

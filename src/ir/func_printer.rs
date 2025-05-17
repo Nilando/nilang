@@ -94,11 +94,11 @@ impl<'a> FuncPrinter<'a> {
                 }
                 Tac::NewList { dest } => {
                     self.push_var(dest);
-                    self.result.push_str(" = new_list");
+                    self.result.push_str(" = NEW_LIST");
                 }
                 Tac::NewMap { dest } => {
                     self.push_var(dest);
-                    self.result.push_str(" = new_map");
+                    self.result.push_str(" = NEW_MAP");
                 }
                 Tac::MemLoad { dest, store, key } => {
                     self.push_var(dest);
@@ -117,8 +117,8 @@ impl<'a> FuncPrinter<'a> {
                     self.result.push_str(" = ");
                     self.push_const(src);
                 }
-                Tac::LoadArg { src } => {
-                    self.result.push_str("load_arg ");
+                Tac::StoreArg { src } => {
+                    self.result.push_str("STORE_ARG ");
                     self.push_var(src);
                 }
                 Tac::Binop { dest, op, lhs, rhs } => {
@@ -130,16 +130,16 @@ impl<'a> FuncPrinter<'a> {
                 }
                 Tac::Call { dest, src } => {
                     self.push_var(dest);
-                    self.result.push_str(" = call ");
+                    self.result.push_str(" = CALL ");
                     self.push_var(src);
                 }
                 Tac::Print { src } => {
-                    self.result.push_str("print ");
+                    self.result.push_str("PRINT ");
                     self.push_var(src);
                 }
                 Tac::Read { dest } => {
+                    self.result.push_str("READ ");
                     self.push_var(dest);
-                    self.result.push_str(" = read");
                 }
                 Tac::Jump { label } => {
                     let succ_id = self.func.get_block_from_label(*label);
@@ -166,7 +166,7 @@ impl<'a> FuncPrinter<'a> {
                     self.print_block_args(block.get_id(), succ_id);
                 }
                 Tac::Return { src } => {
-                    self.result.push_str("return ");
+                    self.result.push_str("RETURN ");
                     self.push_var(src);
                 }
                 Tac::Label { .. } => {
@@ -207,6 +207,10 @@ impl<'a> FuncPrinter<'a> {
                     self.push_var(dest);
                     self.result.push_str(", ");
                     self.push_const(&TacConst::Sym(*id));
+                }
+                Tac::PrepCallSite { src } => {
+                    self.result.push_str("PREP_CALL_SITE ");
+                    self.push_var(src);
                 }
             }
             self.result.push_str("\n");
@@ -339,8 +343,8 @@ impl<'a> FuncPrinter<'a> {
             self.result.push_str(&format!("fn{} (", self.func.get_id()));
         }
 
-        for (idx, sym) in self.func.get_args().iter().enumerate() {
-            self.result.push_str(&format!("{}", self.syms.get_str(*sym)));
+        for (idx, reg) in self.func.get_args().iter().enumerate() {
+            self.push_var(reg);
 
             if idx + 1 < self.func.get_args().len() {
                 self.result.push_str(", ");

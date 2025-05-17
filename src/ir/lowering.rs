@@ -1,6 +1,6 @@
 use crate::parser::{Span, Spanned, Stmt, Expr, Value, Op, MapKey, LhsExpr};
 use crate::symbol_map::SymID;
-use std::collections::HashSet;
+use std::collections::{BTreeSet, HashSet};
 use super::func::Func;
 use super::func_builder::FuncBuilder;
 use super::tac::{
@@ -20,17 +20,17 @@ struct LoopCtx {
 
 struct FuncLoweringCtx {
     label_counter: usize,
-    defined_variables: HashSet<SymID>,
+    defined_variables: BTreeSet<SymID>,
     loop_ctxs: Vec<LoopCtx>,
     builder: FuncBuilder,
 }
 
 impl FuncLoweringCtx {
-    fn new(id: FuncID, inputs: HashSet<SymID>, pretty_ir: bool) -> Self {
+    fn new(id: FuncID, defined_variables: BTreeSet<SymID>, pretty_ir: bool) -> Self {
         Self {
-            builder: FuncBuilder::new(id, inputs.clone(), pretty_ir),
+            builder: FuncBuilder::new(id, &defined_variables, pretty_ir),
             label_counter: 0,
-            defined_variables: inputs,
+            defined_variables,
             loop_ctxs: vec![],
         }
     }
@@ -45,7 +45,7 @@ struct LoweringCtx {
 
 impl LoweringCtx {
     pub fn new(pretty_ir: bool) -> Self {
-        let main_func = FuncLoweringCtx::new(MAIN_FUNC_ID, HashSet::new(), pretty_ir);
+        let main_func = FuncLoweringCtx::new(MAIN_FUNC_ID, BTreeSet::new(), pretty_ir);
 
         Self {
             func_counter: 0,
@@ -245,9 +245,16 @@ impl LoweringCtx {
     }
 
     fn generate_call(&mut self, calle: VReg, args: Vec<VReg>, span: Span) -> VReg {
+        let callsite = self.new_temp();
+        self.emit(
+            Tac::PrepCallSite { 
+                src: callsite
+            }
+        );
+
         for src in args.into_iter() {
             self.emit(
-                Tac::LoadArg {
+                Tac::StoreArg {
                     src
                 }
             )
@@ -343,7 +350,7 @@ impl LoweringCtx {
 
     fn new_func(&mut self, inputs: Spanned<Vec<SymID>>, stmts: Vec<Stmt>) -> (FuncID, HashSet<SymID>) {
         let func_id = self.new_func_id();
-        let generator = FuncLoweringCtx::new(func_id, HashSet::from_iter(inputs.item), self.pretty_ir);
+        let generator = FuncLoweringCtx::new(func_id, BTreeSet::from_iter(inputs.item), self.pretty_ir);
 
         self.funcs.push(generator);
 
@@ -807,9 +814,9 @@ pub mod tests {
             Tac::LoadConst { dest: 1, src: TacConst::Int(1) },
             Tac::LoadConst { dest: 2, src: TacConst::Int(2) },
             Tac::LoadConst { dest: 3, src: TacConst::Null },
-            Tac::LoadArg { src: 0, },
-            Tac::LoadArg { src: 1, },
-            Tac::LoadArg { src: 2, },
+            Tac::StoreArg { src: 0, },
+            Tac::StoreArg { src: 1, },
+            Tac::StoreArg { src: 2, },
             Tac::Call { dest: 4, src: 3, },
         ];
         let input = "a(0, 1, 2);";

@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub struct SymID(u64);
+pub type SymID = u64;
+
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct SmallSymID(u16);
 
@@ -11,8 +11,8 @@ pub struct SymbolMap {
     id_to_str: Vec<Rc<String>>
 }
 
-pub const LENGTH_SYM: SymID = SymID(0);
-pub const PUSH_SYM: SymID = SymID(1);
+pub const LENGTH_SYM: SymID = 0;
+pub const PUSH_SYM: SymID = 1;
 
 impl SymbolMap {
     pub fn new() -> Self {
@@ -35,7 +35,7 @@ impl SymbolMap {
     }
 
     pub fn get_str(&mut self, id: SymID) -> &str {
-        &self.id_to_str[id.0 as usize]
+        &self.id_to_str[id as usize]
     }
 
     fn init(&mut self) {
@@ -44,7 +44,7 @@ impl SymbolMap {
     }
 
     fn insert(&mut self, str: String) -> SymID {
-        let id = SymID(self.id_to_str.len() as u64);
+        let id = self.id_to_str.len() as u64;
         let s = Rc::new(str);
 
         self.id_to_str.push(s.clone());

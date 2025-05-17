@@ -74,7 +74,10 @@ pub enum Tac {
         src: VReg,
     },
 
-    LoadArg {
+    PrepCallSite {
+        src: VReg
+    },
+    StoreArg {
         src: VReg
     },
     Call {
@@ -121,7 +124,7 @@ impl Tac {
             Tac::SpillVar { src } |
             Tac::Copy { src, .. } |
             Tac::Print { src, .. } |
-            Tac::LoadArg { src, .. } |
+            Tac::StoreArg { src, .. } |
             Tac::Call { src, .. } |
             Tac::Return { src, .. } |
             Tac::Jnt { src, .. } | 
@@ -142,7 +145,7 @@ impl Tac {
             Tac::SpillVar { src } |
             Tac::Copy { src, .. } |
             Tac::Print { src, .. } |
-            Tac::LoadArg { src, .. } |
+            Tac::StoreArg { src, .. } |
             Tac::Call { src, .. } |
             Tac::Return { src, .. } |
             Tac::Jnt { src, .. } | 
