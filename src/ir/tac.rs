@@ -4,6 +4,7 @@ use crate::symbol_map::SymID;
 pub type LabelID = usize;
 pub type FuncID = usize;
 pub type VReg = u32;
+pub type UpValId = u16;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum TacConst {
@@ -64,10 +65,9 @@ pub enum Tac {
         sym: VReg,
     },
 
-    // UpValId is a u16
     LoadUpvalue {
         dest: VReg,
-        id: SymID,
+        id: UpValId,
     },
     StoreUpvalue {
         func: VReg,

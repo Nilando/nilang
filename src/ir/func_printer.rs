@@ -202,11 +202,9 @@ impl<'a> FuncPrinter<'a> {
                     self.result.push_str(", ");
                     self.push_var(src);
                 }
-                Tac::LoadUpvalue { dest, id } => {
+                Tac::LoadUpvalue { dest, .. } => {
                     self.result.push_str("LOAD_UPVAL ");
                     self.push_var(dest);
-                    self.result.push_str(", ");
-                    self.push_const(&TacConst::Sym(*id));
                 }
                 Tac::PrepCallSite { src } => {
                     self.result.push_str("PREP_CALL_SITE ");

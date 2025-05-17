@@ -98,6 +98,19 @@ fn gvn_inner(func: &mut Func, dom_tree: &HashMap<BlockId, Vec<BlockId>>, current
                     new_value_ids.push(value_map.insert_entry(new_entry));
                 }
             }
+            Tac::LoadUpvalue { dest, id } => {
+                let value = Value::UpValueId(*id);
+
+                if let Some((_, entry)) = value_map.find_val_entry_mut(&value) {
+                    entry.push_loc(ValueLocation::Var(dest.clone()));
+
+                    *instr = Tac::Noop;
+                } else {
+                    let new_entry = ValueEntry::new(dest.clone(), Some(value));
+
+                    new_value_ids.push(value_map.insert_entry(new_entry));
+                }
+            }
             Tac::Copy { dest, src } => {
                 if let Some((_, entry)) = value_map.find_loc_entry_mut(&ValueLocation::Var(*src)) {
                     entry.push_loc(ValueLocation::Var(dest.clone()));
@@ -246,6 +259,7 @@ impl GVNC {
 enum Value {
     Binop(CanonicalBinop),
     Const(TacConst),
+    UpValueId(u16),
 }
 
 #[derive(PartialEq)]

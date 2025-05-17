@@ -433,7 +433,13 @@ impl LoweringCtx {
 
             self.set_upvalue(sym_id);
 
-            self.emit(Tac::LoadUpvalue { dest, id: sym_id });
+            let upvalue = self.get_current_func_mut().builder.upvalues
+                .iter()
+                .position(|uv| {
+                    *uv == sym_id
+            }).unwrap();
+
+            self.emit(Tac::LoadUpvalue { dest, id: u16::try_from(upvalue).unwrap() });
             
             dest
         } else {
