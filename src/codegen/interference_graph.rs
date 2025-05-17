@@ -241,7 +241,7 @@ impl InterferenceGraph {
         let xr = nx.reg;
         let yr = ny.reg;
 
-        if ny.neighbors.contains(v2) {
+        if ny.neighbors.contains(v1) {
             return None;
         }
 
