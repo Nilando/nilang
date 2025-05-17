@@ -1,6 +1,7 @@
 use super::func_printer::VRegMap;
 use super::ssa::convert_to_ssa;
 use crate::parser::Span;
+use crate::ir::TacConst;
 use super::block::{BlockId, Block};
 use super::tac::{Tac, FuncID, LabelID, VReg};
 use super::func::Func;
@@ -62,6 +63,7 @@ impl FuncBuilder {
     }
 
     pub fn build(mut self) -> Func {
+        self.insert_final_return();
         self.insert_current();
         self.link_blocks();
 
@@ -81,6 +83,18 @@ impl FuncBuilder {
         }
 
         func
+    }
+
+    fn insert_final_return(&mut self) {
+        if let Some(Tac::Return { .. }) = self.last_instr() {
+        }  else {
+            let temp = self.new_reg();
+            let t1 = Tac::LoadConst { dest: temp, src: TacConst::Null };
+            let t2 = Tac::Return { src: temp };
+
+            self.push_tac(t1);
+            self.push_tac(t2);
+        }
     }
 
     pub fn last_instr(&self) -> Option<&Tac> {
