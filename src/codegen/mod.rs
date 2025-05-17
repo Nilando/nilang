@@ -38,7 +38,7 @@ pub fn generate_func(mut ir_func: IRFunc) -> Func {
     
     graph.best_effort_coalescence(copies);
 
-    //println!("{:#?}", graph);
+    // println!("{:#?}", graph);
 
     generate_bytecode(&ir_func, &graph)
 }
@@ -106,7 +106,7 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
                 }
                 Tac::LoadUpvalue { dest, id } => {
                     // need a way to convert sym to id
-                    todo!()
+                    ByteCode::Noop
                 }
                 Tac::StoreUpvalue { func, src } => {
                     ByteCode::StoreUpvalue {
@@ -168,6 +168,13 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
                                 rhs
                             }
                         }
+                        Op::Modulo => {
+                            ByteCode::Modulo { 
+                                dest,
+                                lhs,
+                                rhs
+                            }
+                        }
                         _ => ByteCode::Noop
                     }
                 }
@@ -190,9 +197,6 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
                     }
                 }
                 Tac::LoadConst { dest, src } => {
-                    // we have 2 chance 2 turn this into an "immediate" load
-                    // either src is an int that fits into a i16
-                    // or src is a symID that fits into a u16
                     match src {
                         TacConst::Null => ByteCode::LoadNull { 
                             dest: graph.get_reg(dest), 
@@ -287,8 +291,6 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
 // graph creation process we want to add it into the graph as it represents a register
 // that will need to be used, but when greedy coloring the graph we don't actually want to
 // assign a register as the register will be selected in a different manner.
-//
-//
 
 #[derive(Debug)]
 enum ByteCode {
@@ -379,6 +381,11 @@ enum ByteCode {
         rhs: Reg,
     },
     Sub {
+        dest: Reg,
+        lhs: Reg,
+        rhs: Reg,
+    },
+    Modulo {
         dest: Reg,
         lhs: Reg,
         rhs: Reg,
