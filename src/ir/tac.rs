@@ -2,14 +2,14 @@ use crate::parser::Op;
 use crate::symbol_map::SymID;
 
 pub type LabelID = usize;
-pub type FuncID = usize;
+pub type FuncID = u64;
 pub type VReg = u32;
 pub type UpValId = u16;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum TacConst {
     String(String),
-    Int(isize),
+    Int(i64),
     Float(f64),
     Bool(bool),
     Func(FuncID),

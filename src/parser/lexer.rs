@@ -81,7 +81,7 @@ pub enum Token<'a> {
     Ident(SymID),
     Global(SymID),
     Float(f64),
-    Int(isize),
+    Int(i64),
     String(&'a str),
     Error(LexError),
     KeyWord(KeyWord),
@@ -642,7 +642,7 @@ mod tests {
         let mut lexer = Lexer::new(source);
 
         for i in 0..5 {
-            assert_eq!(lexer.peek_nth(i, &mut syms).unwrap().item, Token::Int(i as isize));
+            assert_eq!(lexer.peek_nth(i, &mut syms).unwrap().item, Token::Int(i as i64));
         }
 
         for i in 0..5 {

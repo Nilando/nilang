@@ -12,17 +12,45 @@ use self::interference_graph::Reg;
 use self::spilling::{find_regs_to_spill, spill_reg};
 
 
+#[derive(PartialEq)]
 enum Local {
     FuncId(u64),
     Int(i64),
     Float(f64),
     Sym(u64),
-    // String(id)
+    String(String)
 }
 
 pub struct Func {
-    // locals: Vec<Local>,
+    id: u64,
+    locals: Vec<Local>,
     instrs: Vec<ByteCode>
+}
+
+impl Func {
+    pub fn new(id: u64) -> Self {
+        Self { 
+            id, 
+            locals: vec![],
+            instrs: vec![]
+        }
+    }
+
+    fn len(&self) -> usize {
+        self.instrs.len()
+    }
+
+    fn get_local(&self, local: &Local) -> Option<u16> {
+        self.locals.iter().position(|l| l == local).map(|id|  {
+            u16::try_from(id).unwrap()
+        })
+    }
+
+    fn push_local(&mut self, local: Local) -> u16 {
+        let id = self.locals.len();
+        self.locals.push(local);
+        u16::try_from(id).unwrap()
+    }
 }
 
 pub fn generate_func(mut ir_func: IRFunc) -> Func {
@@ -55,7 +83,7 @@ pub fn generate_func(mut ir_func: IRFunc) -> Func {
 }
 
 fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
-    let mut instrs = vec![];
+    let mut func = Func::new(ir_func.get_id());
     let mut jump_positions: HashMap<BackPatchLabel, Vec<usize>> = HashMap::new();
     let mut label_positions: HashMap<BackPatchLabel, usize> = HashMap::new();
     let mut temp_label_counter = 0;
@@ -65,11 +93,12 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
             let bytecode = 
             match instr {
                 Tac::Label { label } => {
-                    label_positions.insert(BackPatchLabel::Label(*label), instrs.len());
+                    label_positions.insert(BackPatchLabel::Label(*label), func.len());
                     continue;
                 }
                 Tac::Jnt { src, label } |
                 Tac::Jit { src, label } => {
+                    let original_label = BackPatchLabel::Label(*label);
                     let instr =
                     if let Tac::Jnt { .. } = instr {
                         ByteCode::Jnt { 
@@ -91,27 +120,26 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
                         temp_label_counter += 1;
                         bpl
                     } else {
-                        BackPatchLabel::Label(*label)
+                        original_label
                     };
 
-                    push_generic_jump_instr(instr, &mut instrs, &mut jump_positions, jump_label);
+                    push_generic_jump_instr(instr, &mut func.instrs, &mut jump_positions, jump_label);
 
                     let next_block = ir_func.get_block(block.get_id() + 1);
-                    ssa_elimination(&mut instrs, next_block, block, graph);
+                    ssa_elimination(&mut func.instrs, next_block, block, graph);
                     let fall_through_label = BackPatchLabel::Temp(temp_label_counter);
                     temp_label_counter += 1;
 
                     if !jump_block.get_phi_nodes().is_empty() {
-                        label_positions.insert(jump_label, instrs.len());
+                        label_positions.insert(jump_label, func.len());
 
-                        let original_label = BackPatchLabel::Label(*label);
-                        push_jump_instr(&mut instrs, &mut jump_positions, fall_through_label);
+                        push_jump_instr(&mut func.instrs, &mut jump_positions, fall_through_label);
 
-                        ssa_elimination(&mut instrs, jump_block, block, graph);
+                        ssa_elimination(&mut func.instrs, jump_block, block, graph);
 
-                        push_jump_instr(&mut instrs, &mut jump_positions, original_label);
+                        push_jump_instr(&mut func.instrs, &mut jump_positions, original_label);
 
-                        label_positions.insert(fall_through_label, instrs.len());
+                        label_positions.insert(fall_through_label, func.len());
                     }
 
                     continue;
@@ -121,9 +149,9 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
                     let next_block = ir_func.get_block(next_block_id);
                     let original_label = BackPatchLabel::Label(*label);
 
-                    ssa_elimination(&mut instrs, next_block, block, graph);
+                    ssa_elimination(&mut func.instrs, next_block, block, graph);
 
-                    push_jump_instr(&mut instrs, &mut jump_positions, original_label);
+                    push_jump_instr(&mut func.instrs, &mut jump_positions, original_label);
                     continue;
                 }
                 Tac::Copy { dest, src } => {
@@ -258,6 +286,20 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
                 }
                 Tac::LoadConst { dest, src } => {
                     match src {
+                        TacConst::Func(id) => {
+                            let local = Local::FuncId(*id);
+                            let id =
+                            if let Some(local_id) = func.get_local(&local) {
+                                local_id
+                            } else {
+                                func.push_local(local)
+                            };
+
+                            ByteCode::LoadLocal {
+                                dest: graph.get_reg(dest), 
+                                id
+                            }
+                        }
                         TacConst::Null => ByteCode::LoadNull { 
                             dest: graph.get_reg(dest), 
                         },
@@ -265,6 +307,34 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
                             dest: graph.get_reg(dest), 
                             val: *b
                         },
+                        TacConst::String(s) => { 
+                            let local = Local::String(s.clone());
+                            let id =
+                            if let Some(local_id) = func.get_local(&local) {
+                                local_id
+                            } else {
+                                func.push_local(local)
+                            };
+
+                            ByteCode::LoadLocal {
+                                dest: graph.get_reg(dest), 
+                                id
+                            }
+                        }
+                        TacConst::Float(f) => { 
+                            let local = Local::Float(*f);
+                            let id =
+                            if let Some(local_id) = func.get_local(&local) {
+                                local_id
+                            } else {
+                                func.push_local(local)
+                            };
+
+                            ByteCode::LoadLocal {
+                                dest: graph.get_reg(dest), 
+                                id
+                            }
+                        }
                         TacConst::Int(i) => { 
                             match i16::try_from(*i) {
                                 Ok(immediate) => {
@@ -274,10 +344,18 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
                                     }
                                 }
                                 _ => {
-                                    // check if i exists as a local already
-                                    // if so load that local id
-                                    // if not insert a new local and load that one
-                                    todo!()
+                                    let local = Local::Int(*i);
+                                    let id =
+                                    if let Some(local_id) = func.get_local(&local) {
+                                        local_id
+                                    } else {
+                                        func.push_local(local)
+                                    };
+
+                                    ByteCode::LoadLocal {
+                                        dest: graph.get_reg(dest), 
+                                        id
+                                    }
                                 }
                             }
                         },
@@ -290,31 +368,36 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
                                     }
                                 }
                                 _ => {
-                                    // check if i exists as a local already
-                                    // if so load that local id
-                                    // if not insert a new local and load that one
-                                    todo!()
+                                    let local = Local::Sym(*i);
+                                    let id =
+                                    if let Some(local_id) = func.get_local(&local) {
+                                        local_id
+                                    } else {
+                                        func.push_local(local)
+                                    };
+
+                                    ByteCode::LoadLocal {
+                                        dest: graph.get_reg(dest), 
+                                        id
+                                    }
                                 }
                             }
                         },
-                        _ => ByteCode::Noop
                     }
                 }
                 _ => ByteCode::Noop
             };
 
-            instrs.push(bytecode)
+            func.instrs.push(bytecode)
         }
 
         if let Some(id) = block.falls_through() {
             let next_block = ir_func.get_block(id);
-            ssa_elimination(&mut instrs, next_block, block, graph);
+            ssa_elimination(&mut func.instrs, next_block, block, graph);
         } 
     }
 
-    back_patch_jump_instructions(&mut instrs, label_positions, jump_positions);
-
-    let func = Func { instrs };
+    back_patch_jump_instructions(&mut func.instrs, label_positions, jump_positions);
 
     print_bytecode(&func);
 
@@ -542,7 +625,7 @@ enum ByteCode {
     },
     LoadLocal {
         dest: Reg,
-        local_id: u16
+        id: u16
     },
     LoadUpvalue {
         dest: Reg,
@@ -606,7 +689,7 @@ enum ByteCode {
 }
 
 fn print_bytecode(func: &Func) {
-    println!("=== FN {} START ===", 0);
+    println!("=== FN {} START ===", func.id);
     for instr in func.instrs.iter() {
         match instr {
             ByteCode::Jump { offset } =>              println!("JMP  {offset}"),
@@ -615,9 +698,11 @@ fn print_bytecode(func: &Func) {
             ByteCode::StoreArg { src } =>             println!("ARG  {src }"),
             ByteCode::Call { dest, src } =>           println!("CALL {dest}, {src }"),
             ByteCode::Return { src } =>               println!("RTN  {src }"),
-            ByteCode::LoadInt { dest, val } =>        println!("LDI  {dest}, {val}"),
-            ByteCode::LoadSym { dest, val } =>        println!("LDS  {dest}, {val}"),
-            ByteCode::LoadUpvalue { dest, id } =>     println!("LDU  {dest}, {id}"),
+            ByteCode::LoadInt { dest, val } =>        println!("INT  {dest}, {val}"),
+            ByteCode::LoadSym { dest, val } =>        println!("SYM  {dest}, {val}"),
+            ByteCode::LoadUpvalue { dest, id } =>     println!("LDUV {dest}, {id}"),
+            ByteCode::StoreUpvalue { func, src } =>   println!("STUV {func}, {src}"),
+            ByteCode::LoadLocal { dest, id } =>       println!("LOC  {dest}, {id}"),
             ByteCode::LoadNull { dest } =>            println!("LDN  {dest}"),
             ByteCode::Print { src } =>                println!("OUT  {src }"),
             ByteCode::Read { dest } =>                println!("READ {dest}"),

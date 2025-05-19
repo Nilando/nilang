@@ -11,7 +11,7 @@ use super::tac::{
 };
 use super::VReg;
 
-pub const MAIN_FUNC_ID: usize = 0;
+pub const MAIN_FUNC_ID: u64 = 0;
 
 struct LoopCtx {
     start: LabelID,
@@ -37,7 +37,7 @@ impl FuncLoweringCtx {
 }
 
 struct LoweringCtx {
-    func_counter: usize,
+    func_counter: u64,
     funcs: Vec<FuncLoweringCtx>,
     lowered_funcs: Vec<Func>,
     pretty_ir: bool,
@@ -488,7 +488,7 @@ impl LoweringCtx {
             let src = self.generate_expr(e);
             let key = self.new_temp();
 
-            self.emit(Tac::LoadConst { dest: key, src: TacConst::Int(i as isize)});
+            self.emit(Tac::LoadConst { dest: key, src: TacConst::Int(i64::try_from(i).unwrap())});
 
             self.emit(
                 Tac::MemStore {
