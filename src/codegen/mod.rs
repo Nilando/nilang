@@ -65,8 +65,7 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
             let bytecode = 
             match instr {
                 Tac::Label { label } => {
-                    let position = instrs.len();
-                    label_positions.insert(BackPatchLabel::Label(*label), position);
+                    label_positions.insert(BackPatchLabel::Label(*label), instrs.len());
                     continue;
                 }
                 Tac::Jnt { src, label } |
@@ -84,7 +83,8 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
                         }
                     };
 
-                    let jump_block = ir_func.get_block(*label);
+                    let jump_block_id = ir_func.get_block_from_label(*label);
+                    let jump_block = ir_func.get_block(jump_block_id);
                     let jump_label = 
                     if !jump_block.get_phi_nodes().is_empty() {
                         let bpl = BackPatchLabel::Temp(temp_label_counter);
@@ -102,19 +102,23 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
                     temp_label_counter += 1;
 
                     if !jump_block.get_phi_nodes().is_empty() {
+                        label_positions.insert(jump_label, instrs.len());
+
                         let original_label = BackPatchLabel::Label(*label);
                         push_jump_instr(&mut instrs, &mut jump_positions, fall_through_label);
 
-                        let jump_block = ir_func.get_block(*label);
                         ssa_elimination(&mut instrs, jump_block, block, graph);
 
                         push_jump_instr(&mut instrs, &mut jump_positions, original_label);
+
+                        label_positions.insert(fall_through_label, instrs.len());
                     }
 
                     continue;
                 }
                 Tac::Jump { label } => {
-                    let next_block = ir_func.get_block(*label);
+                    let next_block_id = ir_func.get_block_from_label(*label);
+                    let next_block = ir_func.get_block(next_block_id);
                     let original_label = BackPatchLabel::Label(*label);
 
                     ssa_elimination(&mut instrs, next_block, block, graph);
@@ -179,7 +183,7 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
                 Tac::LoadUpvalue { dest, id } => {
                     ByteCode::LoadUpvalue { 
                         dest: graph.get_reg(dest), 
-                        upval_id: *id 
+                        id: *id 
                     }
                 }
                 Tac::StoreUpvalue { func, src } => {
@@ -317,7 +321,7 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
     func
 }
 
-#[derive(Eq, PartialEq, Hash)]
+#[derive(Eq, PartialEq, Hash, Copy, Clone)]
 enum BackPatchLabel {
     Label(LabelID),
     Temp(usize),
@@ -373,6 +377,10 @@ fn back_patch_jump_instructions(
 // if the src and dest are both spilled instead of reload instructions
 // we could just ensure that they match to the same memory location
 fn ssa_elimination(instrs: &mut Vec<ByteCode>, next_block: &Block, current_block: &Block, graph: &InterferenceGraph) {
+    if next_block.get_phi_nodes().is_empty() {
+        return;
+    }
+
     let mut copy_pairs = vec![];
     let mut dests = vec![];
     let mut srcs = vec![];
@@ -538,7 +546,7 @@ enum ByteCode {
     },
     LoadUpvalue {
         dest: Reg,
-        upval_id: u16
+        id: u16
     },
     StoreUpvalue {
         func: Reg,
@@ -606,18 +614,22 @@ fn print_bytecode(func: &Func) {
             ByteCode::Jit { src, offset } =>          println!("JIT  {offset}, {src}"),
             ByteCode::StoreArg { src } =>             println!("ARG  {src }"),
             ByteCode::Call { dest, src } =>           println!("CALL {dest}, {src }"),
-            ByteCode::Return { src } =>               println!("RTN  {src}"),
+            ByteCode::Return { src } =>               println!("RTN  {src }"),
             ByteCode::LoadInt { dest, val } =>        println!("LDI  {dest}, {val}"),
             ByteCode::LoadSym { dest, val } =>        println!("LDS  {dest}, {val}"),
+            ByteCode::LoadUpvalue { dest, id } =>     println!("LDU  {dest}, {id}"),
             ByteCode::LoadNull { dest } =>            println!("LDN  {dest}"),
-            ByteCode::Print { src } =>                println!("PRT  {src}"),
+            ByteCode::Print { src } =>                println!("OUT  {src }"),
+            ByteCode::Read { dest } =>                println!("READ {dest}"),
             ByteCode::Lt { dest, lhs, rhs } =>        println!("LT   {dest}, {lhs}, {rhs}"),
             ByteCode::Equality { dest, lhs, rhs } =>  println!("EQL  {dest}, {lhs}, {rhs}"),
             ByteCode::Add { dest, lhs, rhs } =>       println!("ADD  {dest}, {lhs}, {rhs}"),
+            ByteCode::Modulo { dest, lhs, rhs } =>    println!("MOD  {dest}, {lhs}, {rhs}"),
             ByteCode::Copy { dest, src } =>           println!("COPY {dest}, {src}"),
             ByteCode::Swap { r1, r2 } =>              println!("SWAP {r1  }, {r2 }"),
-            ByteCode::NewList { dest } =>             println!("NEWL {dest}"),
+            ByteCode::NewList { dest } =>             println!("LIST {dest}"),
             ByteCode::MemLoad { dest, store, key } => println!("MEML {dest}, {store}[{key}]"),
+            ByteCode::MemStore { store, key, src } => println!("MEMS {store}[{key}], {src}"),
             ByteCode::Noop => println!("NOOP"),
             _ => println!("..."),
         }
