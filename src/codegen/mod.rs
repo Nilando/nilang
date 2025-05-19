@@ -310,9 +310,11 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
 
     back_patch_jump_instructions(&mut instrs, label_positions, jump_positions);
 
-    println!("{:#?}", instrs);
+    let func = Func { instrs };
 
-    Func { instrs }
+    print_bytecode(&func);
+
+    func
 }
 
 #[derive(Eq, PartialEq, Hash)]
@@ -431,7 +433,6 @@ fn ssa_elimination(instrs: &mut Vec<ByteCode>, next_block: &Block, current_block
         }
     }
 }
-
 
 // things to implement:
 // 4. spill instruction insertion
@@ -594,4 +595,32 @@ enum ByteCode {
         src: Reg,
         offset: i16
     },
+}
+
+fn print_bytecode(func: &Func) {
+    println!("=== FN {} START ===", 0);
+    for instr in func.instrs.iter() {
+        match instr {
+            ByteCode::Jump { offset } =>              println!("JMP  {offset}"),
+            ByteCode::Jnt { src, offset } =>          println!("JNT  {offset}, {src}"),
+            ByteCode::Jit { src, offset } =>          println!("JIT  {offset}, {src}"),
+            ByteCode::StoreArg { src } =>             println!("ARG  {src }"),
+            ByteCode::Call { dest, src } =>           println!("CALL {dest}, {src }"),
+            ByteCode::Return { src } =>               println!("RTN  {src}"),
+            ByteCode::LoadInt { dest, val } =>        println!("LDI  {dest}, {val}"),
+            ByteCode::LoadSym { dest, val } =>        println!("LDS  {dest}, {val}"),
+            ByteCode::LoadNull { dest } =>            println!("LDN  {dest}"),
+            ByteCode::Print { src } =>                println!("PRT  {src}"),
+            ByteCode::Lt { dest, lhs, rhs } =>        println!("LT   {dest}, {lhs}, {rhs}"),
+            ByteCode::Equality { dest, lhs, rhs } =>  println!("EQL  {dest}, {lhs}, {rhs}"),
+            ByteCode::Add { dest, lhs, rhs } =>       println!("ADD  {dest}, {lhs}, {rhs}"),
+            ByteCode::Copy { dest, src } =>           println!("COPY {dest}, {src}"),
+            ByteCode::Swap { r1, r2 } =>              println!("SWAP {r1  }, {r2 }"),
+            ByteCode::NewList { dest } =>             println!("NEWL {dest}"),
+            ByteCode::MemLoad { dest, store, key } => println!("MEML {dest}, {store}[{key}]"),
+            ByteCode::Noop => println!("NOOP"),
+            _ => println!("..."),
+        }
+    }
+    println!("=== END ===");
 }
