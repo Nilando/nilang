@@ -28,9 +28,11 @@ pub struct Config {
     )]
     pub bytecode_output_path: Option<String>,
 
+    /// Print the IR using symbol names instead of virtual registers
     #[clap(short, long)]
     pub pretty_ir: bool,
 
+    /// No optimizing is done on the IR
     #[clap(short, long)]
     pub no_optimize: bool,
 
