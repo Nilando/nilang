@@ -3,7 +3,6 @@ mod spilling;
 
 use std::collections::HashMap;
 
-use graphviz_rust::attributes::pos;
 pub use interference_graph::{InterferenceGraph, find_copy_edges};
 
 use crate::ir::{Block, Func as IRFunc, LabelID, Tac, TacConst};
@@ -57,18 +56,70 @@ pub fn generate_func(mut ir_func: IRFunc) -> Func {
 
 fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
     let mut instrs = vec![];
-    let mut jump_positions: HashMap<LabelID, Vec<usize>> = HashMap::new();
-    let mut label_positions: HashMap<LabelID, usize> = HashMap::new();
-    let mut position = 0;
+    let mut jump_positions: HashMap<BackPatchLabel, Vec<usize>> = HashMap::new();
+    let mut label_positions: HashMap<BackPatchLabel, usize> = HashMap::new();
+    let mut temp_label_counter = 0;
 
     for block in ir_func.get_blocks() {
         for instr in block.get_instrs() {
-            position = instrs.len();
-
             let bytecode = 
             match instr {
                 Tac::Label { label } => {
-                    label_positions.insert(*label, position);
+                    let position = instrs.len();
+                    label_positions.insert(BackPatchLabel::Label(*label), position);
+                    continue;
+                }
+                Tac::Jnt { src, label } |
+                Tac::Jit { src, label } => {
+                    let instr =
+                    if let Tac::Jnt { .. } = instr {
+                        ByteCode::Jnt { 
+                            src: graph.get_reg(src),
+                            offset: 0
+                        }
+                    } else {
+                        ByteCode::Jit { 
+                            src: graph.get_reg(src),
+                            offset: 0
+                        }
+                    };
+
+                    let jump_block = ir_func.get_block(*label);
+                    let jump_label = 
+                    if !jump_block.get_phi_nodes().is_empty() {
+                        let bpl = BackPatchLabel::Temp(temp_label_counter);
+                        temp_label_counter += 1;
+                        bpl
+                    } else {
+                        BackPatchLabel::Label(*label)
+                    };
+
+                    push_generic_jump_instr(instr, &mut instrs, &mut jump_positions, jump_label);
+
+                    let next_block = ir_func.get_block(block.get_id() + 1);
+                    ssa_elimination(&mut instrs, next_block, block, graph);
+                    let fall_through_label = BackPatchLabel::Temp(temp_label_counter);
+                    temp_label_counter += 1;
+
+                    if !jump_block.get_phi_nodes().is_empty() {
+                        let original_label = BackPatchLabel::Label(*label);
+                        push_jump_instr(&mut instrs, &mut jump_positions, fall_through_label);
+
+                        let jump_block = ir_func.get_block(*label);
+                        ssa_elimination(&mut instrs, jump_block, block, graph);
+
+                        push_jump_instr(&mut instrs, &mut jump_positions, original_label);
+                    }
+
+                    continue;
+                }
+                Tac::Jump { label } => {
+                    let next_block = ir_func.get_block(*label);
+                    let original_label = BackPatchLabel::Label(*label);
+
+                    ssa_elimination(&mut instrs, next_block, block, graph);
+
+                    push_jump_instr(&mut instrs, &mut jump_positions, original_label);
                     continue;
                 }
                 Tac::Copy { dest, src } => {
@@ -201,41 +252,6 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
                         _ => ByteCode::Noop
                     }
                 }
-                Tac::Jnt { src, label } => {
-                    if let Some(positions) = jump_positions.get_mut(label) {
-                        positions.push(position);
-                    } else {
-                        jump_positions.insert(*label, vec![position]);
-                    }
-
-                    ByteCode::Jnt { 
-                        src: graph.get_reg(src),
-                        offset: 0
-                    }
-                }
-                Tac::Jit { src, label } => {
-                    if let Some(positions) = jump_positions.get_mut(label) {
-                        positions.push(position);
-                    } else {
-                        jump_positions.insert(*label, vec![position]);
-                    }
-
-                    ByteCode::Jit { 
-                        src: graph.get_reg(src),
-                        offset: 0
-                    }
-                }
-                Tac::Jump { label } => {
-                    if let Some(positions) = jump_positions.get_mut(label) {
-                        positions.push(position);
-                    } else {
-                        jump_positions.insert(*label, vec![position]);
-                    }
-
-                    ByteCode::Jump { 
-                        offset: 0
-                    }
-                }
                 Tac::LoadConst { dest, src } => {
                     match src {
                         TacConst::Null => ByteCode::LoadNull { 
@@ -286,31 +302,10 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
             instrs.push(bytecode)
         }
 
-
         if let Some(id) = block.falls_through() {
             let next_block = ir_func.get_block(id);
             ssa_elimination(&mut instrs, next_block, block, graph);
-        } else if let Some(id) = block.unconditionally_jumps() {
-            // pop the last instruction
-            // and pop the backpatching entry for that instruction
-            // let next_block = ir_func.get_block(id);
-            // ssa_elimination(&mut instrs, next_block, block, graph);
-            // push the jump instruction
-            // and update the back patching entry
-            /*
-        } else if Some(fallthrough_id, jump_id) = block.conditionally_jump_positions.) {
-            //  if the jump succesor has phi nodes
-            //      update the cond jump to jump to a new label L
-            //
-            //  first insert the copies for the natural successor
-            //
-            //  if the jump successor has phi nodes
-            //      back patch the cond jump to jump here
-            //      insert a jump to the natural successor
-            //      insert jump successor copies
-            //      insert a jump to the jump successor
-            */
-        }
+        } 
     }
 
     back_patch_jump_instructions(&mut instrs, label_positions, jump_positions);
@@ -320,10 +315,34 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
     Func { instrs }
 }
 
+#[derive(Eq, PartialEq, Hash)]
+enum BackPatchLabel {
+    Label(LabelID),
+    Temp(usize),
+}
+
+fn push_jump_instr(instrs: &mut Vec<ByteCode>, jump_positions: &mut HashMap<BackPatchLabel, Vec<usize>>, label: BackPatchLabel) {
+    let instr = ByteCode::Jump { offset: 0 };
+
+    push_generic_jump_instr(instr, instrs, jump_positions, label);
+}
+
+fn push_generic_jump_instr(instr: ByteCode, instrs: &mut Vec<ByteCode>, jump_positions: &mut HashMap<BackPatchLabel, Vec<usize>>, label: BackPatchLabel) {
+    let position = instrs.len();
+
+    instrs.push(instr);
+
+    if let Some(positions) = jump_positions.get_mut(&label) {
+        positions.push(position);
+    } else {
+        jump_positions.insert(label, vec![position]);
+    }
+}
+
 fn back_patch_jump_instructions(
     instrs: &mut Vec<ByteCode>, 
-    label_positions: HashMap<LabelID, usize>,
-    jump_positions: HashMap<LabelID, Vec<usize>>,
+    label_positions: HashMap<BackPatchLabel, usize>,
+    jump_positions: HashMap<BackPatchLabel, Vec<usize>>,
 ) {
     for (label, positions) in jump_positions.iter() {
         let label_position = label_positions.get(label).unwrap();
@@ -348,9 +367,6 @@ fn back_patch_jump_instructions(
         }
     }
 }
-
-//fn back_patch_jump_instructions(instrs: &
-
 
 // if the src and dest are both spilled instead of reload instructions
 // we could just ensure that they match to the same memory location
@@ -420,11 +436,6 @@ fn ssa_elimination(instrs: &mut Vec<ByteCode>, next_block: &Block, current_block
 // things to implement:
 // 4. spill instruction insertion
 // 3. callsite prepping
-
-// optimizations
-// 1. jump threading
-// 2. memory ssa
-//
 
 // ===== PREPPING THE CALL SITE ====
 // idea on how to deal with "prepping the call site"
