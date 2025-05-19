@@ -57,7 +57,7 @@ pub fn generate_func(mut ir_func: IRFunc) -> Func {
 
 fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
     let mut instrs = vec![];
-    let mut jumps: HashMap<LabelID, Vec<usize>> = HashMap::new();
+    let mut jump_positions: HashMap<LabelID, Vec<usize>> = HashMap::new();
     let mut label_positions: HashMap<LabelID, usize> = HashMap::new();
     let mut position = 0;
 
@@ -202,10 +202,10 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
                     }
                 }
                 Tac::Jnt { src, label } => {
-                    if let Some(positions) = jumps.get_mut(label) {
+                    if let Some(positions) = jump_positions.get_mut(label) {
                         positions.push(position);
                     } else {
-                        jumps.insert(*label, vec![position]);
+                        jump_positions.insert(*label, vec![position]);
                     }
 
                     ByteCode::Jnt { 
@@ -214,10 +214,10 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
                     }
                 }
                 Tac::Jit { src, label } => {
-                    if let Some(positions) = jumps.get_mut(label) {
+                    if let Some(positions) = jump_positions.get_mut(label) {
                         positions.push(position);
                     } else {
-                        jumps.insert(*label, vec![position]);
+                        jump_positions.insert(*label, vec![position]);
                     }
 
                     ByteCode::Jit { 
@@ -226,10 +226,10 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
                     }
                 }
                 Tac::Jump { label } => {
-                    if let Some(positions) = jumps.get_mut(label) {
+                    if let Some(positions) = jump_positions.get_mut(label) {
                         positions.push(position);
                     } else {
-                        jumps.insert(*label, vec![position]);
+                        jump_positions.insert(*label, vec![position]);
                     }
 
                     ByteCode::Jump { 
@@ -298,7 +298,7 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
             // push the jump instruction
             // and update the back patching entry
             /*
-        } else if Some(fallthrough_id, jump_id) = block.conditionally_jumps() {
+        } else if Some(fallthrough_id, jump_id) = block.conditionally_jump_positions.) {
             //  if the jump succesor has phi nodes
             //      update the cond jump to jump to a new label L
             //
@@ -313,17 +313,29 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
         }
     }
 
-    for (label, positions) in jumps.iter() {
+    back_patch_jump_instructions(&mut instrs, label_positions, jump_positions);
+
+    println!("{:#?}", instrs);
+
+    Func { instrs }
+}
+
+fn back_patch_jump_instructions(
+    instrs: &mut Vec<ByteCode>, 
+    label_positions: HashMap<LabelID, usize>,
+    jump_positions: HashMap<LabelID, Vec<usize>>,
+) {
+    for (label, positions) in jump_positions.iter() {
         let label_position = label_positions.get(label).unwrap();
 
-        for p in positions.iter() {
-            match &mut instrs[*p] {
+        for jump_pos in positions.iter() {
+            match &mut instrs[*jump_pos] {
                 ByteCode::Jnt { offset, .. } |
                 ByteCode::Jit { offset, .. } |
                 ByteCode::Jump { offset } => {
-                    let abs_diff: usize = label_position.abs_diff(*p);
+                    let abs_diff: usize = label_position.abs_diff(*jump_pos);
                     let signed_offset: isize =
-                    if *label_position < position {
+                    if *label_position < *jump_pos {
                         isize::try_from(abs_diff).unwrap() * -1
                     } else {
                         isize::try_from(abs_diff).unwrap()
@@ -335,10 +347,9 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
             }
         }
     }
-    println!("{:#?}", instrs);
-
-    Func { instrs }
 }
+
+//fn back_patch_jump_instructions(instrs: &
 
 
 // if the src and dest are both spilled instead of reload instructions
@@ -407,9 +418,8 @@ fn ssa_elimination(instrs: &mut Vec<ByteCode>, next_block: &Block, current_block
 
 
 // things to implement:
-// 2. jump offset calculation
-// 3. callsite prepping
 // 4. spill instruction insertion
+// 3. callsite prepping
 
 // optimizations
 // 1. jump threading

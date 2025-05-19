@@ -54,6 +54,10 @@ fn find_loop_factor(block: &Block, loops: &HashMap<BlockId, HashSet<BlockId>>) -
 
 pub fn spill_reg(func: &mut Func, var: VReg) {
     for block in func.get_blocks_mut().iter() {
+
+        // consider the blocks successor phi nodes
+
+
         // if instr's dest == var {
         // }
         //      insert a spill instr right after this
