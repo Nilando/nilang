@@ -1,13 +1,25 @@
 mod interference_graph;
 mod spilling;
 
+use std::collections::HashMap;
+
+use graphviz_rust::attributes::pos;
 pub use interference_graph::{InterferenceGraph, find_copy_edges};
 
-use crate::ir::{Tac, TacConst, Func as IRFunc};
+use crate::ir::{Block, Func as IRFunc, LabelID, Tac, TacConst};
 use crate::parser::Op;
 
 use self::interference_graph::Reg;
 use self::spilling::{find_regs_to_spill, spill_reg};
+
+
+enum Local {
+    FuncId(u64),
+    Int(i64),
+    Float(f64),
+    Sym(u64),
+    // String(id)
+}
 
 pub struct Func {
     // locals: Vec<Local>,
@@ -45,11 +57,20 @@ pub fn generate_func(mut ir_func: IRFunc) -> Func {
 
 fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
     let mut instrs = vec![];
+    let mut jumps: HashMap<LabelID, Vec<usize>> = HashMap::new();
+    let mut label_positions: HashMap<LabelID, usize> = HashMap::new();
+    let mut position = 0;
 
     for block in ir_func.get_blocks() {
         for instr in block.get_instrs() {
+            position = instrs.len();
+
             let bytecode = 
             match instr {
+                Tac::Label { label } => {
+                    label_positions.insert(*label, position);
+                    continue;
+                }
                 Tac::Copy { dest, src } => {
                     ByteCode::Copy { 
                         dest: graph.get_reg(dest), 
@@ -105,8 +126,10 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
                     }
                 }
                 Tac::LoadUpvalue { dest, id } => {
-                    // need a way to convert sym to id
-                    ByteCode::Noop
+                    ByteCode::LoadUpvalue { 
+                        dest: graph.get_reg(dest), 
+                        upval_id: *id 
+                    }
                 }
                 Tac::StoreUpvalue { func, src } => {
                     ByteCode::StoreUpvalue {
@@ -178,20 +201,37 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
                         _ => ByteCode::Noop
                     }
                 }
-                Tac::Label { label } => continue,
                 Tac::Jnt { src, label } => {
+                    if let Some(positions) = jumps.get_mut(label) {
+                        positions.push(position);
+                    } else {
+                        jumps.insert(*label, vec![position]);
+                    }
+
                     ByteCode::Jnt { 
                         src: graph.get_reg(src),
                         offset: 0
                     }
                 }
                 Tac::Jit { src, label } => {
+                    if let Some(positions) = jumps.get_mut(label) {
+                        positions.push(position);
+                    } else {
+                        jumps.insert(*label, vec![position]);
+                    }
+
                     ByteCode::Jit { 
                         src: graph.get_reg(src),
                         offset: 0
                     }
                 }
                 Tac::Jump { label } => {
+                    if let Some(positions) = jumps.get_mut(label) {
+                        positions.push(position);
+                    } else {
+                        jumps.insert(*label, vec![position]);
+                    }
+
                     ByteCode::Jump { 
                         offset: 0
                     }
@@ -246,13 +286,135 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
             instrs.push(bytecode)
         }
 
-        // ==== SSA ELIMINATION ALGORITHM ====
+
+        if let Some(id) = block.falls_through() {
+            let next_block = ir_func.get_block(id);
+            ssa_elimination(&mut instrs, next_block, block, graph);
+        } else if let Some(id) = block.unconditionally_jumps() {
+            // pop the last instruction
+            // and pop the backpatching entry for that instruction
+            // let next_block = ir_func.get_block(id);
+            // ssa_elimination(&mut instrs, next_block, block, graph);
+            // push the jump instruction
+            // and update the back patching entry
+            /*
+        } else if Some(fallthrough_id, jump_id) = block.conditionally_jumps() {
+            //  if the jump succesor has phi nodes
+            //      update the cond jump to jump to a new label L
+            //
+            //  first insert the copies for the natural successor
+            //
+            //  if the jump successor has phi nodes
+            //      back patch the cond jump to jump here
+            //      insert a jump to the natural successor
+            //      insert jump successor copies
+            //      insert a jump to the jump successor
+            */
+        }
+    }
+
+    for (label, positions) in jumps.iter() {
+        let label_position = label_positions.get(label).unwrap();
+
+        for p in positions.iter() {
+            match &mut instrs[*p] {
+                ByteCode::Jnt { offset, .. } |
+                ByteCode::Jit { offset, .. } |
+                ByteCode::Jump { offset } => {
+                    let abs_diff: usize = label_position.abs_diff(*p);
+                    let signed_offset: isize =
+                    if *label_position < position {
+                        isize::try_from(abs_diff).unwrap() * -1
+                    } else {
+                        isize::try_from(abs_diff).unwrap()
+                    };
+
+                    *offset = i16::try_from(signed_offset).unwrap();
+                }
+                _ => panic!("CODEGEN ERROR during Back Patching")
+            }
+        }
     }
     println!("{:#?}", instrs);
 
     Func { instrs }
 }
 
+
+// if the src and dest are both spilled instead of reload instructions
+// we could just ensure that they match to the same memory location
+fn ssa_elimination(instrs: &mut Vec<ByteCode>, next_block: &Block, current_block: &Block, graph: &InterferenceGraph) {
+    let mut copy_pairs = vec![];
+    let mut dests = vec![];
+    let mut srcs = vec![];
+    let mut free_regs = vec![];
+
+    for node in next_block.get_phi_nodes() {
+        let dest = graph.get_reg(&node.dest);
+        let src = graph.get_reg(node.srcs.get(&current_block.get_id()).unwrap());
+
+        dests.push(dest);
+        srcs.push(src);
+
+        if src != dest {
+            copy_pairs.push((src, dest));
+        }
+    }
+
+    // STEP 1: INSERT COPY INSTRUCTIONS BY MAKING USE OF FREE REGISTERS
+    for (_, d) in copy_pairs.iter() {
+        if !srcs.contains(d) {
+            free_regs.push(*d);
+        }
+    }
+
+    while let Some(free_reg) = free_regs.pop() {
+        let i = copy_pairs.iter().position(|(_, dest)| *dest == free_reg).unwrap();
+        let (src, dest) = copy_pairs.remove(i);
+        let copy_instr = ByteCode::Copy {
+            dest,
+            src,
+        };
+
+        instrs.push(copy_instr);
+
+        if copy_pairs.iter().find(|(s, _)| *s == src).is_none() {
+            if dests.iter().find(|d| src == **d).is_some() {
+                free_regs.push(src);
+            }
+        }
+    }
+
+    // STEP 2: INSERT SWAP INSTRUCTIONS
+    while let Some((dest, src)) = copy_pairs.pop() {
+        if dest == src {
+            continue;
+        }
+
+        let swap_instr = ByteCode::Swap {
+            r1: dest,
+            r2: src,
+        };
+        instrs.push(swap_instr);
+
+        for (s, _) in copy_pairs.iter_mut() {
+            if *s == dest {
+                *s = src;
+            }
+        }
+    }
+}
+
+
+// things to implement:
+// 2. jump offset calculation
+// 3. callsite prepping
+// 4. spill instruction insertion
+
+// optimizations
+// 1. jump threading
+// 2. memory ssa
+//
 
 // ===== PREPPING THE CALL SITE ====
 // idea on how to deal with "prepping the call site"

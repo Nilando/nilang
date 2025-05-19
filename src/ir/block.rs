@@ -123,6 +123,23 @@ impl Block {
         }
     }
 
+    pub fn falls_through(&self) -> Option<BlockId> {
+        match self.instrs.last() {
+            Some(Tac::Return { .. }) | 
+            Some(Tac::Jump { .. }) |
+            Some(Tac::Jnt { .. }) |
+            Some(Tac::Jit { .. }) => None,
+            _ => self.successors.last().copied()
+        }
+    }
+
+    pub fn unconditionally_jumps(&self) -> Option<BlockId> {
+        match self.instrs.last() {
+            Some(Tac::Jump { .. }) => self.successors.last().copied(),
+            _ => None
+        }
+    }
+
     pub fn get_return_var_id(&self) -> Option<VReg> {
         if let Some(Tac::Return { src }) = self.instrs.last() {
             Some(*src)
