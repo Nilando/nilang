@@ -3,7 +3,7 @@ use super::block::{Block, BlockId};
 use super::analysis::{DFA, LivenessDFA, compute_dominance_frontier};
 use super::func_printer::VRegMap;
 use super::tac::VReg;
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 #[derive(Debug, PartialEq)]
 pub enum PhiArg {
@@ -14,7 +14,7 @@ pub enum PhiArg {
 #[derive(Debug)]
 pub struct PhiNode {
     pub dest: VReg,
-    pub srcs: HashMap<BlockId, PhiArg>
+    pub srcs: BTreeMap<BlockId, PhiArg>
 }
 
 pub fn convert_to_ssa(func: &mut Func, var_reg_map: Option<VRegMap>) {
@@ -45,7 +45,7 @@ fn insert_phi_nodes(func: &mut Func) {
 
                 let mut phi = PhiNode {
                     dest: *var,
-                    srcs: HashMap::new()
+                    srcs: BTreeMap::new()
                 };
 
                 for pred in phi_block.get_predecessors().iter() {

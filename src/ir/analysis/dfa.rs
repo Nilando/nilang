@@ -15,7 +15,7 @@ pub trait DFA: Sized {
 
         self.complete(executor.inputs, executor.outputs);
     }
-    fn init_block(&mut self, block: &Block) -> (Self::Data, Self::Data);
+    fn init_block(&mut self, block: &Block, func: &Func) -> (Self::Data, Self::Data);
     fn complete(&mut self, _inputs: HashMap<BlockId, Self::Data>, _outputs: HashMap<BlockId, Self::Data>) {}
     fn merge(&mut self, updating: &mut Self::Data, merge: &Self::Data, count: usize);
     fn transfer(&mut self, block: &Block, start: &Self::Data, end: &mut Self::Data) -> bool;
@@ -38,7 +38,7 @@ impl<T: DFA> DFAExecutor<T> {
 
     fn init(&mut self, dfa: &mut T, func: &Func) {
         for block in func.get_blocks().iter() {
-            let (init_input, init_output) = dfa.init_block(block);
+            let (init_input, init_output) = dfa.init_block(block, func);
 
             self.inputs.insert(block.get_id(), init_input);
             self.outputs.insert(block.get_id(), init_output);

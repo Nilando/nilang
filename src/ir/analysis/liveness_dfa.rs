@@ -1,14 +1,16 @@
 use crate::ir::ssa::PhiArg;
+use crate::ir::Func;
 
 use super::super::block::{BlockId, Block};
 use super::super::tac::VReg;
 use super::dfa::DFA;
-use std::collections::{BTreeSet, HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap};
 
 // This works whether or not the IR is in SSA form.
 // That is helpful b/c a liveness analysis is needed to put the IR into SSA form,
 // and also is used by several analysis/optimizations when SSA is already applied.
 
+#[derive(Debug)]
 pub struct LivenessDFA {
     live_in: HashMap<BlockId, BTreeSet<VReg>>,
     live_out: HashMap<BlockId, BTreeSet<VReg>>,
@@ -42,20 +44,22 @@ impl DFA for LivenessDFA {
         self.live_out = outputs;
     }
 
-    fn init_block(&mut self, block: &Block) -> (Self::Data, Self::Data) {
-        let mut live_in = BTreeSet::new();
+    fn init_block(&mut self, block: &Block, func: &Func) -> (Self::Data, Self::Data) {
+        let live_in = BTreeSet::new();
         let mut live_out = BTreeSet::new();
 
-        // set phi node args as live in
-        for node in block.get_phi_nodes().iter() {
-            for (_, arg) in node.srcs.iter() {
-                if let PhiArg::Reg(r) = arg {
-                    live_in.insert(r.clone());
+        for block_id in block.get_successors() {
+            let successor = func.get_block(*block_id);
+
+            for phi_node in successor.get_phi_nodes() {
+                let arg = phi_node.srcs.get(&block.get_id()).unwrap();
+                
+                if let PhiArg::Reg(reg) = arg {
+                    live_out.insert(*reg);
                 }
             }
         }
 
-        // set return var as live out
         if let Some(var_id) = block.get_return_var_id() {
             live_out.insert(var_id);
         }
@@ -66,6 +70,12 @@ impl DFA for LivenessDFA {
     fn transfer(&mut self, block: &Block, live_out: &Self::Data, live_in: &mut Self::Data) -> bool {
         let mut defined: BTreeSet<VReg> = BTreeSet::new();
         let mut updated_flag = false;
+
+        for phi_node in block.get_phi_nodes() {
+            let dest = phi_node.dest;
+
+            defined.insert(dest);
+        }
 
         for instr in block.get_instrs().iter() {
             for v in instr.used_regs() {
@@ -82,10 +92,11 @@ impl DFA for LivenessDFA {
             }
         }
 
-        // LIVE IN = USED VARS THAT WEREN'T DEFINED + LIVE OUT VARS THAT WEREN'T DEFINED
+        // LIVE IN = (USED VARS + OUT VARS) - DEFINED VARS
         for var in live_out.difference(&defined) {
             updated_flag |= live_in.insert(*var);
         }
+
 
         updated_flag
     }

@@ -4,7 +4,7 @@ use super::super::block::Block;
 use super::super::tac::Tac;
 use super::super::func::Func;
 use super::super::analysis::{LivenessDFA, DFA, compute_unreachable_blocks};
-use std::collections::{BTreeSet, HashSet};
+use std::collections::BTreeSet;
 
 pub fn remove_dead_blocks(func: &mut Func) {
     let dead_blocks = compute_unreachable_blocks(func);

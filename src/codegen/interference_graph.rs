@@ -2,7 +2,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use crate::ir::{Func, LivenessDFA, PhiArg, Tac, VReg, DFA};
+use crate::ir::{Func, LivenessDFA, PhiArg, VReg, DFA};
 
 pub type Reg = u8;
 
@@ -34,18 +34,19 @@ impl InterferenceGraph {
         let mut liveness = LivenessDFA::new();
         liveness.exec(func);
 
-        for block in func.get_blocks().iter().rev() {
+        for block in func.get_blocks().iter() {
             let live_vars = liveness.get_live_out(block.get_id());
 
             for var in live_vars.iter() {
                 graph.add_node(*var);
             }
 
-            for v1 in live_vars.iter() {
-                for v2 in live_vars.iter() {
-                    if v1 != v2 {
-                        graph.add_edge(v1, v2);
-                    }
+            for i in 0..live_vars.len() {
+                for k in (i+1)..live_vars.len() {
+                    let v1 = live_vars.iter().nth(i).unwrap();
+                    let v2 = live_vars.iter().nth(k).unwrap();
+
+                    graph.add_edge(v1, v2);
                 }
             }
 
@@ -96,14 +97,8 @@ impl InterferenceGraph {
     }
 
     fn add_node(&mut self, var: VReg) {
-        self.nodes.insert(var, Rc::new(RefCell::new(Node::new(var.clone()))));
-    }
-
-    fn remove_node(&mut self, var: &VReg) {
-        self.nodes.remove(var);
-
-        for (_, node) in self.nodes.iter() {
-            node.as_ref().borrow_mut().neighbors.remove(var);
+        if self.nodes.get(&var).is_none() {
+            self.nodes.insert(var, Rc::new(RefCell::new(Node::new(var.clone()))));
         }
     }
 
