@@ -153,9 +153,9 @@ impl InterferenceGraph {
 
     pub fn color(&mut self, func: &Func) {
         for (idx, arg) in func.get_args().iter().enumerate() {
-            let node = self.nodes.get(&arg).unwrap();
-
-            node.as_ref().borrow_mut().reg = Some(idx as u8);
+            if let Some(node) = self.nodes.get(&arg) {
+                node.as_ref().borrow_mut().reg = Some(idx as u8);
+            }
         }
         
         for (_, n) in self.nodes.iter() {
