@@ -56,21 +56,25 @@ impl GVNC {
         }
     }
 
+    fn try_fold_entries(&self, lhs: &ValueEntry, op: Op, rhs: &ValueEntry) -> Option<Value> {
+        if let (Some(lhs_const), Some(rhs_const)) = (lhs.const_value(), rhs.const_value()) {
+            if let Some(val) = fold_constants(op, lhs_const, rhs_const) {
+                return Some(Value::Const(val))
+            }
+        }
+
+        None
+    }
+
     fn const_fold_binop(&mut self, dest: VReg, op: Op, lhs: VReg, rhs: VReg) -> Option<Tac> {
         let left_id = self.find_or_create_entry_id(lhs);
         let right_id = self.find_or_create_entry_id(rhs);
         let lhs_entry = self.get_entry(left_id);
         let rhs_entry = self.get_entry(right_id);
 
-        let value = 
-        if let (Some(lhs_const), Some(rhs_const)) = (lhs_entry.const_value(), rhs_entry.const_value()) {
-            if let Some(val) = fold_constants(op, lhs_const, rhs_const) {
-                Value::Const(val)
-            } else {
-                Value::Binop(CanonicalBinop::new(op, left_id, right_id))
-            }
-        } else {
-            Value::Binop(CanonicalBinop::new(op, left_id, right_id))
+        let value = match self.try_fold_entries(lhs_entry, op, rhs_entry) {
+            Some(val) => val,
+            None => Value::Binop(CanonicalBinop::new(op, left_id, right_id)),
         };
 
         if let Some((_, entry)) = self.find_val_entry_mut(&value) {
