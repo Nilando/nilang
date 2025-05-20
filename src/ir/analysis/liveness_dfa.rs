@@ -3,15 +3,15 @@ use crate::ir::ssa::PhiArg;
 use super::super::block::{BlockId, Block};
 use super::super::tac::VReg;
 use super::dfa::DFA;
-use std::collections::{HashSet, HashMap};
+use std::collections::{BTreeSet, HashMap, HashSet};
 
 // This works whether or not the IR is in SSA form.
 // That is helpful b/c a liveness analysis is needed to put the IR into SSA form,
 // and also is used by several analysis/optimizations when SSA is already applied.
 
 pub struct LivenessDFA {
-    live_in: HashMap<BlockId, HashSet<VReg>>,
-    live_out: HashMap<BlockId, HashSet<VReg>>,
+    live_in: HashMap<BlockId, BTreeSet<VReg>>,
+    live_out: HashMap<BlockId, BTreeSet<VReg>>,
 }
 
 impl LivenessDFA {
@@ -19,7 +19,7 @@ impl LivenessDFA {
         self.live_in.get(&block_id).unwrap().get(&var).is_some()
     }
 
-    pub fn get_live_out(&mut self, block_id: BlockId) -> &mut HashSet<VReg> {
+    pub fn get_live_out(&mut self, block_id: BlockId) -> &mut BTreeSet<VReg> {
         self.live_out.get_mut(&block_id).unwrap()
     }
 
@@ -34,7 +34,7 @@ impl LivenessDFA {
 impl DFA for LivenessDFA {
     const BACKWARDS: bool = true;
 
-    type Data = HashSet<VReg>;
+    type Data = BTreeSet<VReg>;
 
 
     fn complete(&mut self, inputs: HashMap<BlockId, Self::Data>, outputs: HashMap<BlockId, Self::Data>) {
@@ -43,8 +43,8 @@ impl DFA for LivenessDFA {
     }
 
     fn init_block(&mut self, block: &Block) -> (Self::Data, Self::Data) {
-        let mut live_in = HashSet::new();
-        let mut live_out = HashSet::new();
+        let mut live_in = BTreeSet::new();
+        let mut live_out = BTreeSet::new();
 
         // set phi node args as live in
         for node in block.get_phi_nodes().iter() {
@@ -64,7 +64,7 @@ impl DFA for LivenessDFA {
     }
 
     fn transfer(&mut self, block: &Block, live_out: &Self::Data, live_in: &mut Self::Data) -> bool {
-        let mut defined: HashSet<VReg> = HashSet::new();
+        let mut defined: BTreeSet<VReg> = BTreeSet::new();
         let mut updated_flag = false;
 
         for instr in block.get_instrs().iter() {

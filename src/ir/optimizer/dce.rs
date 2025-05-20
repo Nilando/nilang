@@ -4,7 +4,7 @@ use super::super::block::Block;
 use super::super::tac::Tac;
 use super::super::func::Func;
 use super::super::analysis::{LivenessDFA, DFA, compute_unreachable_blocks};
-use std::collections::HashSet;
+use std::collections::{BTreeSet, HashSet};
 
 pub fn remove_dead_blocks(func: &mut Func) {
     let dead_blocks = compute_unreachable_blocks(func);
@@ -27,7 +27,7 @@ pub fn remove_dead_instructions(func: &mut Func) -> usize {
     removed_instructions
 }
 
-fn dce_inner(block: &mut Block, live_vars: &mut HashSet<VReg>) -> usize {
+fn dce_inner(block: &mut Block, live_vars: &mut BTreeSet<VReg>) -> usize {
     let mut removed_instructions = 0;
 
     block.rev_retain_instrs(|instr| {
