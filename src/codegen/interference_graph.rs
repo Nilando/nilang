@@ -226,6 +226,10 @@ impl InterferenceGraph {
         let xr = nx.reg;
         let yr = ny.reg;
 
+        if ny.vars.contains(v1) {
+            return None;
+        }
+
         if ny.neighbors.contains(v1) {
             return None;
         }

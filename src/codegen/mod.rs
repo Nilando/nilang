@@ -477,7 +477,6 @@ fn ssa_elimination(instrs: &mut Vec<ByteCode>, next_block: &Block, current_block
     }
 
     let mut copy_pairs = vec![];
-    let mut dests = vec![];
     let mut srcs = vec![];
     let mut free_regs = vec![];
     let mut reload_pairs = vec![];
@@ -485,8 +484,6 @@ fn ssa_elimination(instrs: &mut Vec<ByteCode>, next_block: &Block, current_block
     for node in next_block.get_phi_nodes() {
         let dest = graph.get_reg(&node.dest);
         let phi_arg = node.srcs.get(&current_block.get_id()).unwrap();
-
-        dests.push(dest);
 
         match phi_arg  {
             PhiArg::Reg(vreg) => {
@@ -525,7 +522,7 @@ fn ssa_elimination(instrs: &mut Vec<ByteCode>, next_block: &Block, current_block
         instrs.push(copy_instr);
 
         if copy_pairs.iter().find(|(s, _)| *s == src).is_none() {
-            if dests.iter().find(|d| src == **d).is_some() {
+            if copy_pairs.iter().find(|(_, d)| src == *d).is_some() {
                 free_regs.push(src);
             }
         }
@@ -534,7 +531,7 @@ fn ssa_elimination(instrs: &mut Vec<ByteCode>, next_block: &Block, current_block
     // STEP 2: LOAD SPILLED ARGS
     // since reload pairs cannot be involved in cycles, we can be sure
     // that the previous step copied any needed values to their needed dests before we clobber them
-    //  
+    
     // The fact that reload pairs cannot be involved in cycles s b/c currently 
     // spill slots are statically assigned(not reused), which isn't very efficient.
     for (slot, dest) in reload_pairs.into_iter() {
