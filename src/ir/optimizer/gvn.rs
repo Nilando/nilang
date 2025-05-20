@@ -11,178 +11,9 @@ pub type ValueId = usize;
 
 pub fn global_value_numbering(func: &mut Func, memory_access_ids: Option<HashMap<InstrLoc, MemoryAccessId>>) {
     let dom_tree = compute_dom_tree(func);
-    let mut gvnc = GVNC::new(memory_access_ids);
+    let mut ctx = GVNC::new(memory_access_ids);
 
-    gvn_inner(func, &dom_tree, func.get_entry_block().get_id(), &mut gvnc);
-}
-
-fn gvn_inner(func: &mut Func, dom_tree: &HashMap<BlockId, Vec<BlockId>>, current_block: BlockId, value_map: &mut GVNC) {
-    let block = func.get_block_mut(current_block);
-    let mut new_value_ids: Vec<ValueId> = vec![];
-
-    // TODO: remove redundant phi nodes
-    // if every arg has the same value id
-
-    for (i, instr) in block.get_instrs_mut().iter_mut().enumerate() {
-        let instr_loc = (current_block, i);
-
-        for used_var in instr.used_regs_mut() {
-            if let Some(var) = used_var {
-                value_map.canonize_var(var);
-            }
-        }
-
-        match instr {
-            Tac::Binop { dest, op, lhs, rhs } => {
-                let left_id = if let Some((id, _)) = value_map.find_loc_entry_mut(&ValueLocation::Var(*lhs)) {
-                    id
-                } else {
-                    let new_entry = ValueEntry::new(dest.clone(), None);
-                    let id = value_map.insert_entry(new_entry);
-
-                    new_value_ids.push(id);
-                    id
-                };
-
-                let right_id = if let Some((id, _)) = value_map.find_loc_entry_mut(&ValueLocation::Var(*rhs)) {
-                    id
-                } else {
-                    let new_entry = ValueEntry::new(dest.clone(), None);
-                    let id = value_map.insert_entry(new_entry);
-
-                    new_value_ids.push(id);
-                    id
-                };
-
-                let lhs_entry = value_map.get_entry(left_id);
-                let rhs_entry = value_map.get_entry(right_id);
-
-                let value = 
-                if let (Some(lhs_const), Some(rhs_const)) = (lhs_entry.const_value(), rhs_entry.const_value()) {
-                    if let Some(val) = fold_constants(*op, lhs_const, rhs_const) {
-                        Value::Const(val)
-                    } else {
-                        Value::Binop(CanonicalBinop::new(*op, left_id, right_id))
-                    }
-                } else {
-                    Value::Binop(CanonicalBinop::new(*op, left_id, right_id))
-                };
-
-                if let Some((_, entry)) = value_map.find_val_entry_mut(&value) {
-                    entry.push_loc(ValueLocation::Var(dest.clone()));
-
-                    *instr = Tac::Noop;
-                } else {
-                    let new_entry = 
-                    if let Value::Const(val) = value {
-                        let new_entry = ValueEntry::new(*dest, Some(Value::Const(val.clone())));
-                        *instr = Tac::LoadConst { dest: *dest, src: val };
-
-                        new_entry
-                    } else {
-                        ValueEntry::new(*dest, Some(value))
-                    };
-
-                    new_value_ids.push(value_map.insert_entry(new_entry));
-                }
-            }
-            Tac::LoadConst { dest, src } => {
-                let value = Value::Const(src.clone());
-
-                if let Some((_, entry)) = value_map.find_val_entry_mut(&value) {
-                    entry.push_loc(ValueLocation::Var(dest.clone()));
-
-                    *instr = Tac::Noop;
-                } else {
-                    let new_entry = ValueEntry::new(dest.clone(), Some(value));
-
-                    new_value_ids.push(value_map.insert_entry(new_entry));
-                }
-            }
-            Tac::LoadUpvalue { dest, id } => {
-                let value = Value::UpValueId(*id);
-
-                if let Some((_, entry)) = value_map.find_val_entry_mut(&value) {
-                    entry.push_loc(ValueLocation::Var(dest.clone()));
-
-                    *instr = Tac::Noop;
-                } else {
-                    let new_entry = ValueEntry::new(dest.clone(), Some(value));
-
-                    new_value_ids.push(value_map.insert_entry(new_entry));
-                }
-            }
-            Tac::Copy { dest, src } => {
-                if let Some((_, entry)) = value_map.find_loc_entry_mut(&ValueLocation::Var(*src)) {
-                    entry.push_loc(ValueLocation::Var(dest.clone()));
-
-                } else {
-                    let mut new_entry = ValueEntry::new(src.clone(), None);
-
-                    new_entry.push_loc(ValueLocation::Var(dest.clone()));
-
-                    new_value_ids.push(value_map.insert_entry(new_entry));
-                }
-
-                *instr = Tac::Noop;
-            }
-            Tac::MemLoad { dest, .. } => {
-                let mem_acc_id = value_map.get_memory_access_id(instr_loc);
-
-                if let Some(_) = value_map.find_loc_entry_mut(&ValueLocation::Memory(mem_acc_id)) {
-                    *instr = Tac::Noop;
-                } else {
-                    let mut new_entry = ValueEntry::new(dest.clone(), None);
-
-                    new_entry.push_loc(ValueLocation::Memory(mem_acc_id));
-
-                    new_value_ids.push(value_map.insert_entry(new_entry));
-                }
-            }
-            Tac::MemStore { src, .. } => {
-                let mem_acc_id = value_map.get_memory_access_id(instr_loc);
-
-                if let Some((_, entry)) = value_map.find_loc_entry_mut(&ValueLocation::Var(*src)) {
-                    entry.push_loc(ValueLocation::Memory(mem_acc_id));
-                }
-            }
-            Tac::Call { dest, src } => {
-                let new_entry = ValueEntry::new(dest.clone(), None);
-
-                new_value_ids.push(value_map.insert_entry(new_entry));
-                
-                value_map.canonize_var(src);
-            }
-            Tac::NewMap { dest } |
-            Tac::NewList { dest } |
-            Tac::Read { dest } 
-                => {
-                let new_entry = ValueEntry::new(dest.clone(), None);
-
-                new_value_ids.push(value_map.insert_entry(new_entry));
-            }
-            _ => {}
-        }
-    }
-
-    let successors = block.get_successors().clone();
-    for block_id in successors.iter() {
-        let block = func.get_block_mut(*block_id);
-        let phi_nodes = block.get_phi_nodes_mut();
-        for node in phi_nodes.iter_mut() {
-            if let PhiArg::Reg(vreg) = node.srcs.get_mut(&current_block).unwrap() {
-                value_map.canonize_var(vreg);
-            }
-        }
-    }
-
-    for child in dom_tree.get(&current_block).unwrap().iter() {
-        gvn_inner(func, dom_tree, *child, value_map);
-    }
-
-    for value in new_value_ids.iter() {
-        value_map.remove_entry(value);
-    }
+    ctx.apply_value_numbering(func, &dom_tree, func.get_entry_block().get_id());
 }
 
 // global value numbering context
@@ -190,7 +21,8 @@ pub struct GVNC {
     id_counter: usize,
     value_table: HashMap<ValueId, ValueEntry>,
     memory_access_ids: Option<HashMap<InstrLoc, MemoryAccessId>>,
-    dead_values: HashMap<ValueId, ValueEntry>,
+    //dead_values: HashMap<ValueId, ValueEntry>,
+    value_stack: Vec<Vec<ValueId>>
 }
 
 impl GVNC {
@@ -198,8 +30,180 @@ impl GVNC {
         Self {
             id_counter: 0,
             value_table: HashMap::new(),
-            dead_values: HashMap::new(),
-            memory_access_ids
+            //dead_values: HashMap::new(),
+            memory_access_ids,
+            value_stack: vec![]
+        }
+    }
+
+    fn push_value_id(&mut self, id: ValueId) {
+        self.value_stack.last_mut().unwrap().push(id);
+    }
+
+    fn canonize_instr_used_regs(&mut self, instr: &mut Tac) {
+        for used_var in instr.used_regs_mut() {
+            if let Some(var) = used_var {
+                self.canonize_var(var);
+            }
+        }
+    }
+
+    fn const_fold_binop(&mut self, dest: VReg, op: Op, lhs: VReg, rhs: VReg) -> Option<Tac> {
+        let left_id = if let Some((id, _)) = self.find_loc_entry_mut(&ValueLocation::Var(lhs)) {
+            id
+        } else {
+            self.create_entry(lhs, None)
+        };
+
+        let right_id = if let Some((id, _)) = self.find_loc_entry_mut(&ValueLocation::Var(rhs)) {
+            id
+        } else {
+            self.create_entry(rhs, None)
+        };
+
+        let lhs_entry = self.get_entry(left_id);
+        let rhs_entry = self.get_entry(right_id);
+
+        let value = 
+        if let (Some(lhs_const), Some(rhs_const)) = (lhs_entry.const_value(), rhs_entry.const_value()) {
+            if let Some(val) = fold_constants(op, lhs_const, rhs_const) {
+                Value::Const(val)
+            } else {
+                Value::Binop(CanonicalBinop::new(op, left_id, right_id))
+            }
+        } else {
+            Value::Binop(CanonicalBinop::new(op, left_id, right_id))
+        };
+
+        if let Some((_, entry)) = self.find_val_entry_mut(&value) {
+            entry.push_loc(ValueLocation::Var(dest.clone()));
+
+            Some(Tac::Noop)
+        } else {
+
+            if let Value::Const(val) = value {
+                self.create_entry(dest, Some(Value::Const(val.clone())));
+
+                Some(Tac::LoadConst { dest, src: val })
+            } else {
+                self.create_entry(dest, Some(value));
+
+                None
+            }
+        }
+    }
+
+    fn find_or_insert_value(&mut self, value: Value, dest: VReg) -> bool {
+        if let Some((_, entry)) = self.find_val_entry_mut(&value) {
+            entry.push_loc(ValueLocation::Var(dest));
+
+            true
+        } else {
+            self.create_entry(dest, Some(value));
+
+            false
+        }
+    }
+
+    fn apply_value_numbering(&mut self, func: &mut Func, dom_tree: &HashMap<BlockId, Vec<BlockId>>, current_block: BlockId) {
+        let block = func.get_block_mut(current_block);
+        self.value_stack.push(vec![]);
+
+        // TODO: remove redundant phi nodes
+        // if every arg has the same value id
+        // how would this alter the CFG?
+
+        for (i, instr) in block.get_instrs_mut().iter_mut().enumerate() {
+            let instr_loc = (current_block, i);
+
+            self.canonize_instr_used_regs(instr);
+
+            match instr {
+                Tac::Binop { dest, op, lhs, rhs } => {
+                    if let Some(new_instr) = self.const_fold_binop(*dest, *op, *lhs, *rhs) {
+                        *instr = new_instr;
+                    }
+                }
+                Tac::LoadConst { dest, src } => {
+                    let value = Value::Const(src.clone());
+
+                    if self.find_or_insert_value(value, *dest) {
+                        *instr = Tac::Noop;
+                    }
+                }
+                Tac::LoadUpvalue { dest, id } => {
+                    let value = Value::UpValueId(*id);
+
+                    if self.find_or_insert_value(value, *dest) {
+                        *instr = Tac::Noop;
+                    }
+                }
+                Tac::Copy { dest, src } => {
+                    if let Some((_, entry)) = self.find_loc_entry_mut(&ValueLocation::Var(*src)) {
+                        entry.push_loc(ValueLocation::Var(dest.clone()));
+
+                    } else {
+                        let mut new_entry = ValueEntry::new(src.clone(), None);
+
+                        new_entry.push_loc(ValueLocation::Var(dest.clone()));
+
+                        self.insert_entry(new_entry);
+                    }
+
+                    *instr = Tac::Noop;
+                }
+                Tac::MemLoad { dest, .. } => {
+                    let mem_acc_id = self.get_memory_access_id(instr_loc);
+
+                    if let Some(_) = self.find_loc_entry_mut(&ValueLocation::Memory(mem_acc_id)) {
+                        *instr = Tac::Noop;
+                    } else {
+                        let mut new_entry = ValueEntry::new(dest.clone(), None);
+
+                        new_entry.push_loc(ValueLocation::Memory(mem_acc_id));
+
+                        self.insert_entry(new_entry);
+                    }
+                }
+                Tac::MemStore { src, .. } => {
+                    let mem_acc_id = self.get_memory_access_id(instr_loc);
+
+                    if let Some((_, entry)) = self.find_loc_entry_mut(&ValueLocation::Var(*src)) {
+                        entry.push_loc(ValueLocation::Memory(mem_acc_id));
+                    }
+                }
+                Tac::Call { dest, .. } |
+                Tac::NewMap { dest } |
+                Tac::NewList { dest } |
+                Tac::Read { dest } 
+                    => {
+                    self.create_entry(*dest, None);
+                }
+                _ => {
+                    /*
+                     Many arms are covered by calling self.canonize_instr_used_regs(instr);
+                    */
+                }
+            }
+        }
+
+        let successors = block.get_successors().clone();
+        for block_id in successors.iter() {
+            let block = func.get_block_mut(*block_id);
+            let phi_nodes = block.get_phi_nodes_mut();
+            for node in phi_nodes.iter_mut() {
+                if let PhiArg::Reg(vreg) = node.srcs.get_mut(&current_block).unwrap() {
+                    self.canonize_var(vreg);
+                }
+            }
+        }
+
+        for child in dom_tree.get(&current_block).unwrap().iter() {
+            self.apply_value_numbering(func, dom_tree, *child);
+        }
+
+        for value in self.value_stack.pop().unwrap().iter() {
+            self.remove_entry(value);
         }
     }
 
@@ -211,11 +215,19 @@ impl GVNC {
         self.value_table.remove(&value);
     }
 
+    fn create_entry(&mut self, dest: VReg, value: Option<Value>) -> ValueId {
+        let entry = ValueEntry::new(dest, value);
+
+        self.insert_entry(entry)
+    }
+
     fn insert_entry(&mut self, entry: ValueEntry) -> ValueId {
         let id = self.id_counter;
 
         self.value_table.insert(id, entry);
         self.id_counter += 1;
+        self.push_value_id(id);
+
         id
     }
 
@@ -360,6 +372,24 @@ fn fold_constants(op: Op, lhs: &TacConst, rhs: &TacConst) -> Option<TacConst> {
                 (TacConst::Float(f1), TacConst::Float(f2)) => Some(TacConst::Float(f1 / f2)),
                 (TacConst::Float(f), TacConst::Int(i)) => Some(TacConst::Float(f / *i as f64)),
                 (TacConst::Int(i), TacConst::Float(f)) => Some(TacConst::Float(*i as f64 / f)),
+                _ => None
+            }
+        }
+        Op::Minus => {
+            match (lhs, rhs) {
+                (TacConst::Int(i1), TacConst::Int(i2)) => Some(TacConst::Int(i1 - i2)),
+                (TacConst::Float(f1), TacConst::Float(f2)) => Some(TacConst::Float(f1 - f2)),
+                (TacConst::Float(f), TacConst::Int(i)) => Some(TacConst::Float(f - *i as f64)),
+                (TacConst::Int(i), TacConst::Float(f)) => Some(TacConst::Float(*i as f64 - f)),
+                _ => None
+            }
+        }
+        Op::Modulo => {
+            match (lhs, rhs) {
+                (TacConst::Int(i1), TacConst::Int(i2)) => Some(TacConst::Int(i1 % i2)),
+                (TacConst::Float(f1), TacConst::Float(f2)) => Some(TacConst::Float(f1 % f2)),
+                (TacConst::Float(f), TacConst::Int(i)) => Some(TacConst::Float(f % *i as f64)),
+                (TacConst::Int(i), TacConst::Float(f)) => Some(TacConst::Float(*i as f64 % f)),
                 _ => None
             }
         }
