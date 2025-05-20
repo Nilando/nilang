@@ -84,14 +84,6 @@ pub fn generate_func(mut ir_func: IRFunc) -> Func {
     generate_bytecode(&ir_func, &graph)
 }
 
-
-// TODO:
-//  generate reloads and spills during ssa elimination
-//  - this requires keeping track of all the spilled vars
-//  - the spilled vars may need to be passed to the interference graph 
-//  or to the liveness analysis
-//  - so we know that
-
 fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
     let mut func = Func::new(ir_func.get_id());
     let mut jump_positions: HashMap<BackPatchLabel, Vec<usize>> = HashMap::new();
@@ -520,6 +512,8 @@ fn ssa_elimination(instrs: &mut Vec<ByteCode>, next_block: &Block, current_block
 
 
     // STEP 1: INSERT COPY INSTRUCTIONS BY MAKING USE OF FREE REGISTERS
+    // this should take care of everything that except values stuck in a cycles
+    // and values that are spilled
     for (_, d) in copy_pairs.iter() {
         if !srcs.contains(d) {
             free_regs.push(*d);
@@ -558,7 +552,7 @@ fn ssa_elimination(instrs: &mut Vec<ByteCode>, next_block: &Block, current_block
         instrs.push(reload_instr);
     }
 
-    // STEP 3: INSERT SWAP INSTRUCTIONS TO BREAK CYCLES
+    // STEP 3: INSERT SWAP INSTRUCTIONS (break cycles)
     while let Some((dest, src)) = copy_pairs.pop() {
         if dest == src {
             continue;
@@ -577,10 +571,6 @@ fn ssa_elimination(instrs: &mut Vec<ByteCode>, next_block: &Block, current_block
         }
     }
 }
-
-// things to implement:
-// 4. spill instruction insertion
-// 3. callsite prepping
 
 // ===== PREPPING THE CALL SITE ====
 // idea on how to deal with "prepping the call site"
@@ -766,8 +756,8 @@ fn print_bytecode(func: &Func) {
             ByteCode::LoadNull { dest } =>             println!("LDN  {dest}"),
             ByteCode::LoadUpvalue { dest, id } =>      println!("LDUV {dest}, {id}"),
             ByteCode::StoreUpvalue { func, src } =>    println!("STUV {func}, {src}"),
-            ByteCode::Spill { src, slot } =>             println!("SPIL {src}, {slot}"),
-            ByteCode::Reload { dest, slot } =>           println!("RELD {dest}, {slot}"),
+            ByteCode::Spill { src, slot } =>           println!("SPIL {src}, {slot}"),
+            ByteCode::Reload { dest, slot } =>         println!("RELD {dest}, {slot}"),
             ByteCode::Print { src } =>                 println!("OUT  {src }"),
             ByteCode::Read { dest } =>                 println!("READ {dest}"),
             ByteCode::Lt { dest, lhs, rhs } =>         println!("LT   {dest}, {lhs}, {rhs}"),

@@ -1,4 +1,4 @@
-use crate::ir::{find_loops, Block, BlockId, Func, Tac, VReg};
+use crate::ir::{find_loops, Block, BlockId, Func, PhiArg, Tac, VReg};
 use super::interference_graph::InterferenceGraph;
 use std::collections::{HashMap, HashSet};
 
@@ -57,9 +57,17 @@ pub fn spill_reg(func: &mut Func, var: VReg, spill_slot: u16) {
     for block in func.get_blocks_mut().iter_mut() {
         let mut new_tac = vec![];
 
-        for phi_node in block.get_phi_nodes() {
+        for phi_node in block.get_phi_nodes_mut() {
             if phi_node.dest == var {
                 new_tac.push(Tac::SpillVar { src: var, slot: spill_slot });
+            }
+
+            for (_, phi_arg) in phi_node.srcs.iter_mut() {
+                if let PhiArg::Reg(vreg) = phi_arg {
+                    if *vreg == var {
+                        *phi_arg = PhiArg::Spill(spill_slot);
+                    }
+                }
             }
         }
 
