@@ -43,13 +43,13 @@ impl GVNC {
     fn canonize_instr_used_regs(&mut self, instr: &mut Tac) {
         for used_var in instr.used_regs_mut() {
             if let Some(var) = used_var {
-                self.canonize_var(var);
+                self.canonize_reg(var);
             }
         }
     }
 
     fn find_or_create_entry_id(&mut self, reg: VReg) -> ValueId {
-        if let Some((id, _)) = self.find_loc_entry_mut(&ValueLocation::Var(reg)) {
+        if let Some((id, _)) = self.find_loc_entry_mut(&ValueLocation::Reg(reg)) {
             id
         } else {
             self.create_entry(reg, None)
@@ -78,7 +78,7 @@ impl GVNC {
         };
 
         if let Some((_, entry)) = self.find_val_entry_mut(&value) {
-            entry.push_loc(ValueLocation::Var(dest.clone()));
+            entry.push_loc(ValueLocation::Reg(dest.clone()));
 
             Some(Tac::Noop)
         } else {
@@ -97,7 +97,7 @@ impl GVNC {
 
     fn find_or_insert_value(&mut self, value: Value, dest: VReg) -> bool {
         if let Some((_, entry)) = self.find_val_entry_mut(&value) {
-            entry.push_loc(ValueLocation::Var(dest));
+            entry.push_loc(ValueLocation::Reg(dest));
 
             true
         } else {
@@ -141,13 +141,13 @@ impl GVNC {
                     }
                 }
                 Tac::Copy { dest, src } => {
-                    if let Some((_, entry)) = self.find_loc_entry_mut(&ValueLocation::Var(*src)) {
-                        entry.push_loc(ValueLocation::Var(dest.clone()));
+                    if let Some((_, entry)) = self.find_loc_entry_mut(&ValueLocation::Reg(*src)) {
+                        entry.push_loc(ValueLocation::Reg(dest.clone()));
 
                     } else {
                         let mut new_entry = ValueEntry::new(src.clone(), None);
 
-                        new_entry.push_loc(ValueLocation::Var(dest.clone()));
+                        new_entry.push_loc(ValueLocation::Reg(dest.clone()));
 
                         self.insert_entry(new_entry);
                     }
@@ -170,7 +170,7 @@ impl GVNC {
                 Tac::MemStore { src, .. } => {
                     let mem_acc_id = self.get_memory_access_id(instr_loc);
 
-                    if let Some((_, entry)) = self.find_loc_entry_mut(&ValueLocation::Var(*src)) {
+                    if let Some((_, entry)) = self.find_loc_entry_mut(&ValueLocation::Reg(*src)) {
                         entry.push_loc(ValueLocation::Memory(mem_acc_id));
                     }
                 }
@@ -195,7 +195,7 @@ impl GVNC {
             let phi_nodes = block.get_phi_nodes_mut();
             for node in phi_nodes.iter_mut() {
                 if let PhiArg::Reg(vreg) = node.srcs.get_mut(&current_block).unwrap() {
-                    self.canonize_var(vreg);
+                    self.canonize_reg(vreg);
                 }
             }
         }
@@ -249,8 +249,8 @@ impl GVNC {
         }).map(|(id, entry)| (*id, entry))
     }
 
-    fn canonize_var(&mut self, var: &mut VReg) {
-        let loc = ValueLocation::Var(*var);
+    fn canonize_reg(&mut self, var: &mut VReg) {
+        let loc = ValueLocation::Reg(*var);
 
         if let Some((_, entry)) = self.find_loc_entry_mut(&loc) {
             *var = entry.get_canon_var();
@@ -279,7 +279,7 @@ enum Value {
 
 #[derive(PartialEq)]
 enum ValueLocation {
-    Var(VReg),
+    Reg(VReg),
     Memory(MemoryAccessId),
 }
 
@@ -291,7 +291,7 @@ struct ValueEntry {
 impl ValueEntry {
     fn new(canon_loc: VReg, value: Option<Value>) -> Self {
         Self {
-            locations: vec![ValueLocation::Var(canon_loc)],
+            locations: vec![ValueLocation::Reg(canon_loc)],
             value,
         }
     }
@@ -301,7 +301,7 @@ impl ValueEntry {
     }
 
     fn get_canon_var(&self) -> VReg {
-        if let ValueLocation::Var(var) = self.locations.first().unwrap() {
+        if let ValueLocation::Reg(var) = self.locations.first().unwrap() {
             *var
         } else {
             unreachable!("an entry's first location must be a var")
