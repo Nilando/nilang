@@ -3,6 +3,7 @@ use super::super::analysis::{compute_dom_tree, InstrLoc, MemoryAccessId};
 use super::super::block::BlockId;
 use super::super::tac::{Tac, TacConst};
 use std::collections::HashMap;
+use crate::ir::ssa::PhiArg;
 use crate::ir::tac::VReg;
 use crate::parser::Op;
 
@@ -169,9 +170,9 @@ fn gvn_inner(func: &mut Func, dom_tree: &HashMap<BlockId, Vec<BlockId>>, current
         let block = func.get_block_mut(*block_id);
         let phi_nodes = block.get_phi_nodes_mut();
         for node in phi_nodes.iter_mut() {
-            let var = node.srcs.get_mut(&current_block).unwrap();
-
-            value_map.canonize_var(var);
+            if let PhiArg::Reg(vreg) = node.srcs.get_mut(&current_block).unwrap() {
+                value_map.canonize_var(vreg);
+            }
         }
     }
 

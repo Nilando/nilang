@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 pub use interference_graph::{InterferenceGraph, find_copy_edges};
 
-use crate::ir::{Block, Func as IRFunc, LabelID, Tac, TacConst};
+use crate::ir::{Block, Func as IRFunc, LabelID, PhiArg, Tac, TacConst};
 use crate::parser::Op;
 
 use self::interference_graph::Reg;
@@ -54,6 +54,7 @@ impl Func {
 }
 
 pub fn generate_func(mut ir_func: IRFunc) -> Func {
+    let mut spill_counter: u16 = 0;
     let mut graph;
 
     loop {
@@ -67,7 +68,8 @@ pub fn generate_func(mut ir_func: IRFunc) -> Func {
 
         let regs = find_regs_to_spill(&ir_func, max_clique, &graph);
         for reg in regs.iter() {
-            spill_reg(&mut ir_func, *reg);
+            spill_reg(&mut ir_func, *reg, spill_counter);
+            spill_counter += 1
         }
     }
 
@@ -82,6 +84,14 @@ pub fn generate_func(mut ir_func: IRFunc) -> Func {
     generate_bytecode(&ir_func, &graph)
 }
 
+
+// TODO:
+//  generate reloads and spills during ssa elimination
+//  - this requires keeping track of all the spilled vars
+//  - the spilled vars may need to be passed to the interference graph 
+//  or to the liveness analysis
+//  - so we know that
+
 fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
     let mut func = Func::new(ir_func.get_id());
     let mut jump_positions: HashMap<BackPatchLabel, Vec<usize>> = HashMap::new();
@@ -92,6 +102,22 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
         for instr in block.get_instrs() {
             let bytecode = 
             match instr {
+                Tac::PrepCallSite { src } => {
+                    todo!()
+                }
+                Tac::ReloadVar { dest, slot } => {
+                    ByteCode::Reload {
+                        dest: graph.get_reg(dest),
+                        slot: *slot
+                    }
+                }
+                Tac::SpillVar { src, slot } => {
+                    ByteCode::Spill { 
+                        src: graph.get_reg(src),
+                        slot: *slot
+                    }
+                },
+                Tac::Noop => ByteCode::Noop,
                 Tac::Label { label } => {
                     label_positions.insert(BackPatchLabel::Label(*label), func.len());
                     continue;
@@ -385,7 +411,7 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
                         },
                     }
                 }
-                _ => ByteCode::Noop
+
             };
 
             func.instrs.push(bytecode)
@@ -468,18 +494,30 @@ fn ssa_elimination(instrs: &mut Vec<ByteCode>, next_block: &Block, current_block
     let mut dests = vec![];
     let mut srcs = vec![];
     let mut free_regs = vec![];
+    let mut reload_pairs = vec![];
 
     for node in next_block.get_phi_nodes() {
         let dest = graph.get_reg(&node.dest);
-        let src = graph.get_reg(node.srcs.get(&current_block.get_id()).unwrap());
+        let phi_arg = node.srcs.get(&current_block.get_id()).unwrap();
 
         dests.push(dest);
-        srcs.push(src);
 
-        if src != dest {
-            copy_pairs.push((src, dest));
-        }
+        match phi_arg  {
+            PhiArg::Reg(vreg) => {
+                let src = graph.get_reg(vreg);
+
+                srcs.push(src);
+
+                if src != dest {
+                    copy_pairs.push((src, dest));
+                }
+            }
+            PhiArg::Spill(slot) => {
+                reload_pairs.push((*slot, dest))
+            }
+        } 
     }
+
 
     // STEP 1: INSERT COPY INSTRUCTIONS BY MAKING USE OF FREE REGISTERS
     for (_, d) in copy_pairs.iter() {
@@ -505,7 +543,22 @@ fn ssa_elimination(instrs: &mut Vec<ByteCode>, next_block: &Block, current_block
         }
     }
 
-    // STEP 2: INSERT SWAP INSTRUCTIONS
+    // STEP 2: LOAD SPILLED ARGS
+    // since reload pairs cannot be involved in cycles, we can be sure
+    // that the previous step copied any needed values to their needed dests before we clobber them
+    //  
+    // The fact that reload pairs cannot be involved in cycles s b/c currently 
+    // spill slots are statically assigned(not reused), which isn't very efficient.
+    for (slot, dest) in reload_pairs.into_iter() {
+        let reload_instr = ByteCode::Reload {
+            dest,
+            slot,
+        };
+
+        instrs.push(reload_instr);
+    }
+
+    // STEP 3: INSERT SWAP INSTRUCTIONS TO BREAK CYCLES
     while let Some((dest, src)) = copy_pairs.pop() {
         if dest == src {
             continue;
@@ -686,37 +739,52 @@ enum ByteCode {
         src: Reg,
         offset: i16
     },
+    Spill {
+        src: Reg,
+        slot: u16
+    },
+    Reload {
+        dest: Reg,
+        slot: u16
+    },
 }
 
 fn print_bytecode(func: &Func) {
     println!("=== FN {} START ===", func.id);
     for instr in func.instrs.iter() {
         match instr {
-            ByteCode::Jump { offset } =>              println!("JMP  {offset}"),
-            ByteCode::Jnt { src, offset } =>          println!("JNT  {offset}, {src}"),
-            ByteCode::Jit { src, offset } =>          println!("JIT  {offset}, {src}"),
-            ByteCode::StoreArg { src } =>             println!("ARG  {src }"),
-            ByteCode::Call { dest, src } =>           println!("CALL {dest}, {src }"),
-            ByteCode::Return { src } =>               println!("RTN  {src }"),
-            ByteCode::LoadInt { dest, val } =>        println!("INT  {dest}, {val}"),
-            ByteCode::LoadSym { dest, val } =>        println!("SYM  {dest}, {val}"),
-            ByteCode::LoadUpvalue { dest, id } =>     println!("LDUV {dest}, {id}"),
-            ByteCode::StoreUpvalue { func, src } =>   println!("STUV {func}, {src}"),
-            ByteCode::LoadLocal { dest, id } =>       println!("LOC  {dest}, {id}"),
-            ByteCode::LoadNull { dest } =>            println!("LDN  {dest}"),
-            ByteCode::Print { src } =>                println!("OUT  {src }"),
-            ByteCode::Read { dest } =>                println!("READ {dest}"),
-            ByteCode::Lt { dest, lhs, rhs } =>        println!("LT   {dest}, {lhs}, {rhs}"),
-            ByteCode::Equality { dest, lhs, rhs } =>  println!("EQL  {dest}, {lhs}, {rhs}"),
-            ByteCode::Add { dest, lhs, rhs } =>       println!("ADD  {dest}, {lhs}, {rhs}"),
-            ByteCode::Modulo { dest, lhs, rhs } =>    println!("MOD  {dest}, {lhs}, {rhs}"),
-            ByteCode::Copy { dest, src } =>           println!("COPY {dest}, {src}"),
-            ByteCode::Swap { r1, r2 } =>              println!("SWAP {r1  }, {r2 }"),
-            ByteCode::NewList { dest } =>             println!("LIST {dest}"),
-            ByteCode::MemLoad { dest, store, key } => println!("MEML {dest}, {store}[{key}]"),
-            ByteCode::MemStore { store, key, src } => println!("MEMS {store}[{key}], {src}"),
+            ByteCode::Jump { offset } =>               println!("JMP  {offset}"),
+            ByteCode::Jnt { src, offset } =>           println!("JNT  {offset}, {src}"),
+            ByteCode::Jit { src, offset } =>           println!("JIT  {offset}, {src}"),
+            ByteCode::StoreArg { src } =>              println!("ARG  {src }"),
+            ByteCode::Call { dest, src } =>            println!("CALL {dest}, {src }"),
+            ByteCode::Return { src } =>                println!("RTN  {src }"),
+            ByteCode::LoadBool { dest, val } =>        println!("BOOL {dest}, {val}"),
+            ByteCode::LoadInt { dest, val } =>         println!("INT  {dest}, {val}"),
+            ByteCode::LoadSym { dest, val } =>         println!("SYM  {dest}, #{val}"),
+            ByteCode::LoadLocal { dest, id } =>        println!("LOC  {dest}, {id}"),
+            ByteCode::LoadNull { dest } =>             println!("LDN  {dest}"),
+            ByteCode::LoadUpvalue { dest, id } =>      println!("LDUV {dest}, {id}"),
+            ByteCode::StoreUpvalue { func, src } =>    println!("STUV {func}, {src}"),
+            ByteCode::Spill { src, slot } =>             println!("SPIL {src}, {slot}"),
+            ByteCode::Reload { dest, slot } =>           println!("RELD {dest}, {slot}"),
+            ByteCode::Print { src } =>                 println!("OUT  {src }"),
+            ByteCode::Read { dest } =>                 println!("READ {dest}"),
+            ByteCode::Lt { dest, lhs, rhs } =>         println!("LT   {dest}, {lhs}, {rhs}"),
+            ByteCode::Inequality { dest, lhs, rhs } => println!("NEQ  {dest}, {lhs}, {rhs}"),
+            ByteCode::Equality { dest, lhs, rhs } =>   println!("EQ   {dest}, {lhs}, {rhs}"),
+            ByteCode::Add { dest, lhs, rhs } =>        println!("ADD  {dest}, {lhs}, {rhs}"),
+            ByteCode::Sub { dest, lhs, rhs } =>        println!("SUB  {dest}, {lhs}, {rhs}"),
+            ByteCode::Modulo { dest, lhs, rhs } =>     println!("MOD  {dest}, {lhs}, {rhs}"),
+            ByteCode::Copy { dest, src } =>            println!("COPY {dest}, {src}"),
+            ByteCode::Swap { r1, r2 } =>               println!("SWAP {r1  }, {r2 }"),
+            ByteCode::NewList { dest } =>              println!("LIST {dest}"),
+            ByteCode::NewMap { dest } =>               println!("MAP  {dest}"),
+            ByteCode::MemLoad { dest, store, key } =>  println!("MEML {dest}, {store}[{key}]"),
+            ByteCode::MemStore { store, key, src } =>  println!("MEMS {store}[{key}], {src}"),
+            ByteCode::LoadGlobal { dest, sym } =>      println!("LDGB {dest}, #{sym}"),
+            ByteCode::StoreGlobal { sym, src } =>      println!("STGB {src}, #{sym}"),
             ByteCode::Noop => println!("NOOP"),
-            _ => println!("..."),
         }
     }
     println!("=== END ===");

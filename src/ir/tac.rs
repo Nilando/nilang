@@ -106,10 +106,11 @@ pub enum Tac {
     // UpValId is a u16
     SpillVar {
         src: VReg,
+        slot: u16
     },
     ReloadVar {
         dest: VReg,
-        src: VReg,
+        slot: u16,
     }
 }
 
@@ -121,7 +122,7 @@ impl Tac {
             Tac::LoadGlobal { sym, .. } => [Some(sym), None, None],
             Tac::StoreGlobal { src, sym, .. } => [Some(src), Some(sym), None],
 
-            Tac::SpillVar { src } |
+            Tac::SpillVar { src, .. } |
             Tac::Copy { src, .. } |
             Tac::Print { src, .. } |
             Tac::StoreArg { src, .. } |
@@ -142,7 +143,7 @@ impl Tac {
             Tac::LoadGlobal { sym, .. } => [Some(sym), None, None],
             Tac::StoreGlobal { src, sym, .. } => [Some(src), Some(sym), None],
 
-            Tac::SpillVar { src } |
+            Tac::SpillVar { src, .. } |
             Tac::Copy { src, .. } |
             Tac::Print { src, .. } |
             Tac::StoreArg { src, .. } |

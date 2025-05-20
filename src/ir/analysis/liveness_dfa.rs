@@ -1,3 +1,5 @@
+use crate::ir::ssa::PhiArg;
+
 use super::super::block::{BlockId, Block};
 use super::super::tac::VReg;
 use super::dfa::DFA;
@@ -46,8 +48,10 @@ impl DFA for LivenessDFA {
 
         // set phi node args as live in
         for node in block.get_phi_nodes().iter() {
-            for (_, var) in node.srcs.iter() {
-                live_in.insert(var.clone());
+            for (_, arg) in node.srcs.iter() {
+                if let PhiArg::Reg(r) = arg {
+                    live_in.insert(r.clone());
+                }
             }
         }
 

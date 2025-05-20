@@ -52,6 +52,12 @@ impl Block {
         &mut self.instrs
     }
 
+    pub fn take_instrs(&mut self) -> Vec<Tac> {
+        let mut instrs = vec![];
+        std::mem::swap(&mut self.instrs, &mut instrs);
+        instrs
+    }
+
     pub fn rev_retain_instrs(&mut self, mut f: impl FnMut(&Tac) -> bool) {
         let mut dead_indexes = vec![];
 

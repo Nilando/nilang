@@ -1,4 +1,4 @@
-use crate::ir::{VReg, Func, Block, BlockId, find_loops};
+use crate::ir::{find_loops, Block, BlockId, Func, Tac, VReg};
 use super::interference_graph::InterferenceGraph;
 use std::collections::{HashMap, HashSet};
 
@@ -52,17 +52,48 @@ fn find_loop_factor(block: &Block, loops: &HashMap<BlockId, HashSet<BlockId>>) -
     factor
 }
 
-pub fn spill_reg(func: &mut Func, var: VReg) {
-    for block in func.get_blocks_mut().iter() {
+pub fn spill_reg(func: &mut Func, var: VReg, spill_slot: u16) {
+    let mut reg_counter = func.get_vreg_counter();
+    for block in func.get_blocks_mut().iter_mut() {
+        let mut new_tac = vec![];
 
-        // consider the blocks successor phi nodes
+        for phi_node in block.get_phi_nodes() {
+            if phi_node.dest == var {
+                new_tac.push(Tac::SpillVar { src: var, slot: spill_slot });
+            }
+        }
 
+        for mut instr in block.take_instrs().into_iter() {
+            if let Some(reg) = instr.dest_reg() {
+                if *reg == var {
+                    new_tac.push(instr);
+                    new_tac.push(Tac::SpillVar { src: var, slot: spill_slot });
 
-        // if instr's dest == var {
-        // }
-        //      insert a spill instr right after this
-        // if instr's src contains var
-        //      insert a reload instr right after this with a new temp
-        //      replase the use instances with the temp
+                    continue;
+                }
+            }
+            
+            let mut spill_vreg = None;
+            for reg in instr.used_regs_mut() {
+                if let Some(src) = reg {
+                    if *src == var {
+                        if let Some(r) = spill_vreg {
+                            *src = r;
+                        } else {
+                            let reg = reg_counter;
+                            reg_counter += 1;
+                            new_tac.push(Tac::ReloadVar { dest: reg, slot: spill_slot });
+                            spill_vreg = Some(reg);
+                        }
+                    }
+                }
+            }
+
+            new_tac.push(instr);
+        }
+
+        *block.get_instrs_mut() = new_tac;
     }
+
+    func.set_vreg_counter(reg_counter);
 }

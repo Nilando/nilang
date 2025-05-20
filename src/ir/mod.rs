@@ -19,3 +19,4 @@ pub use tac::{VReg, Tac, TacConst, LabelID};
 pub use func::Func;
 pub use block::{BlockId, Block};
 pub use analysis::{DFA, find_loops, LivenessDFA};
+pub use ssa::{PhiArg, PhiNode};

@@ -2,7 +2,7 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use crate::ir::{Func, LivenessDFA, Tac, VReg, DFA};
+use crate::ir::{Func, LivenessDFA, PhiArg, Tac, VReg, DFA};
 
 pub type Reg = u8;
 
@@ -50,11 +50,6 @@ impl InterferenceGraph {
             }
 
             for instr in block.get_instrs().iter().rev() {
-                if let Tac::SpillVar { src } = instr {
-                    graph.remove_node(src);
-                    continue;
-                }
-
                 if let Some(new_var) = instr.dest_reg() {
                     // if this var wasn't live when we remove it, we unfortunately
                     // still need a register to store the dead value
@@ -65,11 +60,6 @@ impl InterferenceGraph {
                             graph.add_edge(new_var, var);
                         }
                     }
-                }
-
-                if let Tac::ReloadVar { .. } = instr {
-                    // no need to add spilled var to graph
-                    continue;
                 }
 
                 for u in instr.used_regs() {
@@ -289,12 +279,14 @@ pub fn find_copy_edges(func: &Func) -> Vec<(VReg, VReg)> {
         for node in block.get_phi_nodes().iter() {
             let dest = node.dest;
 
-            for src in node.srcs.values() {
-                if dest == *src {
-                    continue;
-                }
+            for arg in node.srcs.values() {
+                if let PhiArg::Reg(src) = arg {
+                    if dest == *src {
+                        continue;
+                    }
 
-                copy_edges.push((dest, *src));
+                    copy_edges.push((dest, *src));
+                }
             }
         }
     }
