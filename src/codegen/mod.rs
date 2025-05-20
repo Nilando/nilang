@@ -94,9 +94,6 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
         for instr in block.get_instrs() {
             let bytecode = 
             match instr {
-                Tac::PrepCallSite { src } => {
-                    todo!()
-                }
                 Tac::ReloadVar { dest, slot } => {
                     ByteCode::Reload {
                         dest: graph.get_reg(dest),

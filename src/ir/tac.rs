@@ -73,10 +73,6 @@ pub enum Tac {
         func: VReg,
         src: VReg,
     },
-
-    PrepCallSite {
-        src: VReg
-    },
     StoreArg {
         src: VReg
     },

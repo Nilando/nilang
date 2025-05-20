@@ -245,13 +245,6 @@ impl LoweringCtx {
     }
 
     fn generate_call(&mut self, calle: VReg, args: Vec<VReg>, span: Span) -> VReg {
-        let callsite = self.new_temp();
-        self.emit(
-            Tac::PrepCallSite { 
-                src: callsite
-            }
-        );
-
         for src in args.into_iter() {
             self.emit(
                 Tac::StoreArg {

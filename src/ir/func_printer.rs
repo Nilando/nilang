@@ -207,10 +207,6 @@ impl<'a> FuncPrinter<'a> {
                     self.result.push_str("LOAD_UPVAL ");
                     self.push_var(dest);
                 }
-                Tac::PrepCallSite { src } => {
-                    self.result.push_str("PREP_CALL_SITE ");
-                    self.push_var(src);
-                }
             }
             self.result.push_str("\n");
         }
