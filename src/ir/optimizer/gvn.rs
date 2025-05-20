@@ -48,19 +48,17 @@ impl GVNC {
         }
     }
 
+    fn find_or_create_entry_id(&mut self, reg: VReg) -> ValueId {
+        if let Some((id, _)) = self.find_loc_entry_mut(&ValueLocation::Var(reg)) {
+            id
+        } else {
+            self.create_entry(reg, None)
+        }
+    }
+
     fn const_fold_binop(&mut self, dest: VReg, op: Op, lhs: VReg, rhs: VReg) -> Option<Tac> {
-        let left_id = if let Some((id, _)) = self.find_loc_entry_mut(&ValueLocation::Var(lhs)) {
-            id
-        } else {
-            self.create_entry(lhs, None)
-        };
-
-        let right_id = if let Some((id, _)) = self.find_loc_entry_mut(&ValueLocation::Var(rhs)) {
-            id
-        } else {
-            self.create_entry(rhs, None)
-        };
-
+        let left_id = self.find_or_create_entry_id(lhs);
+        let right_id = self.find_or_create_entry_id(rhs);
         let lhs_entry = self.get_entry(left_id);
         let rhs_entry = self.get_entry(right_id);
 
