@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet};
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -25,12 +25,12 @@ impl Node {
 
 #[derive(Debug)]
 pub struct InterferenceGraph {
-    nodes: HashMap<VReg, Rc<RefCell<Node>>>,
+    nodes: BTreeMap<VReg, Rc<RefCell<Node>>>,
 }
 
 impl InterferenceGraph {
     pub fn build(func: &Func) -> InterferenceGraph {
-        let mut graph = Self { nodes: HashMap::new() };
+        let mut graph = Self { nodes: BTreeMap::new() };
         let mut liveness = LivenessDFA::new();
         liveness.exec(func);
 
