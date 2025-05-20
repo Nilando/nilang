@@ -1,6 +1,6 @@
 mod config;
 
-use crate::codegen::generate_func;
+use crate::codegen::{generate_func, func_to_string as bytecode_to_string};
 use crate::parser::{parse_program, ParseError, Spanned};
 use crate::symbol_map::SymbolMap;
 use crate::ir::{func_to_string, lower_ast, optimize_func};
@@ -65,6 +65,16 @@ fn run_script(mut config: Config) {
     for ir_func in ir.into_iter() {
         let func = generate_func(ir_func);
         program.push(func);
+    }
+
+    if let Some(path) = config.bytecode_output_path.as_ref() {
+        let mut bc_str = String::new();
+
+        for func in program.iter() {
+            bc_str.push_str(&bytecode_to_string(func));
+        }
+
+        output_string(bc_str, path);
     }
     
     todo!("runtime")

@@ -61,7 +61,6 @@ pub fn generate_func(mut ir_func: IRFunc) -> Func {
         graph = InterferenceGraph::build(&ir_func);
 
         let max_clique = graph.find_max_clique();
-        println!("MAX CLIQUE: {}", max_clique.len());
         if max_clique.len() <= 256 {
             break;
         }
@@ -79,9 +78,9 @@ pub fn generate_func(mut ir_func: IRFunc) -> Func {
     
     graph.best_effort_coalescence(copies);
 
-    // println!("{:#?}", graph);
+    let func = generate_bytecode(&ir_func, &graph);
 
-    generate_bytecode(&ir_func, &graph)
+    func
 }
 
 fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
@@ -414,8 +413,6 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
 
     back_patch_jump_instructions(&mut func.instrs, label_positions, jump_positions);
 
-    print_bytecode(&func);
-
     func
 }
 
@@ -736,43 +733,52 @@ enum ByteCode {
     },
 }
 
-fn print_bytecode(func: &Func) {
-    println!("=== FN {} START ===", func.id);
+pub fn func_to_string(func: &Func) -> String {
+    let mut result = String::new();
+
+    result.push_str(&format!("=== FN {} START ===\n", func.id));
     for instr in func.instrs.iter() {
+        let s =
         match instr {
-            ByteCode::Jump { offset } =>               println!("JMP  {offset}"),
-            ByteCode::Jnt { src, offset } =>           println!("JNT  {offset}, {src}"),
-            ByteCode::Jit { src, offset } =>           println!("JIT  {offset}, {src}"),
-            ByteCode::StoreArg { src } =>              println!("ARG  {src }"),
-            ByteCode::Call { dest, src } =>            println!("CALL {dest}, {src }"),
-            ByteCode::Return { src } =>                println!("RTN  {src }"),
-            ByteCode::LoadBool { dest, val } =>        println!("BOOL {dest}, {val}"),
-            ByteCode::LoadInt { dest, val } =>         println!("INT  {dest}, {val}"),
-            ByteCode::LoadSym { dest, val } =>         println!("SYM  {dest}, #{val}"),
-            ByteCode::LoadLocal { dest, id } =>        println!("LOC  {dest}, {id}"),
-            ByteCode::LoadNull { dest } =>             println!("LDN  {dest}"),
-            ByteCode::LoadUpvalue { dest, id } =>      println!("LDUV {dest}, {id}"),
-            ByteCode::StoreUpvalue { func, src } =>    println!("STUV {func}, {src}"),
-            ByteCode::Spill { src, slot } =>           println!("SPIL {src}, {slot}"),
-            ByteCode::Reload { dest, slot } =>         println!("RELD {dest}, {slot}"),
-            ByteCode::Print { src } =>                 println!("OUT  {src }"),
-            ByteCode::Read { dest } =>                 println!("READ {dest}"),
-            ByteCode::Lt { dest, lhs, rhs } =>         println!("LT   {dest}, {lhs}, {rhs}"),
-            ByteCode::Inequality { dest, lhs, rhs } => println!("NEQ  {dest}, {lhs}, {rhs}"),
-            ByteCode::Equality { dest, lhs, rhs } =>   println!("EQ   {dest}, {lhs}, {rhs}"),
-            ByteCode::Add { dest, lhs, rhs } =>        println!("ADD  {dest}, {lhs}, {rhs}"),
-            ByteCode::Sub { dest, lhs, rhs } =>        println!("SUB  {dest}, {lhs}, {rhs}"),
-            ByteCode::Modulo { dest, lhs, rhs } =>     println!("MOD  {dest}, {lhs}, {rhs}"),
-            ByteCode::Copy { dest, src } =>            println!("COPY {dest}, {src}"),
-            ByteCode::Swap { r1, r2 } =>               println!("SWAP {r1  }, {r2 }"),
-            ByteCode::NewList { dest } =>              println!("LIST {dest}"),
-            ByteCode::NewMap { dest } =>               println!("MAP  {dest}"),
-            ByteCode::MemLoad { dest, store, key } =>  println!("MEML {dest}, {store}[{key}]"),
-            ByteCode::MemStore { store, key, src } =>  println!("MEMS {store}[{key}], {src}"),
-            ByteCode::LoadGlobal { dest, sym } =>      println!("LDGB {dest}, #{sym}"),
-            ByteCode::StoreGlobal { sym, src } =>      println!("STGB {src}, #{sym}"),
-            ByteCode::Noop => println!("NOOP"),
-        }
+            ByteCode::Jump { offset } =>               format!("JMP  {offset}"),
+            ByteCode::Jnt { src, offset } =>           format!("JNT  {offset}, {src}"),
+            ByteCode::Jit { src, offset } =>           format!("JIT  {offset}, {src}"),
+            ByteCode::StoreArg { src } =>              format!("ARG  {src }"),
+            ByteCode::Call { dest, src } =>            format!("CALL {dest}, {src }"),
+            ByteCode::Return { src } =>                format!("RTN  {src }"),
+            ByteCode::LoadBool { dest, val } =>        format!("BOOL {dest}, {val}"),
+            ByteCode::LoadInt { dest, val } =>         format!("INT  {dest}, {val}"),
+            ByteCode::LoadSym { dest, val } =>         format!("SYM  {dest}, #{val}"),
+            ByteCode::LoadLocal { dest, id } =>        format!("LOC  {dest}, {id}"),
+            ByteCode::LoadNull { dest } =>             format!("LDN  {dest}"),
+            ByteCode::LoadUpvalue { dest, id } =>      format!("LDUV {dest}, {id}"),
+            ByteCode::StoreUpvalue { func, src } =>    format!("STUV {func}, {src}"),
+            ByteCode::Spill { src, slot } =>           format!("SPIL {src}, {slot}"),
+            ByteCode::Reload { dest, slot } =>         format!("RELD {dest}, {slot}"),
+            ByteCode::Print { src } =>                 format!("OUT  {src }"),
+            ByteCode::Read { dest } =>                 format!("READ {dest}"),
+            ByteCode::Lt { dest, lhs, rhs } =>         format!("LT   {dest}, {lhs}, {rhs}"),
+            ByteCode::Inequality { dest, lhs, rhs } => format!("NEQ  {dest}, {lhs}, {rhs}"),
+            ByteCode::Equality { dest, lhs, rhs } =>   format!("EQ   {dest}, {lhs}, {rhs}"),
+            ByteCode::Add { dest, lhs, rhs } =>        format!("ADD  {dest}, {lhs}, {rhs}"),
+            ByteCode::Sub { dest, lhs, rhs } =>        format!("SUB  {dest}, {lhs}, {rhs}"),
+            ByteCode::Modulo { dest, lhs, rhs } =>     format!("MOD  {dest}, {lhs}, {rhs}"),
+            ByteCode::Copy { dest, src } =>            format!("COPY {dest}, {src}"),
+            ByteCode::Swap { r1, r2 } =>               format!("SWAP {r1  }, {r2 }"),
+            ByteCode::NewList { dest } =>              format!("LIST {dest}"),
+            ByteCode::NewMap { dest } =>               format!("MAP  {dest}"),
+            ByteCode::MemLoad { dest, store, key } =>  format!("MEML {dest}, {store}[{key}]"),
+            ByteCode::MemStore { store, key, src } =>  format!("MEMS {store}[{key}], {src}"),
+            ByteCode::LoadGlobal { dest, sym } =>      format!("LDGB {dest}, #{sym}"),
+            ByteCode::StoreGlobal { sym, src } =>      format!("STGB {src}, #{sym}"),
+            ByteCode::Noop => format!("NOOP"),
+        };
+
+        result.push_str(&s);
+        result.push('\n');
     }
-    println!("=== END ===");
+
+    result.push_str(&format!("=== END ===\n"));
+
+    result
 }

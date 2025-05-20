@@ -26,7 +26,7 @@ pub struct Config {
         long = "bytecode_output",
         requires = "input",
     )]
-    pub bytecode_output_path: Option<String>,
+    pub bytecode_output_path: Option<Option<String>>,
 
     /// Print the IR using symbol names instead of virtual registers
     #[clap(short, long)]
