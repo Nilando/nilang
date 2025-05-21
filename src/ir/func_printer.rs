@@ -2,7 +2,6 @@ use crate::parser::Op;
 use crate::symbol_map::{SymbolMap, SymID};
 use super::func::Func;
 use super::block::{Block, BlockId};
-use super::ssa::PhiArg;
 use super::tac::{VReg, Tac, TacConst};
 use super::lowering::MAIN_FUNC_ID;
 use std::collections::HashMap;
@@ -176,15 +175,6 @@ impl<'a> FuncPrinter<'a> {
                 Tac::Noop => {
                     self.result.push_str("NOOP");
                 }
-                Tac::SpillVar { src, slot } => {
-                    self.result.push_str("SPILL ");
-                    self.push_var(src);
-                }
-                Tac::ReloadVar { dest, slot } => {
-                    self.result.push_str("RELOAD ");
-                    self.push_var(dest);
-                    //self.push_var(slot);
-                }
                 Tac::StoreGlobal { src, sym } => {
                     self.result.push_str("STORE_GLB ");
                     self.push_var(sym);
@@ -230,14 +220,9 @@ impl<'a> FuncPrinter<'a> {
         if !phi_nodes.is_empty() {
             self.result.push_str(&format!("("));
             for (i, node) in phi_nodes.iter().enumerate() {
-                match node.srcs.get(&caller_id).unwrap() {
-                    PhiArg::Reg(r) => {
-                        self.push_var(r);
-                    }
-                    PhiArg::Spill(slot) => {
-                        self.result.push_str(&format!("S{}", slot));
-                    }
-                }
+                let vreg = node.srcs.get(&caller_id).unwrap();
+
+                self.push_var(vreg);
 
                 if  i + 1 < phi_nodes.len() {
                     self.result.push_str(", ");

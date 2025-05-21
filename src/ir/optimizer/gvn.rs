@@ -3,7 +3,6 @@ use super::super::analysis::{compute_dom_tree, InstrLoc, MemoryAccessId};
 use super::super::block::BlockId;
 use super::super::tac::{Tac, TacConst};
 use std::collections::HashMap;
-use crate::ir::ssa::PhiArg;
 use crate::ir::tac::VReg;
 use crate::parser::Op;
 
@@ -194,9 +193,9 @@ impl GVNC {
             let block = func.get_block_mut(*block_id);
             let phi_nodes = block.get_phi_nodes_mut();
             for node in phi_nodes.iter_mut() {
-                if let PhiArg::Reg(vreg) = node.srcs.get_mut(&current_block).unwrap() {
-                    self.canonize_reg(vreg);
-                }
+                let vreg = node.srcs.get_mut(&current_block).unwrap();
+
+                self.canonize_reg(vreg);
             }
         }
 

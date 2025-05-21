@@ -2,7 +2,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use crate::ir::{Func, LivenessDFA, PhiArg, VReg, DFA};
+use crate::ir::{Func, LivenessDFA, VReg, DFA};
 
 pub type Reg = u8;
 
@@ -110,7 +110,7 @@ impl InterferenceGraph {
         self.nodes.get(var).unwrap().as_ref().borrow().reg.unwrap()
     }
 
-    pub fn find_max_clique(&self) -> Vec<VReg> {
+    pub fn find_max_clique(&self) -> (Vec<VReg>, Vec<VReg>) {
         let mut remaining_vars = BTreeMap::<VReg, usize>::new();
         let mut max = 0;
         let mut elimination_ordering: Vec<VReg> = vec![];
@@ -143,19 +143,19 @@ impl InterferenceGraph {
             max_clique.push(elimination_ordering[i]);
         }
 
-        max_clique
+        (max_clique, elimination_ordering)
     }
 
-    pub fn color(&mut self, func: &Func) {
+    pub fn color(&mut self, func: &Func, elimination_ordering: Vec<VReg>) {
         for (idx, arg) in func.get_args().iter().enumerate() {
             if let Some(node) = self.nodes.get(&arg) {
                 node.as_ref().borrow_mut().reg = Some(idx as u8);
             }
         }
         
-        for (_, n) in self.nodes.iter() {
+        for vreg in elimination_ordering.iter() {
             let mut free_reg = true;
-            let mut node = n.as_ref().borrow_mut();
+            let mut node = self.nodes.get(vreg).unwrap().as_ref().borrow_mut();
             if node.reg.is_some() {
                 continue;
             }
@@ -278,14 +278,12 @@ pub fn find_copy_edges(func: &Func) -> Vec<(VReg, VReg)> {
         for node in block.get_phi_nodes().iter() {
             let dest = node.dest;
 
-            for arg in node.srcs.values() {
-                if let PhiArg::Reg(src) = arg {
-                    if dest == *src {
-                        continue;
-                    }
-
-                    copy_edges.push((dest, *src));
+            for src in node.srcs.values() {
+                if dest == *src {
+                    continue;
                 }
+
+                copy_edges.push((dest, *src));
             }
         }
     }

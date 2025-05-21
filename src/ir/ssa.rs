@@ -5,16 +5,11 @@ use super::func_printer::VRegMap;
 use super::tac::VReg;
 use std::collections::{BTreeMap, HashMap, HashSet};
 
-#[derive(Debug, PartialEq)]
-pub enum PhiArg {
-    Reg(VReg),
-    Spill(u16),
-}
 
 #[derive(Debug)]
 pub struct PhiNode {
     pub dest: VReg,
-    pub srcs: BTreeMap<BlockId, PhiArg>
+    pub srcs: BTreeMap<BlockId, VReg>
 }
 
 pub fn convert_to_ssa(func: &mut Func, var_reg_map: Option<VRegMap>) {
@@ -49,7 +44,7 @@ fn insert_phi_nodes(func: &mut Func) {
                 };
 
                 for pred in phi_block.get_predecessors().iter() {
-                    phi.srcs.insert(*pred, PhiArg::Reg(*var));
+                    phi.srcs.insert(*pred, *var);
                 }
 
                 phi_block.push_phi_node(phi);
@@ -114,11 +109,7 @@ impl SSAConverter {
             for phi_node in succ.get_phi_nodes_mut().iter_mut() {
                 let old = phi_node.srcs.get_mut(&predecessor_id).unwrap();
 
-                if let PhiArg::Reg(r) = old {
-                    self.update_reg(r);
-                } else {
-                    panic!("")
-                }
+                self.update_reg(old);
             }
         }
     }

@@ -1,5 +1,4 @@
 mod interference_graph;
-mod spilling;
 
 #[cfg(test)]
 mod tests;
@@ -8,11 +7,10 @@ use std::collections::HashMap;
 
 pub use interference_graph::{InterferenceGraph, find_copy_edges};
 
-use crate::ir::{Block, Func as IRFunc, LabelID, PhiArg, Tac, TacConst};
+use crate::ir::{Block, Func as IRFunc, LabelID, Tac, TacConst};
 use crate::parser::Op;
 
 use self::interference_graph::Reg;
-use self::spilling::{find_regs_to_spill, spill_reg};
 
 
 #[derive(PartialEq)]
@@ -56,26 +54,16 @@ impl Func {
     }
 }
 
-pub fn generate_func(mut ir_func: IRFunc) -> Func {
-    let mut spill_counter: u16 = 0;
-    let mut graph;
+pub fn generate_func(ir_func: IRFunc) -> Func {
+    let mut graph = InterferenceGraph::build(&ir_func);
+    let (max_clique, seo) = graph.find_max_clique();
 
-    loop {
-        graph = InterferenceGraph::build(&ir_func);
-
-        let max_clique = graph.find_max_clique();
-        if max_clique.len() <= 256 {
-            break;
-        }
-
-        let regs = find_regs_to_spill(&ir_func, max_clique, &graph);
-        for reg in regs.iter() {
-            spill_reg(&mut ir_func, *reg, spill_counter);
-            spill_counter += 1
-        }
+    if max_clique.len() > 256 {
+        // just fail saying function requires too many reigsters
+        panic!("function requires too many registers");
     }
 
-    graph.color(&ir_func);
+    graph.color(&ir_func, seo);
 
     let copies = find_copy_edges(&ir_func);
     
@@ -96,18 +84,6 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
         for instr in block.get_instrs() {
             let bytecode = 
             match instr {
-                Tac::ReloadVar { dest, slot } => {
-                    ByteCode::Reload {
-                        dest: graph.get_reg(dest),
-                        slot: *slot
-                    }
-                }
-                Tac::SpillVar { src, slot } => {
-                    ByteCode::Spill { 
-                        src: graph.get_reg(src),
-                        slot: *slot
-                    }
-                },
                 Tac::Noop => ByteCode::Noop,
                 Tac::Label { label } => {
                     label_positions.insert(BackPatchLabel::Label(*label), func.len());
@@ -277,6 +253,13 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
                                 rhs
                             }
                         }
+                        Op::Gt => {
+                            ByteCode::Gt { 
+                                dest,
+                                lhs,
+                                rhs
+                            }
+                        }
                         Op::Plus => {
                             ByteCode::Add { 
                                 dest,
@@ -293,6 +276,20 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
                         }
                         Op::Modulo => {
                             ByteCode::Modulo { 
+                                dest,
+                                lhs,
+                                rhs
+                            }
+                        }
+                        Op::Multiply => {
+                            ByteCode::Mult { 
+                                dest,
+                                lhs,
+                                rhs
+                            }
+                        }
+                        Op::Divide => {
+                            ByteCode::Div { 
                                 dest,
                                 lhs,
                                 rhs
@@ -482,28 +479,18 @@ fn ssa_elimination(instrs: &mut Vec<ByteCode>, next_block: &Block, current_block
     let mut copy_pairs = vec![];
     let mut srcs = vec![];
     let mut free_regs = vec![];
-    let mut reload_pairs = vec![];
 
     for node in next_block.get_phi_nodes() {
         let dest = graph.get_reg(&node.dest);
         let phi_arg = node.srcs.get(&current_block.get_id()).unwrap();
+        let src = graph.get_reg(phi_arg);
 
-        match phi_arg  {
-            PhiArg::Reg(vreg) => {
-                let src = graph.get_reg(vreg);
+        srcs.push(src);
 
-                srcs.push(src);
-
-                if src != dest {
-                    copy_pairs.push((src, dest));
-                }
-            }
-            PhiArg::Spill(slot) => {
-                reload_pairs.push((*slot, dest))
-            }
-        } 
+        if src != dest {
+            copy_pairs.push((src, dest));
+        }
     }
-
 
     // STEP 1: INSERT COPY INSTRUCTIONS BY MAKING USE OF FREE REGISTERS
     // this should take care of everything that except values stuck in a cycles
@@ -531,22 +518,7 @@ fn ssa_elimination(instrs: &mut Vec<ByteCode>, next_block: &Block, current_block
         }
     }
 
-    // STEP 2: LOAD SPILLED ARGS
-    // since reload pairs cannot be involved in cycles, we can be sure
-    // that the previous step copied any needed values to their needed dests before we clobber them
-    
-    // The fact that reload pairs cannot be involved in cycles s b/c currently 
-    // spill slots are statically assigned(not reused), which isn't very efficient.
-    for (slot, dest) in reload_pairs.into_iter() {
-        let reload_instr = ByteCode::Reload {
-            dest,
-            slot,
-        };
-
-        instrs.push(reload_instr);
-    }
-
-    // STEP 3: INSERT SWAP INSTRUCTIONS (break cycles)
+    // STEP 2: INSERT SWAP INSTRUCTIONS (break cycles)
     while let Some((dest, src)) = copy_pairs.pop() {
         if dest == src {
             continue;
@@ -682,7 +654,22 @@ enum ByteCode {
         lhs: Reg,
         rhs: Reg,
     },
+    Gt {
+        dest: Reg,
+        lhs: Reg,
+        rhs: Reg,
+    },
     Lt {
+        dest: Reg,
+        lhs: Reg,
+        rhs: Reg,
+    },
+    Div {
+        dest: Reg,
+        lhs: Reg,
+        rhs: Reg,
+    },
+    Mult {
         dest: Reg,
         lhs: Reg,
         rhs: Reg,
@@ -723,14 +710,6 @@ enum ByteCode {
         src: Reg,
         offset: i16
     },
-    Spill {
-        src: Reg,
-        slot: u16
-    },
-    Reload {
-        dest: Reg,
-        slot: u16
-    },
 }
 
 pub fn func_to_string(func: &Func) -> String {
@@ -753,13 +732,14 @@ pub fn func_to_string(func: &Func) -> String {
             ByteCode::LoadNull { dest } =>             format!("LDN  {dest}"),
             ByteCode::LoadUpvalue { dest, id } =>      format!("LDUV {dest}, {id}"),
             ByteCode::StoreUpvalue { func, src } =>    format!("STUV {func}, {src}"),
-            ByteCode::Spill { src, slot } =>           format!("SPIL {src}, {slot}"),
-            ByteCode::Reload { dest, slot } =>         format!("RELD {dest}, {slot}"),
             ByteCode::Print { src } =>                 format!("OUT  {src }"),
             ByteCode::Read { dest } =>                 format!("READ {dest}"),
             ByteCode::Lt { dest, lhs, rhs } =>         format!("LT   {dest}, {lhs}, {rhs}"),
+            ByteCode::Gt { dest, lhs, rhs } =>         format!("GT   {dest}, {lhs}, {rhs}"),
             ByteCode::Inequality { dest, lhs, rhs } => format!("NEQ  {dest}, {lhs}, {rhs}"),
             ByteCode::Equality { dest, lhs, rhs } =>   format!("EQ   {dest}, {lhs}, {rhs}"),
+            ByteCode::Mult { dest, lhs, rhs } =>       format!("MULT {dest}, {lhs}, {rhs}"),
+            ByteCode::Div { dest, lhs, rhs } =>        format!("DIV  {dest}, {lhs}, {rhs}"),
             ByteCode::Add { dest, lhs, rhs } =>        format!("ADD  {dest}, {lhs}, {rhs}"),
             ByteCode::Sub { dest, lhs, rhs } =>        format!("SUB  {dest}, {lhs}, {rhs}"),
             ByteCode::Modulo { dest, lhs, rhs } =>     format!("MOD  {dest}, {lhs}, {rhs}"),

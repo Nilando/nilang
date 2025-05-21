@@ -1,4 +1,3 @@
-use crate::ir::ssa::PhiArg;
 use crate::ir::Func;
 
 use super::super::block::{BlockId, Block};
@@ -54,9 +53,7 @@ impl DFA for LivenessDFA {
             for phi_node in successor.get_phi_nodes() {
                 let arg = phi_node.srcs.get(&block.get_id()).unwrap();
                 
-                if let PhiArg::Reg(reg) = arg {
-                    live_out.insert(*reg);
-                }
+                live_out.insert(*arg);
             }
         }
 

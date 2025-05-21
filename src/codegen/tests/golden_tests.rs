@@ -3,6 +3,16 @@
   This file is generated programatically by golden_test_generator.rb
 */
 #[test]
+fn farenheit_to_celsius() {
+  super::test_golden_bytecode("./src/codegen/tests/golden/farenheit_to_celsius.golden")
+}
+
+#[test]
+fn powers_of_two() {
+  super::test_golden_bytecode("./src/codegen/tests/golden/powers_of_two.golden")
+}
+
+#[test]
 fn linear_search() {
   super::test_golden_bytecode("./src/codegen/tests/golden/linear_search.golden")
 }
