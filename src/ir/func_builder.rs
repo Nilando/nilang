@@ -5,12 +5,12 @@ use crate::ir::TacConst;
 use super::block::{BlockId, Block};
 use super::tac::{Tac, FuncID, LabelID, VReg};
 use super::func::Func;
-use std::collections::{BTreeSet, HashMap, HashSet};
+use std::collections::{HashMap, HashSet};
 use crate::symbol_map::SymID;
 
 pub struct FuncBuilder {
     id: FuncID,
-    inputs: BTreeSet<VReg>,
+    inputs: Vec<VReg>,
     pub upvalues: HashSet<SymID>,
     blocks:  Vec<Block>,
     block_jump_map: HashMap<LabelID, Vec<BlockId>>, // label is jumped to by the block id
@@ -23,10 +23,10 @@ pub struct FuncBuilder {
 }
 
 impl FuncBuilder {
-    pub fn new(id: FuncID, input_syms: &BTreeSet<SymID>, pretty_ir: bool) -> Self {
+    pub fn new(id: FuncID, input_syms: &Vec<SymID>, pretty_ir: bool) -> Self {
         let mut this = Self {
             id, 
-            inputs: BTreeSet::new(),
+            inputs: vec![],
             upvalues: HashSet::new(),
             blocks: vec![],
             block_jump_map: HashMap::new(),
@@ -40,7 +40,7 @@ impl FuncBuilder {
 
         for s in input_syms.iter() {
             let reg = this.sym_to_reg(s);
-            this.inputs.insert(reg);
+            this.inputs.push(reg);
         }
 
         this
@@ -261,7 +261,7 @@ pub mod tests {
     };
 
     pub fn instrs_to_func(instrs: Vec<Tac>) -> Func {
-        let mut builder = FuncBuilder::new(0, &BTreeSet::new(), false);
+        let mut builder = FuncBuilder::new(0, &vec![], false);
 
         for instr in instrs.into_iter() {
             builder.push_instr(instr, None);

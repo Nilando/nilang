@@ -7,7 +7,7 @@ use std::collections::HashMap;
 
 pub use interference_graph::{InterferenceGraph, find_copy_edges};
 
-use crate::ir::{Block, Func as IRFunc, LabelID, Tac, TacConst};
+use crate::ir::{self, Block, Func as IRFunc, LabelID, Tac, TacConst};
 use crate::parser::Op;
 
 use self::interference_graph::Reg;
@@ -65,11 +65,10 @@ pub fn generate_func(ir_func: IRFunc) -> Func {
         panic!("function requires too many registers");
     }
 
-    graph.color(&ir_func, seo);
+    graph.color(&ir_func, seo, max_clique);
 
     let copies = find_copy_edges(&ir_func);
-    
-    graph.best_effort_coalescence(copies);
+    graph.best_effort_coalescence(&ir_func, copies);
 
     let func = generate_bytecode(&ir_func, &graph, max_clique);
 

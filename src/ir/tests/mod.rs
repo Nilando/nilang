@@ -15,7 +15,7 @@ pub(self) fn test_golden_ir(filename: &str) {
     let expected_ir = split_contents.pop().unwrap().trim();
     let input = split_contents.pop().unwrap().trim();
     let opt_flags = split_contents.pop();
-    let (mut opt, mut dce, mut gvn, mut mssa, mut no_pretty) = (false, false, false, false, false);
+    let (mut opt, mut _dce, mut _gvn, mut _mssa, mut no_pretty) = (false, false, false, false, false);
     if let Some(flags) = opt_flags { 
         for line in flags.lines() {
             let flag = line.trim();

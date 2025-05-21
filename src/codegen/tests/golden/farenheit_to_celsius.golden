@@ -9,22 +9,22 @@ print(farenheit_to_celsius(212)); // 100
 
 === FN 1 START ===
 INT  1, 32
-SUB  0, 0, 1
-LOC  1, 0
-LOC  2, 1
-DIV  1, 1, 2
-MULT 0, 0, 1
+SUB  1, 0, 1
+LOC  2, 0
+LOC  0, 1
+DIV  0, 2, 0
+MULT 0, 1, 0
 RTN  0
 === END ===
 === FN 0 START ===
-LOC  0, 0
-INT  1, 32
-ARG  1
-CALL 1, 0
-OUT  1
-INT  1, 212
-ARG  1
-CALL 0, 0
+LOC  1, 0
+INT  0, 32
+ARG  0
+CALL 0, 1
+OUT  0
+INT  0, 212
+ARG  0
+CALL 0, 1
 OUT  0
 LDN  0
 RTN  0

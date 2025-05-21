@@ -3,7 +3,7 @@ use crate::parser::Span;
 use super::tac::{Tac, LabelID};
 use super::ssa::PhiNode;
 use crate::parser::PackedSpans;
-use std::collections::HashSet;
+use std::collections::BTreeSet;
 
 pub type BlockId =usize;
 const ENTRY_BLOCK_ID: usize = 0;
@@ -50,12 +50,6 @@ impl Block {
 
     pub fn get_instrs_mut(&mut self) -> &mut Vec<Tac> {
         &mut self.instrs
-    }
-
-    pub fn take_instrs(&mut self) -> Vec<Tac> {
-        let mut instrs = vec![];
-        std::mem::swap(&mut self.instrs, &mut instrs);
-        instrs
     }
 
     pub fn rev_retain_instrs(&mut self, mut f: impl FnMut(&Tac) -> bool) {
@@ -139,13 +133,6 @@ impl Block {
         }
     }
 
-    pub fn unconditionally_jumps(&self) -> Option<BlockId> {
-        match self.instrs.last() {
-            Some(Tac::Jump { .. }) => self.successors.last().copied(),
-            _ => None
-        }
-    }
-
     pub fn get_return_var_id(&self) -> Option<VReg> {
         if let Some(Tac::Return { src }) = self.instrs.last() {
             Some(*src)
@@ -154,8 +141,8 @@ impl Block {
         }
     }
 
-    pub fn defined_vars(&self) -> HashSet<VReg> {
-        let mut defined = HashSet::new();
+    pub fn defined_vars(&self) -> BTreeSet<VReg> {
+        let mut defined = BTreeSet::new();
 
         for instr in self.instrs.iter() {
             if let Some(var) = instr.dest_reg() {
@@ -164,24 +151,5 @@ impl Block {
         }
 
         defined
-    }
-
-    pub fn def_and_use_count(&self, var: &VReg) -> usize {
-        let mut count = 0;
-
-        for instr in self.instrs.iter() {
-            if let Some(v) = instr.dest_reg() {
-                if v == var {
-                    count += 1;
-                    continue;
-                }
-            }
-
-            if instr.used_regs().contains(&Some(var)) {
-                count += 1;
-            }
-        }
-
-        count
     }
 }

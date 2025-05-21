@@ -3,7 +3,7 @@ use super::block::{Block, BlockId};
 use super::analysis::{DFA, LivenessDFA, compute_dominance_frontier};
 use super::func_printer::VRegMap;
 use super::tac::VReg;
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet};
 
 
 #[derive(Debug)]
@@ -54,8 +54,8 @@ fn insert_phi_nodes(func: &mut Func) {
 }
 
 struct SSAConverter {
-    stack: Vec<HashMap<VReg, VReg>>,
-    visited: HashSet<BlockId>,
+    stack: Vec<BTreeMap<VReg, VReg>>,
+    visited: BTreeSet<BlockId>,
     reg_counter: u32,
     vreg_map: Option<VRegMap>
 }
@@ -66,7 +66,7 @@ impl SSAConverter {
 
         let mut converter = Self {
             stack: vec![],
-            visited: HashSet::new(),
+            visited: BTreeSet::new(),
             reg_counter: func.get_vreg_counter(),
             vreg_map
         };
@@ -85,7 +85,7 @@ impl SSAConverter {
     fn convert_block(&mut self, func: &mut Func, block_id: BlockId) {
         let block = func.get_block_mut(block_id);
         let successor_ids = block.get_successors().to_vec();
-        let new_stack = HashMap::new();
+        let new_stack = BTreeMap::new();
 
         self.visited.insert(block_id);
         self.stack.push(new_stack);

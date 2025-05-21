@@ -102,10 +102,6 @@ impl InterferenceGraph {
         }
     }
 
-    pub fn degree(&self, var: &VReg) -> usize {
-        self.nodes.get(var).unwrap().as_ref().borrow().neighbors.len()
-    }
-
     pub fn get_reg(&self, var: &VReg) -> u8 {
         self.nodes.get(var).unwrap().as_ref().borrow().reg.unwrap()
     }
@@ -138,7 +134,7 @@ impl InterferenceGraph {
         (max + 1, elimination_ordering)
     }
 
-    pub fn color(&mut self, func: &Func, elimination_ordering: Vec<VReg>) {
+    pub fn color(&mut self, func: &Func, elimination_ordering: Vec<VReg>, max_clique: usize) {
         for (idx, arg) in func.get_args().iter().enumerate() {
             if let Some(node) = self.nodes.get(&arg) {
                 node.as_ref().borrow_mut().reg = Some(idx as u8);
@@ -167,6 +163,10 @@ impl InterferenceGraph {
                 }
 
                 if free_reg {
+                    if r as usize > max_clique {
+                        panic!("error occured during register coloring");
+                    }
+
                     node.reg = Some(r);
                     break;
                 }
@@ -179,35 +179,19 @@ impl InterferenceGraph {
         }
     }
 
-    fn find_shared_unused_reg(&self, vars1: &BTreeSet<VReg>, vars2: &BTreeSet<VReg>) -> Option<u8> {
-        let mut colors = BTreeSet::new();
-
-        for v in vars1.iter() {
-            colors.insert(self.get_reg(v));
-        }
-
-        for v in vars2.iter() {
-            colors.insert(self.get_reg(v));
-        }
-
-        if colors.len() == 256 {
-            return None;
-        } else {
-            for i in 0..=255 {
-                if !colors.contains(&i) {
-                    return Some(i);
-                }
-            }
-        }
-
-        None
-    }
-
     // no propagation!
-    pub fn best_effort_coalescence(&mut self, copies: Vec<(VReg, VReg)>) {
-        for (vx, vy) in copies.iter() {
-            if let Some(reg) = self.find_coalescing_reg(vx, vy) {
-                self.coalesce_nodes(vx, vy, reg);
+    pub fn best_effort_coalescence(&mut self, func: &Func, copies: Vec<(VReg, VReg)>) {
+        let args = func.get_args();
+
+        for (src, dest) in copies.iter() {
+            if let Some(reg) = self.find_coalescing_reg(src, dest) {
+                if let Some(idx) = args.iter().position(|a| a == src) {
+                    if reg as usize != idx {
+                        continue;
+                    }
+                }
+
+                self.coalesce_nodes(src, dest, reg);
             }
         }
     }
@@ -237,29 +221,54 @@ impl InterferenceGraph {
         }
     }
 
-    fn coalesce_nodes(&mut self, vx: &VReg, vy: &VReg, reg: u8) {
+    // merge dest into src
+    fn coalesce_nodes(&mut self, src: &VReg, dest: &VReg, reg: u8) {
         {
-            let nx = self.nodes.get(vx).unwrap().as_ref().borrow();
-            let mut ny = self.nodes.get(vy).unwrap().as_ref().borrow_mut();
+            let dest_node = self.nodes.get(dest).unwrap().as_ref().borrow();
+            let mut src_node = self.nodes.get(src).unwrap().as_ref().borrow_mut();
 
-            for var in nx.vars.iter() {
-                ny.vars.insert(*var);
-                ny.neighbors.remove(var);
+            for var in dest_node.vars.iter() {
+                src_node.vars.insert(*var);
+                src_node.neighbors.remove(var);
             }
 
-            for var in nx.neighbors.iter() {
-                if ny.vars.contains(var) {
+            for var in dest_node.neighbors.iter() {
+                if src_node.vars.contains(var) {
                     continue;
                 }
 
-                ny.neighbors.insert(*var);
+                src_node.neighbors.insert(*var);
             }
 
-            ny.reg = Some(reg);
+            src_node.reg = Some(reg);
         }
 
-        let rc = self.nodes.get(vy).unwrap().clone();
-        self.nodes.insert(*vx, rc);
+        let src_node = self.nodes.get(src).unwrap().clone();
+        self.nodes.insert(*dest, src_node);
+    }
+
+    fn find_shared_unused_reg(&self, vars1: &BTreeSet<VReg>, vars2: &BTreeSet<VReg>) -> Option<u8> {
+        let mut colors = BTreeSet::new();
+
+        for v in vars1.iter() {
+            colors.insert(self.get_reg(v));
+        }
+
+        for v in vars2.iter() {
+            colors.insert(self.get_reg(v));
+        }
+
+        if colors.len() == 256 {
+            return None;
+        } else {
+            for i in 0..=255 {
+                if !colors.contains(&i) {
+                    return Some(i);
+                }
+            }
+        }
+
+        None
     }
 }
 
@@ -275,7 +284,7 @@ pub fn find_copy_edges(func: &Func) -> Vec<(VReg, VReg)> {
                     continue;
                 }
 
-                copy_edges.push((dest, *src));
+                copy_edges.push((*src, dest));
             }
         }
     }

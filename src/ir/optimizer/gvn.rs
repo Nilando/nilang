@@ -2,7 +2,7 @@ use super::super::func::Func;
 use super::super::analysis::{compute_dom_tree, InstrLoc, MemoryAccessId};
 use super::super::block::BlockId;
 use super::super::tac::{Tac, TacConst};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use crate::ir::tac::VReg;
 use crate::parser::Op;
 
@@ -106,7 +106,7 @@ impl GVNC {
         }
     }
 
-    fn apply_value_numbering(&mut self, func: &mut Func, dom_tree: &HashMap<BlockId, Vec<BlockId>>, current_block: BlockId) {
+    fn apply_value_numbering(&mut self, func: &mut Func, dom_tree: &BTreeMap<BlockId, Vec<BlockId>>, current_block: BlockId) {
         let block = func.get_block_mut(current_block);
         self.value_stack.push(vec![]);
 

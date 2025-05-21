@@ -3,7 +3,7 @@ use crate::ir::Func;
 use super::super::block::{BlockId, Block};
 use super::super::tac::VReg;
 use super::dfa::DFA;
-use std::collections::{BTreeSet, HashMap};
+use std::collections::{BTreeSet, BTreeMap};
 
 // This works whether or not the IR is in SSA form.
 // That is helpful b/c a liveness analysis is needed to put the IR into SSA form,
@@ -11,8 +11,8 @@ use std::collections::{BTreeSet, HashMap};
 
 #[derive(Debug)]
 pub struct LivenessDFA {
-    live_in: HashMap<BlockId, BTreeSet<VReg>>,
-    live_out: HashMap<BlockId, BTreeSet<VReg>>,
+    live_in: BTreeMap<BlockId, BTreeSet<VReg>>,
+    live_out: BTreeMap<BlockId, BTreeSet<VReg>>,
 }
 
 impl LivenessDFA {
@@ -26,8 +26,8 @@ impl LivenessDFA {
 
     pub fn new() -> Self { 
         Self {
-            live_in: HashMap::new(),
-            live_out: HashMap::new(),
+            live_in: BTreeMap::new(),
+            live_out: BTreeMap::new(),
         }
     }
 }
@@ -38,7 +38,7 @@ impl DFA for LivenessDFA {
     type Data = BTreeSet<VReg>;
 
 
-    fn complete(&mut self, inputs: HashMap<BlockId, Self::Data>, outputs: HashMap<BlockId, Self::Data>) {
+    fn complete(&mut self, inputs: BTreeMap<BlockId, Self::Data>, outputs: BTreeMap<BlockId, Self::Data>) {
         self.live_in = inputs;
         self.live_out = outputs;
     }
