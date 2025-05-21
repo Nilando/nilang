@@ -1,6 +1,9 @@
 mod interference_graph;
 mod spilling;
 
+#[cfg(test)]
+mod tests;
+
 use std::collections::HashMap;
 
 pub use interference_graph::{InterferenceGraph, find_copy_edges};

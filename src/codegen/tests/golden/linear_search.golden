@@ -1,0 +1,61 @@
+OPT=true
+%%%%
+
+fn linear_search(list, len, target) {
+  i = 0;
+
+  while i < len {
+    if list[i] == target {
+      return i;
+    } else {
+      i = i + 1;
+    }
+  }
+
+  return null;
+}
+
+my_list = [0, 0, 420, 0];
+
+
+result = linear_search(my_list, 4, 420);
+
+print(result);  // 2
+
+%%%%
+
+=== FN 1 START ===
+INT  4, 0
+LT   3, 4, 1
+JNT  8, 3
+MEML 3, 0[4]
+EQ   3, 3, 2
+JNT  2, 3
+RTN  4
+INT  3, 1
+ADD  4, 4, 3
+JMP  -8
+LDN  0
+RTN  0
+=== END ===
+=== FN 0 START ===
+LOC  0, 0
+LIST 1
+INT  2, 0
+MEMS 1[2], 2
+INT  3, 1
+MEMS 1[3], 2
+INT  3, 420
+INT  4, 2
+MEMS 1[4], 3
+INT  4, 3
+MEMS 1[4], 2
+INT  2, 4
+ARG  1
+ARG  2
+ARG  3
+CALL 0, 0
+OUT  0
+LDN  0
+RTN  0
+=== END ===
