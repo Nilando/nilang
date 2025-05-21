@@ -110,11 +110,10 @@ impl InterferenceGraph {
         self.nodes.get(var).unwrap().as_ref().borrow().reg.unwrap()
     }
 
-    pub fn find_max_clique(&self) -> (Vec<VReg>, Vec<VReg>) {
+    pub fn find_max_clique(&self) -> (usize, Vec<VReg>) {
         let mut remaining_vars = BTreeMap::<VReg, usize>::new();
         let mut max = 0;
         let mut elimination_ordering: Vec<VReg> = vec![];
-        let mut max_clique_start = 0;
 
         for (var, _) in self.nodes.iter() {
             remaining_vars.insert(var.clone(), 0);
@@ -126,7 +125,6 @@ impl InterferenceGraph {
 
             if label > max {
                 max = label;
-                max_clique_start = elimination_ordering.len() - (max + 1)
             }
 
             let node = self.nodes.get(&var).unwrap();
@@ -137,13 +135,7 @@ impl InterferenceGraph {
             }
         }
 
-        let mut max_clique = vec![];
-        let max_clique_size = max + 1;
-        for i in max_clique_start..(max_clique_start + max_clique_size) {
-            max_clique.push(elimination_ordering[i]);
-        }
-
-        (max_clique, elimination_ordering)
+        (max + 1, elimination_ordering)
     }
 
     pub fn color(&mut self, func: &Func, elimination_ordering: Vec<VReg>) {

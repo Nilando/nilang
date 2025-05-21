@@ -24,14 +24,16 @@ enum Local {
 
 pub struct Func {
     id: u64,
+    max_clique: usize,
     locals: Vec<Local>,
     instrs: Vec<ByteCode>
 }
 
 impl Func {
-    pub fn new(id: u64) -> Self {
+    pub fn new(id: u64, max_clique: usize) -> Self {
         Self { 
             id, 
+            max_clique,
             locals: vec![],
             instrs: vec![]
         }
@@ -58,7 +60,7 @@ pub fn generate_func(ir_func: IRFunc) -> Func {
     let mut graph = InterferenceGraph::build(&ir_func);
     let (max_clique, seo) = graph.find_max_clique();
 
-    if max_clique.len() > 256 {
+    if max_clique > 256 {
         // just fail saying function requires too many reigsters
         panic!("function requires too many registers");
     }
@@ -69,13 +71,13 @@ pub fn generate_func(ir_func: IRFunc) -> Func {
     
     graph.best_effort_coalescence(copies);
 
-    let func = generate_bytecode(&ir_func, &graph);
+    let func = generate_bytecode(&ir_func, &graph, max_clique);
 
     func
 }
 
-fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph) -> Func {
-    let mut func = Func::new(ir_func.get_id());
+fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph, max_clique: usize) -> Func {
+    let mut func = Func::new(ir_func.get_id(), max_clique);
     let mut jump_positions: HashMap<BackPatchLabel, Vec<usize>> = HashMap::new();
     let mut label_positions: HashMap<BackPatchLabel, usize> = HashMap::new();
     let mut temp_label_counter = 0;
