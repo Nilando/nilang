@@ -58,7 +58,7 @@ impl Func {
 
 pub fn generate_func(ir_func: IRFunc) -> Func {
     let mut graph = InterferenceGraph::build(&ir_func);
-    let (max_clique, seo) = graph.find_max_clique();
+    let (max_clique, seo) = graph.find_max_clique(); // simplical elimination ordering aka SEO
 
     if max_clique > 256 {
         // just fail saying function requires too many reigsters
@@ -471,8 +471,6 @@ fn back_patch_jump_instructions(
     }
 }
 
-// if the src and dest are both spilled instead of reload instructions
-// we could just ensure that they match to the same memory location
 fn ssa_elimination(instrs: &mut Vec<ByteCode>, next_block: &Block, current_block: &Block, graph: &InterferenceGraph) {
     if next_block.get_phi_nodes().is_empty() {
         return;
@@ -539,44 +537,6 @@ fn ssa_elimination(instrs: &mut Vec<ByteCode>, next_block: &Block, current_block
         }
     }
 }
-
-// ===== PREPPING THE CALL SITE ====
-// idea on how to deal with "prepping the call site"
-// when we have a "load arg" instr but the vm will need to know
-// where to actually load that arg
-// this is what the prep call site op should do
-// it needs to be chosen such that it and every higher register is free
-// we can find the answer to what the lowest register that satisfies that
-// by looking at the interference graph and finding the lowest register of 
-// the node that corresponds to the vreg being called
-//
-// there is a major problem here though
-// say the very topmost register is in use...there would be no valid call site
-//
-// what we can do is insert a copy instruction to copy that register to a lower
-// free register and we can be certain that such a register exists since we
-// are past the spilling phase
-//
-// if any arg or the calling function matches the moved register,
-// make sure to use the new values location
-//
-// then we can insert a prep_call_site with the top most register
-// then we can load all the arguments to the known callsite
-// then we can call the function
-//
-// at which point the return value will be stored in the callsite
-// so if we didn't have to free up the callsite manually here we would 
-// just copy the callsite to the dest register
-//
-// if we did have to do a manual callsite freeing
-// we would then insert a swap instruction to swap back the register we moved
-// with the call site, and then we would copy the call site to the dest register
-//
-// what I didn't mention was how to deal with the Tac::PrepCallSite instruction
-// when creating the interference graph. When we see this instructino during the
-// graph creation process we want to add it into the graph as it represents a register
-// that will need to be used, but when greedy coloring the graph we don't actually want to
-// assign a register as the register will be selected in a different manner.
 
 #[derive(Debug)]
 enum ByteCode {
