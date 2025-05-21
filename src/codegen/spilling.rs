@@ -3,7 +3,7 @@ use super::interference_graph::InterferenceGraph;
 use std::collections::{HashMap, HashSet};
 
 pub fn find_regs_to_spill(func: &Func, clique: Vec<VReg>, interference_graph: &InterferenceGraph) -> Vec<VReg> {
-    let spill_count = clique.len() - 256;
+    let spill_count = clique.len() - 255;
     let mut spill_costs = vec![];
     let loops = find_loops(func);
 
@@ -54,6 +54,7 @@ fn find_loop_factor(block: &Block, loops: &HashMap<BlockId, HashSet<BlockId>>) -
 
 pub fn spill_reg(func: &mut Func, var: VReg, spill_slot: u16) {
     let mut reg_counter = func.get_vreg_counter();
+
     for block in func.get_blocks_mut().iter_mut() {
         let mut new_tac = vec![];
 
@@ -92,6 +93,7 @@ pub fn spill_reg(func: &mut Func, var: VReg, spill_slot: u16) {
                             reg_counter += 1;
                             new_tac.push(Tac::ReloadVar { dest: reg, slot: spill_slot });
                             spill_vreg = Some(reg);
+                            *src = reg;
                         }
                     }
                 }

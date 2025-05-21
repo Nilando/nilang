@@ -35,8 +35,8 @@ block1(lucky_number_1):
 
 block2:
   t3 = "guess the lucky number: "
-  print t3
-  guess_0 = read
+  PRINT t3
+  READ guess_0
   t7 = guess_0 == lucky_number_1
   jnt t7 block5
   next block3
@@ -51,12 +51,12 @@ block5:
 
 block6:
   t9 = "too high!"
-  print t9
+  PRINT t9
   jump block8
 
 block7:
   t11 = "too low :("
-  print t11
+  PRINT t11
   next block8
 
 block8:
@@ -67,6 +67,8 @@ block9:
 
 block10:
   t13 = "You got it!"
-  print t13
+  PRINT t13
+  t15 = null
+  RETURN t15
 
 }

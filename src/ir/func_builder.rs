@@ -282,13 +282,13 @@ pub mod tests {
     #[test]
     fn single_block_cfg() {
         let func = instrs_to_func(vec![
-            Tac::LoadConst { dest: 0, src: TacConst::Null}
+            Tac::LoadConst { dest: 0, src: TacConst::Null},
+            Tac::Return { src: 0 }
         ]);
         let blocks = func.get_blocks();
 
-        assert!(blocks.len() == 1);
-        // assert!(blocks[0].get_id() == ENTRY_BLOCK_ID);
-        assert!(blocks[0].get_instrs().len() == 1);
+        assert_eq!(blocks.len(), 1);
+        assert_eq!(blocks[0].get_instrs().len(), 2);
         assert!(blocks[0].get_predecessors().is_empty());
         assert!(blocks[0].get_successors().is_empty());
         assert!(blocks[0].get_label().is_none());

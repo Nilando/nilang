@@ -676,13 +676,18 @@ pub mod tests {
         let ast = parse_result.value.unwrap();
         let top_level_func = lower_ast(ast, false).pop().unwrap();
 
-        assert_eq!(func_to_string(&expected_func, syms), func_to_string(&top_level_func, syms));
+        let expected_string = func_to_string(&expected_func, syms);
+        let found_string = func_to_string(&top_level_func, syms);
+
+        assert_eq!(expected_string, found_string);
     }
 
     #[test]
     fn expr_stmt_tac() {
         let tac = vec![
-            Tac::LoadConst { dest: 0, src: TacConst::Int(1) }
+            Tac::LoadConst { dest: 0, src: TacConst::Int(1) },
+            Tac::LoadConst { dest: 1, src: TacConst::Null },
+            Tac::Return { src: 1 }
         ];
         let input = "1;";
 
@@ -696,7 +701,9 @@ pub mod tests {
             Tac::LoadConst { dest: 1, src: TacConst::Int(1) },
             Tac::LoadConst { dest: 2, src: TacConst::Int(1) },
             Tac::Binop { dest: 3, lhs: 1, op: Op::Multiply, rhs: 2 },
-            Tac::Binop { dest: 4, lhs: 0, op: Op::Multiply, rhs: 3 }
+            Tac::Binop { dest: 4, lhs: 0, op: Op::Multiply, rhs: 3 },
+            Tac::LoadConst { dest: 5, src: TacConst::Null },
+            Tac::Return { src: 5 }
         ];
         let input = "1 * 1 * 1;";
 
@@ -713,6 +720,8 @@ pub mod tests {
             Tac::MemStore { src: 2, store: 1, key: 3 }, 
             Tac::LoadConst { dest: 4, src: TacConst::Int(0) },
             Tac::MemStore { src: 0, store: 1, key: 4 }, 
+            Tac::LoadConst { dest: 5, src: TacConst::Null },
+            Tac::Return { src: 5 }
         ];
         let input = "[1][0] = 1;";
 
@@ -727,6 +736,8 @@ pub mod tests {
             Tac::LoadConst { dest: 1, src: TacConst::Null },
             Tac::LoadConst { dest: 2, src: TacConst::Sym(syms.get_id("b")) },
             Tac::MemStore { src: 0, store: 1, key: 2 }, 
+            Tac::LoadConst { dest: 3, src: TacConst::Null },
+            Tac::Return { src: 3 },
         ];
         let input = "a.b = 1;";
 
@@ -738,6 +749,8 @@ pub mod tests {
         let mut syms = SymbolMap::new();
         let tac = vec![
             Tac::LoadConst { dest: 1, src: TacConst::Int(1) },
+            Tac::LoadConst { dest: 2, src: TacConst::Null },
+            Tac::Return { src: 2 },
         ];
         let input = "a = 1;";
 
@@ -750,7 +763,9 @@ pub mod tests {
         let tac = vec![
             Tac::LoadConst { dest: 0, src: TacConst::Int(1) },
             Tac::LoadConst { dest: 1, src: TacConst::Sym(syms.get_id("a")) },
-            Tac::StoreGlobal { src: 0, sym:1  }
+            Tac::StoreGlobal { src: 0, sym:1  },
+            Tac::LoadConst { dest: 2, src: TacConst::Null },
+            Tac::Return { src: 2 }
         ];
         let input = "@a = 1;";
 
@@ -783,6 +798,8 @@ pub mod tests {
         let tac = vec![
             Tac::LoadConst { dest: 0, src: TacConst::String("Hello World".to_string()) },
             Tac::Print { src: 0 },
+            Tac::LoadConst { dest: 2, src: TacConst::Null },
+            Tac::Return { src: 2 }
         ];
         let input = "print(\"Hello World\");";
 
@@ -799,6 +816,8 @@ pub mod tests {
             Tac::Jump { label: 2 },
             Tac::Jump { label: 1 },
             Tac::Label { label: 2 },
+            Tac::LoadConst { dest: 1, src: TacConst::Null },
+            Tac::Return { src: 1 }
         ];
         let input = "while true { continue; break; }";
 
@@ -817,6 +836,8 @@ pub mod tests {
             Tac::StoreArg { src: 1, },
             Tac::StoreArg { src: 2, },
             Tac::Call { dest: 4, src: 3, },
+            Tac::LoadConst { dest: 5, src: TacConst::Null },
+            Tac::Return { src: 5 }
         ];
         let input = "a(0, 1, 2);";
 
@@ -829,6 +850,8 @@ pub mod tests {
         let tac = vec![
             Tac::LoadConst { dest: 1, src: TacConst::Int(1) },
             Tac::Copy { dest: 2, src: 1 },
+            Tac::LoadConst { dest: 3, src: TacConst::Null },
+            Tac::Return { src: 3 },
         ];
         let input = "a = 1; b = a;";
 
@@ -843,7 +866,9 @@ pub mod tests {
             Tac::Jnt { label: 1, src: 0 }, 
             Tac::LoadConst { dest: 1, src: TacConst::String(String::from("test")) }, 
             Tac::Print { src: 1 }, 
-            Tac::Label { label: 1 }
+            Tac::Label { label: 1 },
+            Tac::LoadConst { dest: 3, src: TacConst::Null },
+            Tac::Return { src: 3 },
         ];
         let input = "if true { print(\"test\"); }";
 
@@ -855,6 +880,8 @@ pub mod tests {
         let mut syms = SymbolMap::new();
         let tac = vec![
             Tac::LoadConst { dest: 1, src: TacConst::Null }, 
+            Tac::LoadConst { dest: 2, src: TacConst::Null },
+            Tac::Return { src: 2 },
         ];
         let input = "a = null;";
 
@@ -868,6 +895,8 @@ pub mod tests {
             Tac::LoadConst { dest: 0, src: TacConst::Null },
             Tac::LoadConst { dest: 1, src: TacConst::Sym(syms.get_id("c")) }, 
             Tac::MemLoad { dest: 3, store: 0, key: 1 }, 
+            Tac::LoadConst { dest: 4, src: TacConst::Null },
+            Tac::Return { src: 4 },
         ];
         let input = "a = b.c;";
 
@@ -881,6 +910,8 @@ pub mod tests {
             Tac::LoadConst { dest: 0, src: TacConst::Null },
             Tac::LoadConst { dest: 1, src: TacConst::Int(0) }, 
             Tac::MemLoad { dest: 3, store: 0, key: 1 }, 
+            Tac::LoadConst { dest: 4, src: TacConst::Null },
+            Tac::Return { src: 4 },
         ];
         let input = "a = b[0];";
 
@@ -892,7 +923,9 @@ pub mod tests {
         let mut syms = SymbolMap::new();
         let tac = vec![
             Tac::LoadConst { dest: 0, src: TacConst::Sym(syms.get_id("b")) },
-            Tac::LoadGlobal { dest: 2, sym: 0 }
+            Tac::LoadGlobal { dest: 2, sym: 0 },
+            Tac::LoadConst { dest: 3, src: TacConst::Null },
+            Tac::Return { src: 3 },
         ];
         let input = "a = @b;";
 
@@ -908,6 +941,8 @@ pub mod tests {
               Tac::LoadConst { dest: 2, src: TacConst::Int(0) },
               Tac::MemStore { store: 0, key: 1, src: 2 },
               Tac::Copy { dest: 3, src: 0 },
+              Tac::LoadConst { dest: 4, src: TacConst::Null },
+              Tac::Return { src: 4 },
         ];
         let input = "a = { b: 0 };";
 

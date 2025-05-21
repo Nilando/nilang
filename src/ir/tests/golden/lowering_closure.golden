@@ -18,41 +18,43 @@ print(my_counter()); // 3
 
 fn2 () {
 block0:
-  LOAD_UPVAL count_0, #count
+  LOAD_UPVAL count_0
   t1 = #val
   t2 = count_0[t1]
   t3 = 1
   t4 = t2 + t3
-  LOAD_UPVAL count_1, #count
+  LOAD_UPVAL count_1
   t5 = #val
   count_1[t5] = t4
-  LOAD_UPVAL count_2, #count
+  LOAD_UPVAL count_2
   t6 = #val
   t7 = count_2[t6]
-  return t7
+  RETURN t7
 
 }
 fn1 () {
 block0:
-  t0 = new_map
+  t0 = NEW_MAP
   t1 = #val
   t2 = 0
   t0[t1] = t2
   count_0 = t0
   t4 = fn(2)
   STORE_UPVAL t4, count_0
-  return t4
+  RETURN t4
 
 }
 MAIN () {
 block0:
   new_counter_0 = fn(1)
-  my_counter_0 = call new_counter_0
-  t3 = call my_counter_0
-  print t3
-  t5 = call my_counter_0
-  print t5
-  t7 = call my_counter_0
-  print t7
+  my_counter_0 = CALL new_counter_0
+  t3 = CALL my_counter_0
+  PRINT t3
+  t5 = CALL my_counter_0
+  PRINT t5
+  t7 = CALL my_counter_0
+  PRINT t7
+  t9 = null
+  RETURN t9
 
 }

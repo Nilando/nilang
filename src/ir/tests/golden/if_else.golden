@@ -30,6 +30,8 @@ block2:
   next block3(msg_0)
 
 block3(msg_1):
-  print msg_1
+  PRINT msg_1
+  t11 = null
+  RETURN t11
 
 }

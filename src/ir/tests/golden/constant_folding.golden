@@ -18,6 +18,8 @@ print(h);
 MAIN () {
 block0:
   h_0 = true
-  print h_0
+  PRINT h_0
+  t22 = null
+  RETURN t22
 
 }

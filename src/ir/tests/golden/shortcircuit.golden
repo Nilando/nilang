@@ -17,29 +17,31 @@ block1:
   c_0 = null
   d_0 = null
   t7 = c_0 == d_0
-  t15 = t7
-  next block2(t15)
+  t16 = t7
+  next block2(t16)
 
-block2(t12):
-  t0 = t12
-  jit t12 block4(t0)
+block2(t13):
+  t0 = t13
+  jit t13 block4(t0)
   next block3
 
 block3:
   e_0 = null
   f_0 = null
   t10 = e_0 == f_0
-  t14 = t10
-  next block4(t14)
+  t15 = t10
+  next block4(t15)
 
-block4(t13):
-  jnt t13 block6
+block4(t14):
+  jnt t14 block6
   next block5
 
 block5:
   t11 = true
-  return t11
+  RETURN t11
 
 block6:
+  t12 = null
+  RETURN t12
 
 }
