@@ -7,13 +7,13 @@ use std::collections::HashMap;
 
 pub use interference_graph::{InterferenceGraph, find_copy_edges};
 
-use crate::ir::{self, Block, Func as IRFunc, LabelID, Tac, TacConst};
-use crate::parser::Op;
+use crate::ir::{Block, Func as IRFunc, LabelID, Tac, TacConst};
+use crate::parser::{Op, PackedSpans};
 
 use self::interference_graph::Reg;
 
 
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq)]
 enum Local {
     FuncId(u64),
     Int(i64),
@@ -22,11 +22,13 @@ enum Local {
     String(String)
 }
 
+#[derive(Debug)]
 pub struct Func {
     id: u64,
     max_clique: usize,
     locals: Vec<Local>,
-    instrs: Vec<ByteCode>
+    instrs: Vec<ByteCode>,
+    spans: PackedSpans
 }
 
 impl Func {
@@ -35,7 +37,8 @@ impl Func {
             id, 
             max_clique,
             locals: vec![],
-            instrs: vec![]
+            instrs: vec![],
+            spans: PackedSpans::new()
         }
     }
 
@@ -82,7 +85,9 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph, max_clique: us
     let mut temp_label_counter = 0;
 
     for block in ir_func.get_blocks() {
-        for instr in block.get_instrs() {
+        let spans = block.get_spans();
+        for (idx, instr) in block.get_instrs().iter().enumerate() {
+            let span = spans.get(idx);
             let bytecode = 
             match instr {
                 Tac::Noop => ByteCode::Noop,
@@ -403,7 +408,12 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph, max_clique: us
 
             };
 
-            func.instrs.push(bytecode)
+            func.instrs.push(bytecode);
+
+            if let Some(s) = span {
+                let i = func.instrs.len();
+                func.spans.push(*s, i);
+            }
         }
 
         if let Some(id) = block.falls_through() {

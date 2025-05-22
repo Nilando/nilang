@@ -44,6 +44,10 @@ impl Block {
         self.label
     }
 
+    pub fn get_spans(&self) -> &PackedSpans {
+        &self.spans
+    }
+
     pub fn get_instrs(&self) -> &Vec<Tac> {
         &self.instrs
     }
