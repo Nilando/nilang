@@ -8,8 +8,18 @@ fn farenheit_to_celsius() {
 }
 
 #[test]
+fn something_wrong() {
+  super::test_golden_bytecode("./src/codegen/tests/golden/something_wrong.golden")
+}
+
+#[test]
 fn powers_of_two() {
   super::test_golden_bytecode("./src/codegen/tests/golden/powers_of_two.golden")
+}
+
+#[test]
+fn rotate_array() {
+  super::test_golden_bytecode("./src/codegen/tests/golden/rotate_array.golden")
 }
 
 #[test]

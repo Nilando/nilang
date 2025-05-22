@@ -1,0 +1,42 @@
+OPT=true
+%%%%
+print("is something wrong?");
+
+if read == "no" {
+  print("Good.");
+  return;
+}
+
+print("can you do something about it?");
+
+if read == "no" {
+  print("Don't worry about it.");
+} else {
+  print("Do something about it");
+}
+
+%%%%
+
+=== FN 0 START ===
+LOC  1, 0
+OUT  1
+READ 2
+LOC  1, 1
+EQ   2, 2, 1
+JNT  4, 2
+LOC  1, 2
+OUT  1
+RTN  0
+LOC  0, 3
+OUT  0
+READ 0
+EQ   0, 0, 1
+JNT  4, 0
+LOC  0, 4
+OUT  0
+JMP  3
+LOC  0, 5
+OUT  0
+LDN  0
+RTN  0
+=== END ===
