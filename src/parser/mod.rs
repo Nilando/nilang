@@ -77,10 +77,11 @@ impl<'a> ParseContext<'a> {
     }
 }
 
-#[derive(Debug)]
+#[derive(PartialEq, Debug)]
 pub enum ParseError {
     LexError(LexError),
     Expected { msg: String, found: String },
+    DuplicateArgs,
 }
 
 #[derive(Clone)]
@@ -372,16 +373,42 @@ pub(self) fn symbol<'a>() -> Parser<'a, SymID> {
 pub(self) fn inputs<'a>() -> Parser<'a, Spanned<Vec<SymID>>> {
     let left_paren = ctrl(Ctrl::LeftParen);
     let right_paren = ctrl(Ctrl::RightParen).expect("Expected ')', found something else");
-    let parsed_args = inner_inputs();
+    let parsed_args = inner_inputs()
+        .or(nothing().map(|_| vec![]))
+        .spanned();
 
     parsed_args.delimited(left_paren, right_paren)
 }
 
-pub(self) fn inner_inputs<'a>() -> Parser<'a, Spanned<Vec<SymID>>> {
-    symbol()
-        .delimited_list(ctrl(Ctrl::Comma))
-        .or(nothing().map(|_| vec![]))
-        .spanned()
+pub(self) fn inner_inputs<'a>() -> Parser<'a, Vec<SymID>> {
+    Parser::new(move |ctx| {
+        let symbol = symbol().spanned();
+        let comma = ctrl(Ctrl::Comma);
+        let mut items = vec![];
+
+        let first = symbol.parse(ctx)?;
+        items.push(first.item);
+
+        loop {
+            if let Some(_) = comma.parse(ctx) {
+                if let Some(next) = symbol.parse(ctx) {
+                    if items.contains(&next.item) {
+                        let error = ParseError::DuplicateArgs;
+
+                        ctx.add_err(Spanned::new(error, next.span));
+                    }
+
+                    items.push(next.item);
+                } else {
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+
+        Some(items)
+    }) 
 }
 
 pub(self) fn block(sp: Parser<'_, Stmt>) -> Parser<'_, Vec<Stmt>> {

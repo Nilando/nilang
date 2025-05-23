@@ -294,4 +294,13 @@ mod tests {
 
         assert_eq!(result.value.unwrap(), expected);
     }
+
+    #[test]
+    fn duplicate_args_error() {
+        let mut syms = SymbolMap::new();
+        let input = "fn test(a, a) {}";
+        let mut result = stmt().parse_str(input, &mut syms);
+
+        assert_eq!(result.errors.pop().unwrap().item, ParseError::DuplicateArgs);
+    }
 }
