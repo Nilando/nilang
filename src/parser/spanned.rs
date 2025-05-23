@@ -74,6 +74,7 @@ impl PackedSpans {
             if k + 1 == self.spans.len() {
                 return Some(&span);
             }
+
             let span_end = &self.spans[k + 1].1;
             if i >= *span_start && i < *span_end {
                 return Some(&span);
@@ -86,17 +87,18 @@ impl PackedSpans {
     pub fn remove(&mut self, i: usize) {
         let mut remove_span = None;
         for k in 0..self.spans.len() {
-            let (_, mut span_start) = &mut self.spans[k];
-            if span_start > i {
-                span_start -= 1;
+            let (_, start) = &mut self.spans[k];
+            if i < *start {
+                *start -= 1;
             }
 
+            let start = *start;
             if k + 1 == self.spans.len() {
                 continue;
             }
 
-            let span_end = &mut self.spans[k + 1].1;
-            if span_start + 1 == *span_end {
+            let (_, span_end) = self.spans[k + 1];
+            if start + 1 == span_end {
                 remove_span = Some(k);
             }
         }
@@ -201,23 +203,66 @@ mod tests {
         ps.push(Span { start: 2, end: 2}, 2);
         ps.remove(1);
 
-        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 2, end: 2}, 2));
+        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 2, end: 2}, 1));
         assert_eq!(ps.spans.pop().unwrap(), (Span { start: 0, end: 0}, 0));
     }
 
-    /*
     #[test]
-    fn removing_first_item_in_span() {
+    fn removing_past_span_end() {
+        let mut ps = PackedSpans::new();
+
+        ps.push(Span { start: 0, end: 0}, 0);
+        ps.remove(10);
+
+        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 0, end: 0}, 0));
+    }
+
+    #[test]
+    fn removing_before_span_start() {
+        let mut ps = PackedSpans::new();
+
+        ps.push(Span { start: 0, end: 0}, 1);
+        ps.remove(0);
+
+        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 0, end: 0}, 0));
+    }
+
+    #[test]
+    fn removing_span_completely() {
+        let mut ps = PackedSpans::new();
+
+        ps.push(Span { start: 0, end: 0}, 0);
+        ps.push(Span { start: 1, end: 1}, 1);
+        ps.push(Span { start: 2, end: 2}, 2);
+        ps.push(Span { start: 3, end: 3}, 3);
+        ps.remove(1);
+
+        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 3, end: 3}, 2));
+        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 2, end: 2}, 1));
+        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 0, end: 0}, 0));
+    }
+
+    #[test]
+    fn removing_start_of_span() {
         let mut ps = PackedSpans::new();
 
         ps.push(Span { start: 0, end: 0}, 10);
         ps.push(Span { start: 1, end: 1}, 20);
         ps.remove(10);
 
-        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 1, end: 1}, 20));
-        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 0, end: 0}, 11));
+        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 1, end: 1}, 19));
+        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 0, end: 0}, 10));
     }
-    */
+
+    #[test]
+    fn removing_start_of_lone_span() {
+        let mut ps = PackedSpans::new();
+
+        ps.push(Span { start: 0, end: 0}, 10);
+        ps.remove(10);
+
+        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 0, end: 0}, 10));
+    }
 
     #[test]
     fn push_wrapping_span() {

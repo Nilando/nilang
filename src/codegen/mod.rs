@@ -408,10 +408,10 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph, max_clique: us
 
             };
 
+            let i = func.instrs.len();
             func.instrs.push(bytecode);
 
             if let Some(s) = span {
-                let i = func.instrs.len();
                 func.spans.push(*s, i);
             }
         }
