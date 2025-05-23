@@ -6,58 +6,10 @@ mod tests;
 use std::collections::HashMap;
 
 pub use interference_graph::{InterferenceGraph, find_copy_edges};
+pub use crate::runtime::vm::{ByteCode, Func, Local};
 
 use crate::ir::{Block, Func as IRFunc, LabelID, Tac, TacConst};
-use crate::parser::{Op, PackedSpans};
-
-use self::interference_graph::Reg;
-
-
-#[derive(Debug, PartialEq)]
-enum Local {
-    FuncId(u64),
-    Int(i64),
-    Float(f64),
-    Sym(u64),
-    String(String)
-}
-
-#[derive(Debug)]
-pub struct Func {
-    id: u64,
-    max_clique: usize,
-    locals: Vec<Local>,
-    instrs: Vec<ByteCode>,
-    spans: PackedSpans
-}
-
-impl Func {
-    pub fn new(id: u64, max_clique: usize) -> Self {
-        Self { 
-            id, 
-            max_clique,
-            locals: vec![],
-            instrs: vec![],
-            spans: PackedSpans::new()
-        }
-    }
-
-    fn len(&self) -> usize {
-        self.instrs.len()
-    }
-
-    fn get_local(&self, local: &Local) -> Option<u16> {
-        self.locals.iter().position(|l| l == local).map(|id|  {
-            u16::try_from(id).unwrap()
-        })
-    }
-
-    fn push_local(&mut self, local: Local) -> u16 {
-        let id = self.locals.len();
-        self.locals.push(local);
-        u16::try_from(id).unwrap()
-    }
-}
+use crate::parser::{Op};
 
 pub fn generate_func(ir_func: IRFunc) -> Func {
     let mut graph = InterferenceGraph::build(&ir_func);
@@ -122,21 +74,21 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph, max_clique: us
                         original_label
                     };
 
-                    push_generic_jump_instr(instr, &mut func.instrs, &mut jump_positions, jump_label);
+                    push_generic_jump_instr(instr, &mut func, &mut jump_positions, jump_label);
 
                     let next_block = ir_func.get_block(block.get_id() + 1);
-                    ssa_elimination(&mut func.instrs, next_block, block, graph);
+                    ssa_elimination(&mut func, next_block, block, graph);
                     let fall_through_label = BackPatchLabel::Temp(temp_label_counter);
                     temp_label_counter += 1;
 
                     if !jump_block.get_phi_nodes().is_empty() {
                         label_positions.insert(jump_label, func.len());
 
-                        push_jump_instr(&mut func.instrs, &mut jump_positions, fall_through_label);
+                        push_jump_instr(&mut func, &mut jump_positions, fall_through_label);
 
-                        ssa_elimination(&mut func.instrs, jump_block, block, graph);
+                        ssa_elimination(&mut func, jump_block, block, graph);
 
-                        push_jump_instr(&mut func.instrs, &mut jump_positions, original_label);
+                        push_jump_instr(&mut func, &mut jump_positions, original_label);
 
                         label_positions.insert(fall_through_label, func.len());
                     }
@@ -148,9 +100,9 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph, max_clique: us
                     let next_block = ir_func.get_block(next_block_id);
                     let original_label = BackPatchLabel::Label(*label);
 
-                    ssa_elimination(&mut func.instrs, next_block, block, graph);
+                    ssa_elimination(&mut func, next_block, block, graph);
 
-                    push_jump_instr(&mut func.instrs, &mut jump_positions, original_label);
+                    push_jump_instr(&mut func, &mut jump_positions, original_label);
                     continue;
                 }
                 Tac::Copy { dest, src } => {
@@ -408,21 +360,16 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph, max_clique: us
 
             };
 
-            let i = func.instrs.len();
-            func.instrs.push(bytecode);
-
-            if let Some(s) = span {
-                func.spans.push(*s, i);
-            }
+            func.push_instr_spanned(bytecode, span.copied());
         }
 
         if let Some(id) = block.falls_through() {
             let next_block = ir_func.get_block(id);
-            ssa_elimination(&mut func.instrs, next_block, block, graph);
+            ssa_elimination(&mut func, next_block, block, graph);
         } 
     }
 
-    back_patch_jump_instructions(&mut func.instrs, label_positions, jump_positions);
+    back_patch_jump_instructions(&mut func, label_positions, jump_positions);
 
     func
 }
@@ -433,16 +380,16 @@ enum BackPatchLabel {
     Temp(usize),
 }
 
-fn push_jump_instr(instrs: &mut Vec<ByteCode>, jump_positions: &mut HashMap<BackPatchLabel, Vec<usize>>, label: BackPatchLabel) {
+fn push_jump_instr(func: &mut Func, jump_positions: &mut HashMap<BackPatchLabel, Vec<usize>>, label: BackPatchLabel) {
     let instr = ByteCode::Jump { offset: 0 };
 
-    push_generic_jump_instr(instr, instrs, jump_positions, label);
+    push_generic_jump_instr(instr, func, jump_positions, label);
 }
 
-fn push_generic_jump_instr(instr: ByteCode, instrs: &mut Vec<ByteCode>, jump_positions: &mut HashMap<BackPatchLabel, Vec<usize>>, label: BackPatchLabel) {
-    let position = instrs.len();
+fn push_generic_jump_instr(instr: ByteCode, func: &mut Func, jump_positions: &mut HashMap<BackPatchLabel, Vec<usize>>, label: BackPatchLabel) {
+    let position = func.len();
 
-    instrs.push(instr);
+    func.push_instr(instr);
 
     if let Some(positions) = jump_positions.get_mut(&label) {
         positions.push(position);
@@ -452,10 +399,11 @@ fn push_generic_jump_instr(instr: ByteCode, instrs: &mut Vec<ByteCode>, jump_pos
 }
 
 fn back_patch_jump_instructions(
-    instrs: &mut Vec<ByteCode>, 
+    func: &mut Func, 
     label_positions: HashMap<BackPatchLabel, usize>,
     jump_positions: HashMap<BackPatchLabel, Vec<usize>>,
 ) {
+    let instrs = func.get_instrs_mut();
     for (label, positions) in jump_positions.iter() {
         let label_position = label_positions.get(label).unwrap();
 
@@ -480,7 +428,7 @@ fn back_patch_jump_instructions(
     }
 }
 
-fn ssa_elimination(instrs: &mut Vec<ByteCode>, next_block: &Block, current_block: &Block, graph: &InterferenceGraph) {
+fn ssa_elimination(func: &mut Func, next_block: &Block, current_block: &Block, graph: &InterferenceGraph) {
     if next_block.get_phi_nodes().is_empty() {
         return;
     }
@@ -518,7 +466,7 @@ fn ssa_elimination(instrs: &mut Vec<ByteCode>, next_block: &Block, current_block
             src,
         };
 
-        instrs.push(copy_instr);
+        func.push_instr(copy_instr);
 
         if copy_pairs.iter().find(|(s, _)| *s == src).is_none() {
             if copy_pairs.iter().find(|(_, d)| src == *d).is_some() {
@@ -537,7 +485,8 @@ fn ssa_elimination(instrs: &mut Vec<ByteCode>, next_block: &Block, current_block
             r1: dest,
             r2: src,
         };
-        instrs.push(swap_instr);
+
+        func.push_instr(swap_instr);
 
         for (s, _) in copy_pairs.iter_mut() {
             if *s == dest {
@@ -545,191 +494,4 @@ fn ssa_elimination(instrs: &mut Vec<ByteCode>, next_block: &Block, current_block
             }
         }
     }
-}
-
-#[derive(Debug)]
-enum ByteCode {
-    Noop,
-    Swap {
-        r1: Reg,
-        r2: Reg,
-    },
-    Copy {
-        dest: Reg,
-        src: Reg
-    },
-    Print {
-        src: Reg,
-    },
-    Read {
-        dest: Reg,
-    },
-    LoadGlobal {
-        dest: Reg,
-        sym: Reg,
-    },
-    StoreGlobal {
-        src: Reg,
-        sym: Reg,
-    },
-    MemLoad {
-        dest: Reg,
-        store: Reg,
-        key: Reg,
-    },
-    MemStore {
-        store: Reg,
-        key: Reg,
-        src: Reg,
-    },
-    NewList {
-        dest: Reg,
-    },
-    NewMap {
-        dest: Reg,
-    },
-    LoadBool {
-        dest: Reg,
-        val: bool
-    },
-    LoadNull {
-        dest: Reg,
-    },
-    LoadInt {
-        dest: Reg,
-        val: i16
-    },
-    LoadSym {
-        dest: Reg,
-        val: u16
-    },
-    LoadLocal {
-        dest: Reg,
-        id: u16
-    },
-    LoadUpvalue {
-        dest: Reg,
-        id: u16
-    },
-    StoreUpvalue {
-        func: Reg,
-        src: Reg
-    },
-    Equality {
-        dest: Reg,
-        lhs: Reg,
-        rhs: Reg,
-    },
-    Inequality {
-        dest: Reg,
-        lhs: Reg,
-        rhs: Reg,
-    },
-    Gt {
-        dest: Reg,
-        lhs: Reg,
-        rhs: Reg,
-    },
-    Lt {
-        dest: Reg,
-        lhs: Reg,
-        rhs: Reg,
-    },
-    Div {
-        dest: Reg,
-        lhs: Reg,
-        rhs: Reg,
-    },
-    Mult {
-        dest: Reg,
-        lhs: Reg,
-        rhs: Reg,
-    },
-    Add {
-        dest: Reg,
-        lhs: Reg,
-        rhs: Reg,
-    },
-    Sub {
-        dest: Reg,
-        lhs: Reg,
-        rhs: Reg,
-    },
-    Modulo {
-        dest: Reg,
-        lhs: Reg,
-        rhs: Reg,
-    },
-    StoreArg {
-        src: Reg,
-    },
-    Call {
-        dest: Reg,
-        src: Reg,
-    },
-    Return {
-        src: Reg,
-    },
-    Jump {
-        offset: i16
-    },
-    Jnt {
-        src: Reg,
-        offset: i16
-    },
-    Jit {
-        src: Reg,
-        offset: i16
-    },
-}
-
-pub fn func_to_string(func: &Func) -> String {
-    let mut result = String::new();
-
-    result.push_str(&format!("=== FN {} START ===\n", func.id));
-    for instr in func.instrs.iter() {
-        let s =
-        match instr {
-            ByteCode::Jump { offset } =>               format!("JMP  {offset}"),
-            ByteCode::Jnt { src, offset } =>           format!("JNT  {offset}, {src}"),
-            ByteCode::Jit { src, offset } =>           format!("JIT  {offset}, {src}"),
-            ByteCode::StoreArg { src } =>              format!("ARG  {src }"),
-            ByteCode::Call { dest, src } =>            format!("CALL {dest}, {src }"),
-            ByteCode::Return { src } =>                format!("RTN  {src }"),
-            ByteCode::LoadBool { dest, val } =>        format!("BOOL {dest}, {val}"),
-            ByteCode::LoadInt { dest, val } =>         format!("INT  {dest}, {val}"),
-            ByteCode::LoadSym { dest, val } =>         format!("SYM  {dest}, #{val}"),
-            ByteCode::LoadLocal { dest, id } =>        format!("LOC  {dest}, {id}"),
-            ByteCode::LoadNull { dest } =>             format!("LDN  {dest}"),
-            ByteCode::LoadUpvalue { dest, id } =>      format!("LDUV {dest}, {id}"),
-            ByteCode::StoreUpvalue { func, src } =>    format!("STUV {func}, {src}"),
-            ByteCode::Print { src } =>                 format!("OUT  {src }"),
-            ByteCode::Read { dest } =>                 format!("READ {dest}"),
-            ByteCode::Lt { dest, lhs, rhs } =>         format!("LT   {dest}, {lhs}, {rhs}"),
-            ByteCode::Gt { dest, lhs, rhs } =>         format!("GT   {dest}, {lhs}, {rhs}"),
-            ByteCode::Inequality { dest, lhs, rhs } => format!("NEQ  {dest}, {lhs}, {rhs}"),
-            ByteCode::Equality { dest, lhs, rhs } =>   format!("EQ   {dest}, {lhs}, {rhs}"),
-            ByteCode::Mult { dest, lhs, rhs } =>       format!("MULT {dest}, {lhs}, {rhs}"),
-            ByteCode::Div { dest, lhs, rhs } =>        format!("DIV  {dest}, {lhs}, {rhs}"),
-            ByteCode::Add { dest, lhs, rhs } =>        format!("ADD  {dest}, {lhs}, {rhs}"),
-            ByteCode::Sub { dest, lhs, rhs } =>        format!("SUB  {dest}, {lhs}, {rhs}"),
-            ByteCode::Modulo { dest, lhs, rhs } =>     format!("MOD  {dest}, {lhs}, {rhs}"),
-            ByteCode::Copy { dest, src } =>            format!("COPY {dest}, {src}"),
-            ByteCode::Swap { r1, r2 } =>               format!("SWAP {r1  }, {r2 }"),
-            ByteCode::NewList { dest } =>              format!("LIST {dest}"),
-            ByteCode::NewMap { dest } =>               format!("MAP  {dest}"),
-            ByteCode::MemLoad { dest, store, key } =>  format!("MEML {dest}, {store}[{key}]"),
-            ByteCode::MemStore { store, key, src } =>  format!("MEMS {store}[{key}], {src}"),
-            ByteCode::LoadGlobal { dest, sym } =>      format!("LDGB {dest}, #{sym}"),
-            ByteCode::StoreGlobal { sym, src } =>      format!("STGB {src}, #{sym}"),
-            ByteCode::Noop => format!("NOOP"),
-        };
-
-        result.push_str(&s);
-        result.push('\n');
-    }
-
-    result.push_str(&format!("=== END ===\n"));
-
-    result
 }

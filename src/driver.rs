@@ -1,6 +1,7 @@
 mod config;
 
-use crate::codegen::{generate_func, func_to_string as bytecode_to_string};
+use crate::runtime::vm::{func_to_string as bytecode_to_string};
+use crate::codegen::generate_func;
 use crate::parser::{parse_program, ParseError, Spanned};
 use crate::symbol_map::SymbolMap;
 use crate::ir::{func_to_string, lower_ast, optimize_func};

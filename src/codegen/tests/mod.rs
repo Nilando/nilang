@@ -6,7 +6,8 @@ use crate::symbol_map::SymbolMap;
 use crate::ir::{lower_ast, optimize_func};
 use pretty_assertions::assert_eq;
 //use super::super::bytecode_to_string;
-use crate::codegen::{generate_func, func_to_string as bytecode_to_string};
+use crate::codegen::generate_func;
+use crate::runtime::vm::func_to_string as bytecode_to_string;
 
 pub(self) fn test_golden_bytecode(filename: &str) {
     let file = File::open(filename).expect("test file exists");
