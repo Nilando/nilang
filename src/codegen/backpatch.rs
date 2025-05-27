@@ -42,47 +42,42 @@ impl BackpatchContext {
     }
 
     pub fn apply_patches(self, func: &mut Func) {
-        back_patch_jump_instructions(func, self.label_positions, self.jump_positions);
-    }
-}
+        let instrs = func.get_instrs_mut();
+        for (label, positions) in self.jump_positions.iter() {
+            let label_position = self.label_positions.get(label).unwrap();
 
-pub fn push_jump_instr(func: &mut Func, ctx: &mut BackpatchContext, label: BackPatchLabel) {
-    let instr = ByteCode::Jump { offset: 0 };
-    push_generic_jump_instr(instr, func, ctx, label);
-}
+            for jump_pos in positions.iter() {
+                match &mut instrs[*jump_pos] {
+                    ByteCode::Jnt { offset, .. } |
+                    ByteCode::Jit { offset, .. } |
+                    ByteCode::Jump { offset } => {
+                        let abs_diff: usize = label_position.abs_diff(*jump_pos);
+                        let signed_offset: isize =
+                        if *label_position < *jump_pos {
+                            isize::try_from(abs_diff).unwrap() * -1
+                        } else {
+                            isize::try_from(abs_diff).unwrap()
+                        };
 
-pub fn push_generic_jump_instr(instr: ByteCode, func: &mut Func, ctx: &mut BackpatchContext, label: BackPatchLabel) {
-    let position = func.len();
-    func.push_instr(instr);
-    ctx.add_jump_position(label, position);
-}
-
-pub fn back_patch_jump_instructions(
-    func: &mut Func, 
-    label_positions: HashMap<BackPatchLabel, usize>,
-    jump_positions: HashMap<BackPatchLabel, Vec<usize>>,
-) {
-    let instrs = func.get_instrs_mut();
-    for (label, positions) in jump_positions.iter() {
-        let label_position = label_positions.get(label).unwrap();
-
-        for jump_pos in positions.iter() {
-            match &mut instrs[*jump_pos] {
-                ByteCode::Jnt { offset, .. } |
-                ByteCode::Jit { offset, .. } |
-                ByteCode::Jump { offset } => {
-                    let abs_diff: usize = label_position.abs_diff(*jump_pos);
-                    let signed_offset: isize =
-                    if *label_position < *jump_pos {
-                        isize::try_from(abs_diff).unwrap() * -1
-                    } else {
-                        isize::try_from(abs_diff).unwrap()
-                    };
-
-                    *offset = i16::try_from(signed_offset).unwrap();
+                        *offset = i16::try_from(signed_offset).unwrap();
+                    }
+                    _ => panic!("CODEGEN ERROR during Back Patching")
                 }
-                _ => panic!("CODEGEN ERROR during Back Patching")
             }
         }
     }
+
+    pub fn push_jump_instr(&mut self, func: &mut Func, label: BackPatchLabel) {
+        let instr = ByteCode::Jump { offset: 0 };
+
+        self.push_generic_jump_instr(instr, func, label);
+    }
+
+    pub fn push_generic_jump_instr(&mut self, instr: ByteCode, func: &mut Func, label: BackPatchLabel) {
+        let position = func.len();
+
+        func.push_instr(instr);
+        self.add_jump_position(label, position);
+    }
 }
+

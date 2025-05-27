@@ -2,7 +2,7 @@ use crate::ir::{Block, Func as IRFunc, LabelID, Tac, VReg};
 use crate::runtime::vm::{ByteCode, Func};
 use crate::codegen::{InterferenceGraph};
 use crate::codegen::ssa_elimination::ssa_elimination;
-use crate::codegen::backpatch::{BackPatchLabel, BackpatchContext, push_jump_instr, push_generic_jump_instr};
+use crate::codegen::backpatch::{BackPatchLabel, BackpatchContext};
 
 pub fn handle_control_flow_instruction(
     instr: &Tac, 
@@ -61,17 +61,17 @@ fn handle_conditional_jump(
         ctx.next_temp_label()
     };
 
-    push_generic_jump_instr(bytecode_instr, func, ctx, jump_label);
+    ctx.push_generic_jump_instr(bytecode_instr, func, jump_label);
 
     let next_block = ir_func.get_block(current_block.get_id() + 1);
     ssa_elimination(func, next_block, current_block, graph);
     let fall_through_label = ctx.next_temp_label();
 
     if !jump_block.get_phi_nodes().is_empty() {
-        push_jump_instr(func, ctx, fall_through_label);
+        ctx.push_jump_instr(func, fall_through_label);
         ctx.insert_label_position(jump_label, func.len());
         ssa_elimination(func, jump_block, current_block, graph);
-        push_jump_instr(func, ctx, original_label);
+        ctx.push_jump_instr(func, original_label);
         ctx.insert_label_position(fall_through_label, func.len());
     }
 }
@@ -89,7 +89,7 @@ fn handle_unconditional_jump(
     let original_label = BackPatchLabel::Label(label);
 
     ssa_elimination(func, next_block, current_block, graph);
-    push_jump_instr(func, ctx, original_label);
+    ctx.push_jump_instr(func, original_label);
 }
 
 pub fn handle_block_fall_through(
