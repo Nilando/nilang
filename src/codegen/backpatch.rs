@@ -8,22 +8,53 @@ pub enum BackPatchLabel {
     Temp(usize),
 }
 
-pub fn push_jump_instr(func: &mut Func, jump_positions: &mut HashMap<BackPatchLabel, Vec<usize>>, label: BackPatchLabel) {
-    let instr = ByteCode::Jump { offset: 0 };
-
-    push_generic_jump_instr(instr, func, jump_positions, label);
+pub struct BackpatchContext {
+    jump_positions: HashMap<BackPatchLabel, Vec<usize>>,
+    label_positions: HashMap<BackPatchLabel, usize>,
+    temp_label_counter: usize,
 }
 
-pub fn push_generic_jump_instr(instr: ByteCode, func: &mut Func, jump_positions: &mut HashMap<BackPatchLabel, Vec<usize>>, label: BackPatchLabel) {
-    let position = func.len();
-
-    func.push_instr(instr);
-
-    if let Some(positions) = jump_positions.get_mut(&label) {
-        positions.push(position);
-    } else {
-        jump_positions.insert(label, vec![position]);
+impl BackpatchContext {
+    pub fn new() -> Self {
+        Self {
+            jump_positions: HashMap::new(),
+            label_positions: HashMap::new(),
+            temp_label_counter: 0,
+        }
     }
+
+    pub fn insert_label_position(&mut self, label: BackPatchLabel, position: usize) {
+        self.label_positions.insert(label, position);
+    }
+
+    pub fn add_jump_position(&mut self, label: BackPatchLabel, position: usize) {
+        if let Some(positions) = self.jump_positions.get_mut(&label) {
+            positions.push(position);
+        } else {
+            self.jump_positions.insert(label, vec![position]);
+        }
+    }
+
+    pub fn next_temp_label(&mut self) -> BackPatchLabel {
+        let label = BackPatchLabel::Temp(self.temp_label_counter);
+        self.temp_label_counter += 1;
+        label
+    }
+
+    pub fn apply_patches(self, func: &mut Func) {
+        back_patch_jump_instructions(func, self.label_positions, self.jump_positions);
+    }
+}
+
+pub fn push_jump_instr(func: &mut Func, ctx: &mut BackpatchContext, label: BackPatchLabel) {
+    let instr = ByteCode::Jump { offset: 0 };
+    push_generic_jump_instr(instr, func, ctx, label);
+}
+
+pub fn push_generic_jump_instr(instr: ByteCode, func: &mut Func, ctx: &mut BackpatchContext, label: BackPatchLabel) {
+    let position = func.len();
+    func.push_instr(instr);
+    ctx.add_jump_position(label, position);
 }
 
 pub fn back_patch_jump_instructions(

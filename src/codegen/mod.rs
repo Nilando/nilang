@@ -2,19 +2,18 @@ mod interference_graph;
 mod translator;
 mod ssa_elimination;
 mod backpatch;
+mod control_flow_translator;
 
 #[cfg(test)]
 mod tests;
 
-use std::collections::HashMap;
-
 pub use interference_graph::{InterferenceGraph, find_copy_edges};
-pub use crate::runtime::vm::{ByteCode, Func};
-use translator::ByteCodeTranslator;
-use ssa_elimination::ssa_elimination;
-use backpatch::{BackPatchLabel, push_jump_instr, push_generic_jump_instr, back_patch_jump_instructions};
+pub use crate::runtime::vm::Func;
+use translator::translate_tac;
+use backpatch::BackpatchContext;
+use control_flow_translator::{handle_control_flow_instruction, handle_block_fall_through};
 
-use crate::ir::{Block, Func as IRFunc, LabelID, Tac};
+use crate::ir::Func as IRFunc;
 
 pub fn generate_func(ir_func: IRFunc) -> Func {
     let mut graph = InterferenceGraph::build(&ir_func);
@@ -37,93 +36,40 @@ pub fn generate_func(ir_func: IRFunc) -> Func {
 
 fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph, max_clique: usize) -> Func {
     let mut func = Func::new(ir_func.get_id(), max_clique);
-    let mut jump_positions: HashMap<BackPatchLabel, Vec<usize>> = HashMap::new();
-    let mut label_positions: HashMap<BackPatchLabel, usize> = HashMap::new();
-    let mut temp_label_counter = 0;
+    let mut backpatch_ctx = BackpatchContext::new();
 
     for block in ir_func.get_blocks() {
         let spans = block.get_spans();
+
         for (idx, instr) in block.get_instrs().iter().enumerate() {
             let span = spans.get(idx);
             
             // Try to translate simple TAC instructions first
-            let mut translator = ByteCodeTranslator::new(graph, &mut func);
-            if let Some(bytecode) = translator.translate_tac(instr) {
+            if let Some(bytecode) = translate_tac(instr, graph, &mut func) {
                 func.push_instr_spanned(bytecode, span.copied());
                 continue;
             }
             
             // Handle complex control flow instructions
-            match instr {
-                Tac::Label { label } => {
-                    label_positions.insert(BackPatchLabel::Label(*label), func.len());
-                    continue;
-                }
-                Tac::Jnt { src, label } |
-                Tac::Jit { src, label } => {
-                    let original_label = BackPatchLabel::Label(*label);
-                    let instr =
-                    if let Tac::Jnt { .. } = instr {
-                        ByteCode::Jnt { 
-                            src: graph.get_reg(src),
-                            offset: 0
-                        }
-                    } else {
-                        ByteCode::Jit { 
-                            src: graph.get_reg(src),
-                            offset: 0
-                        }
-                    };
-
-                    let jump_block_id = ir_func.get_block_from_label(*label);
-                    let jump_block = ir_func.get_block(jump_block_id);
-                    let jump_label = 
-                    if jump_block.get_phi_nodes().is_empty() {
-                        original_label
-                    } else {
-                        let bpl = BackPatchLabel::Temp(temp_label_counter);
-                        temp_label_counter += 1;
-                        bpl
-                    };
-
-                    push_generic_jump_instr(instr, &mut func, &mut jump_positions, jump_label);
-
-                    let next_block = ir_func.get_block(block.get_id() + 1);
-                    ssa_elimination(&mut func, next_block, block, graph);
-                    let fall_through_label = BackPatchLabel::Temp(temp_label_counter);
-                    temp_label_counter += 1;
-
-                    if !jump_block.get_phi_nodes().is_empty() {
-                        push_jump_instr(&mut func, &mut jump_positions, fall_through_label);
-                        label_positions.insert(jump_label, func.len());
-                        ssa_elimination(&mut func, jump_block, block, graph);
-                        push_jump_instr(&mut func, &mut jump_positions, original_label);
-                        label_positions.insert(fall_through_label, func.len());
-                    }
-
-                    continue;
-                }
-                Tac::Jump { label } => {
-                    let next_block_id = ir_func.get_block_from_label(*label);
-                    let next_block = ir_func.get_block(next_block_id);
-                    let original_label = BackPatchLabel::Label(*label);
-
-                    ssa_elimination(&mut func, next_block, block, graph);
-
-                    push_jump_instr(&mut func, &mut jump_positions, original_label);
-                    continue;
-                }
-                _ => panic!("Unhandled TAC instruction in control flow section")
+            if handle_control_flow_instruction(
+                instr, 
+                block,
+                &ir_func,
+                graph,
+                &mut func,
+                &mut backpatch_ctx,
+            ) {
+                continue;
             }
+
+            panic!("Unhandled TAC instruction: {:?}", instr);
         }
 
-        if let Some(id) = block.falls_through() {
-            let next_block = ir_func.get_block(id);
-            ssa_elimination(&mut func, next_block, block, graph);
-        } 
+        // Handle block fall through
+        handle_block_fall_through(block, &ir_func, graph, &mut func);
     }
 
-    back_patch_jump_instructions(&mut func, label_positions, jump_positions);
+    backpatch_ctx.apply_patches(&mut func);
 
     func
 }
