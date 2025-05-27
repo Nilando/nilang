@@ -1,4 +1,5 @@
 mod interference_graph;
+mod translator;
 
 #[cfg(test)]
 mod tests;
@@ -6,10 +7,10 @@ mod tests;
 use std::collections::HashMap;
 
 pub use interference_graph::{InterferenceGraph, find_copy_edges};
-pub use crate::runtime::vm::{ByteCode, Func, Local};
+pub use crate::runtime::vm::{ByteCode, Func};
+use translator::ByteCodeTranslator;
 
-use crate::ir::{Block, Func as IRFunc, LabelID, Tac, TacConst};
-use crate::parser::{Op};
+use crate::ir::{Block, Func as IRFunc, LabelID, Tac};
 
 pub fn generate_func(ir_func: IRFunc) -> Func {
     let mut graph = InterferenceGraph::build(&ir_func);
@@ -40,9 +41,16 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph, max_clique: us
         let spans = block.get_spans();
         for (idx, instr) in block.get_instrs().iter().enumerate() {
             let span = spans.get(idx);
-            let bytecode = 
+            
+            // Try to translate simple TAC instructions first
+            let mut translator = ByteCodeTranslator::new(graph, &mut func);
+            if let Some(bytecode) = translator.translate_tac(instr) {
+                func.push_instr_spanned(bytecode, span.copied());
+                continue;
+            }
+            
+            // Handle complex control flow instructions
             match instr {
-                Tac::Noop => ByteCode::Noop,
                 Tac::Label { label } => {
                     label_positions.insert(BackPatchLabel::Label(*label), func.len());
                     continue;
@@ -101,262 +109,8 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph, max_clique: us
                     push_jump_instr(&mut func, &mut jump_positions, original_label);
                     continue;
                 }
-                Tac::Copy { dest, src } => {
-                    ByteCode::Copy { 
-                        dest: graph.get_reg(dest), 
-                        src: graph.get_reg(src) 
-                    }
-                }
-                Tac::Read { dest } => {
-                    ByteCode::Read { 
-                        dest: graph.get_reg(dest), 
-                    }
-                }
-                Tac::Print { src } => {
-                    ByteCode::Print { 
-                        src: graph.get_reg(src), 
-                    }
-                }
-                Tac::Call { dest, src } => {
-                    ByteCode::Call { 
-                        dest: graph.get_reg(dest), 
-                        src: graph.get_reg(src) 
-                    }
-                }
-                Tac::StoreArg { src } => {
-                    ByteCode::StoreArg { 
-                        src: graph.get_reg(src), 
-                    }
-                }
-                Tac::Return { src } => {
-                    ByteCode::Return { 
-                        src: graph.get_reg(src), 
-                    }
-                }
-                Tac::NewList { dest } => {
-                    ByteCode::NewList {
-                        dest: graph.get_reg(dest), 
-                    }
-                }
-                Tac::NewMap { dest } => {
-                    ByteCode::NewMap {
-                        dest: graph.get_reg(dest), 
-                    }
-                }
-                Tac::LoadGlobal { dest, sym } => {
-                    ByteCode::LoadGlobal { 
-                        dest: graph.get_reg(dest), 
-                        sym: graph.get_reg(sym), 
-                    }
-                }
-                Tac::StoreGlobal { src, sym } => {
-                    ByteCode::StoreGlobal {
-                        src: graph.get_reg(src), 
-                        sym: graph.get_reg(sym), 
-                    }
-                }
-                Tac::LoadUpvalue { dest, id } => {
-                    ByteCode::LoadUpvalue { 
-                        dest: graph.get_reg(dest), 
-                        id: *id 
-                    }
-                }
-                Tac::StoreUpvalue { func, src } => {
-                    ByteCode::StoreUpvalue {
-                        func: graph.get_reg(func), 
-                        src: graph.get_reg(src), 
-                    }
-                }
-                Tac::MemLoad { dest, store, key } => {
-                    ByteCode::MemLoad { 
-                        dest: graph.get_reg(dest), 
-                        store: graph.get_reg(store),
-                        key: graph.get_reg(key) 
-                    }
-                }
-                Tac::MemStore { store, key, src } => {
-                    ByteCode::MemStore { 
-                        store: graph.get_reg(store),
-                        key: graph.get_reg(key),
-                        src: graph.get_reg(src), 
-                    }
-                }
-                Tac::Binop { dest, op, lhs, rhs } => {
-                    let dest = graph.get_reg(dest);
-                    let lhs = graph.get_reg(lhs);
-                    let rhs = graph.get_reg(rhs);
-                    match op {
-                        Op::Equal => {
-                            ByteCode::Equality { 
-                                dest,
-                                lhs,
-                                rhs
-                            }
-                        }
-                        Op::NotEqual => {
-                            ByteCode::Inequality {
-                                dest,
-                                lhs,
-                                rhs
-                            }
-                        }
-                        Op::Lt => {
-                            ByteCode::Lt { 
-                                dest,
-                                lhs,
-                                rhs
-                            }
-                        }
-                        Op::Gt => {
-                            ByteCode::Gt { 
-                                dest,
-                                lhs,
-                                rhs
-                            }
-                        }
-                        Op::Plus => {
-                            ByteCode::Add { 
-                                dest,
-                                lhs,
-                                rhs
-                            }
-                        }
-                        Op::Minus => {
-                            ByteCode::Sub { 
-                                dest,
-                                lhs,
-                                rhs
-                            }
-                        }
-                        Op::Modulo => {
-                            ByteCode::Modulo { 
-                                dest,
-                                lhs,
-                                rhs
-                            }
-                        }
-                        Op::Multiply => {
-                            ByteCode::Mult { 
-                                dest,
-                                lhs,
-                                rhs
-                            }
-                        }
-                        Op::Divide => {
-                            ByteCode::Div { 
-                                dest,
-                                lhs,
-                                rhs
-                            }
-                        }
-                        _ => ByteCode::Noop
-                    }
-                }
-                Tac::LoadConst { dest, src } => {
-                    match src {
-                        TacConst::Func(id) => {
-                            let local = Local::FuncId(*id);
-                            let id =
-                            if let Some(local_id) = func.get_local(&local) {
-                                local_id
-                            } else {
-                                func.push_local(local)
-                            };
-
-                            ByteCode::LoadLocal {
-                                dest: graph.get_reg(dest), 
-                                id
-                            }
-                        }
-                        TacConst::Null => ByteCode::LoadNull { 
-                            dest: graph.get_reg(dest), 
-                        },
-                        TacConst::Bool(b) => ByteCode::LoadBool { 
-                            dest: graph.get_reg(dest), 
-                            val: *b
-                        },
-                        TacConst::String(s) => { 
-                            let local = Local::String(s.clone());
-                            let id =
-                            if let Some(local_id) = func.get_local(&local) {
-                                local_id
-                            } else {
-                                func.push_local(local)
-                            };
-
-                            ByteCode::LoadLocal {
-                                dest: graph.get_reg(dest), 
-                                id
-                            }
-                        }
-                        TacConst::Float(f) => { 
-                            let local = Local::Float(*f);
-                            let id =
-                            if let Some(local_id) = func.get_local(&local) {
-                                local_id
-                            } else {
-                                func.push_local(local)
-                            };
-
-                            ByteCode::LoadLocal {
-                                dest: graph.get_reg(dest), 
-                                id
-                            }
-                        }
-                        TacConst::Int(i) => { 
-                            match i16::try_from(*i) {
-                                Ok(immediate) => {
-                                    ByteCode::LoadInt { 
-                                        dest: graph.get_reg(dest), 
-                                        val: immediate
-                                    }
-                                }
-                                _ => {
-                                    let local = Local::Int(*i);
-                                    let id =
-                                    if let Some(local_id) = func.get_local(&local) {
-                                        local_id
-                                    } else {
-                                        func.push_local(local)
-                                    };
-
-                                    ByteCode::LoadLocal {
-                                        dest: graph.get_reg(dest), 
-                                        id
-                                    }
-                                }
-                            }
-                        },
-                        TacConst::Sym(i) => { 
-                            match u16::try_from(*i) {
-                                Ok(immediate) => {
-                                    ByteCode::LoadSym { 
-                                        dest: graph.get_reg(dest), 
-                                        val: immediate
-                                    }
-                                }
-                                _ => {
-                                    let local = Local::Sym(*i);
-                                    let id =
-                                    if let Some(local_id) = func.get_local(&local) {
-                                        local_id
-                                    } else {
-                                        func.push_local(local)
-                                    };
-
-                                    ByteCode::LoadLocal {
-                                        dest: graph.get_reg(dest), 
-                                        id
-                                    }
-                                }
-                            }
-                        },
-                    }
-                }
-
-            };
-
-            func.push_instr_spanned(bytecode, span.copied());
+                _ => panic!("Unhandled TAC instruction in control flow section")
+            }
         }
 
         if let Some(id) = block.falls_through() {

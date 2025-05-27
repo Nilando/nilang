@@ -1,6 +1,9 @@
 mod config;
 
-use crate::runtime::vm::{func_to_string as bytecode_to_string};
+use crate::runtime::{
+    vm::{func_to_string as bytecode_to_string},
+    run_program
+};
 use crate::codegen::generate_func;
 use crate::parser::{parse_program, ParseError, Spanned};
 use crate::symbol_map::SymbolMap;
@@ -77,8 +80,9 @@ fn run_script(mut config: Config) {
 
         output_string(bc_str, path);
     }
-    
-    todo!("runtime")
+
+    // TODO: Fix run_program to work with Vec<Func>
+    // run_program(program);
 }
 
 fn run_repl(_config: Config) {
