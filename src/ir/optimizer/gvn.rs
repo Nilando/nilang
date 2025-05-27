@@ -126,6 +126,10 @@ impl GVNC {
                     }
                 }
                 Tac::LoadConst { dest, src } => {
+                    if let TacConst::String(_) = src {
+                        continue;
+                    }
+
                     let value = Value::Const(src.clone());
 
                     if self.find_or_insert_value(value, *dest) {
