@@ -66,12 +66,12 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph, max_clique: us
                     let jump_block_id = ir_func.get_block_from_label(*label);
                     let jump_block = ir_func.get_block(jump_block_id);
                     let jump_label = 
-                    if !jump_block.get_phi_nodes().is_empty() {
+                    if jump_block.get_phi_nodes().is_empty() {
+                        original_label
+                    } else {
                         let bpl = BackPatchLabel::Temp(temp_label_counter);
                         temp_label_counter += 1;
                         bpl
-                    } else {
-                        original_label
                     };
 
                     push_generic_jump_instr(instr, &mut func, &mut jump_positions, jump_label);
@@ -82,14 +82,10 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph, max_clique: us
                     temp_label_counter += 1;
 
                     if !jump_block.get_phi_nodes().is_empty() {
-                        label_positions.insert(jump_label, func.len());
-
                         push_jump_instr(&mut func, &mut jump_positions, fall_through_label);
-
+                        label_positions.insert(jump_label, func.len());
                         ssa_elimination(&mut func, jump_block, block, graph);
-
                         push_jump_instr(&mut func, &mut jump_positions, original_label);
-
                         label_positions.insert(fall_through_label, func.len());
                     }
 

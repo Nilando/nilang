@@ -5,7 +5,6 @@ use crate::parser::parse_program;
 use crate::symbol_map::SymbolMap;
 use crate::ir::{lower_ast, optimize_func};
 use pretty_assertions::assert_eq;
-//use super::super::bytecode_to_string;
 use crate::codegen::generate_func;
 use crate::runtime::vm::func_to_string as bytecode_to_string;
 

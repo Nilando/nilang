@@ -13,6 +13,11 @@ fn something_wrong() {
 }
 
 #[test]
+fn simple_closure() {
+  super::test_golden_bytecode("./src/codegen/tests/golden/simple_closure.golden")
+}
+
+#[test]
 fn powers_of_two() {
   super::test_golden_bytecode("./src/codegen/tests/golden/powers_of_two.golden")
 }
@@ -20,6 +25,11 @@ fn powers_of_two() {
 #[test]
 fn rotate_array() {
   super::test_golden_bytecode("./src/codegen/tests/golden/rotate_array.golden")
+}
+
+#[test]
+fn shortcircuit() {
+  super::test_golden_bytecode("./src/codegen/tests/golden/shortcircuit.golden")
 }
 
 #[test]
