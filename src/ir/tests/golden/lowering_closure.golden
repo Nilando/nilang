@@ -39,14 +39,14 @@ block0:
   t2 = 0
   t0[t1] = t2
   count_0 = t0
-  t4 = fn(2)
+  t4 = fn2
   STORE_UPVAL t4, count_0
   RETURN t4
 
 }
 MAIN () {
 block0:
-  new_counter_0 = fn(1)
+  new_counter_0 = fn1
   my_counter_0 = CALL new_counter_0
   t3 = CALL my_counter_0
   PRINT t3

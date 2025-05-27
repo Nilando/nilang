@@ -28,7 +28,7 @@ block0:
 }
 MAIN () {
 block0:
-  b_0 = fn(1)
+  b_0 = fn1
   b_1 = CALL b_0
   t17 = 0
   b_1[t17] = t17

@@ -1,5 +1,6 @@
 OPT=true
 %%%%
+
 print("is something wrong?");
 
 if read == "no" {
@@ -22,15 +23,16 @@ LOC  1, 0
 OUT  1
 READ 2
 LOC  1, 1
-EQ   2, 2, 1
-JNT  4, 2
+EQ   1, 2, 1
+JNT  4, 1
 LOC  1, 2
 OUT  1
 RTN  0
 LOC  0, 3
 OUT  0
-READ 0
-EQ   0, 0, 1
+READ 1
+LOC  0, 1
+EQ   0, 1, 0
 JNT  4, 0
 LOC  0, 4
 OUT  0

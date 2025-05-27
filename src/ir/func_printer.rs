@@ -258,7 +258,7 @@ impl<'a> FuncPrinter<'a> {
             TacConst::String(s) => format!("{:?}", s),
             TacConst::Bool(b) => format!("{}", b),
             TacConst::Null => format!("null"),
-            TacConst::Func(func_id) => format!("fn({func_id})"),
+            TacConst::Func(func_id) => format!("fn{func_id}"),
             TacConst::Float(f) => format!("{}", f),
             TacConst::Sym(s) => format!("#{}", self.syms.get_str(*s)),
         };
