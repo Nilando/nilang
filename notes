@@ -1,17 +1,29 @@
 VERSION 0.1.0
 
+TODO:
+- turn program into loaded program
+- load 'loaded program' into VM
+- create VM dispatch loop
+
 BACKLOG:
-1. Memory SSA
-2. Jump threading pass
-3. Loop Invariant Code Motion (Maybe)
-4. String Interpolation
-5. For loops on strings, lists, and maps
-6. importing and exporting
+- Modular Intrinsic functions
+- Memory SSA
+- Jump threading pass
+- Loop Invariant Code Motion
+- String Interpolation
+- For loops on strings, lists, and maps
+- importing and exporting
+- Peephole pass
+- AST pass
 
 GOALS
 - complete AOC 2025 with this language
 - learn about compilers and interpreters
 - have fun
+
+ABOVE AND BEYOND
+- async execution
+- debugger
 
 DECEMBER -> COMPLETE AOC
 NOVEMBER
@@ -27,6 +39,8 @@ MAY
 - first draft of bytecode
 - TAC Updates: 
   - Var -> VReg (much smaller!)
+- testing via golden files
+- beginning to draft out runtime/VM
 
 APRIL
 - implemented CFG creation from TAC

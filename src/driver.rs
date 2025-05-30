@@ -1,9 +1,6 @@
 mod config;
 
-use crate::runtime::{
-    vm::{func_to_string as bytecode_to_string},
-    run_program
-};
+use crate::runtime::vm::{func_to_string as bytecode_to_string};
 use crate::codegen::generate_func;
 use crate::parser::{parse_program, ParseError, Spanned};
 use crate::symbol_map::SymbolMap;

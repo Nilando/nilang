@@ -1,19 +1,37 @@
 pub mod vm;
 
-use std::collections::HashMap;
+use sandpit::*;
+use vm::{VM, Func};
 
-struct Module {
-    initializing_func: u32,
+use self::vm::LoadedFunc;
+
+struct Runtime {
+    arena: Arena<Root![VM<'_>]>
 }
 
-struct Program {
-    main_module: Module,
-    modules: HashMap<String, Module>
+impl Runtime {
+    pub fn init(program: Vec<Func>) -> Self {
+        let arena = Arena::new(|mu| {
+            let loaded_program = load_program(program, mu);
+             
+            VM::init(loaded_program[0].clone(), mu)
+        });
+
+        Runtime {
+            arena
+        }
+    }
+
+    fn run() -> Result<(), RuntimeError> {
+        todo!()
+    }
 }
+
+fn load_program<'gc>(program: Vec<Func>, mu: &'gc Mutator) -> Vec<Gc<'gc, LoadedFunc<'gc>>> {
+    todo!()
+}
+
 
 enum RuntimeError {
 }
 
-pub fn run_program(program: Program) -> Result<(), RuntimeError> {
-    todo!()
-}

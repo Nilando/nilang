@@ -1,13 +1,14 @@
 use crate::parser::{PackedSpans, Span};
+use sandpit::{TraceLeaf, Trace, Gc, Tagged as TaggedPtr, Tag, GcVec};
 
 pub type Reg = u8;
 
 #[derive(Debug, PartialEq)]
 pub enum Local {
     FuncId(u64),
+    Sym(u64),
     Int(i64),
     Float(f64),
-    Sym(u64),
     String(String)
 }
 
@@ -66,7 +67,7 @@ impl Func {
     }
 }
 
-#[derive(Debug)]
+#[derive(TraceLeaf, Debug)]
 pub enum ByteCode {
     Noop,
     Swap {
