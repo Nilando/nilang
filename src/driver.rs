@@ -1,12 +1,15 @@
 mod config;
 
+use crate::runtime::vm::{func_to_string as bytecode_to_string};
+use crate::codegen::generate_func;
 use crate::parser::{parse_program, ParseError, Spanned};
 use crate::symbol_map::SymbolMap;
-use crate::ir::compile_ast;
+use crate::ir::{func_to_string, lower_ast, optimize_func};
 
 pub use config::Config;
 
 use std::io::{stdin, stdout, Write};
+use std::fs::File;
 
 use termion::color;
 use termion::event::{Event, Key};
@@ -35,22 +38,48 @@ fn run_script(mut config: Config) {
 
     let ast = parse_result.value.unwrap();
 
-
-    if let Some(output_path) = config.ast_output_path {
+    if let Some(path) = config.ast_output_path.as_ref() {
         let ast_string = format!("{:#?}", ast);
+        output_string(ast_string, path);
+    }
 
-        if output_path == std::path::Path::new("stdout") {
-            println!("{}", ast_string);
-        } else {
-            let mut file = std::fs::File::create(output_path).expect("Failed to create file");
+    let mut ir = lower_ast(ast, config.pretty_ir);
 
-            file.write_all(ast_string.as_bytes()).expect("Failed to write to file");
+    if !config.no_optimize {
+        for func in ir.iter_mut() {
+            optimize_func(func);
         }
     }
 
-    let program = compile_ast(ast, &mut symbols);
+    if let Some(path) = config.ir_output_path.as_ref() {
+        let mut ir_string = String::new();
 
-    todo!("run the program")
+        for f in ir.iter() {
+            ir_string.push_str(&func_to_string(f, &mut symbols));
+
+        }
+
+        output_string(ir_string, path);
+    }
+
+    let mut program = vec![];
+    for ir_func in ir.into_iter() {
+        let func = generate_func(ir_func);
+        program.push(func);
+    }
+
+    if let Some(path) = config.bytecode_output_path.as_ref() {
+        let mut bc_str = String::new();
+
+        for func in program.iter() {
+            bc_str.push_str(&bytecode_to_string(func));
+        }
+
+        output_string(bc_str, path);
+    }
+
+    // TODO: Fix run_program to work with Vec<Func>
+    // run_program(program);
 }
 
 fn run_repl(_config: Config) {
@@ -84,7 +113,7 @@ fn run_repl(_config: Config) {
                     display_parse_errors(&input, &parse_result.errors, None);
                 }
 
-                compile_ast(parse_result.value.unwrap(), &mut symbols);
+                lower_ast(parse_result.value.unwrap(), false);
                 let _ = stdout.activate_raw_mode();
 
                 inputs.push(input.clone());
@@ -231,5 +260,15 @@ fn display_parse_errors(
 
         line_start = line_end + 1;
         line_num += 1;
+    }
+}
+
+fn output_string(output: String, path: &Option<String>) {
+    if let Some(path) = path.as_ref() {
+        let mut file = File::create(path).expect("Failed to create file");
+
+        file.write_all(output.as_bytes()).expect("Failed to write to file");
+    } else {
+        println!("{}", output);
     }
 }

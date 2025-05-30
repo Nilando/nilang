@@ -1,77 +1,15 @@
 use crate::parser::Op;
 use crate::symbol_map::SymID;
-use std::hash::Hash;
 
 pub type LabelID = usize;
-pub type TempID = usize;
-pub type FuncID = usize;
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
-pub enum VarID {
-    Temp(TempID), 
-    LongTemp(TempID),
-    Upvalue(SymID),
-    Local(SymID),
-    Global(SymID),
-}
-
-pub type VerID = usize;
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
-pub struct Var {
-    pub id: VarID,
-    pub ver: Option<VerID>,
-}
-
-impl Var {
-    pub fn local(id: SymID) -> Self {
-        Self::new(VarID::Local(id))
-    }
-
-    pub fn global(id: SymID) -> Self {
-        Self::new(VarID::Global(id))
-    }
-
-    pub fn temp(id: usize) -> Self {
-        Self::new(VarID::Temp(id))
-    }
-
-    pub fn long_temp(id: usize) -> Self {
-        Self::new(VarID::LongTemp(id))
-    }
-
-    pub fn upvalue(id: SymID) -> Self {
-        Self::new(VarID::Upvalue(id))
-    }
-
-    fn new(id: VarID) -> Self {
-        Self {
-            id,
-            ver: None,
-            //last_use: None,
-            //live: None,
-        }
-    }
-
-    pub fn is_temp(&self) -> bool {
-        match self.id {
-            VarID::Temp(_) => true,
-            _ => false
-        }
-    }
-
-    pub fn is_global(&self) -> bool {
-        match self.id {
-            VarID::Global(_) => true,
-            _ => false
-        }
-    }
-}
+pub type FuncID = u64;
+pub type VReg = u32;
+pub type UpValId = u16;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum TacConst {
     String(String),
-    Int(isize),
+    Int(i64),
     Float(f64),
     Bool(bool),
     Func(FuncID),
@@ -82,143 +20,163 @@ pub enum TacConst {
 #[derive(Clone, Debug, PartialEq)]
 pub enum Tac {
     Binop { 
-        dest: Var,
+        dest: VReg,
         op: Op,
-        lhs: Var,
-        rhs: Var,
+        lhs: VReg,
+        rhs: VReg,
     },
     NewList {
-        dest: Var,
+        dest: VReg,
     },
     NewMap {
-        dest: Var,
+        dest: VReg,
     },
     Print {
-        src: Var,
+        src: VReg,
     },
     Read {
-        dest: Var,
+        dest: VReg,
     },
     Copy {
-        dest: Var,
-        src: Var,
+        dest: VReg,
+        src: VReg,
     },
     MemStore {
-        store: Var,
-        key: Var,
-        src: Var,
+        store: VReg,
+        key: VReg,
+        src: VReg,
     },
     MemLoad {
-        dest: Var,
-        store: Var,
-        key: Var,
+        dest: VReg,
+        store: VReg,
+        key: VReg,
     },
     LoadConst {
-        dest: Var,
+        dest: VReg,
         src: TacConst,
     },
-    StoreUpvalue {
-        dest: Var,
-        src: SymID,
+
+    LoadGlobal {
+        dest: VReg,
+        sym: VReg,
     },
-    LoadArg {
-        src: Var
+    StoreGlobal {
+        src: VReg,
+        sym: VReg,
+    },
+
+    LoadUpvalue {
+        dest: VReg,
+        id: UpValId,
+    },
+    StoreUpvalue {
+        func: VReg,
+        src: VReg,
+    },
+    StoreArg {
+        src: VReg
     },
     Call {
-        dest: Var,
-        src: Var,
+        dest: VReg,
+        src: VReg,
     },
     Return {
-        src: Var,
+        src: VReg,
     },
     Jump {
         label: LabelID,
     },
     Jnt {
         label: LabelID,
-        src: Var,
+        src: VReg,
     },
     Jit {
         label: LabelID,
-        src: Var,
+        src: VReg,
     },
     Label {
         label: LabelID,
     },
+    Noop,
 }
 
 impl Tac {
-    pub fn needs_span(&self) -> bool {
+    pub fn used_regs(&self) -> [Option<&VReg>; 3] {
         match self {
-            Tac::Binop { .. } |
-            Tac::MemStore { .. }  |
-            Tac::MemLoad { .. } |
-            Tac::Call { .. } |
-            Tac::Read { .. } =>  true,
+            Tac::Binop { lhs, rhs, .. } => [Some(lhs), Some(rhs), None],
+
+            Tac::LoadGlobal { sym, .. } => [Some(sym), None, None],
+            Tac::StoreGlobal { src, sym, .. } => [Some(src), Some(sym), None],
+            Tac::Copy { src, .. } |
+            Tac::Print { src, .. } |
+            Tac::StoreArg { src, .. } |
+            Tac::Call { src, .. } |
+            Tac::Return { src, .. } |
+            Tac::Jnt { src, .. } | 
+            Tac::Jit { src, .. } => [Some(src), None, None],
+            Tac::MemLoad { store, key, .. } => [Some(store), Some(key), None],
+            Tac::MemStore { store, key, src } => [Some(store), Some(key), Some(src)],
+            Tac::StoreUpvalue { func, src } => [Some(func), Some(src), None],
+            _ => [None, None, None]
+        }
+    }
+    pub fn used_regs_mut(&mut self) -> [Option<&mut VReg>; 3] {
+        match self {
+            Tac::Binop { lhs, rhs, .. } => [Some(lhs), Some(rhs), None],
+
+            Tac::LoadGlobal { sym, .. } => [Some(sym), None, None],
+            Tac::StoreGlobal { src, sym, .. } => [Some(src), Some(sym), None],
+            Tac::Copy { src, .. } |
+            Tac::Print { src, .. } |
+            Tac::StoreArg { src, .. } |
+            Tac::Call { src, .. } |
+            Tac::Return { src, .. } |
+            Tac::Jnt { src, .. } | 
+            Tac::Jit { src, .. } => [Some(src), None, None],
+            Tac::MemLoad { store, key, .. } => [Some(store), Some(key), None],
+            Tac::MemStore { store, key, src } => [Some(store), Some(key), Some(src)],
+            Tac::StoreUpvalue { func, src } => [Some(func), Some(src), None],
+
+            _ => [None, None, None]
+        }
+    }
+
+    pub fn dest_reg(&self) -> Option<&VReg> {
+        match self {
+            Tac::LoadUpvalue { dest, .. } |
+            Tac::LoadGlobal { dest, .. } |
+            Tac::Call { dest, .. } |
+            Tac::LoadConst { dest, .. } |
+            Tac::MemLoad { dest, .. } |
+            Tac::Copy { dest, .. } |
+            Tac::Read { dest, .. } |
+            Tac::NewMap { dest, .. } |
+            Tac::NewList { dest, .. } |
+            Tac::Binop { dest, .. } => Some(dest),
+            _ => None
+        }
+    }
+
+    pub fn dest_reg_mut(&mut self) -> Option<&mut VReg> {
+        match self {
+            Tac::LoadUpvalue { dest, .. } |
+            Tac::LoadGlobal { dest, .. } |
+            Tac::Call { dest, .. } |
+            Tac::LoadConst { dest, .. } |
+            Tac::MemLoad { dest, .. } |
+            Tac::Copy { dest, .. } |
+            Tac::Read { dest, .. } |
+            Tac::NewMap { dest, .. } |
+            Tac::NewList { dest, .. } |
+            Tac::Binop { dest, .. } => Some(dest),
+            _ => None
+        }
+    }
+
+    pub fn has_side_effects(&self) -> bool {
+        match self {
+            Tac::Read { .. } | Tac::Print { .. } | Tac::Call { .. } => true,
             _ => false
-        }
-    }
-
-    pub fn used_vars(&self) -> (Option<&Var>, Option<&Var>, Option<&Var>) {
-        match self {
-            Tac::Binop { lhs, rhs, .. } => (Some(lhs), Some(rhs), None),
-
-            Tac::Copy { src, .. } |
-            Tac::Print { src, .. } |
-            Tac::LoadArg { src, .. } |
-            Tac::Call { src, .. } |
-            Tac::Return { src, .. } |
-            Tac::Jnt { src, .. } | 
-            Tac::Jit { src, .. } => (Some(src), None, None),
-            Tac::MemLoad { store, key, .. } => (Some(&store), Some(&key), None),
-            Tac::MemStore { store, key, src } => (Some(&store), Some(&key), Some(src)),
-            _ => (None, None, None)
-        }
-    }
-    pub fn used_vars_mut(&mut self) -> (Option<&mut Var>, Option<&mut Var>, Option<&mut Var>) {
-        match self {
-            Tac::Binop { lhs, rhs, .. } => (Some(lhs), Some(rhs), None),
-
-            Tac::Copy { src, .. } |
-            Tac::Print { src, .. } |
-            Tac::LoadArg { src, .. } |
-            Tac::Call { src, .. } |
-            Tac::Return { src, .. } |
-            Tac::Jnt { src, .. } | 
-            Tac::Jit { src, .. } => (Some(src), None, None),
-            Tac::MemLoad { store, key, .. } => (Some(store), Some(key), None),
-            Tac::MemStore { store, key, src } => (Some(store), Some(key), Some(src)),
-            _ => (None, None, None)
-        }
-    }
-
-    pub fn dest_var(&self) -> Option<&Var> {
-        match self {
-            Tac::Call { dest, .. } |
-            Tac::LoadConst { dest, .. } |
-            Tac::MemLoad { dest, .. } |
-            Tac::Copy { dest, .. } |
-            Tac::Read { dest, .. } |
-            Tac::NewMap { dest, .. } |
-            Tac::NewList { dest, .. } |
-            Tac::StoreUpvalue { dest, .. } |
-            Tac::Binop { dest, .. } => Some(dest),
-            _ => None
-        }
-    }
-
-    pub fn dest_var_mut(&mut self) -> Option<&mut Var> {
-        match self {
-            Tac::Call { dest, .. } |
-            Tac::LoadConst { dest, .. } |
-            Tac::MemLoad { dest, .. } |
-            Tac::Copy { dest, .. } |
-            Tac::Read { dest, .. } |
-            Tac::NewMap { dest, .. } |
-            Tac::NewList { dest, .. } |
-            Tac::StoreUpvalue { dest, .. } |
-            Tac::Binop { dest, .. } => Some(dest),
-            _ => None
         }
     }
 }

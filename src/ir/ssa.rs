@@ -1,32 +1,33 @@
 use super::func::Func;
 use super::block::{Block, BlockId};
 use super::analysis::{DFA, LivenessDFA, compute_dominance_frontier};
-use super::tac::{Tac, Var, VerID, VarID};
-use std::collections::{HashMap, HashSet};
+use super::func_printer::VRegMap;
+use super::tac::VReg;
+use std::collections::{BTreeMap, BTreeSet};
 
-const INIT_VERSION: usize = 0;
 
 #[derive(Debug)]
 pub struct PhiNode {
-    pub dest: Var,
-    pub srcs: HashMap<BlockId, Var>
+    pub dest: VReg,
+    pub srcs: BTreeMap<BlockId, VReg>
 }
 
-pub fn convert_to_ssa(cfg: &mut Func) {
-    SSAConverter::convert(cfg);
+pub fn convert_to_ssa(func: &mut Func, var_reg_map: Option<VRegMap>) {
+    SSAConverter::convert(func, var_reg_map);
 }
 
-fn insert_phi_nodes(cfg: &mut Func) {
+fn insert_phi_nodes(func: &mut Func) {
     let mut liveness = LivenessDFA::new();
-    liveness.exec(cfg);
+    liveness.exec(func);
 
-    for block_id in cfg.get_block_ids() {
-        let dominating_block = cfg.get_block(block_id);
+    for block_id in func.get_block_ids() {
+        let dominating_block = func.get_block(block_id);
         let defined_vars = dominating_block.defined_vars();
-        let dominance_frontier = compute_dominance_frontier(cfg, cfg.get_block(block_id));
+        let dominance_frontier = compute_dominance_frontier(func, func.get_block(block_id));
+
         for phi_block_id in dominance_frontier.iter() {
             for var in defined_vars.iter() {
-                let phi_block = cfg.get_block_mut(*phi_block_id);
+                let phi_block = func.get_block_mut(*phi_block_id);
                 // we've already inserted a node for this var
                 if phi_block.get_phi_nodes().iter().find(|node| node.dest == *var).is_some() {
                     continue;
@@ -37,10 +38,14 @@ fn insert_phi_nodes(cfg: &mut Func) {
                     continue;
                 }
 
-                let phi = PhiNode {
+                let mut phi = PhiNode {
                     dest: *var,
-                    srcs: HashMap::new()
+                    srcs: BTreeMap::new()
                 };
+
+                for pred in phi_block.get_predecessors().iter() {
+                    phi.srcs.insert(*pred, *var);
+                }
 
                 phi_block.push_phi_node(phi);
             }
@@ -49,151 +54,141 @@ fn insert_phi_nodes(cfg: &mut Func) {
 }
 
 struct SSAConverter {
-    version_counters: HashMap<VarID, usize>,
-    version_stacks: Vec<HashMap<VarID, VerID>>,
-    visited: HashSet<BlockId>
+    stack: Vec<BTreeMap<VReg, VReg>>,
+    visited: BTreeSet<BlockId>,
+    reg_counter: u32,
+    vreg_map: Option<VRegMap>
 }
 
 impl SSAConverter {
-    fn convert(cfg: &mut Func) {
-        insert_phi_nodes(cfg);
+    fn convert(func: &mut Func, vreg_map: Option<VRegMap>) {
+        insert_phi_nodes(func);
 
         let mut converter = Self {
-            version_counters: HashMap::new(),
-            version_stacks: vec![HashMap::new()],
-            visited: HashSet::new()
+            stack: vec![],
+            visited: BTreeSet::new(),
+            reg_counter: func.get_vreg_counter(),
+            vreg_map
         };
 
-        converter.convert_cfg(cfg);
+        converter.convert_func(func);
+        func.set_vreg_counter(converter.reg_counter);
+        func.set_vreg_map(converter.vreg_map);
     }
 
-    fn convert_cfg(&mut self, cfg: &mut Func) {
-        let block = cfg.get_entry_block();
+    fn convert_func(&mut self, func: &mut Func) {
+        let block = func.get_entry_block();
 
-        self.convert_block(cfg, block.get_id());
+        self.convert_block(func, block.get_id());
     }
 
-    fn convert_block(&mut self, cfg: &mut Func, block_id: BlockId) {
-        let block = cfg.get_block_mut(block_id);
+    fn convert_block(&mut self, func: &mut Func, block_id: BlockId) {
+        let block = func.get_block_mut(block_id);
         let successor_ids = block.get_successors().to_vec();
+        let new_stack = BTreeMap::new();
 
         self.visited.insert(block_id);
-        self.version_stacks.push(HashMap::new());
+        self.stack.push(new_stack);
         self.version_self_phi_nodes(block);
         self.version_instructions(block);
-        self.version_successor_phi_nodes(block.get_id(), successor_ids.clone(), cfg);
+        self.version_successor_phi_nodes(block.get_id(), successor_ids.clone(), func);
 
         for succ_id in successor_ids.iter() {
             if self.visited.contains(&succ_id) { continue; }
 
-            self.convert_block(cfg, *succ_id);
+            self.convert_block(func, *succ_id);
         }
 
-        self.version_stacks.pop();
+        self.stack.pop();
     }
 
-    fn version_successor_phi_nodes(&mut self, predecessor_id: BlockId, successor_ids: Vec<BlockId>, cfg: &mut Func) {
+    fn version_successor_phi_nodes(&mut self, predecessor_id: BlockId, successor_ids: Vec<BlockId>, func: &mut Func) {
         for succ_id in successor_ids.iter() {
-            let succ = cfg.get_block_mut(*succ_id);
+            let succ = func.get_block_mut(*succ_id);
 
             for phi_node in succ.get_phi_nodes_mut().iter_mut() {
-                let version = self.get_version(phi_node.dest.id);
-                let mut var = phi_node.dest;
+                let old = phi_node.srcs.get_mut(&predecessor_id).unwrap();
 
-                var.ver = Some(version);
-                phi_node.srcs.insert(predecessor_id, var);
+                self.update_reg(old);
             }
         }
     }
 
     fn version_instructions(&mut self, block: &mut Block) {
         for code in block.get_instrs_mut().iter_mut() {
-            let (u1, u2, u3) = code.used_vars_mut();
-            for uv in [u1, u2, u3].into_iter() {
-                if let Some(used_var) = uv {
-                    self.apply_use_versioning(used_var);
+            for vr in code.used_regs_mut() {
+                if let Some(vreg) = vr {
+                    self.update_reg(vreg);
                 }
             }
 
-            if let Some(dest) = code.dest_var_mut() {
-                self.apply_dest_versioning(dest);
+            if let Some(dest) = code.dest_reg_mut() {
+                self.update_dest_reg(dest);
             }
-
-            if let Tac::Call { .. } = code {
-                self.kill_globals();
-            }
-        }
-    }
-
-    fn kill_globals(&mut self) {
-        for stack in self.version_stacks.iter_mut().rev() {
-            stack.retain(|var, _| { 
-                if let VarID::Global(_) = var {
-                    false
-                } else {
-                    true
-                }
-            });
         }
     }
 
     fn version_self_phi_nodes(&mut self, block: &mut Block) {
         for phi_node in block.get_phi_nodes_mut().iter_mut() {
-            self.apply_dest_versioning(&mut phi_node.dest);
+            self.update_dest_reg(&mut phi_node.dest);
         }
     }
 
-    fn apply_dest_versioning(&mut self, var: &mut Var) {
-        // we don't need to version temps or upvalues
-        match var.id {
-            VarID::Upvalue(_) | VarID::Temp(_) => return,
-            _ => {}
-        }
-       
-        let version = self.get_new_version(var.id);
+    fn update_dest_reg(&mut self, old: &mut VReg) {
+        // if the reg has yet to be assigned to a dest,
+        // we can use this existing vreg
 
-        let current_stack = self.version_stacks.last_mut().unwrap();
-        if let Some(current_ver) = current_stack.get_mut(&var.id) {
-            *current_ver = version;
+        // we only really care about this if we are doing pretty printing?
+        // could be worth removing, or optionally running
+        //
+        // it does make the produced tac make much more sense at first glance
+        let mut first_def_flag = true;
+        for stack in self.stack.iter().rev() {
+            if let Some(_) = stack.get(&old) {
+                first_def_flag = false;
+                break
+            }
+        }
+
+        if first_def_flag {
+            self.stack[0].insert(*old, *old);
         } else {
-            current_stack.insert(var.id, version);
-        }
+            let new = self.new_reg();
+            self.stack.last_mut().unwrap().insert(*old, new);
 
-        var.ver = Some(version);
+            if let Some(vrm) = &mut self.vreg_map {
+                vrm.map(*old, new);
+            }
+
+            *old = new;
+        }
     }
 
-    fn apply_use_versioning(&mut self, var: &mut Var) {
-        // we don't need to version temps or upvalues
-        match var.id {
-            VarID::Upvalue(_) | VarID::Temp(_) => return,
-            _ => {}
-        }
+    fn update_reg(&mut self, vreg: &mut VReg) -> VReg {
+        let new = self.map_reg(vreg);
 
-        let version = self.get_version(var.id);
+        *vreg = new;
 
-        var.ver = Some(version);
+        new
     }
 
-    fn get_version(&mut self, var_id: VarID) -> VerID {
-        for stack in self.version_stacks.iter().rev() {
-            if let Some(ver_id) = stack.get(&var_id) {
+    fn map_reg(&mut self, vreg: &VReg) -> VReg {
+        for stack in self.stack.iter().rev() {
+            if let Some(ver_id) = stack.get(&vreg) {
                 return *ver_id;
             }
         }
 
-        let ver = self.get_new_version(var_id);
-        self.version_stacks.first_mut().unwrap().insert(var_id, ver);
-        ver
+        self.stack[0].insert(*vreg, *vreg);
+
+        *vreg
     }
 
-    fn get_new_version(&mut self, var_id: VarID) -> VerID {
-        if let Some(v) = self.version_counters.get_mut(&var_id) {
-            *v += 1;
-            *v
-        } else {
-            self.version_counters.insert(var_id, INIT_VERSION);
+    fn new_reg(&mut self) -> VReg {
+        let r = self.reg_counter;
 
-            INIT_VERSION
-        }
+        self.reg_counter += 1;
+
+        r
     }
 }

@@ -1,0 +1,60 @@
+fn new_counter() {
+  count = { val: 0 };
+
+  return fn() {
+    count.val = count.val + 1;
+
+    return count.val;
+  };
+}
+
+my_counter = new_counter();
+
+print(my_counter()); // 1
+print(my_counter()); // 2
+print(my_counter()); // 3
+
+%%%%
+
+fn2 () {
+block0:
+  LOAD_UPVAL count_0
+  t1 = #val
+  t2 = count_0[t1]
+  t3 = 1
+  t4 = t2 + t3
+  LOAD_UPVAL count_1
+  t5 = #val
+  count_1[t5] = t4
+  LOAD_UPVAL count_2
+  t6 = #val
+  t7 = count_2[t6]
+  RETURN t7
+
+}
+fn1 () {
+block0:
+  t0 = NEW_MAP
+  t1 = #val
+  t2 = 0
+  t0[t1] = t2
+  count_0 = t0
+  t4 = fn2
+  STORE_UPVAL t4, count_0
+  RETURN t4
+
+}
+MAIN () {
+block0:
+  new_counter_0 = fn1
+  my_counter_0 = CALL new_counter_0
+  t3 = CALL my_counter_0
+  PRINT t3
+  t5 = CALL my_counter_0
+  PRINT t5
+  t7 = CALL my_counter_0
+  PRINT t7
+  t9 = null
+  RETURN t9
+
+}

@@ -1,9 +1,51 @@
 use crate::parser::Op;
-use crate::symbol_map::SymbolMap;
+use crate::symbol_map::{SymbolMap, SymID};
 use super::func::Func;
 use super::block::{Block, BlockId};
-use super::tac::{VarID, Var, Tac, TacConst};
+use super::tac::{VReg, Tac, TacConst};
 use super::lowering::MAIN_FUNC_ID;
+use std::collections::HashMap;
+
+#[derive(Debug)]
+pub struct VRegMap {
+    vars: HashMap<SymID, Vec<VReg>>,
+    regs: HashMap<VReg, SymID>
+}
+
+impl VRegMap {
+    pub fn new(vreg_map: HashMap<SymID, VReg>) -> Self {
+        let mut vars = HashMap::new();
+        let mut regs = HashMap::new();
+
+        for (var, reg) in vreg_map.iter() {
+            vars.insert(*var, vec![*reg]);
+            regs.insert(*reg, *var);
+        }
+
+        Self {
+            vars,
+            regs
+        }
+    }
+
+    pub fn map(&mut self, old: VReg, new: VReg) {
+        if let Some(v) = self.regs.get(&old) {
+            let var = *v;
+            self.regs.insert(new, var);
+            self.vars.get_mut(&var).unwrap().push(new);
+        }
+    }
+
+    fn reg_to_var(&self, reg: &VReg) -> Option<(SymID, usize)> {
+        if let Some(var) = self.regs.get(reg) {
+            let ver = self.vars.get(var).unwrap().iter().position(|r| r == reg).unwrap();
+
+            Some((*var, ver))
+        } else {
+            None
+        }
+    }
+}
 
 struct FuncPrinter<'a> {
     func: &'a Func,
@@ -38,7 +80,12 @@ impl<'a> FuncPrinter<'a> {
         self.push_block_header(block);
 
         for tac in block.get_instrs().iter() {
+            if let Tac::Label { .. } = tac {
+                continue;
+            }
+
             self.result.push_str("  ");
+
             match tac {
                 Tac::Copy { dest, src } => {
                     self.push_var(dest);
@@ -47,11 +94,11 @@ impl<'a> FuncPrinter<'a> {
                 }
                 Tac::NewList { dest } => {
                     self.push_var(dest);
-                    self.result.push_str(" = new_list");
+                    self.result.push_str(" = NEW_LIST");
                 }
                 Tac::NewMap { dest } => {
                     self.push_var(dest);
-                    self.result.push_str(" = new_map");
+                    self.result.push_str(" = NEW_MAP");
                 }
                 Tac::MemLoad { dest, store, key } => {
                     self.push_var(dest);
@@ -70,8 +117,8 @@ impl<'a> FuncPrinter<'a> {
                     self.result.push_str(" = ");
                     self.push_const(src);
                 }
-                Tac::LoadArg { src } => {
-                    self.result.push_str("load_arg ");
+                Tac::StoreArg { src } => {
+                    self.result.push_str("STORE_ARG ");
                     self.push_var(src);
                 }
                 Tac::Binop { dest, op, lhs, rhs } => {
@@ -83,16 +130,16 @@ impl<'a> FuncPrinter<'a> {
                 }
                 Tac::Call { dest, src } => {
                     self.push_var(dest);
-                    self.result.push_str(" = call ");
+                    self.result.push_str(" = CALL ");
                     self.push_var(src);
                 }
                 Tac::Print { src } => {
-                    self.result.push_str("print ");
+                    self.result.push_str("PRINT ");
                     self.push_var(src);
                 }
                 Tac::Read { dest } => {
+                    self.result.push_str("READ ");
                     self.push_var(dest);
-                    self.result.push_str(" = read");
                 }
                 Tac::Jump { label } => {
                     let succ_id = self.func.get_block_from_label(*label);
@@ -119,17 +166,36 @@ impl<'a> FuncPrinter<'a> {
                     self.print_block_args(block.get_id(), succ_id);
                 }
                 Tac::Return { src } => {
-                    self.result.push_str("return ");
+                    self.result.push_str("RETURN ");
                     self.push_var(src);
                 }
-                Tac::StoreUpvalue { dest, src } => {
-                    self.push_var(dest);
-                    self.result.push_str(" UPVAL ");
-                    self.result.push_str(self.syms.get_str(*src));
-                }
-                Tac::Label { label } => {
-                    //self.result.push_str(&format!("label {}", label));
+                Tac::Label { .. } => {
                     continue;
+                }
+                Tac::Noop => {
+                    self.result.push_str("NOOP");
+                }
+                Tac::StoreGlobal { src, sym } => {
+                    self.result.push_str("STORE_GLB ");
+                    self.push_var(sym);
+                    self.result.push_str(", ");
+                    self.push_var(src);
+                }
+                Tac::LoadGlobal { dest, sym } => {
+                    self.result.push_str("LOAD_GLB ");
+                    self.push_var(dest);
+                    self.result.push_str(", ");
+                    self.push_var(sym);
+                }
+                Tac::StoreUpvalue { func, src } => {
+                    self.result.push_str("STORE_UPVAL ");
+                    self.push_var(func);
+                    self.result.push_str(", ");
+                    self.push_var(src);
+                }
+                Tac::LoadUpvalue { dest, .. } => {
+                    self.result.push_str("LOAD_UPVAL ");
+                    self.push_var(dest);
                 }
             }
             self.result.push_str("\n");
@@ -154,7 +220,9 @@ impl<'a> FuncPrinter<'a> {
         if !phi_nodes.is_empty() {
             self.result.push_str(&format!("("));
             for (i, node) in phi_nodes.iter().enumerate() {
-                self.push_var(node.srcs.get(&caller_id).unwrap());
+                let vreg = node.srcs.get(&caller_id).unwrap();
+
+                self.push_var(vreg);
 
                 if  i + 1 < phi_nodes.len() {
                     self.result.push_str(", ");
@@ -190,18 +258,27 @@ impl<'a> FuncPrinter<'a> {
             TacConst::String(s) => format!("{:?}", s),
             TacConst::Bool(b) => format!("{}", b),
             TacConst::Null => format!("null"),
-            TacConst::Func(func_id) => format!("fn({func_id})"),
+            TacConst::Func(func_id) => format!("fn{func_id}"),
             TacConst::Float(f) => format!("{}", f),
-            TacConst::Sym(s) => format!("{:?}", s),
+            TacConst::Sym(s) => format!("#{}", self.syms.get_str(*s)),
         };
 
         self.result.push_str(&s);
     }
 
-    fn push_key_access(&mut self, key: &Var) {
-        let s = format!("[{}]", self.var_str(key));
+    fn push_key_access(&mut self, reg: &VReg) {
+        let s = 
+        if let Some(vrm) = self.func.get_vreg_map() {
+            if let Some((sym, ver)) = vrm.reg_to_var(reg) {
+                format!("{}_{}", self.syms.get_str(sym), ver)
+            } else {
+                format!("t{reg}")
+            }
+        } else {
+            self.vreg_str(reg)
+        };
 
-        self.result.push_str(&s);
+        self.result.push_str(&format!("[{}]", s));
     }
 
     fn push_block_header(&mut self, block: &Block) {
@@ -226,20 +303,24 @@ impl<'a> FuncPrinter<'a> {
         }
     }
 
-    fn push_var(&mut self, var: &Var) {
-        let s = self.var_str(var);
+    fn push_var(&mut self, reg: &VReg) {
+        let s = 
+        if let Some(vrm) = self.func.get_vreg_map() {
+            if let Some((sym, ver)) = vrm.reg_to_var(reg) {
+                format!("{}_{}", self.syms.get_str(sym), ver)
+            } else {
+                format!("t{reg}")
+            }
+        } else {
+            self.vreg_str(reg)
+        };
+
 
         self.result.push_str(&s)
     }
 
-    fn var_str(&mut self, var: &Var) -> String {
-        match var.id {
-            VarID::Local(id) => format!("{}_{}", self.syms.get_str(id), var.ver.unwrap()),
-            VarID::Temp(id) => format!("t{id}"),
-            VarID::LongTemp(id) => format!("l{id}_{}", var.ver.unwrap()),
-            VarID::Global(id) => format!("@{}_{}", self.syms.get_str(id), var.ver.unwrap()),
-            VarID::Upvalue(id) => format!("^{}", self.syms.get_str(id)),
-        }
+    fn vreg_str(&mut self, var: &VReg) -> String {
+        format!("%{}", var)
     }
 
     fn push_first_line(&mut self) {
@@ -249,8 +330,8 @@ impl<'a> FuncPrinter<'a> {
             self.result.push_str(&format!("fn{} (", self.func.get_id()));
         }
 
-        for (idx, sym) in self.func.get_args().iter().enumerate() {
-            self.result.push_str(&format!("{}", self.syms.get_str(*sym)));
+        for (idx, reg) in self.func.get_args().iter().enumerate() {
+            self.push_var(reg);
 
             if idx + 1 < self.func.get_args().len() {
                 self.result.push_str(", ");
@@ -261,6 +342,6 @@ impl<'a> FuncPrinter<'a> {
     }
 
     fn push_last_line(&mut self) {
-        self.result.push_str("}");
+        self.result.push_str("}\n");
     }
 }

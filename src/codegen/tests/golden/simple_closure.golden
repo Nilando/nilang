@@ -1,0 +1,33 @@
+OPT=true
+%%%%
+
+a = 1;
+
+fn my_closure() {
+  print(a + a);
+}
+
+my_closure(); // 2
+
+a = 2;
+
+my_closure(); // 2
+
+%%%%
+
+=== FN 1 START ===
+LDUV 0, 0
+ADD  0, 0, 0
+OUT  0
+LDN  0
+RTN  0
+=== END ===
+=== FN 0 START ===
+INT  0, 1
+LOC  1, 0
+STUV 1, 0
+CALL 0, 1
+CALL 0, 1
+LDN  0
+RTN  0
+=== END ===

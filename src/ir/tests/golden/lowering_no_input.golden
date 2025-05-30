@@ -1,0 +1,10 @@
+
+
+%%%%
+
+MAIN () {
+block0:
+  t0 = null
+  RETURN t0
+
+}

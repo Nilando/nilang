@@ -1,47 +1,29 @@
 VERSION 0.1.0
 
-BUGS:
-- only allow one of each sym in func input
-
-SPIKES:
-- remove unreachable blocks from cfg
-  - requires refactor to cfg
-- build graph vizualization
-  - cfg printer needs to be refactored
-- remove String from TacConst ?? this is unclear
-  - might need to separate logic of const string an mutable string
+TODO:
+- turn program into loaded program
+- load 'loaded program' into VM
+- create VM dispatch loop
 
 BACKLOG:
-0. Build Dom Tree -- DONE (needs tests)
-1. Escape Analysis -- DONE (needs tests)
-2. Memory SSA -- in progress
-3. GVN pass
-4. DCE pass
-5. Jump threading pass
-6. Loop Invariant Code Motion (Maybe)
-7. register allocation over SSA => HUGE MILESTONE !!! CELEBRATE !!!
-8. String Interpolation
-9. For loops on strings, lists, and maps
-10. importing and exporting
+- Modular Intrinsic functions
+- Memory SSA
+- Jump threading pass
+- Loop Invariant Code Motion
+- String Interpolation
+- For loops on strings, lists, and maps
+- importing and exporting
+- Peephole pass
+- AST pass
 
 GOALS
 - complete AOC 2025 with this language
-- functions are first class citizens
-- function closures
-- global variables
-- display syntax and runtime errors nicely
-- simple read & print io
-- repl
-- concurrent garbage collection
-- debugger
-- export and import files
+- learn about compilers and interpreters
+- have fun
 
-NON GOALS 
-- async and await
-- LSP
-- dependency manager
-- static analysis
-- interop with rust
+ABOVE AND BEYOND
+- async execution
+- debugger
 
 DECEMBER -> COMPLETE AOC
 NOVEMBER
@@ -49,7 +31,16 @@ OCTOBER
 AUGUST
 JULY
 JUNE
-MAY -> be done with register allocation
+
+MAY
+- dead code elimination
+- global value numbering pass 
+- register allocation
+- first draft of bytecode
+- TAC Updates: 
+  - Var -> VReg (much smaller!)
+- testing via golden files
+- beginning to draft out runtime/VM
 
 APRIL
 - implemented CFG creation from TAC

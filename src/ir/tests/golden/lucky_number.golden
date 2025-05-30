@@ -1,0 +1,74 @@
+OPT=true
+
+%%%%
+
+lucky_number = "42";
+
+while true {
+  print("guess the lucky number: ");
+  guess = read;
+
+  if guess == lucky_number {
+    break;
+  } else {
+    if guess > lucky_number {
+      print("too high!");
+    } else {
+      print("too low :(");
+    }
+  }
+}
+
+print("You got it!");
+
+%%%%
+
+MAIN () {
+block0:
+  lucky_number_0 = "42"
+  next block1(lucky_number_0)
+
+block1(lucky_number_1):
+  t2 = true
+  jnt t2 block10
+  next block2
+
+block2:
+  t3 = "guess the lucky number: "
+  PRINT t3
+  READ guess_0
+  t7 = guess_0 == lucky_number_1
+  jnt t7 block5
+  next block3
+
+block3:
+  jump block10
+
+block5:
+  t8 = guess_0 > lucky_number_1
+  jnt t8 block7
+  next block6
+
+block6:
+  t9 = "too high!"
+  PRINT t9
+  jump block8
+
+block7:
+  t11 = "too low :("
+  PRINT t11
+  next block8
+
+block8:
+  next block9
+
+block9:
+  jump block1(lucky_number_1)
+
+block10:
+  t13 = "You got it!"
+  PRINT t13
+  t15 = null
+  RETURN t15
+
+}

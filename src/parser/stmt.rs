@@ -172,6 +172,7 @@ mod tests {
     use super::super::ParseResult;
     use crate::parser::Op;
     use super::*;
+    use pretty_assertions::assert_eq;
 
     fn parse_stmt_with_syms(input: &str, syms: &mut SymbolMap) -> ParseResult<Stmt> {
         let result = stmt().parse_str(input, syms);
@@ -268,7 +269,7 @@ mod tests {
             ),
             stmts: vec![
                 Stmt::Assign {
-                    dest: Spanned::new(LhsExpr::Local(syms.get_id("two")), (15,21)),
+                    dest: Spanned::new(LhsExpr::Local(syms.get_id("two")), (15,20)),
                     src: Spanned::new(Expr::Value(Value::Int(3)), (21, 23)),
                 }
             ]
@@ -292,5 +293,14 @@ mod tests {
         };
 
         assert_eq!(result.value.unwrap(), expected);
+    }
+
+    #[test]
+    fn duplicate_args_error() {
+        let mut syms = SymbolMap::new();
+        let input = "fn test(a, a) {}";
+        let mut result = stmt().parse_str(input, &mut syms);
+
+        assert_eq!(result.errors.pop().unwrap().item, ParseError::DuplicateArgs);
     }
 }

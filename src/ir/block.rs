@@ -1,8 +1,9 @@
+use super::tac::VReg;
 use crate::parser::Span;
-use super::tac::{Tac, LabelID, Var};
+use super::tac::{Tac, LabelID};
 use super::ssa::PhiNode;
 use crate::parser::PackedSpans;
-use std::collections::HashSet;
+use std::collections::BTreeSet;
 
 pub type BlockId =usize;
 const ENTRY_BLOCK_ID: usize = 0;
@@ -43,12 +44,8 @@ impl Block {
         self.label
     }
 
-    pub fn set_label(&mut self, label: LabelID) {
-        self.label = Some(label)
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.instrs.is_empty()
+    pub fn get_spans(&self) -> &PackedSpans {
+        &self.spans
     }
 
     pub fn get_instrs(&self) -> &Vec<Tac> {
@@ -57,6 +54,28 @@ impl Block {
 
     pub fn get_instrs_mut(&mut self) -> &mut Vec<Tac> {
         &mut self.instrs
+    }
+
+    pub fn rev_retain_instrs(&mut self, mut f: impl FnMut(&Tac) -> bool) {
+        let mut dead_indexes = vec![];
+
+        // find which instructions are dead
+        for (idx, instr) in self.instrs.iter().enumerate().rev()  {
+            let retain = f(instr);
+
+            if !retain {
+                self.spans.remove(idx);
+                dead_indexes.push(idx);
+            }
+        }
+
+        // dont retain the dead instructions
+        let mut k = 0;
+        self.instrs.retain(|_| {
+            let retain = !dead_indexes.contains(&k);
+            k += 1;
+            retain
+        });
     }
 
     pub fn get_phi_nodes(&self) -> &Vec<PhiNode> {
@@ -83,6 +102,10 @@ impl Block {
         self.predecessors.push(block_id);
     }
 
+    pub fn remove_predecessor(&mut self, block_id: BlockId) {
+        self.predecessors.retain(|id| *id != block_id);
+    }
+
     pub fn push_phi_node(&mut self, phi: PhiNode) {
         self.phi_nodes.push(phi);
     }
@@ -104,7 +127,17 @@ impl Block {
         }
     }
 
-    pub fn get_return_var_id(&self) -> Option<Var> {
+    pub fn falls_through(&self) -> Option<BlockId> {
+        match self.instrs.last() {
+            Some(Tac::Return { .. }) | 
+            Some(Tac::Jump { .. }) |
+            Some(Tac::Jnt { .. }) |
+            Some(Tac::Jit { .. }) => None,
+            _ => self.successors.last().copied()
+        }
+    }
+
+    pub fn get_return_var_id(&self) -> Option<VReg> {
         if let Some(Tac::Return { src }) = self.instrs.last() {
             Some(*src)
         } else {
@@ -112,15 +145,11 @@ impl Block {
         }
     }
 
-    pub fn defined_vars(&self) -> HashSet<Var> {
-        let mut defined = HashSet::new();
+    pub fn defined_vars(&self) -> BTreeSet<VReg> {
+        let mut defined = BTreeSet::new();
 
         for instr in self.instrs.iter() {
-            if let Some(var) = instr.dest_var() {
-                if var.is_temp() {
-                    continue;
-                }
-
+            if let Some(var) = instr.dest_reg() {
                 defined.insert(*var);
             }
         }

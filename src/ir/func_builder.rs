@@ -1,37 +1,69 @@
+use super::func_printer::VRegMap;
 use super::ssa::convert_to_ssa;
 use crate::parser::Span;
+use crate::ir::TacConst;
 use super::block::{BlockId, Block};
-use super::tac::{Tac, FuncID, LabelID};
+use super::tac::{Tac, FuncID, LabelID, VReg};
 use super::func::Func;
 use std::collections::{HashMap, HashSet};
 use crate::symbol_map::SymID;
 
 pub struct FuncBuilder {
     id: FuncID,
-    inputs: HashSet<SymID>,
+    inputs: Vec<VReg>,
     pub upvalues: HashSet<SymID>,
     blocks:  Vec<Block>,
     block_jump_map: HashMap<LabelID, Vec<BlockId>>, // label is jumped to by the block id
     non_jump_edges: Vec<(BlockId, BlockId)>, // 0 -> 1
     current_block: Option<Block>,
     non_jump_edge_flag: bool,
+    vreg_counter: u32,
+    sym_to_vreg: HashMap<SymID, VReg>,
+    pretty_ir: bool
 }
 
 impl FuncBuilder {
-    pub fn new(id: FuncID, inputs: HashSet<SymID>) -> Self {
-        Self {
+    pub fn new(id: FuncID, input_syms: &Vec<SymID>, pretty_ir: bool) -> Self {
+        let mut this = Self {
             id, 
-            inputs,
+            inputs: vec![],
             upvalues: HashSet::new(),
             blocks: vec![],
             block_jump_map: HashMap::new(),
             non_jump_edges: vec![],
             current_block: Some(Block::new_entry_block()),
             non_jump_edge_flag: true,
+            vreg_counter: 0,
+            sym_to_vreg: HashMap::new(),
+            pretty_ir 
+        };
+
+        for s in input_syms.iter() {
+            let reg = this.sym_to_reg(s);
+            this.inputs.push(reg);
+        }
+
+        this
+    }
+
+    pub fn new_reg(&mut self) -> VReg {
+        let r = self.vreg_counter;
+        self.vreg_counter += 1;
+        r
+    }
+
+    pub fn sym_to_reg(&mut self, sym: &SymID) -> VReg {
+        if let Some(r) = self.sym_to_vreg.get(sym) {
+            *r
+        } else {
+            let r = self.new_reg();
+            self.sym_to_vreg.insert(*sym, r);
+            r
         }
     }
 
     pub fn build(mut self) -> Func {
+        self.insert_final_return();
         self.insert_current();
         self.link_blocks();
 
@@ -39,11 +71,30 @@ impl FuncBuilder {
             self.id,
             self.inputs,
             self.blocks,
+            self.vreg_counter
         );
 
-        convert_to_ssa(&mut func);
+        if self.pretty_ir {
+            let vreg_map = VRegMap::new(self.sym_to_vreg);
+
+            convert_to_ssa(&mut func, Some(vreg_map));
+        } else {
+            convert_to_ssa(&mut func, None);
+        }
 
         func
+    }
+
+    fn insert_final_return(&mut self) {
+        if let Some(Tac::Return { .. }) = self.last_instr() {
+        }  else {
+            let temp = self.new_reg();
+            let t1 = Tac::LoadConst { dest: temp, src: TacConst::Null };
+            let t2 = Tac::Return { src: temp };
+
+            self.push_tac(t1);
+            self.push_tac(t2);
+        }
     }
 
     pub fn last_instr(&self) -> Option<&Tac> {
@@ -205,12 +256,12 @@ impl FuncBuilder {
 pub mod tests {
     use super::*;
     use super::super::{
-        tac::{TacConst, Var},
+        tac::TacConst,
         func::Func,
     };
 
     pub fn instrs_to_func(instrs: Vec<Tac>) -> Func {
-        let mut builder = FuncBuilder::new(0, HashSet::new());
+        let mut builder = FuncBuilder::new(0, &vec![], false);
 
         for instr in instrs.into_iter() {
             builder.push_instr(instr, None);
@@ -218,6 +269,7 @@ pub mod tests {
 
         builder.build()
     }
+
 
     #[test]
     fn empty_cfg() {
@@ -230,13 +282,13 @@ pub mod tests {
     #[test]
     fn single_block_cfg() {
         let func = instrs_to_func(vec![
-            Tac::LoadConst { dest: Var::temp(1), src: TacConst::Null}
+            Tac::LoadConst { dest: 0, src: TacConst::Null},
+            Tac::Return { src: 0 }
         ]);
         let blocks = func.get_blocks();
 
-        assert!(blocks.len() == 1);
-        // assert!(blocks[0].get_id() == ENTRY_BLOCK_ID);
-        assert!(blocks[0].get_instrs().len() == 1);
+        assert_eq!(blocks.len(), 1);
+        assert_eq!(blocks[0].get_instrs().len(), 2);
         assert!(blocks[0].get_predecessors().is_empty());
         assert!(blocks[0].get_successors().is_empty());
         assert!(blocks[0].get_label().is_none());
@@ -245,13 +297,13 @@ pub mod tests {
     #[test]
     fn cfg_for_a_mock_if_stmt() {
         let func = instrs_to_func(vec![
-            Tac::LoadConst { dest: Var::temp(1), src: TacConst::Null },
-            Tac::Jnt { src: Var::temp(1), label: 1 },
-            Tac::LoadConst { dest: Var::temp(2), src: TacConst::Int(420) },
-            Tac::Print { src: Var::temp(2) },
+            Tac::LoadConst { dest: 0, src: TacConst::Null },
+            Tac::Jnt { src: 0, label: 1 },
+            Tac::LoadConst { dest: 1, src: TacConst::Int(420) },
+            Tac::Print { src: 1 },
             Tac::Label { label: 1 },
-            Tac::LoadConst { dest: Var::temp(3), src: TacConst::Int(69) },
-            Tac::Return { src: Var::temp(3) }
+            Tac::LoadConst { dest: 3, src: TacConst::Int(69) },
+            Tac::Return { src: 3 }
         ]);
 
         let blocks = func.get_blocks();
@@ -281,16 +333,16 @@ pub mod tests {
     fn cfg_for_a_mock_while_stmt() {
         let func = instrs_to_func(vec![
             Tac::Label { label: 1 },
-            Tac::LoadConst { dest: Var::temp(1), src: TacConst::Null },
-            Tac::Jnt { src: Var::temp(1), label: 2 },
+            Tac::LoadConst { dest: 0, src: TacConst::Null },
+            Tac::Jnt { src: 0, label: 2 },
 
-            Tac::LoadConst { dest: Var::temp(2), src: TacConst::Int(420) },
-            Tac::Print { src: Var::temp(2) },
+            Tac::LoadConst { dest: 1, src: TacConst::Int(420) },
+            Tac::Print { src: 1 },
             Tac::Jump { label: 1 },
 
             Tac::Label { label: 2 },
-            Tac::LoadConst { dest: Var::temp(3), src: TacConst::Int(69) },
-            Tac::Return { src: Var::temp(3) }
+            Tac::LoadConst { dest: 2, src: TacConst::Int(69) },
+            Tac::Return { src: 2 }
         ]);
 
         let blocks = func.get_blocks();

@@ -1,6 +1,8 @@
-pub mod driver;
-pub mod parser;
-pub mod symbol_map;
+mod driver;
+mod parser;
+mod symbol_map;
 mod ir;
+mod codegen;
+mod runtime;
 
-pub use symbol_map::SymbolMap;
+pub use driver::{execute, Config};

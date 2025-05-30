@@ -1,0 +1,58 @@
+OPT=true
+%%%%
+
+fn rotate_array(array, len) {
+  prev = array[0-1];
+
+  i = 0;
+  while i < len - 1 {
+    temp = array[i];
+    array[i] = prev;
+    prev = temp;
+    i = i + 1;
+  }
+}
+
+my_array = [1, 2, 3, 4];
+
+rotate_array(my_array, 4);
+
+print(my_array); // [4, 1, 2, 3]
+
+%%%%
+
+=== FN 1 START ===
+INT  6, 0
+INT  4, 1
+INT  2, -1
+MEML 5, 0[2]
+SUB  3, 1, 4
+LT   3, 6, 3
+JNT  6, 3
+MEML 3, 0[6]
+MEMS 0[6], 5
+ADD  6, 6, 4
+COPY 5, 3
+JMP  -7
+LDN  0
+RTN  0
+=== END ===
+=== FN 0 START ===
+LOC  3, 0
+LIST 1
+INT  2, 1
+INT  0, 0
+MEMS 1[0], 2
+INT  0, 2
+MEMS 1[2], 0
+INT  2, 3
+MEMS 1[0], 2
+INT  0, 4
+MEMS 1[2], 0
+ARG  1
+ARG  0
+CALL 0, 3
+OUT  1
+LDN  0
+RTN  0
+=== END ===

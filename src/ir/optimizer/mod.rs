@@ -1,29 +1,22 @@
+mod dce;
+mod gvn;
+
 use super::func::Func;
+use dce::{remove_dead_instructions, remove_dead_blocks};
+use gvn::global_value_numbering;
 
 pub fn optimize_func(func: &mut Func) {
-    let mut optimizer = Optimizer::new(func);
+    remove_dead_blocks(func);
 
-    // compact the cfg
-    optimizer.dead_code_elimination();
-    optimizer.global_value_numbering();
-    optimizer.dead_code_elimination();
-    optimizer.global_value_numbering();
-    optimizer.dead_code_elimination();
-}
+    remove_dead_instructions(func);
 
-pub struct Optimizer {
-}
+    let value_map = global_value_numbering(func, None);
 
-impl Optimizer {
-    pub fn new(func: &mut Func) -> Self {
-        todo!()
-    }
+    remove_dead_instructions(func);
 
-    fn dead_code_elimination(&mut self) {
-        // remove dead blocks
-    }
+    //let memory_access_ids = memory_ssa(value_map);
+    
+    //let value_map = global_value_numbering(func, Some(memory_access_ids));
 
-    fn global_value_numbering(&mut self) {
-        // escape analysis 
-    }
+    //remove_dead_instructions(func);
 }

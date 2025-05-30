@@ -1,13 +1,13 @@
 use super::super::func::Func;
 use super::super::block::{ BlockId, Block};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 pub trait DFA: Sized {
     type Data;
 
     const BACKWARDS: bool = false;
 
-    fn exec(&mut self, func: &mut Func) {
+    fn exec(&mut self, func: &Func) {
         let mut executor = DFAExecutor::<Self>::new(func);
 
         executor.init(self, func);
@@ -15,41 +15,39 @@ pub trait DFA: Sized {
 
         self.complete(executor.inputs, executor.outputs);
     }
-    fn init_block(&mut self, block: &Block) -> (Self::Data, Self::Data);
-    fn complete(&mut self, inputs: HashMap<BlockId, Self::Data>, outputs: HashMap<BlockId, Self::Data>);
-    fn merge(&mut self, updating: &mut Self::Data, merge: &Self::Data);
-    fn transfer(&mut self, block: &mut Block, start: &Self::Data, end: &mut Self::Data) -> bool;
+    fn init_block(&mut self, block: &Block, func: &Func) -> (Self::Data, Self::Data);
+    fn complete(&mut self, _inputs: BTreeMap<BlockId, Self::Data>, _outputs: BTreeMap<BlockId, Self::Data>) {}
+    fn merge(&mut self, updating: &mut Self::Data, merge: &Self::Data, count: usize);
+    fn transfer(&mut self, block: &Block, start: &Self::Data, end: &mut Self::Data) -> bool;
 }
 
-struct DFAExecutor<T> 
-where T: DFA
-{
-    inputs: HashMap<BlockId, <T as DFA>::Data>,
-    outputs: HashMap<BlockId, <T as DFA>::Data>,
+struct DFAExecutor<T> where T: DFA {
+    inputs: BTreeMap<BlockId, <T as DFA>::Data>,
+    outputs: BTreeMap<BlockId, <T as DFA>::Data>,
     work_list: Vec<BlockId>
 }
 
 impl<T: DFA> DFAExecutor<T> {
     fn new(func: &Func) -> Self {
         Self {
-            inputs: HashMap::with_capacity(func.get_blocks().len()),
-            outputs: HashMap::with_capacity(func.get_blocks().len()),
+            inputs: BTreeMap::new(),
+            outputs: BTreeMap::new(),
             work_list: func.get_block_ids()
         }
     }
 
     fn init(&mut self, dfa: &mut T, func: &Func) {
         for block in func.get_blocks().iter() {
-            let (init_input, init_output) = dfa.init_block(block);
+            let (init_input, init_output) = dfa.init_block(block, func);
 
             self.inputs.insert(block.get_id(), init_input);
             self.outputs.insert(block.get_id(), init_output);
         }
     }
 
-    fn exec(&mut self, dfa: &mut T, func: &mut Func) {
+    fn exec(&mut self, dfa: &mut T, func: &Func) {
         while let Some(block_id) = self.work_list.pop() {
-            let block = func.get_block_mut(block_id);
+            let block = func.get_block(block_id);
 
             if T::BACKWARDS {
                 self.propagate_backward(dfa, block)
@@ -59,13 +57,13 @@ impl<T: DFA> DFAExecutor<T> {
         }
     }
 
-    fn propagate_backward(&mut self, dfa: &mut T, block: &mut Block) {
+    fn propagate_backward(&mut self, dfa: &mut T, block: &Block) {
         let id = block.get_id();
         let output = self.outputs.get_mut(&id).unwrap();
-        for succ_id in block.get_successors().iter() {
+        for (i, succ_id) in block.get_successors().iter().enumerate() {
             let succ_input = self.inputs.get(succ_id).unwrap();
 
-            dfa.merge(output, succ_input);
+            dfa.merge(output, succ_input, i);
         }
 
         let input = self.inputs.get_mut(&id).unwrap();
@@ -79,13 +77,13 @@ impl<T: DFA> DFAExecutor<T> {
         }
     }
 
-    fn propagate_forward(&mut self, dfa: &mut T, block: &mut Block) {
+    fn propagate_forward(&mut self, dfa: &mut T, block: &Block) {
         let id = block.get_id();
         let input = self.inputs.get_mut(&id).unwrap();
-        for pred_id in block.get_predecessors().iter() {
+        for (i, pred_id) in block.get_predecessors().iter().enumerate() {
             let pred_output = self.outputs.get(pred_id).unwrap();
 
-            dfa.merge(input, pred_output);
+            dfa.merge(input, pred_output, i);
         }
 
         let output = self.outputs.get_mut(&id).unwrap();

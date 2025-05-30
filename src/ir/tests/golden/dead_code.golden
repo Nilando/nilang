@@ -1,0 +1,40 @@
+OPT=true
+
+%%%%
+
+// these instructions are all dead
+a = 12345;
+a = "foo";
+a = 1 + 1;
+a = @my_global;
+a = a[0];
+a = x.y;
+a = a * a;
+
+// can't remove these instructions due to side effects
+b = fn() {};
+b = b();
+b[0] = 0;
+b = read;
+print(b);
+
+%%%%
+
+fn1 () {
+block0:
+  t0 = null
+  RETURN t0
+
+}
+MAIN () {
+block0:
+  b_0 = fn1
+  b_1 = CALL b_0
+  t17 = 0
+  b_1[t17] = t17
+  READ b_2
+  PRINT b_2
+  t21 = null
+  RETURN t21
+
+}

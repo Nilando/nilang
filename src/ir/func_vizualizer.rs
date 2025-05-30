@@ -8,6 +8,7 @@ use graphviz_rust::{
 
 use super::func::Func;
 
+#[allow(dead_code)]
 pub fn func_to_svg(func: &Func) {
     let name = format!("func_{}", func.get_id());
     let mut g = graph!(strict di id!(name));

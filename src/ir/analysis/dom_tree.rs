@@ -1,13 +1,13 @@
 use super::super::block::Block;
 use super::super::func::Func;
 use super::super::block::BlockId;
-use std::collections::{HashSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet};
 
-pub fn compute_dom_tree(func: &mut Func) {
+pub fn compute_dom_tree(func: &Func) -> BTreeMap<BlockId, Vec<BlockId>> {
     let entry_block = func.get_entry_block();
     let mut work_list = vec![entry_block.get_id()];
-    let mut visited = HashSet::from([entry_block.get_id()]);
-    let mut dom_tree: HashMap<BlockId, Vec<BlockId>> = HashMap::new();
+    let mut visited = BTreeSet::from([entry_block.get_id()]);
+    let mut dom_tree: BTreeMap<BlockId, Vec<BlockId>> = BTreeMap::new();
 
     while let Some(block_id) = work_list.pop() {
         let block = &func.get_block(block_id);
@@ -31,12 +31,11 @@ pub fn compute_dom_tree(func: &mut Func) {
         }
     }
 
-    todo!() // save the tree somewhere
-    // cfg.dom_tree = dom_tree;
+    dom_tree
 }
 
-pub fn compute_reachable_blocks(func: &Func, block: &Block) -> HashSet<BlockId> {
-    let mut reachable_blocks = HashSet::from([block.get_id()]);
+pub fn compute_reachable_blocks(func: &Func, block: &Block) -> BTreeSet<BlockId> {
+    let mut reachable_blocks = BTreeSet::from([block.get_id()]);
     let mut work_list: Vec<usize> = block.get_successors().to_vec();
 
     while let Some(id) = work_list.pop() {
@@ -54,8 +53,8 @@ pub fn compute_reachable_blocks(func: &Func, block: &Block) -> HashSet<BlockId> 
     reachable_blocks
 }
 
-pub fn compute_dominated_blocks(func: &Func, seed_block: &Block) -> HashSet<BlockId> {
-    let mut dominated_blocks: HashSet<BlockId> = compute_reachable_blocks(func, seed_block).into_iter().collect();
+pub fn compute_dominated_blocks(func: &Func, seed_block: &Block) -> BTreeSet<BlockId> {
+    let mut dominated_blocks: BTreeSet<BlockId> = compute_reachable_blocks(func, seed_block).into_iter().collect();
     let mut work_list: Vec<BlockId> = dominated_blocks.iter().map(|id| *id).collect();
 
     while let Some(id) = work_list.pop() {
@@ -79,8 +78,8 @@ pub fn compute_dominated_blocks(func: &Func, seed_block: &Block) -> HashSet<Bloc
     dominated_blocks
 }
 
-pub fn compute_dominance_frontier(func: &Func, seed_block: &Block) -> HashSet<BlockId> {
-    let mut dominance_frontier: HashSet<BlockId> = HashSet::new();
+pub fn compute_dominance_frontier(func: &Func, seed_block: &Block) -> BTreeSet<BlockId> {
+    let mut dominance_frontier: BTreeSet<BlockId> = BTreeSet::new();
     let dominated_blocks = compute_dominated_blocks(func, seed_block);
 
     for id in dominated_blocks.iter() {
@@ -96,13 +95,48 @@ pub fn compute_dominance_frontier(func: &Func, seed_block: &Block) -> HashSet<Bl
     dominance_frontier
 }
 
-/*
-pub fn compute_unreachable_blocks(&self) -> HashSet<BlockID> {
-    let entry_block = self.get_entry_block();
-    let reachable_blocks = self.compute_reachable_blocks(entry_block);
-    let all_blocks = self.blocks.iter().map(|b| b.id).collect::<HashSet<BlockID>>();
+pub fn compute_unreachable_blocks(func: &Func) -> BTreeSet<BlockId> {
+    let entry_block = func.get_entry_block();
+    let reachable_blocks = compute_reachable_blocks(func, entry_block);
+    let all_blocks = func.get_blocks().iter().map(|b| b.get_id()).collect::<BTreeSet<BlockId>>();
 
     all_blocks.difference(&reachable_blocks).map(|id| *id).collect()
 }
-*/
 
+/*
+pub fn find_loops(func: &Func) -> HashMap<BlockId, HashSet<BlockId>> {
+    let mut loops: HashMap<BlockId, HashSet<BlockId>> = HashMap::new();
+    let mut back_edges = vec![];
+
+    for block in func.get_blocks().iter() {
+        for dominated_block in compute_dominated_blocks(func, block) {
+            if func.get_block(dominated_block).get_successors().contains(&block.get_id()) {
+                back_edges.push((block.get_id(), dominated_block));
+            }
+        }
+    }
+
+    for (header, back_edge) in back_edges.iter() {
+        let mut worklist = vec![back_edge];
+        let mut body = HashSet::from([*header]);
+
+        while let Some(block_id) = worklist.pop() {
+            if body.insert(*block_id) {
+                for pred in func.get_block(*block_id).get_predecessors() {
+                    worklist.push(pred);
+                }
+            }
+        }
+
+        if let Some(loop_body) = loops.get_mut(header) {
+            for block_id in body.iter() {
+                loop_body.insert(*block_id);
+            }
+        } else {
+            loops.insert(*header, body);
+        }
+    }
+
+    loops
+}
+*/

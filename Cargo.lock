@@ -225,9 +225,9 @@ dependencies = [
 
 [[package]]
 name = "crossbeam-channel"
-version = "0.5.14"
+version = "0.5.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "06ba6d68e24814cb8de6bb986db8222d3a027d15872cabc0d18817bc3c0e4471"
+checksum = "82b8f8f868b36967f9606790d1903570de9ceaf870a7bf9fbbd3016d636a2cb2"
 dependencies = [
  "crossbeam-utils",
 ]
@@ -272,6 +272,12 @@ dependencies = [
  "generic-array",
  "typenum",
 ]
+
+[[package]]
+name = "diff"
+version = "0.1.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "56254986775e3233ffa9c4d7d3faaf6d36a2c09d30b20687e9f88bc8bafc16c8"
 
 [[package]]
 name = "digest"
@@ -512,6 +518,7 @@ dependencies = [
  "clap",
  "criterion",
  "graphviz-rust",
+ "pretty_assertions",
  "sandpit",
  "termion",
 ]
@@ -629,6 +636,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "85eae3c4ed2f50dcfe72643da4befc30deadb458a9b590d720cde2f2b1e97da9"
 dependencies = [
  "zerocopy",
+]
+
+[[package]]
+name = "pretty_assertions"
+version = "1.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3ae130e2f271fbc2ac3a40fb1d07180839cdbbe443c7a27e1e3c13c5cac0116d"
+dependencies = [
+ "diff",
+ "yansi",
 ]
 
 [[package]]
@@ -786,7 +803,7 @@ dependencies = [
 [[package]]
 name = "sandpit"
 version = "0.3.0"
-source = "git+https://github.com/Nilando/sandpit?branch=develop#7e468bfbd2c0baa77a6d67cc69c623911d53b48e"
+source = "git+https://github.com/Nilando/sandpit?branch=develop#58af1de173c055315121b92c9d9034d0196e6171"
 dependencies = [
  "crossbeam-channel",
  "higher-kinded-types",
@@ -797,7 +814,7 @@ dependencies = [
 [[package]]
 name = "sandpit_derive"
 version = "0.3.0"
-source = "git+https://github.com/Nilando/sandpit?branch=develop#7e468bfbd2c0baa77a6d67cc69c623911d53b48e"
+source = "git+https://github.com/Nilando/sandpit?branch=develop#58af1de173c055315121b92c9d9034d0196e6171"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1143,6 +1160,12 @@ checksum = "6f42320e61fe2cfd34354ecb597f86f413484a798ba44a8ca1165c58d42da6c1"
 dependencies = [
  "bitflags",
 ]
+
+[[package]]
+name = "yansi"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cfe53a6657fd280eaa890a3bc59152892ffa3e30101319d168b781ed6529b049"
 
 [[package]]
 name = "zerocopy"

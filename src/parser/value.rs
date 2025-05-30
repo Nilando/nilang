@@ -12,7 +12,7 @@ pub enum Value {
     Global(SymID),
     Null,
     Float(f64),
-    Int(isize),
+    Int(i64),
     String(String),
     Bool(bool),
     List(Vec<Spanned<Expr>>),
