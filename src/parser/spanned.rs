@@ -61,7 +61,7 @@ impl PackedSpans {
         }
     }
 
-    pub fn is_empty(&self) -> bool {
+    pub fn _is_empty(&self) -> bool {
         self.spans.is_empty()
     }
 

@@ -15,17 +15,17 @@ pub enum Local {
 #[derive(Debug)]
 pub struct Func {
     id: u64,
-    max_clique: usize,
+    _max_clique: usize,
     locals: Vec<Local>,
     instrs: Vec<ByteCode>,
     spans: PackedSpans,
 }
 
 impl Func {
-    pub fn new(id: u64, max_clique: usize) -> Self {
+    pub fn new(id: u64, _max_clique: usize) -> Self {
         Self {
             id,
-            max_clique,
+            _max_clique,
             locals: vec![],
             instrs: vec![],
             spans: PackedSpans::new(),

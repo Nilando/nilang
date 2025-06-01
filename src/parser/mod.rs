@@ -29,14 +29,14 @@ pub fn parse_program(input: &str, syms: &mut SymbolMap) -> ParseResult<Vec<Stmt>
 pub struct ParseResult<T> {
     pub value: Option<T>,
     pub errors: Vec<Spanned<ParseError>>,
-    pub warnings: Vec<Spanned<()>>,
+    //pub warnings: Vec<Spanned<()>>,
 }
 
 struct ParseContext<'a> {
     lexer: Lexer<'a>,
     syms: &'a mut SymbolMap,
     errors: Vec<Spanned<ParseError>>,
-    warnings: Vec<Spanned<()>>,
+    //warnings: Vec<Spanned<()>>,
     is_in_loop: bool,
 }
 
@@ -100,7 +100,7 @@ impl<'a, T: 'a> Parser<'a, T> {
             lexer,
             syms,
             errors: vec![],
-            warnings: vec![],
+            //warnings: vec![],
             is_in_loop: false,
         };
 
@@ -109,7 +109,7 @@ impl<'a, T: 'a> Parser<'a, T> {
         ParseResult {
             value,
             errors: ctx.errors,
-            warnings: ctx.warnings,
+            //warnings: ctx.warnings,
         }
     }
 
