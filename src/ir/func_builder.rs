@@ -1,31 +1,31 @@
+use super::block::{Block, BlockId};
+use super::func::Func;
 use super::func_printer::VRegMap;
 use super::ssa::convert_to_ssa;
-use crate::parser::Span;
+use super::tac::{FuncID, LabelID, Tac, VReg};
 use crate::ir::TacConst;
-use super::block::{BlockId, Block};
-use super::tac::{Tac, FuncID, LabelID, VReg};
-use super::func::Func;
-use std::collections::{HashMap, HashSet};
+use crate::parser::Span;
 use crate::symbol_map::SymID;
+use std::collections::{HashMap, HashSet};
 
 pub struct FuncBuilder {
     id: FuncID,
     inputs: Vec<VReg>,
     pub upvalues: HashSet<SymID>,
-    blocks:  Vec<Block>,
+    blocks: Vec<Block>,
     block_jump_map: HashMap<LabelID, Vec<BlockId>>, // label is jumped to by the block id
-    non_jump_edges: Vec<(BlockId, BlockId)>, // 0 -> 1
+    non_jump_edges: Vec<(BlockId, BlockId)>,        // 0 -> 1
     current_block: Option<Block>,
     non_jump_edge_flag: bool,
     vreg_counter: u32,
     sym_to_vreg: HashMap<SymID, VReg>,
-    pretty_ir: bool
+    pretty_ir: bool,
 }
 
 impl FuncBuilder {
     pub fn new(id: FuncID, input_syms: &Vec<SymID>, pretty_ir: bool) -> Self {
         let mut this = Self {
-            id, 
+            id,
             inputs: vec![],
             upvalues: HashSet::new(),
             blocks: vec![],
@@ -35,7 +35,7 @@ impl FuncBuilder {
             non_jump_edge_flag: true,
             vreg_counter: 0,
             sym_to_vreg: HashMap::new(),
-            pretty_ir 
+            pretty_ir,
         };
 
         for s in input_syms.iter() {
@@ -67,12 +67,7 @@ impl FuncBuilder {
         self.insert_current();
         self.link_blocks();
 
-        let mut func = Func::new(
-            self.id,
-            self.inputs,
-            self.blocks,
-            self.vreg_counter
-        );
+        let mut func = Func::new(self.id, self.inputs, self.blocks, self.vreg_counter);
 
         if self.pretty_ir {
             let vreg_map = VRegMap::new(self.sym_to_vreg);
@@ -87,9 +82,12 @@ impl FuncBuilder {
 
     fn insert_final_return(&mut self) {
         if let Some(Tac::Return { .. }) = self.last_instr() {
-        }  else {
+        } else {
             let temp = self.new_reg();
-            let t1 = Tac::LoadConst { dest: temp, src: TacConst::Null };
+            let t1 = Tac::LoadConst {
+                dest: temp,
+                src: TacConst::Null,
+            };
             let t2 = Tac::Return { src: temp };
 
             self.push_tac(t1);
@@ -218,7 +216,6 @@ impl FuncBuilder {
         }
 
         self.current_block.as_mut().unwrap()
-
     }
 
     fn insert_current(&mut self) {
@@ -254,11 +251,8 @@ impl FuncBuilder {
 
 #[cfg(test)]
 pub mod tests {
+    use super::super::{func::Func, tac::TacConst};
     use super::*;
-    use super::super::{
-        tac::TacConst,
-        func::Func,
-    };
 
     pub fn instrs_to_func(instrs: Vec<Tac>) -> Func {
         let mut builder = FuncBuilder::new(0, &vec![], false);
@@ -269,7 +263,6 @@ pub mod tests {
 
         builder.build()
     }
-
 
     #[test]
     fn empty_cfg() {
@@ -282,8 +275,11 @@ pub mod tests {
     #[test]
     fn single_block_cfg() {
         let func = instrs_to_func(vec![
-            Tac::LoadConst { dest: 0, src: TacConst::Null},
-            Tac::Return { src: 0 }
+            Tac::LoadConst {
+                dest: 0,
+                src: TacConst::Null,
+            },
+            Tac::Return { src: 0 },
         ]);
         let blocks = func.get_blocks();
 
@@ -297,13 +293,22 @@ pub mod tests {
     #[test]
     fn cfg_for_a_mock_if_stmt() {
         let func = instrs_to_func(vec![
-            Tac::LoadConst { dest: 0, src: TacConst::Null },
+            Tac::LoadConst {
+                dest: 0,
+                src: TacConst::Null,
+            },
             Tac::Jnt { src: 0, label: 1 },
-            Tac::LoadConst { dest: 1, src: TacConst::Int(420) },
+            Tac::LoadConst {
+                dest: 1,
+                src: TacConst::Int(420),
+            },
             Tac::Print { src: 1 },
             Tac::Label { label: 1 },
-            Tac::LoadConst { dest: 3, src: TacConst::Int(69) },
-            Tac::Return { src: 3 }
+            Tac::LoadConst {
+                dest: 3,
+                src: TacConst::Int(69),
+            },
+            Tac::Return { src: 3 },
         ]);
 
         let blocks = func.get_blocks();
@@ -333,16 +338,23 @@ pub mod tests {
     fn cfg_for_a_mock_while_stmt() {
         let func = instrs_to_func(vec![
             Tac::Label { label: 1 },
-            Tac::LoadConst { dest: 0, src: TacConst::Null },
+            Tac::LoadConst {
+                dest: 0,
+                src: TacConst::Null,
+            },
             Tac::Jnt { src: 0, label: 2 },
-
-            Tac::LoadConst { dest: 1, src: TacConst::Int(420) },
+            Tac::LoadConst {
+                dest: 1,
+                src: TacConst::Int(420),
+            },
             Tac::Print { src: 1 },
             Tac::Jump { label: 1 },
-
             Tac::Label { label: 2 },
-            Tac::LoadConst { dest: 2, src: TacConst::Int(69) },
-            Tac::Return { src: 2 }
+            Tac::LoadConst {
+                dest: 2,
+                src: TacConst::Int(69),
+            },
+            Tac::Return { src: 2 },
         ]);
 
         let blocks = func.get_blocks();
@@ -353,7 +365,7 @@ pub mod tests {
 
         assert!(blocks.len() == 4);
 
-        assert!(b0.get_instrs().len() == 0);
+        assert!(b0.get_instrs().is_empty());
         assert!(b0.get_predecessors().is_empty());
         assert!(b0.get_successors() == &vec![1]);
 

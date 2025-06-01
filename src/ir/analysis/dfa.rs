@@ -1,6 +1,6 @@
+use super::super::block::{Block, BlockId};
 use super::super::func::Func;
-use super::super::block::{ BlockId, Block};
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 
 pub trait DFA: Sized {
     type Data;
@@ -16,15 +16,23 @@ pub trait DFA: Sized {
         self.complete(executor.inputs, executor.outputs);
     }
     fn init_block(&mut self, block: &Block, func: &Func) -> (Self::Data, Self::Data);
-    fn complete(&mut self, _inputs: BTreeMap<BlockId, Self::Data>, _outputs: BTreeMap<BlockId, Self::Data>) {}
+    fn complete(
+        &mut self,
+        _inputs: BTreeMap<BlockId, Self::Data>,
+        _outputs: BTreeMap<BlockId, Self::Data>,
+    ) {
+    }
     fn merge(&mut self, updating: &mut Self::Data, merge: &Self::Data, count: usize);
     fn transfer(&mut self, block: &Block, start: &Self::Data, end: &mut Self::Data) -> bool;
 }
 
-struct DFAExecutor<T> where T: DFA {
+struct DFAExecutor<T>
+where
+    T: DFA,
+{
     inputs: BTreeMap<BlockId, <T as DFA>::Data>,
     outputs: BTreeMap<BlockId, <T as DFA>::Data>,
-    work_list: Vec<BlockId>
+    work_list: Vec<BlockId>,
 }
 
 impl<T: DFA> DFAExecutor<T> {
@@ -32,7 +40,7 @@ impl<T: DFA> DFAExecutor<T> {
         Self {
             inputs: BTreeMap::new(),
             outputs: BTreeMap::new(),
-            work_list: func.get_block_ids()
+            work_list: func.get_block_ids(),
         }
     }
 

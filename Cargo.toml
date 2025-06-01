@@ -13,9 +13,9 @@ termion = "4.0.4"
 criterion = "0.5.1"
 pretty_assertions = "1.4.1"
 
-[[bench]]
-name = "lexer"
-harness = false
+# [[bench]]
+# name = "lexer"
+# harness = false
 
 # uncomment when generating flamegraphs
 #[profile.release]

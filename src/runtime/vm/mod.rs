@@ -1,15 +1,13 @@
 mod bytecode;
-pub use bytecode::{ByteCode, Func, Local, func_to_string}; 
-use sandpit::{Gc, GcVec, Mutator, Tag, Tagged as TaggedPtr, Trace, TraceLeaf};
-
-use crate::parser::PackedSpans;
+pub use bytecode::{func_to_string, ByteCode, Func, Local};
+use sandpit::{Gc, GcVec, Mutator, Tag, Tagged as TaggedPtr, Trace};
 
 #[derive(Trace)]
 struct CallFrame<'gc> {
     // register count
     // instruction_stream
     // func id
-    bytecode: Gc<'gc, [ByteCode]>,//this is temp
+    bytecode: Gc<'gc, [ByteCode]>, //this is temp
 }
 
 impl<'gc> CallFrame<'gc> {
@@ -70,20 +68,20 @@ impl<'gc> VM<'gc> {
 
 #[derive(Trace)]
 struct List<'gc> {
-    vec: GcVec<'gc, TaggedValue<'gc>>
+    vec: GcVec<'gc, TaggedValue<'gc>>,
 }
 
 type TaggedValue<'gc> = TaggedPtr<'gc, ValueTag>;
 
 #[derive(Debug, Tag, PartialEq)]
 pub enum ValueTag {
-  Packed,
-  #[ptr(f64)]
-  Float,
-  #[ptr(i64)]
-  Int,
-  #[ptr(List<'gc>)]
-  List,
+    Packed,
+    #[ptr(f64)]
+    Float,
+    #[ptr(i64)]
+    Int,
+    #[ptr(List<'gc>)]
+    List,
 }
 
 impl<'gc> From<&TaggedValue<'gc>> for Value<'gc> {
@@ -116,24 +114,15 @@ impl<'gc> From<&TaggedValue<'gc>> for Value<'gc> {
 impl<'gc> From<Value<'gc>> for TaggedValue<'gc> {
     fn from(value: Value<'gc>) -> Self {
         match value {
-            Value::Null | 
-            Value::Bool(_) | 
-            Value::SymId(_) | 
-            Value::FuncId(_) | 
-            Value::SmallInt(_) | 
-            Value::SmallFloat(_) => {
-                pack_tagged_value(value)
-            }
-            Value::List(gc_list) => {
-                ValueTag::from_list(gc_list)
-            }
-            Value::Float(f) => {
-                ValueTag::from_float(f)
-            }
-            Value::Int(i) => {
-                ValueTag::from_int(i)
-            }
-            _ => todo!()
+            Value::Null
+            | Value::Bool(_)
+            | Value::SymId(_)
+            | Value::FuncId(_)
+            | Value::SmallInt(_)
+            | Value::SmallFloat(_) => pack_tagged_value(value),
+            Value::List(gc_list) => ValueTag::from_list(gc_list),
+            Value::Float(f) => ValueTag::from_float(f),
+            Value::Int(i) => ValueTag::from_int(i),
         }
     }
 }
@@ -144,7 +133,7 @@ enum PackedTag {
     Int,
     Float,
     Bool,
-    Null
+    Null,
 }
 
 // PACKED VALUE LAYOUT
@@ -160,22 +149,22 @@ enum PackedTag {
 // overflow checking logic which I didn't feel like implementing.
 //
 // Value (32 bits)                                                  Secondary Tag (3 bits) => PackedTag::_
-// |                                                                  |  
+// |                                                                  |
 // |                                                                  |  Primary Tag (3 bits) == ValueTag::PackedTag
 // |                                                                  |   |
 // V                                                                  V   V
 // -----------------------------------                               --- ---
-// 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00 000 000 
+// 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00 000 000
 
-fn pack_tagged_value<'gc>(value: Value<'gc>) -> TaggedValue<'gc> {
+fn pack_tagged_value(value: Value<'_>) -> TaggedValue<'_> {
     match value {
         Value::Null => {
-            let raw: u64 = (0 ^ PackedTag::Null as u64) << 3;
+            let raw: u64 = (PackedTag::Null as u64) << 3;
 
             TaggedValue::from_raw(raw as usize, ValueTag::Packed)
         }
         Value::Bool(b) => {
-            let mut raw: u64 = (0 ^ PackedTag::Bool as u64) << 3;
+            let mut raw: u64 = (PackedTag::Bool as u64) << 3;
 
             if b {
                 let value_mask: u64 = (u32::MAX as u64) ^ u64::MAX;
@@ -210,7 +199,7 @@ fn pack_tagged_value<'gc>(value: Value<'gc>) -> TaggedValue<'gc> {
 
             TaggedValue::from_raw(raw as usize, ValueTag::Packed)
         }
-        _ => panic!("Could not pack value")
+        _ => panic!("Could not pack value"),
     }
 }
 
@@ -262,7 +251,7 @@ enum Value<'gc> {
     SymId(u32),
     Int(Gc<'gc, i64>),
     Float(Gc<'gc, f64>),
-    List(Gc<'gc, List<'gc>>)
+    List(Gc<'gc, List<'gc>>),
 }
 
 #[cfg(test)]
@@ -300,7 +289,7 @@ mod tests {
             assert!(false);
         }
     }
-    
+
     #[test]
     fn pack_and_unpack_sym_id() {
         let v = Value::SymId(123);

@@ -38,7 +38,6 @@ use crate::symbol_map::SymID;
 //  || idx_expr
 //  || access_expr
 
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum LhsExpr {
     Index {
@@ -50,20 +49,18 @@ pub enum LhsExpr {
         key: SymID,
     },
     Global(SymID),
-    Local(SymID)
+    Local(SymID),
 }
 
 impl From<Expr> for Option<LhsExpr> {
     fn from(value: Expr) -> Self {
-        Some(
-            match value {
-                Expr::Index { store, key } => LhsExpr::Index { store, key },
-                Expr::Access { store, key } => LhsExpr::Access { store, key },
-                Expr::Value(Value::Ident(sym_id)) => LhsExpr::Local(sym_id),
-                Expr::Value(Value::Global(sym_id)) => LhsExpr::Global(sym_id),
-                _ => return None,
-            }
-        )
+        Some(match value {
+            Expr::Index { store, key } => LhsExpr::Index { store, key },
+            Expr::Access { store, key } => LhsExpr::Access { store, key },
+            Expr::Value(Value::Ident(sym_id)) => LhsExpr::Local(sym_id),
+            Expr::Value(Value::Global(sym_id)) => LhsExpr::Global(sym_id),
+            _ => return None,
+        })
     }
 }
 
@@ -223,11 +220,7 @@ fn nested_expr(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, Spanned<Expr>> {
 }
 
 fn print_expr(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, Spanned<Expr>> {
-    keyword(KeyWord::Print).then(
-        nested_expr(ep)
-            .map(|e| Expr::Print(Box::new(e)))
-            .spanned()
-    )
+    keyword(KeyWord::Print).then(nested_expr(ep).map(|e| Expr::Print(Box::new(e))).spanned())
 }
 
 fn read_expr<'a>() -> Parser<'a, Spanned<Expr>> {
@@ -259,8 +252,8 @@ mod tests {
     use super::super::expr::expr;
     use super::super::stmt::stmt;
     use super::super::ParseResult;
-    use crate::symbol_map::SymbolMap;
     use super::*;
+    use crate::symbol_map::SymbolMap;
 
     fn parse_expr_with_syms(input: &str, syms: &mut SymbolMap) -> ParseResult<Expr> {
         let stmt = stmt();
@@ -331,7 +324,7 @@ mod tests {
                     assert!(key.item == Expr::Value(Value::Int(0)));
 
                     if let Expr::Value(Value::Ident(_)) = store.item {
-                        return
+                        return;
                     }
                 }
             }
@@ -359,7 +352,9 @@ mod tests {
     #[test]
     fn nested_call_expr() {
         let mut syms = SymbolMap::new();
-        if let Some(Expr::Call { calle, args }) = parse_expr_with_syms("a(0)(1)(2)", &mut syms).value {
+        if let Some(Expr::Call { calle, args }) =
+            parse_expr_with_syms("a(0)(1)(2)", &mut syms).value
+        {
             assert!(args[0].item == Expr::Value(Value::Int(2)));
 
             if let Expr::Call { calle, args } = calle.item {

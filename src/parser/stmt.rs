@@ -1,9 +1,7 @@
 use super::expr::{expr, Expr, LhsExpr};
-use super::lexer::{Token, Ctrl, KeyWord};
+use super::lexer::{Ctrl, KeyWord, Token};
 use super::spanned::Spanned;
-use super::{
-    block, ctrl, inputs, keyword, nothing, recursive, symbol, Parser, ParseError
-};
+use super::{block, ctrl, inputs, keyword, nothing, recursive, symbol, ParseError, Parser};
 
 use crate::symbol_map::SymID;
 
@@ -47,28 +45,29 @@ pub fn stmt<'a>() -> Parser<'a, Stmt> {
 }
 
 fn func_decl(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
-    let func_decl = 
-        keyword(KeyWord::Fn)
-            .then(
-                symbol()
-                .expect("Expected function name after 'fn' keyword")
-                .append(inputs().expect("Expected input list after 'fn name'"))
-                .append(block(sp).looping(false).expect("Expected block '{ .. }' after function inputs"))
-                .map(|((ident, inputs), stmts)| Stmt::FuncDecl {
-                    ident,
-                    inputs,
-                    stmts,
-                }),
-        );
+    let func_decl = keyword(KeyWord::Fn).then(
+        symbol()
+            .expect("Expected function name after 'fn' keyword")
+            .append(inputs().expect("Expected input list after 'fn name'"))
+            .append(
+                block(sp)
+                    .looping(false)
+                    .expect("Expected block '{ .. }' after function inputs"),
+            )
+            .map(|((ident, inputs), stmts)| Stmt::FuncDecl {
+                ident,
+                inputs,
+                stmts,
+            }),
+    );
 
-    // requires a peek ahead to the token after the next to 
+    // requires a peek ahead to the token after the next to
     // differentiate between a func value vs a function declaration
     Parser::new(move |ctx| {
         let next = ctx.peek_one_ahead();
 
         if let Some(token) = next {
             if let Token::Ident(_) = token.item {
-
                 return func_decl.parse(ctx);
             }
         }
@@ -98,7 +97,11 @@ fn else_block(sp: Parser<'_, Stmt>) -> Parser<'_, Vec<Stmt>> {
 fn while_stmt(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
     keyword(KeyWord::While)
         .then(expr(sp.clone()).expect("Expected expression after 'while' keyword"))
-        .append(block(sp).looping(true).expect("Expected a block '{ ... }' after while expression"))
+        .append(
+            block(sp)
+                .looping(true)
+                .expect("Expected a block '{ ... }' after while expression"),
+        )
         .map(|(cond, stmts)| Stmt::While { cond, stmts })
 }
 
@@ -113,9 +116,7 @@ fn closed_stmt(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
         .or(return_stmt(sp))
         .or(break_stmt())
         .or(continue_stmt())
-        .closed_by(
-            ctrl(Ctrl::SemiColon).expect("expected ';' at end of stmt")
-        )
+        .closed_by(ctrl(Ctrl::SemiColon).expect("expected ';' at end of stmt"))
 }
 
 fn basic_stmt(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
@@ -127,9 +128,9 @@ fn basic_stmt(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
             let span = lhs_expr.span;
 
             if let Some(lhs) = lhs_expr.item.into() {
-                return Some(Stmt::Assign { 
-                    dest: Spanned::new(lhs, span), 
-                    src: rhs 
+                return Some(Stmt::Assign {
+                    dest: Spanned::new(lhs, span),
+                    src: rhs,
                 });
             }
 
@@ -162,16 +163,18 @@ fn break_stmt<'a>() -> Parser<'a, Stmt> {
 }
 
 fn continue_stmt<'a>() -> Parser<'a, Stmt> {
-    keyword(KeyWord::Continue).map(|_| Stmt::Continue).expect_looped()
+    keyword(KeyWord::Continue)
+        .map(|_| Stmt::Continue)
+        .expect_looped()
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::symbol_map::SymbolMap;
     use super::super::value::Value;
     use super::super::ParseResult;
-    use crate::parser::Op;
     use super::*;
+    use crate::parser::Op;
+    use crate::symbol_map::SymbolMap;
     use pretty_assertions::assert_eq;
 
     fn parse_stmt_with_syms(input: &str, syms: &mut SymbolMap) -> ParseResult<Stmt> {
@@ -221,7 +224,11 @@ mod tests {
     fn func_decl_stmt() {
         let mut syms = SymbolMap::new();
         match parse_stmt_with_syms("fn add(x, y) { return x + y; }", &mut syms).value {
-            Some(Stmt::FuncDecl { ident, inputs, stmts }) => {
+            Some(Stmt::FuncDecl {
+                ident,
+                inputs,
+                stmts,
+            }) => {
                 assert!(ident == syms.get_id("add"));
                 assert!(inputs.item.len() == 2);
                 assert!(stmts.len() == 1);
@@ -234,7 +241,7 @@ mod tests {
     fn if_stmt() {
         let mut syms = SymbolMap::new();
         match parse_stmt_with_syms("if true { print(true); }", &mut syms).value {
-            Some(Stmt::If { cond, stmts}) => {
+            Some(Stmt::If { cond, stmts }) => {
                 assert!(cond.item == Expr::Value(Value::Bool(true)));
                 assert!(stmts.len() == 1);
             }
@@ -245,8 +252,14 @@ mod tests {
     #[test]
     fn if_else_stmt() {
         let mut syms = SymbolMap::new();
-        match parse_stmt_with_syms("if true { print(true); } else { print(false); }", &mut syms).value {
-            Some(Stmt::IfElse { cond, stmts, else_stmts }) => {
+        match parse_stmt_with_syms("if true { print(true); } else { print(false); }", &mut syms)
+            .value
+        {
+            Some(Stmt::IfElse {
+                cond,
+                stmts,
+                else_stmts,
+            }) => {
                 assert!(cond.item == Expr::Value(Value::Bool(true)));
                 assert!(stmts.len() == 1);
                 assert!(else_stmts.len() == 1);
@@ -260,19 +273,18 @@ mod tests {
         let mut syms = SymbolMap::new();
         let result = parse_stmt_with_syms("while 2 == 3 { two = 3; }", &mut syms);
         let expected = Stmt::While {
-            cond: Spanned::new(Expr::Binop {
+            cond: Spanned::new(
+                Expr::Binop {
                     lhs: Box::new(Spanned::new(Expr::Value(Value::Int(2)), (6, 7))),
                     op: Op::Equal,
-                    rhs: Box::new(Spanned::new(Expr::Value(Value::Int(3)), (11, 14)))
-                }, 
-                (6, 14)
+                    rhs: Box::new(Spanned::new(Expr::Value(Value::Int(3)), (11, 14))),
+                },
+                (6, 14),
             ),
-            stmts: vec![
-                Stmt::Assign {
-                    dest: Spanned::new(LhsExpr::Local(syms.get_id("two")), (15,20)),
-                    src: Spanned::new(Expr::Value(Value::Int(3)), (21, 23)),
-                }
-            ]
+            stmts: vec![Stmt::Assign {
+                dest: Spanned::new(LhsExpr::Local(syms.get_id("two")), (15, 20)),
+                src: Spanned::new(Expr::Value(Value::Int(3)), (21, 23)),
+            }],
         };
 
         assert_eq!(result.value.unwrap(), expected);
@@ -281,15 +293,13 @@ mod tests {
     #[test]
     fn continue_and_break_stmts() {
         let mut syms = SymbolMap::new();
-        let result = parse_stmt_with_syms("while true { continue; break; continue; break; }", &mut syms);
+        let result = parse_stmt_with_syms(
+            "while true { continue; break; continue; break; }",
+            &mut syms,
+        );
         let expected = Stmt::While {
             cond: Spanned::new(Expr::Value(Value::Bool(true)), (6, 12)),
-            stmts: vec![
-                Stmt::Continue,
-                Stmt::Break,
-                Stmt::Continue,
-                Stmt::Break,
-            ]
+            stmts: vec![Stmt::Continue, Stmt::Break, Stmt::Continue, Stmt::Break],
         };
 
         assert_eq!(result.value.unwrap(), expected);

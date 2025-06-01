@@ -1,6 +1,6 @@
 use super::super::block::Block;
-use super::super::func::Func;
 use super::super::block::BlockId;
+use super::super::func::Func;
 use std::collections::{BTreeMap, BTreeSet};
 
 pub fn compute_dom_tree(func: &Func) -> BTreeMap<BlockId, Vec<BlockId>> {
@@ -14,15 +14,14 @@ pub fn compute_dom_tree(func: &Func) -> BTreeMap<BlockId, Vec<BlockId>> {
         let mut dominated_blocks = compute_dominated_blocks(func, block);
         dominated_blocks.remove(&block_id);
 
-        for (_, blocks)  in dom_tree.iter_mut() {
+        for (_, blocks) in dom_tree.iter_mut() {
             blocks.retain(|b| !dominated_blocks.contains(b));
         }
 
         dom_tree.insert(block.get_id(), dominated_blocks.into_iter().collect());
 
-
         for succ in block.get_successors().iter() {
-            if visited.contains(&succ) {
+            if visited.contains(succ) {
                 continue;
             }
 
@@ -54,8 +53,10 @@ pub fn compute_reachable_blocks(func: &Func, block: &Block) -> BTreeSet<BlockId>
 }
 
 pub fn compute_dominated_blocks(func: &Func, seed_block: &Block) -> BTreeSet<BlockId> {
-    let mut dominated_blocks: BTreeSet<BlockId> = compute_reachable_blocks(func, seed_block).into_iter().collect();
-    let mut work_list: Vec<BlockId> = dominated_blocks.iter().map(|id| *id).collect();
+    let mut dominated_blocks: BTreeSet<BlockId> = compute_reachable_blocks(func, seed_block)
+        .into_iter()
+        .collect();
+    let mut work_list: Vec<BlockId> = dominated_blocks.iter().copied().collect();
 
     while let Some(id) = work_list.pop() {
         if id == seed_block.get_id() {
@@ -64,11 +65,15 @@ pub fn compute_dominated_blocks(func: &Func, seed_block: &Block) -> BTreeSet<Blo
 
         let block = func.get_block(id);
 
-        if block.get_predecessors().iter().find(|id| dominated_blocks.get(&id).is_none()).is_some() {
+        if block
+            .get_predecessors()
+            .iter()
+            .any(|id| dominated_blocks.get(id).is_none())
+        {
             dominated_blocks.remove(&id);
 
             for id in block.get_successors().iter() {
-                if dominated_blocks.get(&id).is_some() {
+                if dominated_blocks.get(id).is_some() {
                     work_list.push(*id);
                 }
             }
@@ -98,9 +103,13 @@ pub fn compute_dominance_frontier(func: &Func, seed_block: &Block) -> BTreeSet<B
 pub fn compute_unreachable_blocks(func: &Func) -> BTreeSet<BlockId> {
     let entry_block = func.get_entry_block();
     let reachable_blocks = compute_reachable_blocks(func, entry_block);
-    let all_blocks = func.get_blocks().iter().map(|b| b.get_id()).collect::<BTreeSet<BlockId>>();
+    let all_blocks = func
+        .get_blocks()
+        .iter()
+        .map(|b| b.get_id())
+        .collect::<BTreeSet<BlockId>>();
 
-    all_blocks.difference(&reachable_blocks).map(|id| *id).collect()
+    all_blocks.difference(&reachable_blocks).copied().collect()
 }
 
 /*

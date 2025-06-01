@@ -1,7 +1,5 @@
 use super::lexer::{Ctrl, KeyWord, Token};
-use super::{
-    block, ctrl, inputs, keyword, nothing, Parser,
-};
+use super::{block, ctrl, inputs, keyword, nothing, Parser};
 use crate::parser::stmt::Stmt;
 use crate::parser::{Expr, Spanned};
 use crate::symbol_map::SymID;
@@ -26,7 +24,7 @@ pub enum Value {
 #[derive(Debug, Clone, PartialEq)]
 pub enum MapKey {
     Sym(SymID),
-    Expr(Spanned<Expr>)
+    Expr(Spanned<Expr>),
 }
 
 pub fn value<'a>(ep: Parser<'a, Spanned<Expr>>, sp: Parser<'a, Stmt>) -> Parser<'a, Value> {
@@ -37,13 +35,16 @@ pub fn value<'a>(ep: Parser<'a, Spanned<Expr>>, sp: Parser<'a, Stmt>) -> Parser<
 }
 
 fn inline_func(sp: Parser<'_, Stmt>) -> Parser<'_, Value> {
-    keyword(KeyWord::Fn)
-        .then(
-            inputs()
-                .expect("Expected input list after 'fn name'")
-                .append(block(sp).looping(false).expect("Expected block '{ .. }' after function inputs"))
-                .map(|(inputs, stmts)| Value::InlineFunc { inputs, stmts }),
-        )
+    keyword(KeyWord::Fn).then(
+        inputs()
+            .expect("Expected input list after 'fn name'")
+            .append(
+                block(sp)
+                    .looping(false)
+                    .expect("Expected block '{ .. }' after function inputs"),
+            )
+            .map(|(inputs, stmts)| Value::InlineFunc { inputs, stmts }),
+    )
 }
 
 fn map(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, Value> {
@@ -51,14 +52,10 @@ fn map(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, Value> {
     let right_curly = ctrl(Ctrl::RightCurly).expect("Expected '}', found something else");
     let items = inner_map(ep);
 
-    items
-        .delimited(left_curly, right_curly)
-        .map(Value::Map)
+    items.delimited(left_curly, right_curly).map(Value::Map)
 }
 
-pub fn inner_map(
-    ep: Parser<'_, Spanned<Expr>>,
-) -> Parser<'_, Vec<(MapKey, Spanned<Expr>)>> {
+pub fn inner_map(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, Vec<(MapKey, Spanned<Expr>)>> {
     map_entry(ep)
         .delimited_list(ctrl(Ctrl::Comma))
         .or(nothing().map(|_| vec![]))
@@ -71,11 +68,9 @@ pub fn map_entry(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, (MapKey, Spanned<E
 }
 
 pub fn map_key(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, MapKey> {
-    ep.map(|expr| {
-        match expr.item {
-            Expr::Value(Value::Ident(sym_id)) => MapKey::Sym(sym_id),
-            _ => MapKey::Expr(expr),
-        }
+    ep.map(|expr| match expr.item {
+        Expr::Value(Value::Ident(sym_id)) => MapKey::Sym(sym_id),
+        _ => MapKey::Expr(expr),
     })
 }
 
@@ -122,8 +117,8 @@ mod tests {
     use super::super::expr::expr;
     use super::super::stmt::stmt;
     use super::super::ParseResult;
-    use crate::symbol_map::SymbolMap;
     use super::*;
+    use crate::symbol_map::SymbolMap;
 
     fn parse_value(input: &str) -> ParseResult<Value> {
         let mut syms = SymbolMap::new();
@@ -183,11 +178,15 @@ mod tests {
 
     #[test]
     fn parse_list_with_single_value() {
-        let Some(Value::List(list)) = parse_value("[333]").value else { panic!() };
+        let Some(Value::List(list)) = parse_value("[333]").value else {
+            panic!()
+        };
 
         assert!(list.len() == 1);
 
-        let Expr::Value(Value::Int(333)) = list[0].item else { panic!() };
+        let Expr::Value(Value::Int(333)) = list[0].item else {
+            panic!()
+        };
     }
 
     #[test]
@@ -231,12 +230,16 @@ mod tests {
     fn expr_map_key() {
         let mut syms = SymbolMap::new();
         let parse_value = parse_value_with_syms("{ \"test\": 2 }", &mut syms).value;
-        let Some(Value::Map(entries)) = parse_value else { panic!() };
+        let Some(Value::Map(entries)) = parse_value else {
+            panic!()
+        };
 
         assert!(entries.len() == 1);
         assert!(entries[0].1.item == Expr::Value(Value::Int(2)));
 
-        let MapKey::Expr(expr) = &entries[0].0 else { panic!() };
+        let MapKey::Expr(expr) = &entries[0].0 else {
+            panic!()
+        };
 
         assert!(expr.item == Expr::Value(Value::String("test".to_string())));
     }
@@ -244,9 +247,11 @@ mod tests {
     #[test]
     fn parse_empty_map() {
         let parse_value = parse_value("{}").value;
-        let Some(Value::Map(entries)) = parse_value else { panic!() };
+        let Some(Value::Map(entries)) = parse_value else {
+            panic!()
+        };
 
-        assert!(entries.len() == 0);
+        assert!(entries.is_empty());
     }
 
     #[test]

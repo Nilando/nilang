@@ -1,11 +1,11 @@
+use crate::codegen::backpatch::{BackPatchLabel, BackpatchContext};
+use crate::codegen::ssa_elimination::ssa_elimination;
+use crate::codegen::InterferenceGraph;
 use crate::ir::{Block, Func as IRFunc, LabelID, Tac, VReg};
 use crate::runtime::vm::{ByteCode, Func};
-use crate::codegen::{InterferenceGraph};
-use crate::codegen::ssa_elimination::ssa_elimination;
-use crate::codegen::backpatch::{BackPatchLabel, BackpatchContext};
 
 pub fn handle_control_flow_instruction(
-    instr: &Tac, 
+    instr: &Tac,
     current_block: &Block,
     ir_func: &IRFunc,
     graph: &InterferenceGraph,
@@ -17,9 +17,17 @@ pub fn handle_control_flow_instruction(
             ctx.insert_label_position(BackPatchLabel::Label(*label), func.len());
             true
         }
-        Tac::Jnt { src, label } |
-        Tac::Jit { src, label } => {
-            handle_conditional_jump(instr, *src, *label, current_block, ir_func, graph, func, ctx);
+        Tac::Jnt { src, label } | Tac::Jit { src, label } => {
+            handle_conditional_jump(
+                instr,
+                *src,
+                *label,
+                current_block,
+                ir_func,
+                graph,
+                func,
+                ctx,
+            );
             true
         }
         Tac::Jump { label } => {
@@ -31,9 +39,9 @@ pub fn handle_control_flow_instruction(
 }
 
 fn handle_conditional_jump(
-    instr: &Tac, 
-    src: VReg, 
-    label: LabelID, 
+    instr: &Tac,
+    src: VReg,
+    label: LabelID,
     current_block: &Block,
     ir_func: &IRFunc,
     graph: &InterferenceGraph,
@@ -42,13 +50,13 @@ fn handle_conditional_jump(
 ) {
     let original_label = BackPatchLabel::Label(label);
     let bytecode_instr = match instr {
-        Tac::Jnt { .. } => ByteCode::Jnt { 
+        Tac::Jnt { .. } => ByteCode::Jnt {
             src: graph.get_reg(&src),
-            offset: 0
+            offset: 0,
         },
-        Tac::Jit { .. } => ByteCode::Jit { 
+        Tac::Jit { .. } => ByteCode::Jit {
             src: graph.get_reg(&src),
-            offset: 0
+            offset: 0,
         },
         _ => unreachable!(),
     };
@@ -77,7 +85,7 @@ fn handle_conditional_jump(
 }
 
 fn handle_unconditional_jump(
-    label: LabelID, 
+    label: LabelID,
     current_block: &Block,
     ir_func: &IRFunc,
     graph: &InterferenceGraph,

@@ -1,9 +1,9 @@
 use crate::ir::tac::VReg;
 
+use super::super::analysis::{compute_unreachable_blocks, LivenessDFA, DFA};
 use super::super::block::Block;
-use super::super::tac::Tac;
 use super::super::func::Func;
-use super::super::analysis::{LivenessDFA, DFA, compute_unreachable_blocks};
+use super::super::tac::Tac;
 use std::collections::BTreeSet;
 
 pub fn remove_dead_blocks(func: &mut Func) {
@@ -51,13 +51,13 @@ fn dce_inner(block: &mut Block, live_vars: &mut BTreeSet<VReg>) -> usize {
         }
 
         // keep this instruction
-        return true;
+        true
     });
 
     // remove dead phi nodes
-    block.get_phi_nodes_mut().retain(|node| {
-        live_vars.contains(&node.dest)
-    });
+    block
+        .get_phi_nodes_mut()
+        .retain(|node| live_vars.contains(&node.dest));
 
     removed_instructions
 }

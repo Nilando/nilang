@@ -1,14 +1,17 @@
-use super::super::func::Func;
 use super::super::analysis::{compute_dom_tree, InstrLoc, MemoryAccessId};
 use super::super::block::BlockId;
+use super::super::func::Func;
 use super::super::tac::{Tac, TacConst};
-use std::collections::{BTreeMap, HashMap};
 use crate::ir::tac::VReg;
 use crate::parser::Op;
+use std::collections::{BTreeMap, HashMap};
 
 pub type ValueId = usize;
 
-pub fn global_value_numbering(func: &mut Func, memory_access_ids: Option<HashMap<InstrLoc, MemoryAccessId>>) {
+pub fn global_value_numbering(
+    func: &mut Func,
+    memory_access_ids: Option<HashMap<InstrLoc, MemoryAccessId>>,
+) {
     let dom_tree = compute_dom_tree(func);
     let mut ctx = GVNC::new(memory_access_ids);
 
@@ -21,7 +24,7 @@ pub struct GVNC {
     value_table: HashMap<ValueId, ValueEntry>,
     memory_access_ids: Option<HashMap<InstrLoc, MemoryAccessId>>,
     //dead_values: HashMap<ValueId, ValueEntry>,
-    value_stack: Vec<Vec<ValueId>>
+    value_stack: Vec<Vec<ValueId>>,
 }
 
 impl GVNC {
@@ -31,7 +34,7 @@ impl GVNC {
             value_table: HashMap::new(),
             //dead_values: HashMap::new(),
             memory_access_ids,
-            value_stack: vec![]
+            value_stack: vec![],
         }
     }
 
@@ -58,7 +61,7 @@ impl GVNC {
     fn try_fold_entries(&self, lhs: &ValueEntry, op: Op, rhs: &ValueEntry) -> Option<Value> {
         if let (Some(lhs_const), Some(rhs_const)) = (lhs.const_value(), rhs.const_value()) {
             if let Some(val) = fold_constants(op, lhs_const, rhs_const) {
-                return Some(Value::Const(val))
+                return Some(Value::Const(val));
             }
         }
 
@@ -77,20 +80,17 @@ impl GVNC {
         };
 
         if let Some((_, entry)) = self.find_val_entry_mut(&value) {
-            entry.push_loc(ValueLocation::Reg(dest.clone()));
+            entry.push_loc(ValueLocation::Reg(dest));
 
             Some(Tac::Noop)
+        } else if let Value::Const(val) = value {
+            self.create_entry(dest, Some(Value::Const(val.clone())));
+
+            Some(Tac::LoadConst { dest, src: val })
         } else {
+            self.create_entry(dest, Some(value));
 
-            if let Value::Const(val) = value {
-                self.create_entry(dest, Some(Value::Const(val.clone())));
-
-                Some(Tac::LoadConst { dest, src: val })
-            } else {
-                self.create_entry(dest, Some(value));
-
-                None
-            }
+            None
         }
     }
 
@@ -106,7 +106,12 @@ impl GVNC {
         }
     }
 
-    fn apply_value_numbering(&mut self, func: &mut Func, dom_tree: &BTreeMap<BlockId, Vec<BlockId>>, current_block: BlockId) {
+    fn apply_value_numbering(
+        &mut self,
+        func: &mut Func,
+        dom_tree: &BTreeMap<BlockId, Vec<BlockId>>,
+        current_block: BlockId,
+    ) {
         let block = func.get_block_mut(current_block);
         self.value_stack.push(vec![]);
 
@@ -145,12 +150,11 @@ impl GVNC {
                 }
                 Tac::Copy { dest, src } => {
                     if let Some((_, entry)) = self.find_loc_entry_mut(&ValueLocation::Reg(*src)) {
-                        entry.push_loc(ValueLocation::Reg(dest.clone()));
-
+                        entry.push_loc(ValueLocation::Reg(*dest));
                     } else {
-                        let mut new_entry = ValueEntry::new(src.clone(), None);
+                        let mut new_entry = ValueEntry::new(*src, None);
 
-                        new_entry.push_loc(ValueLocation::Reg(dest.clone()));
+                        new_entry.push_loc(ValueLocation::Reg(*dest));
 
                         self.insert_entry(new_entry);
                     }
@@ -160,10 +164,13 @@ impl GVNC {
                 Tac::MemLoad { dest, .. } => {
                     let mem_acc_id = self.get_memory_access_id(instr_loc);
 
-                    if let Some(_) = self.find_loc_entry_mut(&ValueLocation::Memory(mem_acc_id)) {
+                    if self
+                        .find_loc_entry_mut(&ValueLocation::Memory(mem_acc_id))
+                        .is_some()
+                    {
                         *instr = Tac::Noop;
                     } else {
-                        let mut new_entry = ValueEntry::new(dest.clone(), None);
+                        let mut new_entry = ValueEntry::new(*dest, None);
 
                         new_entry.push_loc(ValueLocation::Memory(mem_acc_id));
 
@@ -177,11 +184,10 @@ impl GVNC {
                         entry.push_loc(ValueLocation::Memory(mem_acc_id));
                     }
                 }
-                Tac::Call { dest, .. } |
-                Tac::NewMap { dest } |
-                Tac::NewList { dest } |
-                Tac::Read { dest } 
-                    => {
+                Tac::Call { dest, .. }
+                | Tac::NewMap { dest }
+                | Tac::NewList { dest }
+                | Tac::Read { dest } => {
                     self.create_entry(*dest, None);
                 }
                 _ => {
@@ -217,7 +223,7 @@ impl GVNC {
     }
 
     fn remove_entry(&mut self, value: &ValueId) {
-        self.value_table.remove(&value);
+        self.value_table.remove(value);
     }
 
     fn create_entry(&mut self, dest: VReg, value: Option<Value>) -> ValueId {
@@ -237,19 +243,23 @@ impl GVNC {
     }
 
     fn find_loc_entry_mut(&mut self, loc: &ValueLocation) -> Option<(ValueId, &mut ValueEntry)> {
-        self.value_table.iter_mut().find(|(_, entry)| {
-            entry.locations.contains(loc)
-        }).map(|(id, entry)| (*id, entry))
+        self.value_table
+            .iter_mut()
+            .find(|(_, entry)| entry.locations.contains(loc))
+            .map(|(id, entry)| (*id, entry))
     }
 
     fn find_val_entry_mut(&mut self, val: &Value) -> Option<(ValueId, &mut ValueEntry)> {
-        self.value_table.iter_mut().find(|(_, entry)| {
-            if let Some(v) = &entry.value {
-                v == val
-            } else {
-                false
-            }
-        }).map(|(id, entry)| (*id, entry))
+        self.value_table
+            .iter_mut()
+            .find(|(_, entry)| {
+                if let Some(v) = &entry.value {
+                    v == val
+                } else {
+                    false
+                }
+            })
+            .map(|(id, entry)| (*id, entry))
     }
 
     fn canonize_reg(&mut self, var: &mut VReg) {
@@ -333,85 +343,62 @@ impl CanonicalBinop {
             Self {
                 op,
                 lhs: rhs,
-                rhs: lhs
+                rhs: lhs,
             }
         } else {
-            Self {
-                op,
-                lhs,
-                rhs
-            }
+            Self { op, lhs, rhs }
         }
     }
 }
 
 fn fold_constants(op: Op, lhs: &TacConst, rhs: &TacConst) -> Option<TacConst> {
     match op {
-        Op::Plus => {
-            match (lhs, rhs) {
-                (TacConst::Int(i1), TacConst::Int(i2)) => Some(TacConst::Int(i1 + i2)),
-                (TacConst::Float(f1), TacConst::Float(f2)) => Some(TacConst::Float(f1 + f2)),
-                (TacConst::Int(i), TacConst::Float(f)) |
-                (TacConst::Float(f), TacConst::Int(i))
-                => {
-                    Some(TacConst::Float(*i as f64 + f))
-                }
-                _ => None
+        Op::Plus => match (lhs, rhs) {
+            (TacConst::Int(i1), TacConst::Int(i2)) => Some(TacConst::Int(i1 + i2)),
+            (TacConst::Float(f1), TacConst::Float(f2)) => Some(TacConst::Float(f1 + f2)),
+            (TacConst::Int(i), TacConst::Float(f)) | (TacConst::Float(f), TacConst::Int(i)) => {
+                Some(TacConst::Float(*i as f64 + f))
             }
-        }
-        Op::Multiply => {
-            match (lhs, rhs) {
-                (TacConst::Int(i1), TacConst::Int(i2)) => Some(TacConst::Int(i1 * i2)),
-                (TacConst::Float(f1), TacConst::Float(f2)) => Some(TacConst::Float(f1 * f2)),
-                (TacConst::Int(i), TacConst::Float(f)) |
-                (TacConst::Float(f), TacConst::Int(i))
-                => {
-                    Some(TacConst::Float(*i as f64 * f))
-                }
-                _ => None
+            _ => None,
+        },
+        Op::Multiply => match (lhs, rhs) {
+            (TacConst::Int(i1), TacConst::Int(i2)) => Some(TacConst::Int(i1 * i2)),
+            (TacConst::Float(f1), TacConst::Float(f2)) => Some(TacConst::Float(f1 * f2)),
+            (TacConst::Int(i), TacConst::Float(f)) | (TacConst::Float(f), TacConst::Int(i)) => {
+                Some(TacConst::Float(*i as f64 * f))
             }
-        }
-        Op::Divide => {
-            match (lhs, rhs) {
-                (TacConst::Int(i1), TacConst::Int(i2)) => Some(TacConst::Int(i1 / i2)),
-                (TacConst::Float(f1), TacConst::Float(f2)) => Some(TacConst::Float(f1 / f2)),
-                (TacConst::Float(f), TacConst::Int(i)) => Some(TacConst::Float(f / *i as f64)),
-                (TacConst::Int(i), TacConst::Float(f)) => Some(TacConst::Float(*i as f64 / f)),
-                _ => None
-            }
-        }
-        Op::Minus => {
-            match (lhs, rhs) {
-                (TacConst::Int(i1), TacConst::Int(i2)) => Some(TacConst::Int(i1 - i2)),
-                (TacConst::Float(f1), TacConst::Float(f2)) => Some(TacConst::Float(f1 - f2)),
-                (TacConst::Float(f), TacConst::Int(i)) => Some(TacConst::Float(f - *i as f64)),
-                (TacConst::Int(i), TacConst::Float(f)) => Some(TacConst::Float(*i as f64 - f)),
-                _ => None
-            }
-        }
-        Op::Modulo => {
-            match (lhs, rhs) {
-                (TacConst::Int(i1), TacConst::Int(i2)) => Some(TacConst::Int(i1 % i2)),
-                (TacConst::Float(f1), TacConst::Float(f2)) => Some(TacConst::Float(f1 % f2)),
-                (TacConst::Float(f), TacConst::Int(i)) => Some(TacConst::Float(f % *i as f64)),
-                (TacConst::Int(i), TacConst::Float(f)) => Some(TacConst::Float(*i as f64 % f)),
-                _ => None
-            }
-        }
-        Op::And => {
-            match (lhs, rhs) {
-                (TacConst::Bool(false), _) => Some(TacConst::Bool(false)),
-                (TacConst::Null, _) => Some(TacConst::Null),
-                (_, rhs) => Some(rhs.clone())
-            }
-        }
-        Op::Or => {
-            match (lhs, rhs) {
-                (TacConst::Bool(false), rhs) |
-                (TacConst::Null, rhs) => Some(rhs.clone()),
-                (lhs, _) => Some(lhs.clone())
-            }
-        }
+            _ => None,
+        },
+        Op::Divide => match (lhs, rhs) {
+            (TacConst::Int(i1), TacConst::Int(i2)) => Some(TacConst::Int(i1 / i2)),
+            (TacConst::Float(f1), TacConst::Float(f2)) => Some(TacConst::Float(f1 / f2)),
+            (TacConst::Float(f), TacConst::Int(i)) => Some(TacConst::Float(f / *i as f64)),
+            (TacConst::Int(i), TacConst::Float(f)) => Some(TacConst::Float(*i as f64 / f)),
+            _ => None,
+        },
+        Op::Minus => match (lhs, rhs) {
+            (TacConst::Int(i1), TacConst::Int(i2)) => Some(TacConst::Int(i1 - i2)),
+            (TacConst::Float(f1), TacConst::Float(f2)) => Some(TacConst::Float(f1 - f2)),
+            (TacConst::Float(f), TacConst::Int(i)) => Some(TacConst::Float(f - *i as f64)),
+            (TacConst::Int(i), TacConst::Float(f)) => Some(TacConst::Float(*i as f64 - f)),
+            _ => None,
+        },
+        Op::Modulo => match (lhs, rhs) {
+            (TacConst::Int(i1), TacConst::Int(i2)) => Some(TacConst::Int(i1 % i2)),
+            (TacConst::Float(f1), TacConst::Float(f2)) => Some(TacConst::Float(f1 % f2)),
+            (TacConst::Float(f), TacConst::Int(i)) => Some(TacConst::Float(f % *i as f64)),
+            (TacConst::Int(i), TacConst::Float(f)) => Some(TacConst::Float(*i as f64 % f)),
+            _ => None,
+        },
+        Op::And => match (lhs, rhs) {
+            (TacConst::Bool(false), _) => Some(TacConst::Bool(false)),
+            (TacConst::Null, _) => Some(TacConst::Null),
+            (_, rhs) => Some(rhs.clone()),
+        },
+        Op::Or => match (lhs, rhs) {
+            (TacConst::Bool(false), rhs) | (TacConst::Null, rhs) => Some(rhs.clone()),
+            (lhs, _) => Some(lhs.clone()),
+        },
         Op::Equal => Some(TacConst::Bool(lhs == rhs)),
         Op::NotEqual => Some(TacConst::Bool(lhs != rhs)),
         // TODO: more constatn folding can be added, I just got lazy and stopeed here

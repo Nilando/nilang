@@ -8,7 +8,7 @@ pub struct SmallSymID(u16);
 
 pub struct SymbolMap {
     str_to_id: HashMap<Rc<String>, SymID>,
-    id_to_str: Vec<Rc<String>>
+    id_to_str: Vec<Rc<String>>,
 }
 
 pub const LENGTH_SYM: SymID = 0;
@@ -16,9 +16,9 @@ pub const PUSH_SYM: SymID = 1;
 
 impl SymbolMap {
     pub fn new() -> Self {
-        let mut this = Self { 
-            str_to_id: HashMap::new(), 
-            id_to_str: Vec::new()
+        let mut this = Self {
+            str_to_id: HashMap::new(),
+            id_to_str: Vec::new(),
         };
 
         this.init();

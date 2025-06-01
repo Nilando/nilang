@@ -1,15 +1,15 @@
-use crate::parser::Op;
-use crate::symbol_map::{SymbolMap, SymID};
-use super::func::Func;
 use super::block::{Block, BlockId};
-use super::tac::{VReg, Tac, TacConst};
+use super::func::Func;
 use super::lowering::MAIN_FUNC_ID;
+use super::tac::{Tac, TacConst, VReg};
+use crate::parser::Op;
+use crate::symbol_map::{SymID, SymbolMap};
 use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct VRegMap {
     vars: HashMap<SymID, Vec<VReg>>,
-    regs: HashMap<VReg, SymID>
+    regs: HashMap<VReg, SymID>,
 }
 
 impl VRegMap {
@@ -22,10 +22,7 @@ impl VRegMap {
             regs.insert(*reg, *var);
         }
 
-        Self {
-            vars,
-            regs
-        }
+        Self { vars, regs }
     }
 
     pub fn map(&mut self, old: VReg, new: VReg) {
@@ -38,7 +35,13 @@ impl VRegMap {
 
     fn reg_to_var(&self, reg: &VReg) -> Option<(SymID, usize)> {
         if let Some(var) = self.regs.get(reg) {
-            let ver = self.vars.get(var).unwrap().iter().position(|r| r == reg).unwrap();
+            let ver = self
+                .vars
+                .get(var)
+                .unwrap()
+                .iter()
+                .position(|r| r == reg)
+                .unwrap();
 
             Some((*var, ver))
         } else {
@@ -50,20 +53,20 @@ impl VRegMap {
 struct FuncPrinter<'a> {
     func: &'a Func,
     syms: &'a mut SymbolMap,
-    result: String
+    result: String,
 }
 
 pub fn func_to_string(func: &Func, syms: &mut SymbolMap) -> String {
     let stringifier = FuncPrinter {
         func,
         syms,
-        result: String::new()
+        result: String::new(),
     };
 
     stringifier.stringify()
 }
 
-impl<'a> FuncPrinter<'a> {
+impl FuncPrinter<'_> {
     fn stringify(mut self) -> String {
         self.push_first_line();
 
@@ -198,55 +201,55 @@ impl<'a> FuncPrinter<'a> {
                     self.push_var(dest);
                 }
             }
-            self.result.push_str("\n");
+            self.result.push('\n');
         }
 
         if block.continues() {
-            // TODO: this logic is wrong, the next block may not have id + 1 
+            // TODO: this logic is wrong, the next block may not have id + 1
             let id = block.get_id();
             if self.func.get_blocks().len() > id + 1 {
                 self.result.push_str(&format!("  next block{}", id + 1));
                 self.print_block_args(id, id + 1);
-                self.result.push_str("\n");
+                self.result.push('\n');
             }
         }
 
-        self.result.push_str("\n");
+        self.result.push('\n');
     }
 
     fn print_block_args(&mut self, caller_id: BlockId, calle_id: BlockId) {
         let phi_nodes = self.func.get_block(calle_id).get_phi_nodes();
 
         if !phi_nodes.is_empty() {
-            self.result.push_str(&format!("("));
+            self.result.push('(');
             for (i, node) in phi_nodes.iter().enumerate() {
                 let vreg = node.srcs.get(&caller_id).unwrap();
 
                 self.push_var(vreg);
 
-                if  i + 1 < phi_nodes.len() {
+                if i + 1 < phi_nodes.len() {
                     self.result.push_str(", ");
                 }
             }
-            self.result.push_str(&format!(")"));
+            self.result.push(')');
         }
     }
 
     fn push_op(&mut self, op: &Op) {
         let s = match op {
-            Op::Lt => format!("<"),
-            Op::Lte => format!("<="),
-            Op::Gt => format!(">"),
-            Op::Gte => format!(">="),
-            Op::Multiply => format!("*"),
-            Op::Equal => format!("=="),
-            Op::NotEqual => format!("!="),
-            Op::And => format!("&&"),
-            Op::Or => format!("||"),
-            Op::Modulo => format!("%"),
-            Op::Plus => format!("+"),
-            Op::Minus => format!("-"),
-            Op::Divide => format!("/"),
+            Op::Lt => "<".to_string(),
+            Op::Lte => "<=".to_string(),
+            Op::Gt => ">".to_string(),
+            Op::Gte => ">=".to_string(),
+            Op::Multiply => "*".to_string(),
+            Op::Equal => "==".to_string(),
+            Op::NotEqual => "!=".to_string(),
+            Op::And => "&&".to_string(),
+            Op::Or => "||".to_string(),
+            Op::Modulo => "%".to_string(),
+            Op::Plus => "+".to_string(),
+            Op::Minus => "-".to_string(),
+            Op::Divide => "/".to_string(),
         };
 
         self.result.push_str(&format!(" {} ", s));
@@ -257,7 +260,7 @@ impl<'a> FuncPrinter<'a> {
             TacConst::Int(i) => format!("{i}"),
             TacConst::String(s) => format!("{:?}", s),
             TacConst::Bool(b) => format!("{}", b),
-            TacConst::Null => format!("null"),
+            TacConst::Null => "null".to_string(),
             TacConst::Func(func_id) => format!("fn{func_id}"),
             TacConst::Float(f) => format!("{}", f),
             TacConst::Sym(s) => format!("#{}", self.syms.get_str(*s)),
@@ -267,8 +270,7 @@ impl<'a> FuncPrinter<'a> {
     }
 
     fn push_key_access(&mut self, reg: &VReg) {
-        let s = 
-        if let Some(vrm) = self.func.get_vreg_map() {
+        let s = if let Some(vrm) = self.func.get_vreg_map() {
             if let Some((sym, ver)) = vrm.reg_to_var(reg) {
                 format!("{}_{}", self.syms.get_str(sym), ver)
             } else {
@@ -288,7 +290,7 @@ impl<'a> FuncPrinter<'a> {
             let block_def = format!("block{}:\n", block.get_id());
             self.result.push_str(&block_def);
         } else {
-            let block_def = format!("block{}(", block.get_id(), );
+            let block_def = format!("block{}(", block.get_id(),);
             self.result.push_str(&block_def);
 
             for (idx, node) in phi_nodes.iter().enumerate() {
@@ -304,8 +306,7 @@ impl<'a> FuncPrinter<'a> {
     }
 
     fn push_var(&mut self, reg: &VReg) {
-        let s = 
-        if let Some(vrm) = self.func.get_vreg_map() {
+        let s = if let Some(vrm) = self.func.get_vreg_map() {
             if let Some((sym, ver)) = vrm.reg_to_var(reg) {
                 format!("{}_{}", self.syms.get_str(sym), ver)
             } else {
@@ -314,7 +315,6 @@ impl<'a> FuncPrinter<'a> {
         } else {
             self.vreg_str(reg)
         };
-
 
         self.result.push_str(&s)
     }
@@ -338,7 +338,7 @@ impl<'a> FuncPrinter<'a> {
             }
         }
 
-        self.result.push_str(&format!(") {{\n"));
+        self.result.push_str(") {\n");
     }
 
     fn push_last_line(&mut self) {

@@ -1,5 +1,5 @@
-use std::collections::{BTreeMap, BTreeSet};
 use std::cell::RefCell;
+use std::collections::{BTreeMap, BTreeSet};
 use std::rc::Rc;
 
 use crate::ir::{Func, LivenessDFA, VReg, DFA};
@@ -18,7 +18,7 @@ impl Node {
         Self {
             vars: BTreeSet::from([var]),
             reg: None,
-            neighbors: BTreeSet::new()
+            neighbors: BTreeSet::new(),
         }
     }
 }
@@ -30,7 +30,9 @@ pub struct InterferenceGraph {
 
 impl InterferenceGraph {
     pub fn build(func: &Func) -> InterferenceGraph {
-        let mut graph = Self { nodes: BTreeMap::new() };
+        let mut graph = Self {
+            nodes: BTreeMap::new(),
+        };
         let mut liveness = LivenessDFA::new();
         liveness.exec(func);
 
@@ -42,7 +44,7 @@ impl InterferenceGraph {
             }
 
             for i in 0..live_vars.len() {
-                for k in (i+1)..live_vars.len() {
+                for k in (i + 1)..live_vars.len() {
                     let v1 = live_vars.iter().nth(i).unwrap();
                     let v2 = live_vars.iter().nth(k).unwrap();
 
@@ -88,17 +90,18 @@ impl InterferenceGraph {
         {
             let r1 = self.nodes.get(v1).unwrap();
             let mut n1 = r1.as_ref().borrow_mut();
-            n1.neighbors.insert(v2.clone());
+            n1.neighbors.insert(*v2);
         }
 
         let c2 = self.nodes.get(v2).unwrap();
         let mut n2 = c2.as_ref().borrow_mut();
-        n2.neighbors.insert(v1.clone());
+        n2.neighbors.insert(*v1);
     }
 
     fn add_node(&mut self, var: VReg) {
         if self.nodes.get(&var).is_none() {
-            self.nodes.insert(var, Rc::new(RefCell::new(Node::new(var.clone()))));
+            self.nodes
+                .insert(var, Rc::new(RefCell::new(Node::new(var))));
         }
     }
 
@@ -112,12 +115,16 @@ impl InterferenceGraph {
         let mut elimination_ordering: Vec<VReg> = vec![];
 
         for (var, _) in self.nodes.iter() {
-            remaining_vars.insert(var.clone(), 0);
+            remaining_vars.insert(*var, 0);
         }
 
-        while let Some((var, label)) = remaining_vars.iter().max_by(|n1, n2| n1.1.cmp(n2.1)).map(|(v, l)| (v.clone(), *l)) {
+        while let Some((var, label)) = remaining_vars
+            .iter()
+            .max_by(|n1, n2| n1.1.cmp(n2.1))
+            .map(|(v, l)| (*v, *l))
+        {
             remaining_vars.remove(&var);
-            elimination_ordering.push(var.clone());
+            elimination_ordering.push(var);
 
             if label > max {
                 max = label;
@@ -136,11 +143,11 @@ impl InterferenceGraph {
 
     pub fn color(&mut self, func: &Func, elimination_ordering: Vec<VReg>, max_clique: usize) {
         for (idx, arg) in func.get_args().iter().enumerate() {
-            if let Some(node) = self.nodes.get(&arg) {
+            if let Some(node) = self.nodes.get(arg) {
                 node.as_ref().borrow_mut().reg = Some(idx as u8);
             }
         }
-        
+
         for vreg in elimination_ordering.iter() {
             let mut free_reg = true;
             let mut node = self.nodes.get(vreg).unwrap().as_ref().borrow_mut();
@@ -213,11 +220,7 @@ impl InterferenceGraph {
         if xr == yr {
             xr
         } else {
-            if let Some(reg) = self.find_shared_unused_reg(&nx.neighbors, &ny.neighbors) {
-                Some(reg)
-            } else {
-                None
-            }
+            self.find_shared_unused_reg(&nx.neighbors, &ny.neighbors)
         }
     }
 

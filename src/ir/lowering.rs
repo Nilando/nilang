@@ -1,15 +1,10 @@
-use crate::parser::{Span, Spanned, Stmt, Expr, Value, Op, MapKey, LhsExpr};
-use crate::symbol_map::SymID;
-use std::collections::{BTreeSet, HashSet};
 use super::func::Func;
 use super::func_builder::FuncBuilder;
-use super::tac::{
-    LabelID,
-    Tac,
-    TacConst,
-    FuncID,
-};
+use super::tac::{FuncID, LabelID, Tac, TacConst};
 use super::VReg;
+use crate::parser::{Expr, LhsExpr, MapKey, Op, Span, Spanned, Stmt, Value};
+use crate::symbol_map::SymID;
+use std::collections::{BTreeSet, HashSet};
 
 pub const MAIN_FUNC_ID: u64 = 0;
 
@@ -30,7 +25,7 @@ impl FuncLoweringCtx {
         Self {
             builder: FuncBuilder::new(id, &inputs, pretty_ir),
             label_counter: 0,
-            defined_variables: BTreeSet::from_iter(inputs.into_iter()),
+            defined_variables: BTreeSet::from_iter(inputs),
             loop_ctxs: vec![],
         }
     }
@@ -51,27 +46,36 @@ impl LoweringCtx {
             func_counter: 0,
             funcs: vec![main_func],
             lowered_funcs: vec![],
-            pretty_ir
+            pretty_ir,
         }
-    } 
+    }
 
     fn lower_stmt(&mut self, stmt: Stmt) {
         match stmt {
-            Stmt::Expr(expr) => { self.lower_expr(expr); }
+            Stmt::Expr(expr) => {
+                self.lower_expr(expr);
+            }
             Stmt::Return(expr) => self.lower_return(expr),
             Stmt::Break => self.lower_break(),
             Stmt::Continue => self.lower_continue(),
             Stmt::While { cond, stmts } => self.lower_while_block(cond, stmts),
             Stmt::If { cond, stmts } => self.lower_if_block(cond, stmts),
-            Stmt::IfElse { cond, stmts, else_stmts } => self.lower_if_else_block(cond, stmts, else_stmts),
-            Stmt::FuncDecl { ident, inputs, stmts } => self.lower_func_decl(ident, inputs, stmts),
+            Stmt::IfElse {
+                cond,
+                stmts,
+                else_stmts,
+            } => self.lower_if_else_block(cond, stmts, else_stmts),
+            Stmt::FuncDecl {
+                ident,
+                inputs,
+                stmts,
+            } => self.lower_func_decl(ident, inputs, stmts),
             Stmt::Assign { dest, src } => self.lower_assign(dest, src),
         };
     }
 
     fn lower_return(&mut self, return_expr: Option<Spanned<Expr>>) {
-        let src =
-        if let Some(expr) = return_expr {
+        let src = if let Some(expr) = return_expr {
             self.lower_expr(expr)
         } else {
             self.new_temp()
@@ -81,8 +85,7 @@ impl LoweringCtx {
     }
 
     fn lower_assign(&mut self, lhs_expr: Spanned<LhsExpr>, src: Spanned<Expr>) {
-        let copy_flag = 
-        if let Expr::Value(Value::Ident(_)) = src.item {
+        let copy_flag = if let Expr::Value(Value::Ident(_)) = src.item {
             true
         } else {
             false
@@ -107,24 +110,17 @@ impl LoweringCtx {
                 self.define_var(sym_id);
 
                 if !copy_flag && self.last_instr_has_dest() {
-                  self.update_prev_dest(sym_id);
+                    self.update_prev_dest(sym_id);
                 } else {
                     let dest = self.sym_to_reg(&sym_id);
 
-                    self.emit(
-                        Tac::Copy {
-                            dest,
-                            src
-                        }
-                    )
+                    self.emit(Tac::Copy { dest, src })
                 }
             }
             LhsExpr::Global(sym_id) => {
                 let sym = self.load_const(TacConst::Sym(sym_id));
 
-                self.emit(
-                    Tac::StoreGlobal { src, sym }
-                )
+                self.emit(Tac::StoreGlobal { src, sym })
             }
         }
     }
@@ -139,17 +135,15 @@ impl LoweringCtx {
 
                 self.lower_print(var)
             }
-            Expr::Binop { lhs, op, rhs } => {
-                match op {
-                    Op::And | Op::Or => self.lower_shortcircuit(*lhs, op, *rhs),
-                    _ => {
-                        let v1 = self.lower_expr(*lhs);
-                        let v2 = self.lower_expr(*rhs);
+            Expr::Binop { lhs, op, rhs } => match op {
+                Op::And | Op::Or => self.lower_shortcircuit(*lhs, op, *rhs),
+                _ => {
+                    let v1 = self.lower_expr(*lhs);
+                    let v2 = self.lower_expr(*rhs);
 
-                        self.lower_binop(v1, op, v2, span)
-                    }
+                    self.lower_binop(v1, op, v2, span)
                 }
-            }
+            },
             Expr::Access { store, key } => {
                 let var = self.lower_expr(*store);
                 let key = self.load_const(TacConst::Sym(key));
@@ -176,39 +170,17 @@ impl LoweringCtx {
         let dest = self.new_temp();
         let src = self.lower_expr(lhs);
 
-        self.emit(
-            Tac::Copy {
-                dest,
-                src
-            }
-        );
+        self.emit(Tac::Copy { dest, src });
 
         match op {
-            Op::And => 
-                self.emit(
-                    Tac::Jnt {
-                        src,
-                        label,
-                    }
-                ),
-            Op::Or => 
-                self.emit(
-                    Tac::Jit {
-                        src,
-                        label,
-                    }
-                ),
+            Op::And => self.emit(Tac::Jnt { src, label }),
+            Op::Or => self.emit(Tac::Jit { src, label }),
             _ => panic!("tried to generated shortcircuit for wrong op"),
         }
 
         let src = self.lower_expr(rhs);
 
-        self.emit(
-            Tac::Copy {
-                dest,
-                src
-            }
-        );
+        self.emit(Tac::Copy { dest, src });
 
         self.emit_label(label);
 
@@ -234,60 +206,31 @@ impl LoweringCtx {
         let sym = self.load_const(TacConst::Sym(sym_id));
         let dest = self.new_temp();
 
-        self.emit(
-            Tac::LoadGlobal {
-                dest,
-                sym,
-            }
-        );
+        self.emit(Tac::LoadGlobal { dest, sym });
 
         dest
     }
 
     fn lower_call(&mut self, calle: VReg, args: Vec<VReg>, span: Span) -> VReg {
         for src in args.into_iter() {
-            self.emit(
-                Tac::StoreArg {
-                    src
-                }
-            )
+            self.emit(Tac::StoreArg { src })
         }
 
         let dest = self.new_temp();
 
-        self.emit_spanned(
-            Tac::Call {
-                dest,
-                src: calle,
-            },
-            span
-        );
+        self.emit_spanned(Tac::Call { dest, src: calle }, span);
 
         dest
     }
 
     fn lower_key_store(&mut self, store: VReg, key: VReg, src: VReg, span: Span) {
-        self.emit_spanned(
-            Tac::MemStore {
-                store,
-                key, 
-                src
-            },
-            span
-        );
+        self.emit_spanned(Tac::MemStore { store, key, src }, span);
     }
 
     fn lower_key_load(&mut self, store: VReg, key: VReg, span: Span) -> VReg {
         let dest = self.new_temp();
 
-        self.emit_spanned(
-            Tac::MemLoad {
-                dest,
-                store,
-                key,
-            },
-            span
-        );
+        self.emit_spanned(Tac::MemLoad { dest, store, key }, span);
 
         dest
     }
@@ -310,9 +253,13 @@ impl LoweringCtx {
         self.lower_func(inputs, stmts, Some(ident));
     }
 
-    fn lower_func(&mut self, inputs: Spanned<Vec<SymID>>, stmts: Vec<Stmt>, ident: Option<SymID>) -> VReg {
-        let func = 
-        if let Some(sym) = ident {
+    fn lower_func(
+        &mut self,
+        inputs: Spanned<Vec<SymID>>,
+        stmts: Vec<Stmt>,
+        ident: Option<SymID>,
+    ) -> VReg {
+        let func = if let Some(sym) = ident {
             self.sym_to_reg(&sym)
         } else {
             self.new_temp()
@@ -320,28 +267,25 @@ impl LoweringCtx {
 
         let (func_id, upvalues) = self.new_func(inputs, stmts);
 
-        self.emit(
-            Tac::LoadConst {
-                dest: func,
-                src: TacConst::Func(func_id),
-            }
-        );
+        self.emit(Tac::LoadConst {
+            dest: func,
+            src: TacConst::Func(func_id),
+        });
 
         for sym_id in upvalues.iter() {
             let src = self.lower_ident(*sym_id);
 
-            self.emit(
-                Tac::StoreUpvalue {
-                    func,
-                    src 
-                }
-            );
+            self.emit(Tac::StoreUpvalue { func, src });
         }
 
         func
     }
 
-    fn new_func(&mut self, inputs: Spanned<Vec<SymID>>, stmts: Vec<Stmt>) -> (FuncID, HashSet<SymID>) {
+    fn new_func(
+        &mut self,
+        inputs: Spanned<Vec<SymID>>,
+        stmts: Vec<Stmt>,
+    ) -> (FuncID, HashSet<SymID>) {
         let func_id = self.new_func_id();
         let generator = FuncLoweringCtx::new(func_id, inputs.item, self.pretty_ir);
 
@@ -368,27 +312,25 @@ impl LoweringCtx {
         let label = self.new_label();
         let src = self.lower_expr(cond);
 
-        self.emit(
-            Tac::Jnt {
-                src,
-                label,
-            }
-        );
+        self.emit(Tac::Jnt { src, label });
         self.lower_stmts(stmts);
         self.emit_label(label);
     }
 
-    fn lower_if_else_block(&mut self, cond: Spanned<Expr>, stmts: Vec<Stmt>, else_stmts: Vec<Stmt>) {
+    fn lower_if_else_block(
+        &mut self,
+        cond: Spanned<Expr>,
+        stmts: Vec<Stmt>,
+        else_stmts: Vec<Stmt>,
+    ) {
         let else_end = self.new_label();
         let else_start = self.new_label();
         let src = self.lower_expr(cond);
 
-        self.emit(
-            Tac::Jnt {
-                src,
-                label: else_start,
-            }
-        );
+        self.emit(Tac::Jnt {
+            src,
+            label: else_start,
+        });
         self.lower_stmts(stmts);
         self.emit_jump(else_end);
         self.emit_label(else_start);
@@ -406,17 +348,11 @@ impl LoweringCtx {
 
         let src = self.lower_expr(cond);
 
-        self.emit(
-            Tac::Jnt {
-                src,
-                label: end,
-            }
-        );
+        self.emit(Tac::Jnt { src, label: end });
         self.lower_stmts(stmts);
         self.emit_jump(start);
         self.emit_label(end);
     }
-
 
     fn lower_ident(&mut self, sym_id: SymID) -> VReg {
         if self.defined_local(sym_id) {
@@ -426,20 +362,28 @@ impl LoweringCtx {
 
             self.set_upvalue(sym_id);
 
-            let upvalue = self.get_current_func_mut().builder.upvalues
+            let upvalue = self
+                .get_current_func_mut()
+                .builder
+                .upvalues
                 .iter()
-                .position(|uv| {
-                    *uv == sym_id
-            }).unwrap();
+                .position(|uv| *uv == sym_id)
+                .unwrap();
 
-            self.emit(Tac::LoadUpvalue { dest, id: u16::try_from(upvalue).unwrap() });
-            
+            self.emit(Tac::LoadUpvalue {
+                dest,
+                id: u16::try_from(upvalue).unwrap(),
+            });
+
             dest
         } else {
             // this is an uninitialized variable
             let dest = self.sym_to_reg(&sym_id);
 
-            self.emit(Tac::LoadConst { dest, src: TacConst::Null });
+            self.emit(Tac::LoadConst {
+                dest,
+                src: TacConst::Null,
+            });
 
             dest
         }
@@ -451,22 +395,15 @@ impl LoweringCtx {
         self.emit(Tac::NewMap { dest: store });
 
         for (k, value) in pairs.into_iter() {
-            let key = 
-            match k {
+            let key = match k {
                 MapKey::Sym(sym) => self.load_const(TacConst::Sym(sym)),
-                MapKey::Expr(expr) => self.lower_expr(expr)
+                MapKey::Expr(expr) => self.lower_expr(expr),
             };
             let src = self.lower_expr(value);
 
             // this doesn't need to be spanned since we are sure we are storing into a map this
             // can't fail so we don't need spanning info
-            self.emit(
-                Tac::MemStore {
-                    store,
-                    key,
-                    src,
-                },
-            );
+            self.emit(Tac::MemStore { store, key, src });
         }
 
         store
@@ -481,15 +418,12 @@ impl LoweringCtx {
             let src = self.lower_expr(e);
             let key = self.new_temp();
 
-            self.emit(Tac::LoadConst { dest: key, src: TacConst::Int(i64::try_from(i).unwrap())});
+            self.emit(Tac::LoadConst {
+                dest: key,
+                src: TacConst::Int(i64::try_from(i).unwrap()),
+            });
 
-            self.emit(
-                Tac::MemStore {
-                    store,
-                    key,
-                    src,
-                }
-            );
+            self.emit(Tac::MemStore { store, key, src });
         }
 
         store
@@ -498,25 +432,13 @@ impl LoweringCtx {
     fn lower_binop(&mut self, lhs: VReg, op: Op, rhs: VReg, span: Span) -> VReg {
         let dest = self.new_temp();
 
-        self.emit_spanned(
-            Tac::Binop {
-                dest,
-                lhs,
-                op,
-                rhs
-            },
-            span
-        );
+        self.emit_spanned(Tac::Binop { dest, lhs, op, rhs }, span);
 
         dest
     }
 
     fn lower_print(&mut self, src: VReg) -> VReg {
-        self.emit(
-            Tac::Print {
-                src,
-            }
-        );
+        self.emit(Tac::Print { src });
 
         self.new_temp()
     }
@@ -524,11 +446,7 @@ impl LoweringCtx {
     fn lower_read(&mut self) -> VReg {
         let dest = self.new_temp();
 
-        self.emit(
-            Tac::Read {
-                dest
-            }
-        );
+        self.emit(Tac::Read { dest });
 
         dest
     }
@@ -536,12 +454,10 @@ impl LoweringCtx {
     fn load_const(&mut self, tac_const: TacConst) -> VReg {
         let dest = self.new_temp();
 
-        self.emit(
-            Tac::LoadConst {
-                dest,
-                src: tac_const
-            }
-        );
+        self.emit(Tac::LoadConst {
+            dest,
+            src: tac_const,
+        });
 
         dest
     }
@@ -555,7 +471,12 @@ impl LoweringCtx {
     }
 
     fn last_instr_has_dest(&self) -> bool {
-        self.get_current_func().builder.last_instr().unwrap().dest_reg().is_some()
+        self.get_current_func()
+            .builder
+            .last_instr()
+            .unwrap()
+            .dest_reg()
+            .is_some()
     }
 
     fn update_prev_dest(&mut self, sym: SymID) {
@@ -571,11 +492,19 @@ impl LoweringCtx {
     }
 
     fn emit(&mut self, instr: Tac) {
-        self.funcs.last_mut().unwrap().builder.push_instr(instr, None);
+        self.funcs
+            .last_mut()
+            .unwrap()
+            .builder
+            .push_instr(instr, None);
     }
 
     fn emit_spanned(&mut self, instr: Tac, span: Span) {
-        self.funcs.last_mut().unwrap().builder.push_instr(instr, Some(span));
+        self.funcs
+            .last_mut()
+            .unwrap()
+            .builder
+            .push_instr(instr, Some(span));
     }
 
     fn push_loop_ctx(&mut self, ctx: LoopCtx) {
@@ -622,12 +551,11 @@ impl LoweringCtx {
             }
         }
 
-        return false;
+        false
     }
 
     fn set_upvalue(&mut self, sym: SymID) {
         self.get_current_func_mut().builder.upvalues.insert(sym);
-
     }
 
     fn lower_stmts(&mut self, stmts: Vec<Stmt>) {
@@ -657,13 +585,13 @@ pub fn lower_ast(stmts: Vec<Stmt>, pretty_ir: bool) -> Vec<Func> {
 
 #[cfg(test)]
 pub mod tests {
+    use super::super::func_builder::tests::instrs_to_func;
+    use super::super::func_to_string;
     use super::*;
     use crate::parser::parse_program;
     use crate::symbol_map::SymbolMap;
-    use super::super::func_builder::tests::instrs_to_func;
-    use super::super::func_to_string;
     use pretty_assertions::assert_eq;
-    
+
     fn expect_tac(input: &str, expected_code: Vec<Tac>) {
         let mut syms = SymbolMap::new();
 
@@ -685,9 +613,15 @@ pub mod tests {
     #[test]
     fn expr_stmt_tac() {
         let tac = vec![
-            Tac::LoadConst { dest: 0, src: TacConst::Int(1) },
-            Tac::LoadConst { dest: 1, src: TacConst::Null },
-            Tac::Return { src: 1 }
+            Tac::LoadConst {
+                dest: 0,
+                src: TacConst::Int(1),
+            },
+            Tac::LoadConst {
+                dest: 1,
+                src: TacConst::Null,
+            },
+            Tac::Return { src: 1 },
         ];
         let input = "1;";
 
@@ -697,13 +631,35 @@ pub mod tests {
     #[test]
     fn generates_expr_tac() {
         let tac = vec![
-            Tac::LoadConst { dest: 0, src: TacConst::Int(1) },
-            Tac::LoadConst { dest: 1, src: TacConst::Int(1) },
-            Tac::LoadConst { dest: 2, src: TacConst::Int(1) },
-            Tac::Binop { dest: 3, lhs: 1, op: Op::Multiply, rhs: 2 },
-            Tac::Binop { dest: 4, lhs: 0, op: Op::Multiply, rhs: 3 },
-            Tac::LoadConst { dest: 5, src: TacConst::Null },
-            Tac::Return { src: 5 }
+            Tac::LoadConst {
+                dest: 0,
+                src: TacConst::Int(1),
+            },
+            Tac::LoadConst {
+                dest: 1,
+                src: TacConst::Int(1),
+            },
+            Tac::LoadConst {
+                dest: 2,
+                src: TacConst::Int(1),
+            },
+            Tac::Binop {
+                dest: 3,
+                lhs: 1,
+                op: Op::Multiply,
+                rhs: 2,
+            },
+            Tac::Binop {
+                dest: 4,
+                lhs: 0,
+                op: Op::Multiply,
+                rhs: 3,
+            },
+            Tac::LoadConst {
+                dest: 5,
+                src: TacConst::Null,
+            },
+            Tac::Return { src: 5 },
         ];
         let input = "1 * 1 * 1;";
 
@@ -713,15 +669,38 @@ pub mod tests {
     #[test]
     fn index_assignment_tac() {
         let tac = vec![
-            Tac::LoadConst { dest: 0, src: TacConst::Int(1) },
+            Tac::LoadConst {
+                dest: 0,
+                src: TacConst::Int(1),
+            },
             Tac::NewList { dest: 1 },
-            Tac::LoadConst { dest: 2, src: TacConst::Int(1) },
-            Tac::LoadConst { dest: 3, src: TacConst::Int(0) },
-            Tac::MemStore { src: 2, store: 1, key: 3 }, 
-            Tac::LoadConst { dest: 4, src: TacConst::Int(0) },
-            Tac::MemStore { src: 0, store: 1, key: 4 }, 
-            Tac::LoadConst { dest: 5, src: TacConst::Null },
-            Tac::Return { src: 5 }
+            Tac::LoadConst {
+                dest: 2,
+                src: TacConst::Int(1),
+            },
+            Tac::LoadConst {
+                dest: 3,
+                src: TacConst::Int(0),
+            },
+            Tac::MemStore {
+                src: 2,
+                store: 1,
+                key: 3,
+            },
+            Tac::LoadConst {
+                dest: 4,
+                src: TacConst::Int(0),
+            },
+            Tac::MemStore {
+                src: 0,
+                store: 1,
+                key: 4,
+            },
+            Tac::LoadConst {
+                dest: 5,
+                src: TacConst::Null,
+            },
+            Tac::Return { src: 5 },
         ];
         let input = "[1][0] = 1;";
 
@@ -732,11 +711,27 @@ pub mod tests {
     fn access_assignment_tac() {
         let mut syms = SymbolMap::new();
         let tac = vec![
-            Tac::LoadConst { dest: 0, src: TacConst::Int(1) },
-            Tac::LoadConst { dest: 1, src: TacConst::Null },
-            Tac::LoadConst { dest: 2, src: TacConst::Sym(syms.get_id("b")) },
-            Tac::MemStore { src: 0, store: 1, key: 2 }, 
-            Tac::LoadConst { dest: 3, src: TacConst::Null },
+            Tac::LoadConst {
+                dest: 0,
+                src: TacConst::Int(1),
+            },
+            Tac::LoadConst {
+                dest: 1,
+                src: TacConst::Null,
+            },
+            Tac::LoadConst {
+                dest: 2,
+                src: TacConst::Sym(syms.get_id("b")),
+            },
+            Tac::MemStore {
+                src: 0,
+                store: 1,
+                key: 2,
+            },
+            Tac::LoadConst {
+                dest: 3,
+                src: TacConst::Null,
+            },
             Tac::Return { src: 3 },
         ];
         let input = "a.b = 1;";
@@ -748,8 +743,14 @@ pub mod tests {
     fn assign_local() {
         let mut syms = SymbolMap::new();
         let tac = vec![
-            Tac::LoadConst { dest: 1, src: TacConst::Int(1) },
-            Tac::LoadConst { dest: 2, src: TacConst::Null },
+            Tac::LoadConst {
+                dest: 1,
+                src: TacConst::Int(1),
+            },
+            Tac::LoadConst {
+                dest: 2,
+                src: TacConst::Null,
+            },
             Tac::Return { src: 2 },
         ];
         let input = "a = 1;";
@@ -761,11 +762,20 @@ pub mod tests {
     fn assign_global() {
         let mut syms = SymbolMap::new();
         let tac = vec![
-            Tac::LoadConst { dest: 0, src: TacConst::Int(1) },
-            Tac::LoadConst { dest: 1, src: TacConst::Sym(syms.get_id("a")) },
-            Tac::StoreGlobal { src: 0, sym:1  },
-            Tac::LoadConst { dest: 2, src: TacConst::Null },
-            Tac::Return { src: 2 }
+            Tac::LoadConst {
+                dest: 0,
+                src: TacConst::Int(1),
+            },
+            Tac::LoadConst {
+                dest: 1,
+                src: TacConst::Sym(syms.get_id("a")),
+            },
+            Tac::StoreGlobal { src: 0, sym: 1 },
+            Tac::LoadConst {
+                dest: 2,
+                src: TacConst::Null,
+            },
+            Tac::Return { src: 2 },
         ];
         let input = "@a = 1;";
 
@@ -775,7 +785,10 @@ pub mod tests {
     #[test]
     fn generates_return_with_value() {
         let tac = vec![
-            Tac::LoadConst { dest: 0, src: TacConst::Bool(true) },
+            Tac::LoadConst {
+                dest: 0,
+                src: TacConst::Bool(true),
+            },
             Tac::Return { src: 0 },
         ];
         let input = "return true;";
@@ -785,9 +798,7 @@ pub mod tests {
 
     #[test]
     fn generates_return_with_no_value() {
-        let tac = vec![
-            Tac::Return { src: 0 },
-        ];
+        let tac = vec![Tac::Return { src: 0 }];
         let input = "return;";
 
         expect_tac(input, tac);
@@ -796,10 +807,16 @@ pub mod tests {
     #[test]
     fn generates_print_expr() {
         let tac = vec![
-            Tac::LoadConst { dest: 0, src: TacConst::String("Hello World".to_string()) },
+            Tac::LoadConst {
+                dest: 0,
+                src: TacConst::String("Hello World".to_string()),
+            },
             Tac::Print { src: 0 },
-            Tac::LoadConst { dest: 2, src: TacConst::Null },
-            Tac::Return { src: 2 }
+            Tac::LoadConst {
+                dest: 2,
+                src: TacConst::Null,
+            },
+            Tac::Return { src: 2 },
         ];
         let input = "print(\"Hello World\");";
 
@@ -810,14 +827,20 @@ pub mod tests {
     fn generates_break_and_continue_stmts() {
         let tac = vec![
             Tac::Label { label: 1 },
-            Tac::LoadConst { dest: 0, src: TacConst::Bool(true) },
+            Tac::LoadConst {
+                dest: 0,
+                src: TacConst::Bool(true),
+            },
             Tac::Jnt { src: 0, label: 2 },
             Tac::Jump { label: 1 },
             Tac::Jump { label: 2 },
             Tac::Jump { label: 1 },
             Tac::Label { label: 2 },
-            Tac::LoadConst { dest: 1, src: TacConst::Null },
-            Tac::Return { src: 1 }
+            Tac::LoadConst {
+                dest: 1,
+                src: TacConst::Null,
+            },
+            Tac::Return { src: 1 },
         ];
         let input = "while true { continue; break; }";
 
@@ -828,16 +851,31 @@ pub mod tests {
     fn call_multiple_args() {
         let mut syms = SymbolMap::new();
         let tac = vec![
-            Tac::LoadConst { dest: 0, src: TacConst::Int(0) },
-            Tac::LoadConst { dest: 1, src: TacConst::Int(1) },
-            Tac::LoadConst { dest: 2, src: TacConst::Int(2) },
-            Tac::LoadConst { dest: 3, src: TacConst::Null },
-            Tac::StoreArg { src: 0, },
-            Tac::StoreArg { src: 1, },
-            Tac::StoreArg { src: 2, },
-            Tac::Call { dest: 4, src: 3, },
-            Tac::LoadConst { dest: 5, src: TacConst::Null },
-            Tac::Return { src: 5 }
+            Tac::LoadConst {
+                dest: 0,
+                src: TacConst::Int(0),
+            },
+            Tac::LoadConst {
+                dest: 1,
+                src: TacConst::Int(1),
+            },
+            Tac::LoadConst {
+                dest: 2,
+                src: TacConst::Int(2),
+            },
+            Tac::LoadConst {
+                dest: 3,
+                src: TacConst::Null,
+            },
+            Tac::StoreArg { src: 0 },
+            Tac::StoreArg { src: 1 },
+            Tac::StoreArg { src: 2 },
+            Tac::Call { dest: 4, src: 3 },
+            Tac::LoadConst {
+                dest: 5,
+                src: TacConst::Null,
+            },
+            Tac::Return { src: 5 },
         ];
         let input = "a(0, 1, 2);";
 
@@ -848,9 +886,15 @@ pub mod tests {
     fn use_defined_local() {
         let mut syms = SymbolMap::new();
         let tac = vec![
-            Tac::LoadConst { dest: 1, src: TacConst::Int(1) },
+            Tac::LoadConst {
+                dest: 1,
+                src: TacConst::Int(1),
+            },
             Tac::Copy { dest: 2, src: 1 },
-            Tac::LoadConst { dest: 3, src: TacConst::Null },
+            Tac::LoadConst {
+                dest: 3,
+                src: TacConst::Null,
+            },
             Tac::Return { src: 3 },
         ];
         let input = "a = 1; b = a;";
@@ -862,12 +906,21 @@ pub mod tests {
     fn simple_if_stmt() {
         let mut syms = SymbolMap::new();
         let tac = vec![
-            Tac::LoadConst { dest: 0, src: TacConst::Bool(true) }, 
-            Tac::Jnt { label: 1, src: 0 }, 
-            Tac::LoadConst { dest: 1, src: TacConst::String(String::from("test")) }, 
-            Tac::Print { src: 1 }, 
+            Tac::LoadConst {
+                dest: 0,
+                src: TacConst::Bool(true),
+            },
+            Tac::Jnt { label: 1, src: 0 },
+            Tac::LoadConst {
+                dest: 1,
+                src: TacConst::String(String::from("test")),
+            },
+            Tac::Print { src: 1 },
             Tac::Label { label: 1 },
-            Tac::LoadConst { dest: 3, src: TacConst::Null },
+            Tac::LoadConst {
+                dest: 3,
+                src: TacConst::Null,
+            },
             Tac::Return { src: 3 },
         ];
         let input = "if true { print(\"test\"); }";
@@ -879,8 +932,14 @@ pub mod tests {
     fn load_null() {
         let mut syms = SymbolMap::new();
         let tac = vec![
-            Tac::LoadConst { dest: 1, src: TacConst::Null }, 
-            Tac::LoadConst { dest: 2, src: TacConst::Null },
+            Tac::LoadConst {
+                dest: 1,
+                src: TacConst::Null,
+            },
+            Tac::LoadConst {
+                dest: 2,
+                src: TacConst::Null,
+            },
             Tac::Return { src: 2 },
         ];
         let input = "a = null;";
@@ -892,10 +951,23 @@ pub mod tests {
     fn sym_key_load() {
         let mut syms = SymbolMap::new();
         let tac = vec![
-            Tac::LoadConst { dest: 0, src: TacConst::Null },
-            Tac::LoadConst { dest: 1, src: TacConst::Sym(syms.get_id("c")) }, 
-            Tac::MemLoad { dest: 3, store: 0, key: 1 }, 
-            Tac::LoadConst { dest: 4, src: TacConst::Null },
+            Tac::LoadConst {
+                dest: 0,
+                src: TacConst::Null,
+            },
+            Tac::LoadConst {
+                dest: 1,
+                src: TacConst::Sym(syms.get_id("c")),
+            },
+            Tac::MemLoad {
+                dest: 3,
+                store: 0,
+                key: 1,
+            },
+            Tac::LoadConst {
+                dest: 4,
+                src: TacConst::Null,
+            },
             Tac::Return { src: 4 },
         ];
         let input = "a = b.c;";
@@ -907,10 +979,23 @@ pub mod tests {
     fn val_key_load() {
         let mut syms = SymbolMap::new();
         let tac = vec![
-            Tac::LoadConst { dest: 0, src: TacConst::Null },
-            Tac::LoadConst { dest: 1, src: TacConst::Int(0) }, 
-            Tac::MemLoad { dest: 3, store: 0, key: 1 }, 
-            Tac::LoadConst { dest: 4, src: TacConst::Null },
+            Tac::LoadConst {
+                dest: 0,
+                src: TacConst::Null,
+            },
+            Tac::LoadConst {
+                dest: 1,
+                src: TacConst::Int(0),
+            },
+            Tac::MemLoad {
+                dest: 3,
+                store: 0,
+                key: 1,
+            },
+            Tac::LoadConst {
+                dest: 4,
+                src: TacConst::Null,
+            },
             Tac::Return { src: 4 },
         ];
         let input = "a = b[0];";
@@ -922,9 +1007,15 @@ pub mod tests {
     fn load_global() {
         let mut syms = SymbolMap::new();
         let tac = vec![
-            Tac::LoadConst { dest: 0, src: TacConst::Sym(syms.get_id("b")) },
+            Tac::LoadConst {
+                dest: 0,
+                src: TacConst::Sym(syms.get_id("b")),
+            },
             Tac::LoadGlobal { dest: 2, sym: 0 },
-            Tac::LoadConst { dest: 3, src: TacConst::Null },
+            Tac::LoadConst {
+                dest: 3,
+                src: TacConst::Null,
+            },
             Tac::Return { src: 3 },
         ];
         let input = "a = @b;";
@@ -936,13 +1027,26 @@ pub mod tests {
     fn map_assignment() {
         let mut syms = SymbolMap::new();
         let tac = vec![
-              Tac::NewMap { dest: 0 },
-              Tac::LoadConst { dest: 1, src: TacConst::Sym(syms.get_id("b")) },
-              Tac::LoadConst { dest: 2, src: TacConst::Int(0) },
-              Tac::MemStore { store: 0, key: 1, src: 2 },
-              Tac::Copy { dest: 3, src: 0 },
-              Tac::LoadConst { dest: 4, src: TacConst::Null },
-              Tac::Return { src: 4 },
+            Tac::NewMap { dest: 0 },
+            Tac::LoadConst {
+                dest: 1,
+                src: TacConst::Sym(syms.get_id("b")),
+            },
+            Tac::LoadConst {
+                dest: 2,
+                src: TacConst::Int(0),
+            },
+            Tac::MemStore {
+                store: 0,
+                key: 1,
+                src: 2,
+            },
+            Tac::Copy { dest: 3, src: 0 },
+            Tac::LoadConst {
+                dest: 4,
+                src: TacConst::Null,
+            },
+            Tac::Return { src: 4 },
         ];
         let input = "a = { b: 0 };";
 

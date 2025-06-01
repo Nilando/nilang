@@ -1,17 +1,17 @@
-mod interference_graph;
-mod translator;
-mod ssa_elimination;
 mod backpatch;
 mod control_flow_translator;
+mod interference_graph;
+mod ssa_elimination;
+mod translator;
 
 #[cfg(test)]
 mod tests;
 
-pub use interference_graph::{InterferenceGraph, find_copy_edges};
 pub use crate::runtime::vm::Func;
-use translator::translate_tac;
 use backpatch::BackpatchContext;
-use control_flow_translator::{handle_control_flow_instruction, handle_block_fall_through};
+use control_flow_translator::{handle_block_fall_through, handle_control_flow_instruction};
+pub use interference_graph::{find_copy_edges, InterferenceGraph};
+use translator::translate_tac;
 
 use crate::ir::Func as IRFunc;
 
@@ -29,9 +29,7 @@ pub fn generate_func(ir_func: IRFunc) -> Func {
     let copies = find_copy_edges(&ir_func);
     graph.best_effort_coalescence(&ir_func, copies);
 
-    let func = generate_bytecode(&ir_func, &graph, max_clique);
-
-    func
+    generate_bytecode(&ir_func, &graph, max_clique)
 }
 
 fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph, max_clique: usize) -> Func {
@@ -43,18 +41,18 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph, max_clique: us
 
         for (idx, instr) in block.get_instrs().iter().enumerate() {
             let span = spans.get(idx);
-            
+
             // Try to translate simple TAC instructions first
             if let Some(bytecode) = translate_tac(instr, graph, &mut func) {
                 func.push_instr_spanned(bytecode, span.copied());
                 continue;
             }
-            
+
             // Handle complex control flow instructions
             if handle_control_flow_instruction(
-                instr, 
+                instr,
                 block,
-                &ir_func,
+                ir_func,
                 graph,
                 &mut func,
                 &mut backpatch_ctx,
@@ -66,12 +64,10 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph, max_clique: us
         }
 
         // Handle block fall through
-        handle_block_fall_through(block, &ir_func, graph, &mut func);
+        handle_block_fall_through(block, ir_func, graph, &mut func);
     }
 
     backpatch_ctx.apply_patches(&mut func);
 
     func
 }
-
-

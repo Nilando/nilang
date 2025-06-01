@@ -1,15 +1,14 @@
-use super::func::Func;
+use super::analysis::{compute_dominance_frontier, LivenessDFA, DFA};
 use super::block::{Block, BlockId};
-use super::analysis::{DFA, LivenessDFA, compute_dominance_frontier};
+use super::func::Func;
 use super::func_printer::VRegMap;
 use super::tac::VReg;
 use std::collections::{BTreeMap, BTreeSet};
 
-
 #[derive(Debug)]
 pub struct PhiNode {
     pub dest: VReg,
-    pub srcs: BTreeMap<BlockId, VReg>
+    pub srcs: BTreeMap<BlockId, VReg>,
 }
 
 pub fn convert_to_ssa(func: &mut Func, var_reg_map: Option<VRegMap>) {
@@ -29,18 +28,22 @@ fn insert_phi_nodes(func: &mut Func) {
             for var in defined_vars.iter() {
                 let phi_block = func.get_block_mut(*phi_block_id);
                 // we've already inserted a node for this var
-                if phi_block.get_phi_nodes().iter().find(|node| node.dest == *var).is_some() {
+                if phi_block
+                    .get_phi_nodes()
+                    .iter()
+                    .any(|node| node.dest == *var)
+                {
                     continue;
                 }
 
                 // var is not live on entry so it doesn't need a phi node
-                if !liveness.is_live_on_entry(*phi_block_id, &var) {
+                if !liveness.is_live_on_entry(*phi_block_id, var) {
                     continue;
                 }
 
                 let mut phi = PhiNode {
                     dest: *var,
-                    srcs: BTreeMap::new()
+                    srcs: BTreeMap::new(),
                 };
 
                 for pred in phi_block.get_predecessors().iter() {
@@ -57,7 +60,7 @@ struct SSAConverter {
     stack: Vec<BTreeMap<VReg, VReg>>,
     visited: BTreeSet<BlockId>,
     reg_counter: u32,
-    vreg_map: Option<VRegMap>
+    vreg_map: Option<VRegMap>,
 }
 
 impl SSAConverter {
@@ -68,7 +71,7 @@ impl SSAConverter {
             stack: vec![],
             visited: BTreeSet::new(),
             reg_counter: func.get_vreg_counter(),
-            vreg_map
+            vreg_map,
         };
 
         converter.convert_func(func);
@@ -94,7 +97,9 @@ impl SSAConverter {
         self.version_successor_phi_nodes(block.get_id(), successor_ids.clone(), func);
 
         for succ_id in successor_ids.iter() {
-            if self.visited.contains(&succ_id) { continue; }
+            if self.visited.contains(succ_id) {
+                continue;
+            }
 
             self.convert_block(func, *succ_id);
         }
@@ -102,7 +107,12 @@ impl SSAConverter {
         self.stack.pop();
     }
 
-    fn version_successor_phi_nodes(&mut self, predecessor_id: BlockId, successor_ids: Vec<BlockId>, func: &mut Func) {
+    fn version_successor_phi_nodes(
+        &mut self,
+        predecessor_id: BlockId,
+        successor_ids: Vec<BlockId>,
+        func: &mut Func,
+    ) {
         for succ_id in successor_ids.iter() {
             let succ = func.get_block_mut(*succ_id);
 
@@ -144,9 +154,9 @@ impl SSAConverter {
         // it does make the produced tac make much more sense at first glance
         let mut first_def_flag = true;
         for stack in self.stack.iter().rev() {
-            if let Some(_) = stack.get(&old) {
+            if stack.get(old).is_some() {
                 first_def_flag = false;
-                break
+                break;
             }
         }
 
@@ -174,7 +184,7 @@ impl SSAConverter {
 
     fn map_reg(&mut self, vreg: &VReg) -> VReg {
         for stack in self.stack.iter().rev() {
-            if let Some(ver_id) = stack.get(&vreg) {
+            if let Some(ver_id) = stack.get(vreg) {
                 return *ver_id;
             }
         }

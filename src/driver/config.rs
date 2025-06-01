@@ -5,27 +5,15 @@ use clap::{ArgGroup, Parser};
 #[clap(group(ArgGroup::new("input").args(&["file", "inline", "stdin"])))]
 pub struct Config {
     /// Optionally output AST to stdout or to a file if provided
-    #[clap(
-        short = 'a',
-        long = "ast_output",
-        requires = "input",
-    )]
+    #[clap(short = 'a', long = "ast_output", requires = "input")]
     pub ast_output_path: Option<Option<String>>,
 
     /// Optionally output ir to stdout or to a file if provided
-    #[clap(
-        short = 'r',
-        long = "ir_output",
-        requires = "input",
-    )]
+    #[clap(short = 'r', long = "ir_output", requires = "input")]
     pub ir_output_path: Option<Option<String>>,
 
     /// Optionally output bytecode to stdout or to a file if provided
-    #[clap(
-        short = 'b',
-        long = "bytecode_output",
-        requires = "input",
-    )]
+    #[clap(short = 'b', long = "bytecode_output", requires = "input")]
     pub bytecode_output_path: Option<Option<String>>,
 
     /// Print the IR using symbol names instead of virtual registers
