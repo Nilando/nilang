@@ -29,10 +29,10 @@ pub fn generate_func(ir_func: IRFunc) -> Func {
     let copies = find_copy_edges(&ir_func);
     graph.best_effort_coalescence(&ir_func, copies);
 
-    generate_bytecode(&ir_func, &graph, max_clique)
+    generate_bytecode(&ir_func, &graph, u8::try_from(max_clique).unwrap())
 }
 
-fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph, max_clique: usize) -> Func {
+fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph, max_clique: u8) -> Func {
     let mut func = Func::new(ir_func.get_id(), max_clique);
     let mut backpatch_ctx = BackpatchContext::new();
 

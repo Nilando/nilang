@@ -5,8 +5,8 @@ pub type Reg = u8;
 
 #[derive(Debug, PartialEq)]
 pub enum Local {
-    FuncId(u64),
-    Sym(u64),
+    FuncId(u32),
+    Sym(u32),
     Int(i64),
     Float(f64),
     String(String),
@@ -14,26 +14,38 @@ pub enum Local {
 
 #[derive(Debug)]
 pub struct Func {
-    id: u64,
-    _max_clique: usize,
+    id: u32,
+    max_clique: u8,
     locals: Vec<Local>,
     instrs: Vec<ByteCode>,
     spans: PackedSpans,
 }
 
 impl Func {
-    pub fn new(id: u64, _max_clique: usize) -> Self {
+    pub fn new(id: u32, max_clique: u8) -> Self {
         Self {
             id,
-            _max_clique,
+            max_clique,
             locals: vec![],
             instrs: vec![],
             spans: PackedSpans::new(),
         }
     }
 
+    pub fn id(&self) -> u32 {
+        self.id
+    }
+
+    pub fn max_clique(&self) -> u8 {
+        self.max_clique
+    }
+
     pub fn len(&self) -> usize {
         self.instrs.len()
+    }
+
+    pub fn get_locals(&self) -> &Vec<Local> {
+        &self.locals
     }
 
     pub fn get_local(&self, local: &Local) -> Option<u16> {
@@ -53,6 +65,10 @@ impl Func {
         self.instrs.push(instr)
     }
 
+    pub fn get_instrs(&self) -> &Vec<ByteCode> {
+        &self.instrs
+    }
+
     pub fn get_instrs_mut(&mut self) -> &mut Vec<ByteCode> {
         &mut self.instrs
     }
@@ -68,7 +84,7 @@ impl Func {
     }
 }
 
-#[derive(TraceLeaf, Debug)]
+#[derive(TraceLeaf, Debug, Copy, Clone)]
 pub enum ByteCode {
     Noop,
     Swap { r1: Reg, r2: Reg },

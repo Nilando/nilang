@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
-pub type SymID = u64;
+pub type SymID = u32;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct SmallSymID(u16);
@@ -44,7 +44,7 @@ impl SymbolMap {
     }
 
     fn insert(&mut self, str: String) -> SymID {
-        let id = self.id_to_str.len() as u64;
+        let id = self.id_to_str.len() as u32;
         let s = Rc::new(str);
 
         self.id_to_str.push(s.clone());

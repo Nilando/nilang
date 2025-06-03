@@ -1,18 +1,23 @@
 mod bytecode;
 pub use bytecode::{func_to_string, ByteCode, Func, Local};
-use sandpit::{Gc, GcVec, Mutator, Tag, Tagged as TaggedPtr, Trace};
+use sandpit::{field, Gc, GcVec, Mutator, Tag, Tagged as TaggedPtr, Trace};
 
 #[derive(Trace)]
 struct CallFrame<'gc> {
-    // register count
-    // instruction_stream
-    // func id
-    bytecode: Gc<'gc, [ByteCode]>, //this is temp
+    reg_count: u8,
+    func_id: u32,
+    ip: usize,
+    code: Gc<'gc, [ByteCode]>,
 }
 
 impl<'gc> CallFrame<'gc> {
     pub fn new(loaded_func: Gc<'gc, LoadedFunc<'gc>>, mu: &'gc Mutator) -> Self {
-        todo!()
+        Self {
+            ip: 0,
+            func_id: loaded_func.id,
+            code: loaded_func.code.clone(),
+            reg_count: loaded_func.max_clique
+        }
     }
 }
 
@@ -24,6 +29,7 @@ pub enum LoadedLocal<'gc> {
     SymId(u32),
     Int(i64),
     Float(f64),
+    //String(u64),
 }
 
 #[derive(Trace)]
@@ -31,8 +37,26 @@ pub struct LoadedFunc<'gc> {
     id: u32,
     max_clique: u8,
     locals: Gc<'gc, [LoadedLocal<'gc>]>,
-    bytecode: Gc<'gc, [ByteCode]>,
+    code: Gc<'gc, [ByteCode]>,
     // spans: GcPackedSpans
+}
+
+impl<'gc> LoadedFunc<'gc> {
+    pub fn new(id: u32, max_clique: u8, locals: Gc<'gc, [LoadedLocal<'gc>]>, code: Gc<'gc, [ByteCode]>) -> Self {
+        Self {
+            id,
+            max_clique,
+            locals,
+            code
+        }
+    }
+
+    pub fn update_locals(this: Gc<'gc, Self>, new_locals: Gc<'gc, [LoadedLocal<'gc>]>, mu: &'gc Mutator) {
+    this.write_barrier(mu, |barrier| {
+        let old_locals = field!(barrier, LoadedFunc, locals);
+        old_locals.set(new_locals);
+    });
+}
 }
 
 #[derive(Trace)]

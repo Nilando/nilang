@@ -4,6 +4,7 @@ use crate::codegen::generate_func;
 use crate::ir::{func_to_string, lower_ast, optimize_func};
 use crate::parser::{parse_program, ParseError, Spanned};
 use crate::runtime::vm::func_to_string as bytecode_to_string;
+use crate::runtime::Runtime;
 use crate::symbol_map::SymbolMap;
 
 pub use config::Config;
@@ -77,8 +78,13 @@ fn run_script(mut config: Config) {
         output_string(bc_str, path);
     }
 
-    // TODO: Fix run_program to work with Vec<Func>
-    // run_program(program);
+    let runtime = Runtime::init(program);
+    match runtime.run() {
+        Ok(()) => {},
+        Err(_err) => {
+            todo!("display runtime error")
+        }
+    }
 }
 
 fn run_repl(_config: Config) {

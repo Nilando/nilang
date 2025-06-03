@@ -2,7 +2,7 @@ use crate::parser::Op;
 use crate::symbol_map::SymID;
 
 pub type LabelID = usize;
-pub type FuncID = u64;
+pub type FuncID = u32;
 pub type VReg = u32;
 pub type UpValId = u16;
 

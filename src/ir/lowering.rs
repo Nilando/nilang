@@ -6,7 +6,7 @@ use crate::parser::{Expr, LhsExpr, MapKey, Op, Span, Spanned, Stmt, Value};
 use crate::symbol_map::SymID;
 use std::collections::{BTreeSet, HashSet};
 
-pub const MAIN_FUNC_ID: u64 = 0;
+pub const MAIN_FUNC_ID: u32 = 0;
 
 struct LoopCtx {
     start: LabelID,
@@ -32,7 +32,7 @@ impl FuncLoweringCtx {
 }
 
 struct LoweringCtx {
-    func_counter: u64,
+    func_counter: u32,
     funcs: Vec<FuncLoweringCtx>,
     lowered_funcs: Vec<Func>,
     pretty_ir: bool,
