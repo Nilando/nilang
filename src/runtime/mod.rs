@@ -1,4 +1,5 @@
 pub mod vm;
+mod bytecode;
 
 use std::collections::HashMap;
 

@@ -803,7 +803,7 @@ dependencies = [
 [[package]]
 name = "sandpit"
 version = "0.3.0"
-source = "git+https://github.com/Nilando/sandpit?branch=develop#58af1de173c055315121b92c9d9034d0196e6171"
+source = "git+https://github.com/Nilando/sandpit?branch=develop#73bf5addcf1a13e23d68664ae6f2c9ef5147e09e"
 dependencies = [
  "crossbeam-channel",
  "higher-kinded-types",
@@ -814,7 +814,7 @@ dependencies = [
 [[package]]
 name = "sandpit_derive"
 version = "0.3.0"
-source = "git+https://github.com/Nilando/sandpit?branch=develop#58af1de173c055315121b92c9d9034d0196e6171"
+source = "git+https://github.com/Nilando/sandpit?branch=develop#73bf5addcf1a13e23d68664ae6f2c9ef5147e09e"
 dependencies = [
  "proc-macro2",
  "quote",

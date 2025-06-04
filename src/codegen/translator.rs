@@ -86,7 +86,9 @@ fn translate_binop(
         Op::Modulo => ByteCode::Modulo { dest, lhs, rhs },
         Op::Multiply => ByteCode::Mult { dest, lhs, rhs },
         Op::Divide => ByteCode::Div { dest, lhs, rhs },
-        _ => ByteCode::Noop,
+        Op::Lte => ByteCode::Lte { dest, lhs, rhs },
+        Op::Gte => ByteCode::Gte { dest, lhs, rhs },
+        _ => todo!()
     }
 }
 

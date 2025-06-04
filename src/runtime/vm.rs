@@ -1,5 +1,4 @@
-mod bytecode;
-pub use bytecode::{func_to_string, ByteCode, Func, Local};
+pub use super::bytecode::{func_to_string, ByteCode, Func, Local};
 use sandpit::{field, Gc, GcVec, Mutator, Tag, Tagged as TaggedPtr, Trace};
 use std::cell::Cell;
 use std::fmt::Display;
@@ -229,11 +228,51 @@ impl<'gc> VM<'gc> {
                         todo!("runtime type error")
                     }
                 }
+                ByteCode::Sub { dest, lhs, rhs } => {
+                    let lhs = self.reg_to_val(lhs);
+                    let rhs = self.reg_to_val(rhs);
+
+                    if let Some(value) = Value::sub(lhs, rhs) {
+                        self.set_reg(value, dest, mu);
+                    } else {
+                        todo!("runtime type error")
+                    }
+                }
+                ByteCode::Mult { dest, lhs, rhs } => {
+                    let lhs = self.reg_to_val(lhs);
+                    let rhs = self.reg_to_val(rhs);
+
+                    if let Some(value) = Value::multiply(lhs, rhs) {
+                        self.set_reg(value, dest, mu);
+                    } else {
+                        todo!("runtime type error")
+                    }
+                }
+                ByteCode::Lt { dest, lhs, rhs } => {
+                    let lhs = self.reg_to_val(lhs);
+                    let rhs = self.reg_to_val(rhs);
+
+                    if let Some(value) = Value::less_than(lhs, rhs) {
+                        self.set_reg(value, dest, mu);
+                    } else {
+                        todo!("runtime type error")
+                    }
+                }
+                ByteCode::Lte { dest, lhs, rhs } => {
+                    let lhs = self.reg_to_val(lhs);
+                    let rhs = self.reg_to_val(rhs);
+
+                    if let Some(value) = Value::less_than_or_equal(lhs, rhs) {
+                        self.set_reg(value, dest, mu);
+                    } else {
+                        todo!("runtime type error")
+                    }
+                }
                 ByteCode::Return { src } => {
                     let val = self.reg_to_val(src);
 
                     self.handle_return(val, mu);
-                    if self.registers.len() == 0 {
+                    if self.registers.is_empty(){
                         todo!("end runtime");
                     }
                 }
@@ -247,7 +286,7 @@ impl<'gc> VM<'gc> {
     fn handle_return(&self, return_val: Value<'gc>, mu: &'gc Mutator) {
         self.pop_callframe();
 
-        if self.call_frames.len() == 0 {
+        if self.call_frames.is_empty() {
             return;
         }
 
@@ -264,7 +303,7 @@ impl<'gc> VM<'gc> {
             self.registers.pop();
         }
 
-        if self.call_frames.len() == 0 {
+        if self.call_frames.is_empty() {
             return;
         }
 
@@ -359,6 +398,10 @@ impl<'gc> VM<'gc> {
 #[derive(Trace)]
 struct List<'gc> {
     vec: GcVec<'gc, TaggedValue<'gc>>,
+}
+
+struct GcStr<'gc> {
+    vec: GcVec<'gc, Cell<char>>
 }
 
 impl<'gc> List<'gc> {
@@ -565,6 +608,57 @@ impl<'gc> Value<'gc> {
             (Value::Float(f), Value::Int(i)) | (Value::Int(i), Value::Float(f)) => {
                 Some(Value::Float(f + i as f64))
             }
+            _ => None,
+        }
+    }
+
+    fn sub(lhs: Value<'gc>, rhs: Value<'gc>) -> Option<Self> {
+        match (lhs, rhs) {
+            (Value::Float(lhs), Value::Float(rhs)) => Some(Value::Float(lhs - rhs)),
+            (Value::Int(lhs), Value::Int(rhs)) => Some(Value::Int(lhs - rhs)),
+            (Value::Float(lhs), Value::Int(rhs)) => Some(Value::Float(lhs - rhs as f64)),
+            (Value::Int(lhs), Value::Float(rhs)) => Some(Value::Float(lhs as f64 - rhs)),
+            _ => None,
+        }
+    }
+
+    fn multiply(lhs: Value<'gc>, rhs: Value<'gc>) -> Option<Self> {
+        match (lhs, rhs) {
+            (Value::Float(lhs), Value::Float(rhs)) => Some(Value::Float(lhs * rhs)),
+            (Value::Int(lhs), Value::Int(rhs)) => Some(Value::Int(lhs * rhs)),
+            (Value::Float(f), Value::Int(i)) | (Value::Int(i), Value::Float(f)) => {
+                Some(Value::Float(f * i as f64))
+            }
+            _ => None,
+        }
+    }
+
+    fn divide(lhs: Value<'gc>, rhs: Value<'gc>) -> Option<Self> {
+        match (lhs, rhs) {
+            (Value::Float(lhs), Value::Float(rhs)) => Some(Value::Float(lhs / rhs)),
+            (Value::Int(lhs), Value::Int(rhs)) => Some(Value::Int(lhs / rhs)),
+            (Value::Float(lhs), Value::Int(rhs)) => Some(Value::Float(lhs / rhs as f64)),
+            (Value::Int(lhs), Value::Float(rhs)) => Some(Value::Float(lhs as f64 / rhs)),
+            _ => None,
+        }
+    }
+
+    fn less_than(lhs: Value<'gc>, rhs: Value<'gc>) -> Option<Self> {
+        match (lhs, rhs) {
+            (Value::Float(lhs), Value::Float(rhs)) => Some(Value::Bool(lhs < rhs)),
+            (Value::Int(lhs), Value::Int(rhs)) => Some(Value::Bool(lhs < rhs)),
+            (Value::Float(lhs), Value::Int(rhs)) => Some(Value::Bool(lhs < rhs as f64)),
+            (Value::Int(lhs), Value::Float(rhs)) => Some(Value::Bool((lhs as f64) < rhs)),
+            _ => None,
+        }
+    }
+
+    fn less_than_or_equal(lhs: Value<'gc>, rhs: Value<'gc>) -> Option<Self> {
+        match (lhs, rhs) {
+            (Value::Float(lhs), Value::Float(rhs)) => Some(Value::Bool(lhs <= rhs)),
+            (Value::Int(lhs), Value::Int(rhs)) => Some(Value::Bool(lhs <= rhs)),
+            (Value::Float(lhs), Value::Int(rhs)) => Some(Value::Bool(lhs <= rhs as f64)),
+            (Value::Int(lhs), Value::Float(rhs)) => Some(Value::Bool((lhs as f64) <= rhs)),
             _ => None,
         }
     }
