@@ -248,6 +248,16 @@ impl<'gc> VM<'gc> {
                         todo!("runtime type error")
                     }
                 }
+                ByteCode::Div { dest, lhs, rhs } => {
+                    let lhs = self.reg_to_val(lhs);
+                    let rhs = self.reg_to_val(rhs);
+
+                    if let Some(value) = Value::divide(lhs, rhs) {
+                        self.set_reg(value, dest, mu);
+                    } else {
+                        todo!("runtime type error")
+                    }
+                }
                 ByteCode::Lt { dest, lhs, rhs } => {
                     let lhs = self.reg_to_val(lhs);
                     let rhs = self.reg_to_val(rhs);
@@ -263,6 +273,16 @@ impl<'gc> VM<'gc> {
                     let rhs = self.reg_to_val(rhs);
 
                     if let Some(value) = Value::less_than_or_equal(lhs, rhs) {
+                        self.set_reg(value, dest, mu);
+                    } else {
+                        todo!("runtime type error")
+                    }
+                }
+                ByteCode::Equality { dest, lhs, rhs } => {
+                    let lhs = self.reg_to_val(lhs);
+                    let rhs = self.reg_to_val(rhs);
+
+                    if let Some(value) = Value::equal(lhs, rhs) {
                         self.set_reg(value, dest, mu);
                     } else {
                         todo!("runtime type error")
@@ -660,6 +680,17 @@ impl<'gc> Value<'gc> {
             (Value::Float(lhs), Value::Int(rhs)) => Some(Value::Bool(lhs <= rhs as f64)),
             (Value::Int(lhs), Value::Float(rhs)) => Some(Value::Bool((lhs as f64) <= rhs)),
             _ => None,
+        }
+    }
+
+    fn equal(lhs: Value<'gc>, rhs: Value<'gc>) -> Option<Self> {
+        match (lhs, rhs) {
+            (Value::Float(lhs), Value::Float(rhs)) => Some(Value::Bool(lhs == rhs)),
+            (Value::Int(lhs), Value::Int(rhs)) => Some(Value::Bool(lhs == rhs)),
+            (Value::Float(f), Value::Int(i)) | (Value::Int(i), Value::Float(f)) => {
+                Some(Value::Bool(f == i as f64))
+            }
+            _ => todo!(),
         }
     }
 }
