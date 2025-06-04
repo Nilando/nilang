@@ -80,7 +80,7 @@ fn run_script(mut config: Config) {
 
     let runtime = Runtime::init(program);
     match runtime.run() {
-        Ok(()) => {},
+        Ok(()) => {}
         Err(_err) => {
             todo!("display runtime error")
         }
