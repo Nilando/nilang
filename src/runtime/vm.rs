@@ -14,7 +14,7 @@ use super::RuntimeError;
 pub struct VM<'gc> {
     registers: GcVec<'gc, TaggedValue<'gc>>, // set number of registers
     call_frames: GcVec<'gc, GcOpt<'gc, CallFrame<'gc>>>, // set number of call frames
-    frame_start: Cell<usize>, // globals
+    frame_start: Cell<usize>,                // globals
 }
 
 impl<'gc> VM<'gc> {
@@ -218,8 +218,8 @@ impl<'gc> VM<'gc> {
                         let val = self.reg_to_val(src);
 
                         self.handle_return(val, mu);
-                        if self.registers.is_empty(){
-                            return Ok(true)
+                        if self.registers.is_empty() {
+                            return Ok(true);
                         }
                     }
                     _ => {
@@ -272,8 +272,8 @@ impl<'gc> VM<'gc> {
             match self.get_next_instruction() {
                 ByteCode::Call { src, .. } => {
                     if let Value::Func(func) = self.reg_to_val(src) {
-                        let new_frame_start =
-                            self.frame_start.get() + self.get_top_call_frame().get_reg_count() as usize;
+                        let new_frame_start = self.frame_start.get()
+                            + self.get_top_call_frame().get_reg_count() as usize;
 
                         for _ in 0..func.get_max_clique() {
                             self.registers.push(mu, Value::into_tagged(Value::Null, mu));

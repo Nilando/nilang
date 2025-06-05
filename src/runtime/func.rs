@@ -31,7 +31,7 @@ pub struct LoadedFunc<'gc> {
     max_clique: u8,
     locals: Gc<'gc, [LoadedLocal<'gc>]>,
     code: Gc<'gc, [ByteCode]>,
-    spans: GcPackedSpans<'gc>
+    spans: GcPackedSpans<'gc>,
 }
 
 impl<'gc> LoadedFunc<'gc> {
@@ -47,7 +47,7 @@ impl<'gc> LoadedFunc<'gc> {
             max_clique,
             locals,
             code,
-            spans
+            spans,
         }
     }
 

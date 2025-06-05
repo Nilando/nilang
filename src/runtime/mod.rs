@@ -1,18 +1,18 @@
-mod vm;
-mod value;
 mod bytecode;
-mod tagged_value;
-mod list;
 mod call_frame;
 mod func;
+mod list;
+mod tagged_value;
+mod value;
+mod vm;
 
-use std::collections::HashMap;
 use self::func::{LoadedFunc, LoadedLocal};
 use sandpit::*;
+use std::collections::HashMap;
 
-pub use vm::VM;
-pub use self::func::{Func, Local, func_to_string};
+pub use self::func::{func_to_string, Func, Local};
 pub use bytecode::ByteCode;
+pub use vm::VM;
 
 pub struct Runtime {
     arena: Arena<Root![VM<'_>]>,

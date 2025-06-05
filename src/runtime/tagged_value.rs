@@ -1,8 +1,8 @@
 use sandpit::{Tag, Tagged};
 
-use super::value::Value;
 use super::func::LoadedFunc;
 use super::list::List;
+use super::value::Value;
 
 pub type TaggedValue<'gc> = Tagged<'gc, ValueTag>;
 
@@ -148,8 +148,8 @@ pub fn unpack_tagged_value<'gc>(raw: u64) -> Value<'gc> {
 
 #[cfg(test)]
 mod tests {
-    use sandpit::{Arena, Root};
     use super::*;
+    use sandpit::{Arena, Root};
 
     #[test]
     fn pack_and_unpack_null_value() {

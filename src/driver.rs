@@ -3,7 +3,7 @@ mod config;
 use crate::codegen::generate_func;
 use crate::ir::{func_to_string, lower_ast, optimize_func};
 use crate::parser::{parse_program, ParseError, Spanned};
-use crate::runtime::{Runtime, func_to_string as bytecode_to_string};
+use crate::runtime::{func_to_string as bytecode_to_string, Runtime};
 use crate::symbol_map::SymbolMap;
 
 pub use config::Config;
@@ -123,7 +123,7 @@ fn run_repl(config: Config) {
                 }
 
                 let mut ir = lower_ast(parse_result.value.unwrap(), false);
-                
+
                 if !config.no_optimize {
                     for func in ir.iter_mut() {
                         optimize_func(func);

@@ -2,8 +2,8 @@ use std::fmt::Display;
 
 use sandpit::{Gc, Mutator};
 
-use super::list::List;
 use super::func::LoadedFunc;
+use super::list::List;
 use super::tagged_value::{pack_tagged_value, TaggedValue, ValueTag};
 
 impl<'gc> Display for Value<'gc> {

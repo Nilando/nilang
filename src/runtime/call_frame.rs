@@ -46,7 +46,7 @@ impl<'gc> CallFrame<'gc> {
     pub fn get_ip(&self) -> usize {
         self.ip.get()
     }
-    
+
     pub fn get_reg_count(&self) -> u8 {
         self.reg_count
     }

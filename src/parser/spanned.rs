@@ -70,7 +70,7 @@ impl PackedSpans {
 
     pub fn into_gc<'gc>(&self, mu: &'gc Mutator) -> GcPackedSpans<'gc> {
         GcPackedSpans {
-            spans: mu.alloc_array_from_slice(self.spans.as_slice())
+            spans: mu.alloc_array_from_slice(self.spans.as_slice()),
         }
     }
 
