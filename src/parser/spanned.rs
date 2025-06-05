@@ -1,6 +1,13 @@
+use sandpit::{Gc, Mutator, Trace, TraceLeaf};
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct PackedSpans {
     spans: Vec<(Span, usize)>,
+}
+
+#[derive(Trace, Clone)]
+pub struct GcPackedSpans<'gc> {
+    spans: Gc<'gc, [(Span, usize)]>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -9,7 +16,7 @@ pub struct Spanned<T> {
     pub span: (usize, usize),
 }
 
-#[derive(Debug, PartialEq, Eq, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone, TraceLeaf)]
 pub struct Span {
     start: usize,
     end: usize,
@@ -58,6 +65,12 @@ impl PackedSpans {
             }
         } else {
             self.spans.push((span, item_number))
+        }
+    }
+
+    pub fn into_gc<'gc>(&self, mu: &'gc Mutator) -> GcPackedSpans<'gc> {
+        GcPackedSpans {
+            spans: mu.alloc_array_from_slice(self.spans.as_slice())
         }
     }
 

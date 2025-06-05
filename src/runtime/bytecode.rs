@@ -36,6 +36,10 @@ impl Func {
         self.id
     }
 
+    pub fn spans(&self) -> &PackedSpans {
+        &self.spans
+    }
+
     pub fn max_clique(&self) -> u8 {
         self.max_clique
     }

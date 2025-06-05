@@ -44,7 +44,8 @@ fn load_program<'gc>(program: Vec<Func>, mu: &'gc Mutator) -> Vec<Gc<'gc, Loaded
         let locals: Gc<'gc, [LoadedLocal<'gc>]> =
             mu.alloc_array_from_fn(0, |_| LoadedLocal::Int(0));
         let code = mu.alloc_array_from_slice(func.get_instrs().as_slice());
-        let loaded_func = LoadedFunc::new(func.id(), func.max_clique(), locals, code);
+        let spans = func.spans().into_gc(mu);
+        let loaded_func = LoadedFunc::new(func.id(), func.max_clique(), locals, code, spans);
         let loaded_func_ptr = Gc::new(mu, loaded_func);
 
         loaded_funcs.insert(func.id(), loaded_func_ptr.clone());
@@ -80,4 +81,9 @@ fn load_program<'gc>(program: Vec<Func>, mu: &'gc Mutator) -> Vec<Gc<'gc, Loaded
     result
 }
 
-pub enum RuntimeError {}
+pub struct RuntimeError {
+    // kind: RuntimeErrorKind,
+    // location: Option<Span>,
+    // message: Option<String>
+    // backtrace: Option<Backtrace>,
+}

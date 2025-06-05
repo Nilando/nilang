@@ -1,3 +1,5 @@
+use crate::parser::GcPackedSpans;
+
 pub use super::bytecode::{func_to_string, ByteCode, Func, Local};
 use sandpit::{field, Gc, GcOpt, GcVec, Mutator, Tag, Tagged as TaggedPtr, Trace};
 use std::cell::Cell;
@@ -8,8 +10,8 @@ use super::RuntimeError;
 #[derive(Trace)]
 struct CallFrame<'gc> {
     reg_count: u8,
-    func_id: u32,
     ip: Cell<usize>,
+    func_id: Gc<'gc, LoadedFunc<'gc>>,
     code: Gc<'gc, [ByteCode]>,
     locals: Gc<'gc, [LoadedLocal<'gc>]>,
 }
@@ -18,7 +20,7 @@ impl<'gc> CallFrame<'gc> {
     pub fn new(loaded_func: Gc<'gc, LoadedFunc<'gc>>) -> Self {
         Self {
             ip: Cell::new(0),
-            func_id: loaded_func.id,
+            func_id: loaded_func.clone(),
             code: loaded_func.code.clone(),
             reg_count: loaded_func.max_clique,
             locals: loaded_func.locals.clone(),
@@ -70,7 +72,7 @@ pub struct LoadedFunc<'gc> {
     max_clique: u8,
     locals: Gc<'gc, [LoadedLocal<'gc>]>,
     code: Gc<'gc, [ByteCode]>,
-    // spans: GcPackedSpans
+    spans: GcPackedSpans<'gc>
 }
 
 impl<'gc> LoadedFunc<'gc> {
@@ -79,12 +81,14 @@ impl<'gc> LoadedFunc<'gc> {
         max_clique: u8,
         locals: Gc<'gc, [LoadedLocal<'gc>]>,
         code: Gc<'gc, [ByteCode]>,
+        spans: GcPackedSpans<'gc>,
     ) -> Self {
         Self {
             id,
             max_clique,
             locals,
             code,
+            spans
         }
     }
 
