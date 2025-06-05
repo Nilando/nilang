@@ -5,7 +5,7 @@ use super::tagged_value::TaggedValue;
 use super::value::Value;
 
 pub use super::bytecode::ByteCode;
-use sandpit::{field, Gc, GcOpt, GcVec, Mutator, Tag, Tagged as TaggedPtr, Trace};
+use sandpit::{Gc, GcOpt, GcVec, Mutator, Trace};
 use std::cell::Cell;
 
 use super::RuntimeError;

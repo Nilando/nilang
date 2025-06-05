@@ -6,7 +6,7 @@ use super::func::LoadedFunc;
 use super::list::List;
 use super::tagged_value::{pack_tagged_value, TaggedValue, ValueTag};
 
-impl<'gc> Display for Value<'gc> {
+impl Display for Value<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Value::Null => write!(f, "null"),
@@ -30,7 +30,7 @@ pub enum Value<'gc> {
 }
 
 impl<'gc> Value<'gc> {
-    pub fn into_tagged(self: Self, mu: &'gc Mutator) -> TaggedValue<'gc> {
+    pub fn into_tagged(self, mu: &'gc Mutator) -> TaggedValue<'gc> {
         if let Some(tagged) = pack_tagged_value(&self) {
             return tagged;
         }
