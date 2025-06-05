@@ -15,7 +15,7 @@ pub enum LoadedLocal<'gc> {
 }
 
 impl<'gc> LoadedLocal<'gc> {
-    pub fn into_value(&self) -> Value<'gc> {
+    pub fn as_value(&self) -> Value<'gc> {
         match self {
             LoadedLocal::SymId(s) => Value::SymId(*s),
             LoadedLocal::Int(i) => Value::Int(*i),

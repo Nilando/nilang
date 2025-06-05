@@ -38,10 +38,7 @@ impl Op {
     pub fn is_commutative(&self) -> bool {
         // TODO: And and Or are commutative BUT they can't always be treated
         // as such due to short circuiting and the possibility for side effects
-        match self {
-            Op::Plus | Op::Multiply | Op::Equal | Op::NotEqual => true,
-            _ => false,
-        }
+        matches!(self, Op::Plus | Op::Multiply | Op::Equal | Op::NotEqual)
     }
 }
 
@@ -497,15 +494,11 @@ impl<'a> Lexer<'a> {
     }
 
     fn read_until(&mut self, c: char) {
-        loop {
-            if let Some(peek) = self.chars.peek() {
-                if *peek == c {
-                    break;
-                } else {
-                    self.advance();
-                }
-            } else {
+        while let Some(peek) = self.chars.peek() {
+            if *peek == c {
                 break;
+            } else {
+                self.advance();
             }
         }
     }

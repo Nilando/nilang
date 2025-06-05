@@ -174,7 +174,7 @@ impl<'a, T: 'a> Parser<'a, T> {
 
     pub fn unless<A: 'a>(self, alternative: Parser<'a, A>) -> Parser<'a, T> {
         Parser::new(move |ctx| {
-            if let Some(_) = alternative.parse(ctx) {
+            if alternative.parse(ctx).is_some() {
                 None
             } else {
                 self.parse(ctx)
@@ -220,12 +220,8 @@ impl<'a, T: 'a> Parser<'a, T> {
         Parser::new(move |ctx| {
             let mut values = vec![];
 
-            loop {
-                if let Some(value) = self.parse(ctx) {
-                    values.push(value);
-                } else {
-                    break;
-                }
+            while let Some(value) = self.parse(ctx) {
+                values.push(value);
             }
 
             Some(values)
@@ -298,7 +294,7 @@ impl<'a, T: 'a> Parser<'a, T> {
             items.push(first);
 
             loop {
-                if let Some(_) = delimiter.parse(ctx) {
+                if delimiter.parse(ctx).is_some() {
                     if let Some(next) = self.parse(ctx) {
                         items.push(next);
                     } else {

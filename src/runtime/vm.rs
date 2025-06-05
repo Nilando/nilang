@@ -54,7 +54,7 @@ impl<'gc> VM<'gc> {
         let call_frame = self.get_top_call_frame();
         let local = call_frame.get_local(local_id);
 
-        local.into_value()
+        local.as_value()
     }
 
     pub fn run(&self, mu: &'gc Mutator) -> Result<bool, RuntimeError> {

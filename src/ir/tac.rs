@@ -174,9 +174,9 @@ impl Tac {
     }
 
     pub fn has_side_effects(&self) -> bool {
-        match self {
-            Tac::Read { .. } | Tac::Print { .. } | Tac::Call { .. } => true,
-            _ => false,
-        }
+        matches!(
+            self,
+            Tac::Read { .. } | Tac::Print { .. } | Tac::Call { .. }
+        )
     }
 }

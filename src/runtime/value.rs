@@ -45,10 +45,7 @@ impl<'gc> Value<'gc> {
     }
 
     pub fn is_truthy(&self) -> bool {
-        match self {
-            Value::Null | Value::Bool(false) => false,
-            _ => true,
-        }
+        !matches!(self, Value::Null | Value::Bool(false))
     }
 
     pub fn add(lhs: Value<'gc>, rhs: Value<'gc>) -> Option<Self> {

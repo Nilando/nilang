@@ -85,11 +85,7 @@ impl LoweringCtx {
     }
 
     fn lower_assign(&mut self, lhs_expr: Spanned<LhsExpr>, src: Spanned<Expr>) {
-        let copy_flag = if let Expr::Value(Value::Ident(_)) = src.item {
-            true
-        } else {
-            false
-        };
+        let copy_flag = matches!(src.item, Expr::Value(Value::Ident(_)));
         let src = self.lower_expr(src);
         let span = lhs_expr.get_span();
 
