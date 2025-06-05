@@ -3,8 +3,7 @@ mod config;
 use crate::codegen::generate_func;
 use crate::ir::{func_to_string, lower_ast, optimize_func};
 use crate::parser::{parse_program, ParseError, Spanned};
-use crate::runtime::vm::func_to_string as bytecode_to_string;
-use crate::runtime::Runtime;
+use crate::runtime::{Runtime, func_to_string as bytecode_to_string};
 use crate::symbol_map::SymbolMap;
 
 pub use config::Config;
@@ -92,7 +91,7 @@ fn run_script(mut config: Config) {
     }
 }
 
-fn run_repl(_config: Config) {
+fn run_repl(config: Config) {
     println!("ENTERING REPL");
     let stdin = stdin();
     let mut stdout = stdout().into_raw_mode().unwrap();
@@ -123,7 +122,53 @@ fn run_repl(_config: Config) {
                     display_parse_errors(&input, &parse_result.errors, None);
                 }
 
-                lower_ast(parse_result.value.unwrap(), false);
+                let mut ir = lower_ast(parse_result.value.unwrap(), false);
+                
+                if !config.no_optimize {
+                    for func in ir.iter_mut() {
+                        optimize_func(func);
+                    }
+                }
+
+                if let Some(path) = config.ir_output_path.as_ref() {
+                    let mut ir_string = String::new();
+
+                    for f in ir.iter() {
+                        ir_string.push_str(&func_to_string(f, &mut symbols));
+                    }
+
+                    output_string(ir_string, path);
+                }
+
+                let mut program = vec![];
+                for ir_func in ir.into_iter() {
+                    let func = generate_func(ir_func);
+                    program.push(func);
+                }
+
+                if let Some(path) = config.bytecode_output_path.as_ref() {
+                    let mut bc_str = String::new();
+
+                    for func in program.iter() {
+                        bc_str.push_str(&bytecode_to_string(func));
+                    }
+
+                    output_string(bc_str, path);
+                }
+
+                if config.dry_run {
+                    println!("DRY RUN: program compiled successfully");
+                    return;
+                }
+
+                let runtime = Runtime::init(program);
+                match runtime.run() {
+                    Ok(()) => {}
+                    Err(_err) => {
+                        todo!("display runtime error")
+                    }
+                }
+
                 let _ = stdout.activate_raw_mode();
 
                 inputs.push(input.clone());

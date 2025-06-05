@@ -7,7 +7,7 @@ mod translator;
 #[cfg(test)]
 mod tests;
 
-pub use crate::runtime::vm::Func;
+use crate::runtime::Func;
 use backpatch::BackpatchContext;
 use control_flow_translator::{handle_block_fall_through, handle_control_flow_instruction};
 pub use interference_graph::{find_copy_edges, InterferenceGraph};

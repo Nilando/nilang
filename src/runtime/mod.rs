@@ -1,12 +1,18 @@
-pub mod vm;
+mod vm;
+mod value;
 mod bytecode;
+mod tagged_value;
+mod list;
+mod call_frame;
+mod func;
 
 use std::collections::HashMap;
-
+use self::func::{LoadedFunc, LoadedLocal};
 use sandpit::*;
-use vm::{Func, VM};
 
-use self::vm::{LoadedFunc, LoadedLocal, Local};
+pub use vm::VM;
+pub use self::func::{Func, Local, func_to_string};
+pub use bytecode::ByteCode;
 
 pub struct Runtime {
     arena: Arena<Root![VM<'_>]>,
@@ -24,13 +30,26 @@ impl Runtime {
     }
 
     pub fn run(&self) -> Result<(), RuntimeError> {
-        let mut result = Ok(());
+        loop {
+            let mut vm_result = Ok(false);
 
-        self.arena.mutate(|mu, vm| {
-            result = vm.run(mu);
-        });
+            self.arena.mutate(|mu, vm| {
+                vm_result = vm.run(mu);
+            });
 
-        result
+            match vm_result {
+                Ok(finished) => {
+                    if finished {
+                        break;
+                    }
+                }
+                Err(err) => {
+                    return Err(err);
+                }
+            }
+        }
+
+        Ok(())
     }
 }
 

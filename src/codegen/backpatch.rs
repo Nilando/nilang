@@ -1,5 +1,5 @@
 use crate::ir::LabelID;
-use crate::runtime::vm::{ByteCode, Func};
+use crate::runtime::{ByteCode, Func};
 use std::collections::HashMap;
 
 #[derive(Eq, PartialEq, Hash, Copy, Clone)]

@@ -2,7 +2,7 @@ mod golden_tests;
 use crate::codegen::generate_func;
 use crate::ir::{lower_ast, optimize_func};
 use crate::parser::parse_program;
-use crate::runtime::vm::func_to_string as bytecode_to_string;
+use crate::runtime::func_to_string as bytecode_to_string;
 use crate::symbol_map::SymbolMap;
 use pretty_assertions::assert_eq;
 use std::fs::File;
