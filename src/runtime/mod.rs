@@ -24,11 +24,13 @@ impl Runtime {
     }
 
     pub fn run(&self) -> Result<(), RuntimeError> {
+        let mut result = Ok(());
+
         self.arena.mutate(|mu, vm| {
-            let _ = vm.run(mu);
+            result = vm.run(mu);
         });
 
-        todo!()
+        result
     }
 }
 

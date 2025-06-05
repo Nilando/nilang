@@ -1,5 +1,5 @@
 pub use super::bytecode::{func_to_string, ByteCode, Func, Local};
-use sandpit::{field, Gc, GcVec, Mutator, Tag, Tagged as TaggedPtr, Trace};
+use sandpit::{field, Gc, GcOpt, GcVec, Mutator, Tag, Tagged as TaggedPtr, Trace};
 use std::cell::Cell;
 use std::fmt::Display;
 
@@ -102,8 +102,8 @@ impl<'gc> LoadedFunc<'gc> {
 
 #[derive(Trace)]
 pub struct VM<'gc> {
-    registers: GcVec<'gc, TaggedValue<'gc>>,
-    call_frames: GcVec<'gc, Gc<'gc, CallFrame<'gc>>>,
+    registers: GcVec<'gc, TaggedValue<'gc>>, // set number of registers
+    call_frames: GcVec<'gc, GcOpt<'gc, CallFrame<'gc>>>, // set number of call frames
     frame_start: Cell<usize>, // globals
 }
 
@@ -117,8 +117,9 @@ impl<'gc> VM<'gc> {
         let call_frames = GcVec::new(mu);
         let init_frame = CallFrame::new(main_func);
         let frame_start = Cell::new(0);
+        let call_frame_ptr = GcOpt::new(mu, init_frame);
 
-        call_frames.push(mu, Gc::new(mu, init_frame));
+        call_frames.push(mu, call_frame_ptr);
 
         Self {
             registers,
@@ -136,7 +137,7 @@ impl<'gc> VM<'gc> {
 
     fn get_top_call_frame(&self) -> Gc<'gc, CallFrame<'gc>> {
         let l = self.call_frames.len() - 1;
-        self.call_frames.get_idx(l).unwrap()
+        self.call_frames.get_idx(l).unwrap().unwrap()
     }
 
     fn get_local(&self, local_id: u16) -> Value<'gc> {
@@ -258,6 +259,16 @@ impl<'gc> VM<'gc> {
                         todo!("runtime type error")
                     }
                 }
+                ByteCode::Modulo { dest, lhs, rhs } => {
+                    let lhs = self.reg_to_val(lhs);
+                    let rhs = self.reg_to_val(rhs);
+
+                    if let Some(value) = Value::modulo(lhs, rhs) {
+                        self.set_reg(value, dest, mu);
+                    } else {
+                        todo!("runtime type error")
+                    }
+                }
                 ByteCode::Lt { dest, lhs, rhs } => {
                     let lhs = self.reg_to_val(lhs);
                     let rhs = self.reg_to_val(rhs);
@@ -293,7 +304,7 @@ impl<'gc> VM<'gc> {
 
                     self.handle_return(val, mu);
                     if self.registers.is_empty(){
-                        todo!("end runtime");
+                        return Ok(())
                     }
                 }
                 _ => {
@@ -319,7 +330,7 @@ impl<'gc> VM<'gc> {
 
     fn pop_callframe(&self) {
         let cf = self.call_frames.pop().unwrap();
-        for _ in 0..cf.reg_count {
+        for _ in 0..cf.unwrap().reg_count {
             self.registers.pop();
         }
 
@@ -370,7 +381,7 @@ impl<'gc> VM<'gc> {
                         let init_frame = CallFrame::new(func.clone());
 
                         self.frame_start.set(new_frame_start);
-                        self.call_frames.push(mu, Gc::new(mu, init_frame));
+                        self.call_frames.push(mu, GcOpt::new(mu, init_frame));
 
                         break;
                     } else {
@@ -659,6 +670,16 @@ impl<'gc> Value<'gc> {
             (Value::Int(lhs), Value::Int(rhs)) => Some(Value::Int(lhs / rhs)),
             (Value::Float(lhs), Value::Int(rhs)) => Some(Value::Float(lhs / rhs as f64)),
             (Value::Int(lhs), Value::Float(rhs)) => Some(Value::Float(lhs as f64 / rhs)),
+            _ => None,
+        }
+    }
+
+    fn modulo(lhs: Value<'gc>, rhs: Value<'gc>) -> Option<Self> {
+        match (lhs, rhs) {
+            (Value::Float(lhs), Value::Float(rhs)) => Some(Value::Float(lhs % rhs)),
+            (Value::Int(lhs), Value::Int(rhs)) => Some(Value::Int(lhs % rhs)),
+            (Value::Float(lhs), Value::Int(rhs)) => Some(Value::Float(lhs % rhs as f64)),
+            (Value::Int(lhs), Value::Float(rhs)) => Some(Value::Float(lhs as f64 % rhs)),
             _ => None,
         }
     }
