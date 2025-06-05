@@ -33,7 +33,7 @@ pub struct Config {
     pub stdin: bool,
 
     /// Don't execute the program only compile it.
-    #[clap(short, long)]
+    #[clap(short = 'd', long)]
     pub dry_run: bool,
 
     /// File to be run (exclude for repl)

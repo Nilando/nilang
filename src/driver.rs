@@ -78,6 +78,11 @@ fn run_script(mut config: Config) {
         output_string(bc_str, path);
     }
 
+    if config.dry_run {
+        println!("DRY RUN: program compiled successfully");
+        return;
+    }
+
     let runtime = Runtime::init(program);
     match runtime.run() {
         Ok(()) => {}
