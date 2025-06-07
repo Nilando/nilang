@@ -53,7 +53,7 @@ pub fn ssa_elimination(
     }
 
     // STEP 2: INSERT SWAP INSTRUCTIONS (break cycles)
-    while let Some((dest, src)) = copy_pairs.pop() {
+    while let Some((src, dest)) = copy_pairs.pop() {
         if dest == src {
             continue;
         }
