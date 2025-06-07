@@ -14,6 +14,13 @@ impl Display for Value<'_> {
             Value::Float(v) => write!(f, "{v}"),
             Value::SymId(s) => write!(f, "#{s}"),
             Value::Bool(v) => write!(f, "{v}"),
+            Value::List(list) => {
+                write!(f, "[")?;
+                for i in 0..list.len() {
+                    write!(f, "{}, ", list.at(i as i64))?;
+                }
+                write!(f, "]")
+            }
             _ => write!(f, "unimplemented display"),
         }
     }
@@ -127,6 +134,16 @@ impl<'gc> Value<'gc> {
             (Value::Float(f), Value::Int(i)) | (Value::Int(i), Value::Float(f)) => {
                 Some(Value::Bool(f == i as f64))
             }
+            _ => todo!(),
+        }
+    }
+
+    pub fn mem_load(store: Value<'gc>, key: Value<'gc>) -> Option<Self> {
+        match (store, key) {
+            (Value::List(list), Value::Int(idx)) => {
+                Some(list.at(idx))
+            }
+            // can also be a value::map, followed by any value
             _ => todo!(),
         }
     }

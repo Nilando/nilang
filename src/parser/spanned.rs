@@ -29,6 +29,27 @@ impl Span {
     }
 }
 */
+impl<'gc> GcPackedSpans<'gc> {
+    pub fn get(&self, i: usize) -> Option<&Span> {
+        for k in 0..self.spans.len() {
+            let (span, span_start) = &self.spans[k];
+            if i < *span_start {
+                continue;
+            }
+
+            if k + 1 == self.spans.len() {
+                return Some(span);
+            }
+
+            let span_end = &self.spans[k + 1].1;
+            if i >= *span_start && i < *span_end {
+                return Some(span);
+            }
+        }
+
+        None
+    }
+}
 
 impl<T> Spanned<T> {
     pub fn new(item: T, span: (usize, usize)) -> Self {

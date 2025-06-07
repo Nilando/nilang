@@ -73,6 +73,10 @@ impl<'gc> LoadedFunc<'gc> {
     pub fn get_code(&self) -> Gc<'gc, [ByteCode]> {
         self.code.clone()
     }
+
+    pub fn get_spans(&self) -> GcPackedSpans {
+        self.spans.clone()
+    }
 }
 
 #[derive(Debug, PartialEq)]

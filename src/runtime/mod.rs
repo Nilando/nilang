@@ -6,6 +6,8 @@ mod tagged_value;
 mod value;
 mod vm;
 
+use crate::parser::Span;
+
 use self::func::{LoadedFunc, LoadedLocal};
 use sandpit::*;
 use std::collections::HashMap;
@@ -100,9 +102,26 @@ fn load_program<'gc>(program: Vec<Func>, mu: &'gc Mutator) -> Vec<Gc<'gc, Loaded
     result
 }
 
+#[derive(Debug)]
 pub struct RuntimeError {
-    // kind: RuntimeErrorKind,
-    // location: Option<Span>,
-    // message: Option<String>
+    pub kind: RuntimeErrorKind,
+    pub span: Option<Span>,
+    pub message: Option<String>
     // backtrace: Option<Backtrace>,
+}
+
+impl RuntimeError {
+    pub fn new(kind: RuntimeErrorKind, span: Option<Span>, message: Option<String>) -> Self {
+        Self {
+            kind,
+            span,
+            message
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum RuntimeErrorKind {
+    Unimplemented,
+    TypeError,
 }

@@ -3,7 +3,7 @@ use super::func_builder::FuncBuilder;
 use super::tac::{FuncID, LabelID, Tac, TacConst};
 use super::VReg;
 use crate::parser::{Expr, LhsExpr, MapKey, Op, Span, Spanned, Stmt, Value};
-use crate::symbol_map::SymID;
+use crate::symbol_map::{SymID, SymbolMap};
 use std::collections::{BTreeSet, HashSet};
 
 pub const MAIN_FUNC_ID: u32 = 0;
@@ -376,10 +376,17 @@ impl LoweringCtx {
             // this is an uninitialized variable
             let dest = self.sym_to_reg(&sym_id);
 
-            self.emit(Tac::LoadConst {
-                dest,
-                src: TacConst::Null,
-            });
+            if SymbolMap::is_intrinsic(sym_id) {
+                self.emit(Tac::LoadConst {
+                    dest,
+                    src: TacConst::Sym(sym_id),
+                });
+            } else {
+                self.emit(Tac::LoadConst {
+                    dest,
+                    src: TacConst::Null,
+                });
+            }
 
             dest
         }

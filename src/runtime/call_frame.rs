@@ -2,6 +2,8 @@ use std::cell::Cell;
 
 use sandpit::{Gc, Trace};
 
+use crate::parser::Span;
+
 use super::bytecode::ByteCode;
 use super::func::{LoadedFunc, LoadedLocal};
 
@@ -9,19 +11,19 @@ use super::func::{LoadedFunc, LoadedLocal};
 pub struct CallFrame<'gc> {
     reg_count: u8,
     ip: Cell<usize>,
-    func_id: Gc<'gc, LoadedFunc<'gc>>,
+    func: Gc<'gc, LoadedFunc<'gc>>,
     code: Gc<'gc, [ByteCode]>,
-    locals: Gc<'gc, [LoadedLocal<'gc>]>,
+    //locals: Gc<'gc, [LoadedLocal<'gc>]>,
 }
 
 impl<'gc> CallFrame<'gc> {
     pub fn new(loaded_func: Gc<'gc, LoadedFunc<'gc>>) -> Self {
         Self {
             ip: Cell::new(0),
-            func_id: loaded_func.clone(),
+            func: loaded_func.clone(),
             code: loaded_func.get_code(),
             reg_count: loaded_func.get_max_clique(),
-            locals: loaded_func.get_locals(),
+            //locals: loaded_func.get_locals(),
         }
     }
 
@@ -34,7 +36,9 @@ impl<'gc> CallFrame<'gc> {
     }
 
     pub fn get_local(&self, local_id: u16) -> &LoadedLocal<'gc> {
-        &self.locals[local_id as usize]
+        let locals = self.func.get_locals();
+
+        &locals.scoped_deref()[local_id as usize]
     }
 
     pub fn offset_ip(&self, offset: i16) {
@@ -53,5 +57,9 @@ impl<'gc> CallFrame<'gc> {
 
     pub fn get_instr_at(&self, idx: usize) -> ByteCode {
         self.code[idx]
+    }
+
+    pub fn get_current_span(&self) -> Option<Span> {
+        self.func.get_spans().get(self.ip.get()).copied()
     }
 }
