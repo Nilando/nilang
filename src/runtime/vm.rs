@@ -107,7 +107,7 @@ impl<'gc> VM<'gc> {
                         let r2_val = self.reg_to_val(r2);
 
                         self.set_reg(r1_val, r2, mu);
-                        self.set_reg(r2_val, r2, mu);
+                        self.set_reg(r2_val, r1, mu);
                     }
                     ByteCode::Copy { dest, src } => {
                         let val = self.reg_to_val(src);
