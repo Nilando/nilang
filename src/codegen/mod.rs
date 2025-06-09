@@ -27,7 +27,7 @@ pub fn generate_func(ir_func: IRFunc) -> Func {
     graph.color(&ir_func, seo, max_clique);
 
     let copies = find_copy_edges(&ir_func);
-    graph.best_effort_coalescence(&ir_func, copies);
+    graph.best_effort_coalescence(&ir_func, copies, max_clique as u8);
 
     generate_bytecode(&ir_func, &graph, u8::try_from(max_clique).unwrap())
 }
