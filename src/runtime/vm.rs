@@ -1,3 +1,4 @@
+use crate::runtime::string::VMString;
 use crate::symbol_map::{LEN_SYM, PUSH_SYM};
 
 use super::call_frame::CallFrame;
@@ -245,6 +246,20 @@ impl<'gc> VM<'gc> {
                             return Ok(true);
                         }
                     }
+                    ByteCode::Read { dest } => {
+                        let stdin = std::io::stdin();
+                        let mut buf = String::new();
+                        let vm_str = VMString::alloc(&[], mu);
+
+                        stdin.read_line(&mut buf).expect("failed to read from stdin");
+                        buf = buf.trim_end().to_string();
+
+                        for c in buf.chars() {
+                            vm_str.push_char(c, mu);
+                        }
+
+                        self.set_reg(Value::String(Gc::new(mu, vm_str)), dest, mu);
+                    }
                     _ => return Err(self.unimplemented())
                 }
             }
@@ -358,6 +373,12 @@ impl<'gc> VM<'gc> {
                                         let val = self.reg_to_val(src);
                                         match val {
                                             Value::List(list) => {
+                                                let val = Value::Int(list.len() as i64);
+
+                                                self.set_reg(val, dest, mu);
+                                                break;
+                                            }
+                                            Value::String(list) => {
                                                 let val = Value::Int(list.len() as i64);
 
                                                 self.set_reg(val, dest, mu);

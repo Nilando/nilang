@@ -21,6 +21,10 @@ impl<'gc> VMString<'gc> {
         }
     }
 
+    pub fn push_char(&self, c: char, mu: &'gc Mutator) {
+        self.vec.push(mu, Cell::new(c));
+    }
+
     pub fn at(&self, idx: usize) -> char {
         self.vec.get_idx(idx).unwrap().get()
     }

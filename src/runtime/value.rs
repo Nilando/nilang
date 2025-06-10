@@ -143,6 +143,18 @@ impl<'gc> Value<'gc> {
             (Value::Float(f), Value::Int(i)) | (Value::Int(i), Value::Float(f)) => {
                 Some(Value::Bool(f == i as f64))
             }
+            (Value::String(lhs), Value::String(rhs)) => {
+                if lhs.len() != rhs.len() {
+                    return Some(Value::Bool(false));
+                } 
+                for i in 0..lhs.len() {
+                    if lhs.at(i) != rhs.at(i) {
+                        return Some(Value::Bool(false));
+                    }
+                }
+
+                Some(Value::Bool(true))
+            }
             _ => todo!(),
         }
     }
@@ -152,6 +164,9 @@ impl<'gc> Value<'gc> {
             (Value::List(list), Value::Int(idx)) => {
                 Some(list.at(idx))
             }
+            // here you could check if the thing we are loading is a function,
+            // and if its first arg is self, load the thing we are calling this on 
+            // into self as a upvalue?
             // can also be a value::map, followed by any value
             _ => todo!(),
         }
