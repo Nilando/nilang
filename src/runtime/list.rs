@@ -26,4 +26,8 @@ impl<'gc> List<'gc> {
     pub fn push(&self, tagged_value: TaggedValue<'gc>, mu: &'gc Mutator) {
         self.vec.push(mu, tagged_value);
     }
+
+    pub fn set(&self, idx: usize, tagged_value: TaggedValue<'gc>, mu: &'gc Mutator) {
+        self.vec.set(mu, tagged_value, idx);
+    }
 }

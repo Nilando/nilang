@@ -227,6 +227,16 @@ impl<'gc> VM<'gc> {
                             return Err(self.type_error("".to_string()))
                         }
                     }
+                    ByteCode::MemStore { store, key, src } => {
+                        let store = self.reg_to_val(store);
+                        let key = self.reg_to_val(key);
+                        let src = self.reg_to_val(src);
+
+                        if let Some(()) = Value::mem_store(store, key, src, mu) {
+                        } else {
+                            return Err(self.type_error("".to_string()))
+                        }
+                    }
                     ByteCode::Return { src } => {
                         let val = self.reg_to_val(src);
 

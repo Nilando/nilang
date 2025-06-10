@@ -156,4 +156,16 @@ impl<'gc> Value<'gc> {
             _ => todo!(),
         }
     }
+
+    pub fn mem_store(store: Value<'gc>, key: Value<'gc>, src: Value<'gc>, mu: &'gc Mutator) -> Option<()> {
+        match (store, key) {
+            (Value::List(list), Value::Int(idx)) => {
+                list.set(usize::try_from(idx).unwrap(), Value::into_tagged(src, mu), mu);
+
+                Some(())
+            }
+            // can also be a value::map, followed by any value
+            _ => todo!(),
+        }
+    }
 }
