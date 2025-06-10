@@ -1,6 +1,7 @@
 use sandpit::{field, Gc, Mutator, Trace};
 
 use crate::parser::{GcPackedSpans, PackedSpans, Span};
+use crate::runtime::string::VMString;
 
 use super::value::Value;
 use super::vm::ByteCode;
@@ -11,16 +12,17 @@ pub enum LoadedLocal<'gc> {
     SymId(u32),
     Int(i64),
     Float(f64),
-    //String(u64),
+    Text(Gc<'gc, [char]>),
 }
 
 impl<'gc> LoadedLocal<'gc> {
-    pub fn as_value(&self) -> Value<'gc> {
+    pub fn as_value(&self, mu: &'gc Mutator) -> Value<'gc> {
         match self {
             LoadedLocal::SymId(s) => Value::SymId(*s),
             LoadedLocal::Int(i) => Value::Int(*i),
             LoadedLocal::Float(f) => Value::Float(*f),
             LoadedLocal::Func(f) => Value::Func(f.clone()),
+            LoadedLocal::Text(gc_text) => Value::String(Gc::new(mu, VMString::alloc(gc_text, mu)))
         }
     }
 }

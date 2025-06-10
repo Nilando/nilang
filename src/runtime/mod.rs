@@ -5,6 +5,7 @@ mod list;
 mod tagged_value;
 mod value;
 mod vm;
+mod string;
 
 use crate::parser::Span;
 
@@ -73,8 +74,10 @@ fn load_program<'gc>(program: Vec<Func>, mu: &'gc Mutator) -> Vec<Gc<'gc, Loaded
         result.push(loaded_func_ptr);
     }
 
-    // second pass
-    // - fill in the local arrays
+    // TODO: Move this logic to some kind of String interner
+    let mut string_map: HashMap<&String, Gc<'gc, [char]>> = HashMap::new();
+    let mut strings: Vec<&String> = vec![];
+
     for func in program.iter() {
         let locals = func.get_locals();
 
@@ -90,7 +93,23 @@ fn load_program<'gc>(program: Vec<Func>, mu: &'gc Mutator) -> Vec<Gc<'gc, Loaded
 
                     LoadedLocal::Func(fn_ptr)
                 }
-                _ => todo!(),
+                Local::String(s) => {
+                    if let Some(str_id) = string_map.get(&s) {
+                        LoadedLocal::Text(str_id.clone())
+                    } else {
+                        // TODO: this isn't efficient
+                        let mut chars = s.chars();
+                        let len = chars.clone().count();
+                        let gc_text = mu.alloc_array_from_fn(len, |_| {
+                            chars.next().unwrap()
+                        });
+
+                        strings.push(s);
+                        string_map.insert(s, gc_text.clone());
+
+                        LoadedLocal::Text(gc_text)
+                    }
+                }
             }
         });
 

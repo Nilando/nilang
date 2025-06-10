@@ -4,6 +4,7 @@ use sandpit::{Gc, Mutator};
 
 use super::func::LoadedFunc;
 use super::list::List;
+use super::string::VMString;
 use super::tagged_value::{pack_tagged_value, TaggedValue, ValueTag};
 
 impl Display for Value<'_> {
@@ -21,6 +22,12 @@ impl Display for Value<'_> {
                 }
                 write!(f, "]")
             }
+            Value::String(s) => {
+                for i in 0 ..s.len() {
+                    write!(f, "{}", s.at(i))?;
+                }
+                write!(f, "\n")
+            }
             _ => write!(f, "unimplemented display"),
         }
     }
@@ -34,6 +41,7 @@ pub enum Value<'gc> {
     Float(f64),
     List(Gc<'gc, List<'gc>>),
     Func(Gc<'gc, LoadedFunc<'gc>>),
+    String(Gc<'gc, VMString<'gc>>),
 }
 
 impl<'gc> Value<'gc> {
@@ -47,6 +55,7 @@ impl<'gc> Value<'gc> {
             Value::Func(func) => ValueTag::from_func(func),
             Value::Float(f) => ValueTag::from_float(Gc::new(mu, f)),
             Value::Int(i) => ValueTag::from_int(Gc::new(mu, i)),
+            Value::String(s) => ValueTag::from_string(s),
             _ => panic!("failed to tagg value"),
         }
     }

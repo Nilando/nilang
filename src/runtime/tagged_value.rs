@@ -2,6 +2,7 @@ use sandpit::{Tag, Tagged};
 
 use super::func::LoadedFunc;
 use super::list::List;
+use super::string::VMString;
 use super::value::Value;
 
 pub type TaggedValue<'gc> = Tagged<'gc, ValueTag>;
@@ -17,6 +18,8 @@ pub enum ValueTag {
     List,
     #[ptr(LoadedFunc<'gc>)]
     Func,
+    #[ptr(VMString<'gc>)]
+    String,
 }
 
 impl<'gc> From<&TaggedValue<'gc>> for Value<'gc> {
@@ -42,8 +45,13 @@ impl<'gc> From<&TaggedValue<'gc>> for Value<'gc> {
 
                 Value::List(v)
             }
+            ValueTag::String => {
+                let s = ValueTag::get_string(value.clone()).unwrap();
+
+                Value::String(s)
+            }
             ValueTag::Packed => {
-                let raw = value.get_raw().unwrap() as u64;
+                let raw = value.get_stripped_raw() as u64;
 
                 unpack_tagged_value(raw)
             }

@@ -1,6 +1,6 @@
 use sandpit::{GcVec, Mutator, Trace};
 
-use super::tagged_value::{self, TaggedValue};
+use super::tagged_value::TaggedValue;
 use super::value::Value;
 
 #[derive(Trace)]

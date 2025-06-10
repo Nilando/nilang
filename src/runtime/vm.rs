@@ -53,11 +53,11 @@ impl<'gc> VM<'gc> {
         self.call_frames.get_idx(l).unwrap().unwrap()
     }
 
-    fn get_local(&self, local_id: u16) -> Value<'gc> {
+    fn get_local(&self, local_id: u16, mu: &'gc Mutator) -> Value<'gc> {
         let call_frame = self.get_top_call_frame();
         let local = call_frame.get_local(local_id);
 
-        local.as_value()
+        local.as_value(mu)
     }
 
     pub fn run(&self, mu: &'gc Mutator) -> Result<bool, RuntimeError> {
@@ -66,7 +66,7 @@ impl<'gc> VM<'gc> {
                 return Ok(false);
             }
 
-            for _ in 0..10_000 {
+            for _ in 0..100 {
                 let instr = self.get_next_instruction();
                 match instr {
                     ByteCode::Noop => {}
@@ -81,7 +81,7 @@ impl<'gc> VM<'gc> {
                         self.set_reg(value, dest, mu);
                     }
                     ByteCode::LoadLocal { dest, id } => {
-                        let local = self.get_local(id);
+                        let local = self.get_local(id, mu);
 
                         self.set_reg(local, dest, mu);
                     }
