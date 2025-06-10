@@ -76,7 +76,6 @@ fn load_program<'gc>(program: Vec<Func>, mu: &'gc Mutator) -> Vec<Gc<'gc, Loaded
 
     // TODO: Move this logic to some kind of String interner
     let mut string_map: HashMap<&String, Gc<'gc, [char]>> = HashMap::new();
-    let mut strings: Vec<&String> = vec![];
 
     for func in program.iter() {
         let locals = func.get_locals();
@@ -104,7 +103,6 @@ fn load_program<'gc>(program: Vec<Func>, mu: &'gc Mutator) -> Vec<Gc<'gc, Loaded
                             chars.next().unwrap()
                         });
 
-                        strings.push(s);
                         string_map.insert(s, gc_text.clone());
 
                         LoadedLocal::Text(gc_text)
