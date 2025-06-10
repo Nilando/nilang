@@ -33,7 +33,7 @@ pub fn generate_func(ir_func: IRFunc) -> Func {
 }
 
 fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph, max_clique: u8) -> Func {
-    let mut func = Func::new(ir_func.get_id(), max_clique);
+    let mut func = Func::new(ir_func.get_id(), u8::try_from(ir_func.get_args().len()).unwrap(),max_clique);
     let mut backpatch_ctx = BackpatchContext::new();
 
     for block in ir_func.get_blocks() {

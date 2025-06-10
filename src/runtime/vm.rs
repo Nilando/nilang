@@ -297,12 +297,16 @@ impl<'gc> VM<'gc> {
     }
 
     fn call_function_with_args(&self, mu: &'gc Mutator) {
-        let mut arg_count = 1;
+        let mut arg_count: usize = 1;
         loop {
             match self.get_next_instruction() {
                 ByteCode::Call { src, dest } => {
                     match self.reg_to_val(src) {
                         Value::Func(func) => {
+                            if func.arg_count() as usize != arg_count {
+                                todo!("runtime error wrong # args");
+                            }
+
                             let new_frame_start = self.frame_start.get()
                                 + self.get_top_call_frame().get_reg_count() as usize;
 

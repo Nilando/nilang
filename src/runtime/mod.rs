@@ -57,8 +57,6 @@ impl Runtime {
 }
 
 fn load_program<'gc>(program: Vec<Func>, mu: &'gc Mutator) -> Vec<Gc<'gc, LoadedFunc<'gc>>> {
-    // first pass create a map of FuncID -> Gc<LoadedFunc>
-    // - locals are empty arrays
     let mut loaded_funcs = HashMap::<u32, Gc<'gc, LoadedFunc<'gc>>>::new();
     let mut result = vec![];
 
@@ -67,7 +65,7 @@ fn load_program<'gc>(program: Vec<Func>, mu: &'gc Mutator) -> Vec<Gc<'gc, Loaded
             mu.alloc_array_from_fn(0, |_| LoadedLocal::Int(0));
         let code = mu.alloc_array_from_slice(func.get_instrs().as_slice());
         let spans = func.spans().into_gc(mu);
-        let loaded_func = LoadedFunc::new(func.id(), func.max_clique(), locals, code, spans);
+        let loaded_func = LoadedFunc::new(func.id(), func.arg_count(), func.max_clique(), locals, code, spans);
         let loaded_func_ptr = Gc::new(mu, loaded_func);
 
         loaded_funcs.insert(func.id(), loaded_func_ptr.clone());

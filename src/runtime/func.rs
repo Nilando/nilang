@@ -30,6 +30,7 @@ impl<'gc> LoadedLocal<'gc> {
 #[derive(Trace)]
 pub struct LoadedFunc<'gc> {
     id: u32,
+    arg_count: u8,
     max_clique: u8,
     locals: Gc<'gc, [LoadedLocal<'gc>]>,
     code: Gc<'gc, [ByteCode]>,
@@ -39,6 +40,7 @@ pub struct LoadedFunc<'gc> {
 impl<'gc> LoadedFunc<'gc> {
     pub fn new(
         id: u32,
+        arg_count: u8,
         max_clique: u8,
         locals: Gc<'gc, [LoadedLocal<'gc>]>,
         code: Gc<'gc, [ByteCode]>,
@@ -46,6 +48,7 @@ impl<'gc> LoadedFunc<'gc> {
     ) -> Self {
         Self {
             id,
+            arg_count,
             max_clique,
             locals,
             code,
@@ -55,6 +58,10 @@ impl<'gc> LoadedFunc<'gc> {
 
     pub fn get_max_clique(&self) -> u8 {
         self.max_clique
+    }
+
+    pub fn arg_count(&self) -> u8 {
+        self.arg_count
     }
 
     pub fn update_locals(
@@ -93,6 +100,7 @@ pub enum Local {
 #[derive(Debug)]
 pub struct Func {
     id: u32,
+    arg_count: u8,
     max_clique: u8,
     locals: Vec<Local>,
     instrs: Vec<ByteCode>,
@@ -100,9 +108,10 @@ pub struct Func {
 }
 
 impl Func {
-    pub fn new(id: u32, max_clique: u8) -> Self {
+    pub fn new(id: u32, arg_count: u8, max_clique: u8) -> Self {
         Self {
             id,
+            arg_count,
             max_clique,
             locals: vec![],
             instrs: vec![],
@@ -116,6 +125,10 @@ impl Func {
 
     pub fn spans(&self) -> &PackedSpans {
         &self.spans
+    }
+
+    pub fn arg_count(&self) -> u8 {
+        self.arg_count
     }
 
     pub fn max_clique(&self) -> u8 {
