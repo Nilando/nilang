@@ -68,202 +68,210 @@ impl<'gc> VM<'gc> {
             }
 
             for _ in 0..100 {
-                let instr = self.get_next_instruction();
-                match instr {
-                    ByteCode::Noop => {}
-                    ByteCode::NewList { dest } => {
-                        let value = Value::List(Gc::new(mu, List::alloc(mu)));
-
-                        self.set_reg(value, dest, mu);
-                    }
-                    ByteCode::LoadNull { dest } => {
-                        let value = Value::Null;
-
-                        self.set_reg(value, dest, mu);
-                    }
-                    ByteCode::LoadLocal { dest, id } => {
-                        let local = self.get_local(id, mu);
-
-                        self.set_reg(local, dest, mu);
-                    }
-                    ByteCode::LoadInt { dest, val } => {
-                        let value = Value::Int(val as i64);
-
-                        self.set_reg(value, dest, mu);
-                    }
-                    ByteCode::LoadSym { dest, val } => {
-                        let value = Value::SymId(val as u32);
-
-                        self.set_reg(value, dest, mu);
-                    }
-                    ByteCode::LoadBool { dest, val } => {
-                        let val = Value::Bool(val);
-
-                        self.set_reg(val, dest, mu);
-                    }
-                    ByteCode::Print { src } => {
-                        let val = self.reg_to_val(src);
-
-                        println!("{val}");
-                    }
-                    ByteCode::Swap { r1, r2 } => {
-                        let r1_val = self.reg_to_val(r1);
-                        let r2_val = self.reg_to_val(r2);
-
-                        self.set_reg(r1_val, r2, mu);
-                        self.set_reg(r2_val, r1, mu);
-                    }
-                    ByteCode::Copy { dest, src } => {
-                        let val = self.reg_to_val(src);
-
-                        self.set_reg(val, dest, mu);
-                    }
-                    ByteCode::StoreArg { .. } => {
-                        self.call_function_with_args(mu);
-                    }
-                    ByteCode::Jump { offset } => {
-                        self.offset_ip(offset);
-                    }
-                    ByteCode::Jnt { src, offset } => {
-                        let val = self.reg_to_val(src);
-
-                        if !val.is_truthy() {
-                            self.offset_ip(offset);
-                        }
-                    }
-                    ByteCode::Jit { src, offset } => {
-                        let val = self.reg_to_val(src);
-
-                        if val.is_truthy() {
-                            self.offset_ip(offset);
-                        }
-                    }
-                    ByteCode::Add { dest, lhs, rhs } => {
-                        let lhs = self.reg_to_val(lhs);
-                        let rhs = self.reg_to_val(rhs);
-
-                        if let Some(value) = Value::add(lhs, rhs) {
-                            self.set_reg(value, dest, mu);
-                        } else {
-                            return Err(self.type_error("".to_string()))
-                        }
-                    }
-                    ByteCode::Sub { dest, lhs, rhs } => {
-                        let lhs = self.reg_to_val(lhs);
-                        let rhs = self.reg_to_val(rhs);
-
-                        if let Some(value) = Value::sub(lhs, rhs) {
-                            self.set_reg(value, dest, mu);
-                        } else {
-                            return Err(self.type_error("uh oh!".to_string()))
-                        }
-                    }
-                    ByteCode::Mult { dest, lhs, rhs } => {
-                        let lhs = self.reg_to_val(lhs);
-                        let rhs = self.reg_to_val(rhs);
-
-                        if let Some(value) = Value::multiply(lhs, rhs) {
-                            self.set_reg(value, dest, mu);
-                        } else {
-                            return Err(self.type_error("".to_string()))
-                        }
-                    }
-                    ByteCode::Div { dest, lhs, rhs } => {
-                        let lhs = self.reg_to_val(lhs);
-                        let rhs = self.reg_to_val(rhs);
-
-                        if let Some(value) = Value::divide(lhs, rhs) {
-                            self.set_reg(value, dest, mu);
-                        } else {
-                            return Err(self.type_error("".to_string()))
-                        }
-                    }
-                    ByteCode::Modulo { dest, lhs, rhs } => {
-                        let lhs = self.reg_to_val(lhs);
-                        let rhs = self.reg_to_val(rhs);
-
-                        if let Some(value) = Value::modulo(lhs, rhs) {
-                            self.set_reg(value, dest, mu);
-                        } else {
-                            return Err(self.type_error("".to_string()))
-                        }
-                    }
-                    ByteCode::Lt { dest, lhs, rhs } => {
-                        let lhs = self.reg_to_val(lhs);
-                        let rhs = self.reg_to_val(rhs);
-
-                        if let Some(value) = Value::less_than(lhs, rhs) {
-                            self.set_reg(value, dest, mu);
-                        } else {
-                            return Err(self.type_error("".to_string()))
-                        }
-                    }
-                    ByteCode::Lte { dest, lhs, rhs } => {
-                        let lhs = self.reg_to_val(lhs);
-                        let rhs = self.reg_to_val(rhs);
-
-                        if let Some(value) = Value::less_than_or_equal(lhs, rhs) {
-                            self.set_reg(value, dest, mu);
-                        } else {
-                            return Err(self.type_error("".to_string()))
-                        }
-                    }
-                    ByteCode::Equality { dest, lhs, rhs } => {
-                        let lhs = self.reg_to_val(lhs);
-                        let rhs = self.reg_to_val(rhs);
-
-                        if let Some(value) = Value::equal(lhs, rhs) {
-                            self.set_reg(value, dest, mu);
-                        } else {
-                            return Err(self.type_error("".to_string()))
-                        }
-                    }
-                    ByteCode::MemLoad { dest, store, key } => {
-                        let store = self.reg_to_val(store);
-                        let key = self.reg_to_val(key);
-
-                        if let Some(value) = Value::mem_load(store, key) {
-                            self.set_reg(value, dest, mu);
-                        } else {
-                            return Err(self.type_error("".to_string()))
-                        }
-                    }
-                    ByteCode::MemStore { store, key, src } => {
-                        let store = self.reg_to_val(store);
-                        let key = self.reg_to_val(key);
-                        let src = self.reg_to_val(src);
-
-                        if let Some(()) = Value::mem_store(store, key, src, mu) {
-                        } else {
-                            return Err(self.type_error("".to_string()))
-                        }
-                    }
-                    ByteCode::Return { src } => {
-                        let val = self.reg_to_val(src);
-
-                        self.handle_return(val, mu);
-                        if self.registers.is_empty() {
-                            return Ok(true);
-                        }
-                    }
-                    ByteCode::Read { dest } => {
-                        let stdin = std::io::stdin();
-                        let mut buf = String::new();
-                        let vm_str = VMString::alloc(&[], mu);
-
-                        stdin.read_line(&mut buf).expect("failed to read from stdin");
-                        buf = buf.trim_end().to_string();
-
-                        for c in buf.chars() {
-                            vm_str.push_char(c, mu);
-                        }
-
-                        self.set_reg(Value::String(Gc::new(mu, vm_str)), dest, mu);
-                    }
-                    _ => return Err(self.unimplemented())
+                if self.dispatch_instruction(mu)? {
+                    return Ok(true)
                 }
             }
         }
+    }
+
+    fn dispatch_instruction(&self, mu: &'gc Mutator) -> Result<bool, RuntimeError> {
+        let instr = self.get_next_instruction();
+        match instr {
+            ByteCode::Noop => {}
+            ByteCode::NewList { dest } => {
+                let value = Value::List(Gc::new(mu, List::alloc(mu)));
+
+                self.set_reg(value, dest, mu);
+            }
+            ByteCode::LoadNull { dest } => {
+                let value = Value::Null;
+
+                self.set_reg(value, dest, mu);
+            }
+            ByteCode::LoadLocal { dest, id } => {
+                let local = self.get_local(id, mu);
+
+                self.set_reg(local, dest, mu);
+            }
+            ByteCode::LoadInt { dest, val } => {
+                let value = Value::Int(val as i64);
+
+                self.set_reg(value, dest, mu);
+            }
+            ByteCode::LoadSym { dest, val } => {
+                let value = Value::SymId(val as u32);
+
+                self.set_reg(value, dest, mu);
+            }
+            ByteCode::LoadBool { dest, val } => {
+                let val = Value::Bool(val);
+
+                self.set_reg(val, dest, mu);
+            }
+            ByteCode::Print { src } => {
+                let val = self.reg_to_val(src);
+
+                println!("{val}");
+            }
+            ByteCode::Swap { r1, r2 } => {
+                let r1_val = self.reg_to_val(r1);
+                let r2_val = self.reg_to_val(r2);
+
+                self.set_reg(r1_val, r2, mu);
+                self.set_reg(r2_val, r1, mu);
+            }
+            ByteCode::Copy { dest, src } => {
+                let val = self.reg_to_val(src);
+
+                self.set_reg(val, dest, mu);
+            }
+            ByteCode::StoreArg { .. } => {
+                self.call_function_with_args(mu);
+            }
+            ByteCode::Jump { offset } => {
+                self.offset_ip(offset);
+            }
+            ByteCode::Jnt { src, offset } => {
+                let val = self.reg_to_val(src);
+
+                if !val.is_truthy() {
+                    self.offset_ip(offset);
+                }
+            }
+            ByteCode::Jit { src, offset } => {
+                let val = self.reg_to_val(src);
+
+                if val.is_truthy() {
+                    self.offset_ip(offset);
+                }
+            }
+            ByteCode::Add { dest, lhs, rhs } => {
+                let lhs = self.reg_to_val(lhs);
+                let rhs = self.reg_to_val(rhs);
+
+                if let Some(value) = Value::add(lhs, rhs) {
+                    self.set_reg(value, dest, mu);
+                } else {
+                    return Err(self.type_error("".to_string()))
+                }
+            }
+            ByteCode::Sub { dest, lhs, rhs } => {
+                let lhs = self.reg_to_val(lhs);
+                let rhs = self.reg_to_val(rhs);
+
+                if let Some(value) = Value::sub(lhs, rhs) {
+                    self.set_reg(value, dest, mu);
+                } else {
+                    return Err(self.type_error("uh oh!".to_string()))
+                }
+            }
+            ByteCode::Mult { dest, lhs, rhs } => {
+                let lhs = self.reg_to_val(lhs);
+                let rhs = self.reg_to_val(rhs);
+
+                if let Some(value) = Value::multiply(lhs, rhs) {
+                    self.set_reg(value, dest, mu);
+                } else {
+                    return Err(self.type_error("".to_string()))
+                }
+            }
+            ByteCode::Div { dest, lhs, rhs } => {
+                let lhs = self.reg_to_val(lhs);
+                let rhs = self.reg_to_val(rhs);
+
+                if let Some(value) = Value::divide(lhs, rhs) {
+                    self.set_reg(value, dest, mu);
+                } else {
+                    return Err(self.type_error("".to_string()))
+                }
+            }
+            ByteCode::Modulo { dest, lhs, rhs } => {
+                let lhs = self.reg_to_val(lhs);
+                let rhs = self.reg_to_val(rhs);
+
+                if let Some(value) = Value::modulo(lhs, rhs) {
+                    self.set_reg(value, dest, mu);
+                } else {
+                    return Err(self.type_error("".to_string()))
+                }
+            }
+            ByteCode::Lt { dest, lhs, rhs } => {
+                let lhs = self.reg_to_val(lhs);
+                let rhs = self.reg_to_val(rhs);
+
+                if let Some(value) = Value::less_than(lhs, rhs) {
+                    self.set_reg(value, dest, mu);
+                } else {
+                    return Err(self.type_error("".to_string()))
+                }
+            }
+            ByteCode::Lte { dest, lhs, rhs } => {
+                let lhs = self.reg_to_val(lhs);
+                let rhs = self.reg_to_val(rhs);
+
+                if let Some(value) = Value::less_than_or_equal(lhs, rhs) {
+                    self.set_reg(value, dest, mu);
+                } else {
+                    return Err(self.type_error("".to_string()))
+                }
+            }
+            ByteCode::Equality { dest, lhs, rhs } => {
+                let lhs = self.reg_to_val(lhs);
+                let rhs = self.reg_to_val(rhs);
+
+                if let Some(value) = Value::equal(lhs, rhs) {
+                    self.set_reg(value, dest, mu);
+                } else {
+                    return Err(self.type_error("".to_string()))
+                }
+            }
+            ByteCode::MemLoad { dest, store, key } => {
+                let store = self.reg_to_val(store);
+                let key = self.reg_to_val(key);
+
+                if let Some(value) = Value::mem_load(store, key) {
+                    self.set_reg(value, dest, mu);
+                } else {
+                    return Err(self.type_error("".to_string()))
+                }
+            }
+            ByteCode::MemStore { store, key, src } => {
+                let store = self.reg_to_val(store);
+                let key = self.reg_to_val(key);
+                let src = self.reg_to_val(src);
+
+                if let Some(()) = Value::mem_store(store, key, src, mu) {
+                } else {
+                    return Err(self.type_error("".to_string()))
+                }
+            }
+            ByteCode::Return { src } => {
+                let val = self.reg_to_val(src);
+
+                self.handle_return(val, mu);
+                if self.registers.is_empty() {
+                    return Ok(true);
+                }
+            }
+            ByteCode::Read { dest } => {
+                let stdin = std::io::stdin();
+                let mut buf = String::new();
+                let vm_str = VMString::alloc(&[], mu);
+
+                stdin.read_line(&mut buf).expect("failed to read from stdin");
+                buf = buf.trim_end().to_string();
+
+                for c in buf.chars() {
+                    vm_str.push_char(c, mu);
+                }
+
+                self.set_reg(Value::String(Gc::new(mu, vm_str)), dest, mu);
+            }
+            _ => return Err(self.unimplemented())
+        }
+
+        Ok(false)
     }
 
     fn unimplemented(&self) -> RuntimeError {
