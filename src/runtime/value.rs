@@ -18,7 +18,11 @@ impl Display for Value<'_> {
             Value::List(list) => {
                 write!(f, "[")?;
                 for i in 0..list.len() {
-                    write!(f, "{}, ", list.at(i as i64))?;
+                    if i != list.len() - 1 {
+                        write!(f, "{}, ", list.at(i as i64))?;
+                    } else {
+                        write!(f, "{}", list.at(i as i64))?;
+                    }
                 }
                 write!(f, "]")
             }
