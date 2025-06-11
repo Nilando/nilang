@@ -1,5 +1,5 @@
 use crate::runtime::string::VMString;
-use crate::symbol_map::{LEN_SYM, PUSH_SYM};
+use crate::symbol_map::{SymID, LEN_SYM, PUSH_SYM};
 
 use super::bytecode::Reg;
 use super::call_frame::CallFrame;
@@ -135,7 +135,7 @@ impl<'gc> VM<'gc> {
                             self.call_function(dest, src, arg_count, mu)?;
                             break;
                         }
-                        ByteCode::StoreArg { src } => arg_count += 1,
+                        ByteCode::StoreArg { .. } => arg_count += 1,
                         _ => todo!("internal runtime error")
                     }
                 }
@@ -382,7 +382,7 @@ impl<'gc> VM<'gc> {
         self.get_instr_at(ip)
     }
 
-    fn call_function(&self, src: Reg, dest: Reg, mut arg_count: usize, mu: &'gc Mutator) -> Result<(), RuntimeError> {
+    fn call_function(&self, src: Reg, dest: Reg, arg_count: usize, mu: &'gc Mutator) -> Result<(), RuntimeError> {
         match self.reg_to_val(src) {
             Value::Func(func) => {
                 if func.arg_count() as usize != arg_count {
@@ -390,89 +390,102 @@ impl<'gc> VM<'gc> {
                     return Err(self.wrong_num_args(msg));
                 }
 
-                let new_frame_start = self.frame_start.get()
-                    + self.get_top_call_frame().get_reg_count() as usize;
-
-                for _ in 0..func.get_max_clique() {
-                    self.registers.push(mu, Value::into_tagged(Value::Null, mu));
-                }
-
-                let mut ip = self.get_ip() - 2;
-                while arg_count > 0 {
-                    if let ByteCode::StoreArg { src } = self.get_instr_at(ip) {
-                        let val = self.reg_to_val(src);
-                        let idx = new_frame_start + (arg_count - 1);
-
-                        self.registers.set(mu, Value::into_tagged(val, mu), idx);
-
-                        arg_count -= 1;
-                        ip -= 1;
-                    } else {
-                        break;
-                    }
-                }
-
-                let init_frame = CallFrame::new(func.clone());
-
-                self.frame_start.set(new_frame_start);
-                self.call_frames.push(mu, GcOpt::new(mu, init_frame));
+                self.call_natural_func(func, mu);
             }
             Value::SymId(sym_id) => {
-                match sym_id {
-                    LEN_SYM => {
-                        if arg_count != 1 {
-                            todo!("runtime error: wrong # args")
-                        }
-
-                        let ip = self.get_ip() - 2;
-                        if let ByteCode::StoreArg { src } = self.get_instr_at(ip) {
-                            let val = self.reg_to_val(src);
-                            match val {
-                                Value::List(list) => {
-                                    let val = Value::Int(list.len() as i64);
-
-                                    self.set_reg(val, dest, mu);
-                                }
-                                Value::String(list) => {
-                                    let val = Value::Int(list.len() as i64);
-
-                                    self.set_reg(val, dest, mu);
-                                }
-                                _ => todo!("unimplemented")
-                            }
-                        } else {
-                            todo!("runtime error")
-                        }
-                    },
-                    PUSH_SYM => {
-                        if arg_count != 2 {
-                            todo!("runtime error: wrong # args")
-                        }
-
-                        let list_ip = self.get_ip() - 3;
-                        let item_ip = self.get_ip() - 2;
-                        if let (ByteCode::StoreArg { src: list_reg }, ByteCode::StoreArg { src: item_reg }) = (self.get_instr_at(list_ip), self.get_instr_at(item_ip)) {
-                            let list = self.reg_to_val(list_reg);
-                            let item = self.reg_to_val(item_reg);
-
-                            match (list, item) {
-                                (Value::List(list), item)=> {
-                                    list.push(Value::into_tagged(item, mu), mu);
-
-                                    let val = Value::Bool(true);
-
-                                    self.set_reg(val, dest, mu);
-                                }
-                                _ => todo!("runtime error")
-                            }
-                        } else {
-                            todo!("runtime error")
-                        }
-                    }
-                    _ => todo!()
-                }
+                self.call_intrinsic_func(sym_id, dest, arg_count, mu)?;
             }
             _ => todo!("return runtime error for calling non func"),
+        }
+
+        Ok(())
+    }
+
+    fn call_natural_func(&self, func: Gc<'gc, LoadedFunc<'gc>>, mu: &'gc Mutator) {
+        let mut arg_count = func.arg_count() as usize;
+        let new_frame_start = self.frame_start.get()
+            + self.get_top_call_frame().get_reg_count() as usize;
+
+        for _ in 0..func.get_max_clique() {
+            self.registers.push(mu, Value::into_tagged(Value::Null, mu));
+        }
+
+        let mut ip = self.get_ip() - 2;
+        while arg_count > 0 {
+            if let ByteCode::StoreArg { src } = self.get_instr_at(ip) {
+                let val = self.reg_to_val(src);
+                let idx = new_frame_start + (arg_count - 1);
+
+                self.registers.set(mu, Value::into_tagged(val, mu), idx);
+
+                arg_count -= 1;
+                ip -= 1;
+            } else {
+                break;
+            }
+        }
+
+        let init_frame = CallFrame::new(func.clone());
+
+        self.frame_start.set(new_frame_start);
+        self.call_frames.push(mu, GcOpt::new(mu, init_frame));
+    }
+
+    fn call_intrinsic_func(&self, sym_id: SymID, dest: Reg, arg_count: usize, mu: &'gc Mutator) -> Result<(), RuntimeError> {
+        match sym_id {
+            LEN_SYM => {
+                if 1 != arg_count {
+                    let msg = format!("Expect {} args, was given {}", 1, arg_count);
+                    return Err(self.wrong_num_args(msg));
+                }
+
+                let ip = self.get_ip() - 2;
+                if let ByteCode::StoreArg { src } = self.get_instr_at(ip) {
+                    let val = self.reg_to_val(src);
+                    match val {
+                        Value::List(list) => {
+                            let val = Value::Int(list.len() as i64);
+
+                            self.set_reg(val, dest, mu);
+                        }
+                        Value::String(list) => {
+                            let val = Value::Int(list.len() as i64);
+
+                            self.set_reg(val, dest, mu);
+                        }
+                        _ => todo!("unimplemented")
+                    }
+                } else {
+                    todo!("runtime error")
+                }
+            },
+            PUSH_SYM => {
+                if 2 != arg_count {
+                    let msg = format!("Expect {} args, was given {}", 2, arg_count);
+                    return Err(self.wrong_num_args(msg));
+                }
+
+                let list_ip = self.get_ip() - 3;
+                let item_ip = self.get_ip() - 2;
+                if let (ByteCode::StoreArg { src: list_reg }, ByteCode::StoreArg { src: item_reg }) = (self.get_instr_at(list_ip), self.get_instr_at(item_ip)) {
+                    let list = self.reg_to_val(list_reg);
+                    let item = self.reg_to_val(item_reg);
+
+                    match (list, item) {
+                        (Value::List(list), item)=> {
+                            list.push(Value::into_tagged(item, mu), mu);
+
+                            let val = Value::Bool(true);
+
+                            self.set_reg(val, dest, mu);
+                        }
+                        _ => todo!("runtime error")
+                    }
+                } else {
+                    todo!("runtime error")
+                }
+            }
+            _ => todo!()
         }
 
         Ok(())
