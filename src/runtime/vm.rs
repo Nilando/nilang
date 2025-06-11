@@ -382,7 +382,7 @@ impl<'gc> VM<'gc> {
         self.get_instr_at(ip)
     }
 
-    fn call_function(&self, src: Reg, dest: Reg, arg_count: usize, mu: &'gc Mutator) -> Result<(), RuntimeError> {
+    fn call_function(&self, dest: Reg, src: Reg, arg_count: usize, mu: &'gc Mutator) -> Result<(), RuntimeError> {
         match self.reg_to_val(src) {
             Value::Func(func) => {
                 if func.arg_count() as usize != arg_count {
