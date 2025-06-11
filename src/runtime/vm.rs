@@ -127,7 +127,7 @@ impl<'gc> VM<'gc> {
                 self.set_reg(val, dest, mu);
             }
             ByteCode::StoreArg { .. } => {
-                self.call_function_with_args(mu);
+                self.call_function_with_args(mu)?;
             }
             ByteCode::Jump { offset } => {
                 self.offset_ip(offset);
@@ -278,6 +278,10 @@ impl<'gc> VM<'gc> {
         self.new_error(RuntimeErrorKind::Unimplemented, "this is not implemented".to_string())
     }
 
+    fn wrong_num_args(&self, msg: String) -> RuntimeError {
+        self.new_error(RuntimeErrorKind::WrongNumArgs, msg)
+    }
+
     fn type_error(&self, msg: String) -> RuntimeError {
         self.new_error(RuntimeErrorKind::TypeError, msg)
     }
@@ -329,7 +333,7 @@ impl<'gc> VM<'gc> {
         self.get_instr_at(ip)
     }
 
-    fn call_function_with_args(&self, mu: &'gc Mutator) {
+    fn call_function_with_args(&self, mu: &'gc Mutator) -> Result<(), RuntimeError> {
         let mut arg_count: usize = 1;
         loop {
             match self.get_next_instruction() {
@@ -337,7 +341,8 @@ impl<'gc> VM<'gc> {
                     match self.reg_to_val(src) {
                         Value::Func(func) => {
                             if func.arg_count() as usize != arg_count {
-                                todo!("runtime error wrong # args");
+                                let msg = format!("Expect {} args, was given {}", func.arg_count(), arg_count);
+                                return Err(self.wrong_num_args(msg));
                             }
 
                             let new_frame_start = self.frame_start.get()
@@ -435,6 +440,8 @@ impl<'gc> VM<'gc> {
                 }
             }
         }
+
+        Ok(())
     }
 
     fn get_ip(&self) -> usize {

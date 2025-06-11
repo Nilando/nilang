@@ -18,8 +18,8 @@ pub struct Spanned<T> {
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone, TraceLeaf)]
 pub struct Span {
-    start: usize,
-    end: usize,
+    pub start: usize,
+    pub end: usize,
 }
 
 /*

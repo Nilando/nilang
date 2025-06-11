@@ -139,4 +139,5 @@ impl RuntimeError {
 pub enum RuntimeErrorKind {
     Unimplemented,
     TypeError,
+    WrongNumArgs
 }
