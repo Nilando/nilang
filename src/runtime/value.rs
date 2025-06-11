@@ -136,6 +136,26 @@ impl<'gc> Value<'gc> {
         }
     }
 
+    pub fn greater_than(lhs: Value<'gc>, rhs: Value<'gc>) -> Option<Self> {
+        match (lhs, rhs) {
+            (Value::Float(lhs), Value::Float(rhs)) => Some(Value::Bool(lhs > rhs)),
+            (Value::Int(lhs), Value::Int(rhs)) => Some(Value::Bool(lhs > rhs)),
+            (Value::Float(lhs), Value::Int(rhs)) => Some(Value::Bool(lhs > rhs as f64)),
+            (Value::Int(lhs), Value::Float(rhs)) => Some(Value::Bool((lhs as f64) > rhs)),
+            _ => None,
+        }
+    }
+
+    pub fn greater_than_or_equal(lhs: Value<'gc>, rhs: Value<'gc>) -> Option<Self> {
+        match (lhs, rhs) {
+            (Value::Float(lhs), Value::Float(rhs)) => Some(Value::Bool(lhs >= rhs)),
+            (Value::Int(lhs), Value::Int(rhs)) => Some(Value::Bool(lhs >= rhs)),
+            (Value::Float(lhs), Value::Int(rhs)) => Some(Value::Bool(lhs >= rhs as f64)),
+            (Value::Int(lhs), Value::Float(rhs)) => Some(Value::Bool((lhs as f64) >= rhs)),
+            _ => None,
+        }
+    }
+
     pub fn equal(lhs: Value<'gc>, rhs: Value<'gc>) -> Option<Self> {
         match (lhs, rhs) {
             (Value::Float(lhs), Value::Float(rhs)) => Some(Value::Bool(lhs == rhs)),
@@ -154,6 +174,29 @@ impl<'gc> Value<'gc> {
                 }
 
                 Some(Value::Bool(true))
+            }
+            _ => todo!(),
+        }
+    }
+
+    pub fn not_equal(lhs: Value<'gc>, rhs: Value<'gc>) -> Option<Self> {
+        match (lhs, rhs) {
+            (Value::Float(lhs), Value::Float(rhs)) => Some(Value::Bool(lhs != rhs)),
+            (Value::Int(lhs), Value::Int(rhs)) => Some(Value::Bool(lhs != rhs)),
+            (Value::Float(f), Value::Int(i)) | (Value::Int(i), Value::Float(f)) => {
+                Some(Value::Bool(f != i as f64))
+            }
+            (Value::String(lhs), Value::String(rhs)) => {
+                if lhs.len() != rhs.len() {
+                    return Some(Value::Bool(true));
+                } 
+                for i in 0..lhs.len() {
+                    if lhs.at(i) != rhs.at(i) {
+                        return Some(Value::Bool(true));
+                    }
+                }
+
+                Some(Value::Bool(false))
             }
             _ => todo!(),
         }

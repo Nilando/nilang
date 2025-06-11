@@ -216,11 +216,41 @@ impl<'gc> VM<'gc> {
                     return Err(self.type_error("".to_string()))
                 }
             }
+            ByteCode::Gt { dest, lhs, rhs } => {
+                let lhs = self.reg_to_val(lhs);
+                let rhs = self.reg_to_val(rhs);
+
+                if let Some(value) = Value::greater_than(lhs, rhs) {
+                    self.set_reg(value, dest, mu);
+                } else {
+                    return Err(self.type_error("".to_string()))
+                }
+            }
+            ByteCode::Gte { dest, lhs, rhs } => {
+                let lhs = self.reg_to_val(lhs);
+                let rhs = self.reg_to_val(rhs);
+
+                if let Some(value) = Value::greater_than_or_equal(lhs, rhs) {
+                    self.set_reg(value, dest, mu);
+                } else {
+                    return Err(self.type_error("".to_string()))
+                }
+            }
             ByteCode::Equality { dest, lhs, rhs } => {
                 let lhs = self.reg_to_val(lhs);
                 let rhs = self.reg_to_val(rhs);
 
                 if let Some(value) = Value::equal(lhs, rhs) {
+                    self.set_reg(value, dest, mu);
+                } else {
+                    return Err(self.type_error("".to_string()))
+                }
+            }
+            ByteCode::Inequality { dest, lhs, rhs } => {
+                let lhs = self.reg_to_val(lhs);
+                let rhs = self.reg_to_val(rhs);
+
+                if let Some(value) = Value::not_equal(lhs, rhs) {
                     self.set_reg(value, dest, mu);
                 } else {
                     return Err(self.type_error("".to_string()))
@@ -268,9 +298,15 @@ impl<'gc> VM<'gc> {
 
                 self.set_reg(Value::String(Gc::new(mu, vm_str)), dest, mu);
             }
-            _ => return Err(self.unimplemented())
-        }
+            ByteCode::Call { dest, src } => {}
+            ByteCode::StoreUpvalue { func, src } => todo!(),
+            ByteCode::LoadUpvalue { dest, id } => todo!(),
 
+            // BELOW REQUIRES A GC MAP TO BE IMPLEMENTED
+            ByteCode::LoadGlobal { dest, sym } => todo!(),
+            ByteCode::StoreGlobal { .. } => todo!(),
+            ByteCode::NewMap { dest } => todo!(),
+        }
         Ok(false)
     }
 
