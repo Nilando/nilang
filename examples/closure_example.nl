@@ -1,15 +1,16 @@
 fn new_counter() {
-  count = { val: 0 };
+  val = [];
+  // counter = { count: 0 };
 
-  return fn() {
-    count.val = count.val + 1;
+  return fn(x) {
+    push(val, x);
 
-    return count.val;
+    return len(val);
   };
 }
 
 my_counter = new_counter();
 
-print(my_counter()); // 1
-print(my_counter()); // 2
-print(my_counter()); // 3
+print(my_counter(null)); // 1
+print(my_counter(null)); // 2
+print(my_counter(null)); // 3

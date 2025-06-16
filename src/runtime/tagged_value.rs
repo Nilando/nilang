@@ -1,5 +1,6 @@
 use sandpit::{Tag, Tagged};
 
+use super::closure::Closure;
 use super::func::LoadedFunc;
 use super::list::List;
 use super::string::VMString;
@@ -20,6 +21,8 @@ pub enum ValueTag {
     Func,
     #[ptr(VMString<'gc>)]
     String,
+    #[ptr(Closure<'gc>)]
+    Closure,
 }
 
 impl<'gc> From<&TaggedValue<'gc>> for Value<'gc> {
@@ -39,6 +42,11 @@ impl<'gc> From<&TaggedValue<'gc>> for Value<'gc> {
                 let v = ValueTag::get_func(value.clone()).unwrap();
 
                 Value::Func(v)
+            }
+            ValueTag::Closure => {
+                let v = ValueTag::get_closure(value.clone()).unwrap();
+
+                Value::Closure(v)
             }
             ValueTag::List => {
                 let v = ValueTag::get_list(value.clone()).unwrap();

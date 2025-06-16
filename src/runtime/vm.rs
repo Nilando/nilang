@@ -3,6 +3,7 @@ use crate::symbol_map::{SymID, LEN_SYM, PUSH_SYM};
 
 use super::bytecode::Reg;
 use super::call_frame::CallFrame;
+use super::closure::Closure;
 use super::func::LoadedFunc;
 use super::list::List;
 use super::tagged_value::TaggedValue;
@@ -10,7 +11,7 @@ use super::value::Value;
 
 pub use super::bytecode::ByteCode;
 
-use sandpit::{Gc, GcOpt, GcVec, Mutator, Trace};
+use sandpit::{field, Gc, GcOpt, GcVec, Mutator, Trace};
 use std::cell::Cell;
 
 use super::{RuntimeError, RuntimeErrorKind};
@@ -83,32 +84,32 @@ impl<'gc> VM<'gc> {
             ByteCode::NewList { dest } => {
                 let value = Value::List(Gc::new(mu, List::alloc(mu)));
 
-                self.set_reg(value, dest, mu);
+                self.set_reg_with_value(value, dest, mu);
             }
             ByteCode::LoadNull { dest } => {
                 let value = Value::Null;
 
-                self.set_reg(value, dest, mu);
+                self.set_reg_with_value(value, dest, mu);
             }
             ByteCode::LoadLocal { dest, id } => {
                 let local = self.get_local(id, mu);
 
-                self.set_reg(local, dest, mu);
+                self.set_reg_with_value(local, dest, mu);
             }
             ByteCode::LoadInt { dest, val } => {
                 let value = Value::Int(val as i64);
 
-                self.set_reg(value, dest, mu);
+                self.set_reg_with_value(value, dest, mu);
             }
             ByteCode::LoadSym { dest, val } => {
                 let value = Value::SymId(val as u32);
 
-                self.set_reg(value, dest, mu);
+                self.set_reg_with_value(value, dest, mu);
             }
             ByteCode::LoadBool { dest, val } => {
                 let val = Value::Bool(val);
 
-                self.set_reg(val, dest, mu);
+                self.set_reg_with_value(val, dest, mu);
             }
             ByteCode::Print { src } => {
                 let val = self.reg_to_val(src);
@@ -119,26 +120,41 @@ impl<'gc> VM<'gc> {
                 let r1_val = self.reg_to_val(r1);
                 let r2_val = self.reg_to_val(r2);
 
-                self.set_reg(r1_val, r2, mu);
-                self.set_reg(r2_val, r1, mu);
+                self.set_reg_with_value(r1_val, r2, mu);
+                self.set_reg_with_value(r2_val, r1, mu);
             }
             ByteCode::Copy { dest, src } => {
                 let val = self.reg_to_val(src);
 
-                self.set_reg(val, dest, mu);
+                self.set_reg_with_value(val, dest, mu);
             }
-            ByteCode::StoreArg { .. } => {
-                let mut arg_count: usize = 1;
+            ByteCode::StoreUpvalue { func, src } => {
+                let mut upval_count: usize = 1;
+                let mut recursive_upval_index = None; 
+                if func == src {
+                    recursive_upval_index = Some(upval_count - 1);
+                }
+
                 loop {
                     match self.get_next_instruction() {
-                        ByteCode::Call { src, dest } => {
-                            self.call_function(dest, src, arg_count, mu)?;
+                        ByteCode::StoreUpvalue { func, src } => {
+                            if func == src {
+                                recursive_upval_index = Some(upval_count);
+                            }
+                            upval_count += 1;
+                        }
+                        _ => {
+                            self.rewind_ip();
+                            let upvalues = self.collect_upvalues(upval_count, mu);
+
+                            self.create_closure(func, upvalues, recursive_upval_index, mu)?;
                             break;
                         }
-                        ByteCode::StoreArg { .. } => arg_count += 1,
-                        _ => todo!("internal runtime error")
                     }
                 }
+            }
+            ByteCode::StoreArg { .. } => {
+                self.read_args_then_call(1, mu)?;
             }
             ByteCode::Call { dest, src } => {
                 self.call_function(dest, src, 0, mu)?;
@@ -165,7 +181,7 @@ impl<'gc> VM<'gc> {
                 let rhs = self.reg_to_val(rhs);
 
                 if let Some(value) = Value::add(lhs, rhs) {
-                    self.set_reg(value, dest, mu);
+                    self.set_reg_with_value(value, dest, mu);
                 } else {
                     return Err(self.type_error("".to_string()))
                 }
@@ -175,7 +191,7 @@ impl<'gc> VM<'gc> {
                 let rhs = self.reg_to_val(rhs);
 
                 if let Some(value) = Value::sub(lhs, rhs) {
-                    self.set_reg(value, dest, mu);
+                    self.set_reg_with_value(value, dest, mu);
                 } else {
                     return Err(self.type_error("uh oh!".to_string()))
                 }
@@ -185,7 +201,7 @@ impl<'gc> VM<'gc> {
                 let rhs = self.reg_to_val(rhs);
 
                 if let Some(value) = Value::multiply(lhs, rhs) {
-                    self.set_reg(value, dest, mu);
+                    self.set_reg_with_value(value, dest, mu);
                 } else {
                     return Err(self.type_error("".to_string()))
                 }
@@ -195,7 +211,7 @@ impl<'gc> VM<'gc> {
                 let rhs = self.reg_to_val(rhs);
 
                 if let Some(value) = Value::divide(lhs, rhs) {
-                    self.set_reg(value, dest, mu);
+                    self.set_reg_with_value(value, dest, mu);
                 } else {
                     return Err(self.type_error("".to_string()))
                 }
@@ -205,7 +221,7 @@ impl<'gc> VM<'gc> {
                 let rhs = self.reg_to_val(rhs);
 
                 if let Some(value) = Value::modulo(lhs, rhs) {
-                    self.set_reg(value, dest, mu);
+                    self.set_reg_with_value(value, dest, mu);
                 } else {
                     return Err(self.type_error("".to_string()))
                 }
@@ -215,7 +231,7 @@ impl<'gc> VM<'gc> {
                 let rhs = self.reg_to_val(rhs);
 
                 if let Some(value) = Value::less_than(lhs, rhs) {
-                    self.set_reg(value, dest, mu);
+                    self.set_reg_with_value(value, dest, mu);
                 } else {
                     return Err(self.type_error("".to_string()))
                 }
@@ -225,7 +241,7 @@ impl<'gc> VM<'gc> {
                 let rhs = self.reg_to_val(rhs);
 
                 if let Some(value) = Value::less_than_or_equal(lhs, rhs) {
-                    self.set_reg(value, dest, mu);
+                    self.set_reg_with_value(value, dest, mu);
                 } else {
                     return Err(self.type_error("".to_string()))
                 }
@@ -235,7 +251,7 @@ impl<'gc> VM<'gc> {
                 let rhs = self.reg_to_val(rhs);
 
                 if let Some(value) = Value::greater_than(lhs, rhs) {
-                    self.set_reg(value, dest, mu);
+                    self.set_reg_with_value(value, dest, mu);
                 } else {
                     return Err(self.type_error("".to_string()))
                 }
@@ -245,7 +261,7 @@ impl<'gc> VM<'gc> {
                 let rhs = self.reg_to_val(rhs);
 
                 if let Some(value) = Value::greater_than_or_equal(lhs, rhs) {
-                    self.set_reg(value, dest, mu);
+                    self.set_reg_with_value(value, dest, mu);
                 } else {
                     return Err(self.type_error("".to_string()))
                 }
@@ -255,7 +271,7 @@ impl<'gc> VM<'gc> {
                 let rhs = self.reg_to_val(rhs);
 
                 if let Some(value) = Value::equal(lhs, rhs) {
-                    self.set_reg(value, dest, mu);
+                    self.set_reg_with_value(value, dest, mu);
                 } else {
                     return Err(self.type_error("".to_string()))
                 }
@@ -265,7 +281,7 @@ impl<'gc> VM<'gc> {
                 let rhs = self.reg_to_val(rhs);
 
                 if let Some(value) = Value::not_equal(lhs, rhs) {
-                    self.set_reg(value, dest, mu);
+                    self.set_reg_with_value(value, dest, mu);
                 } else {
                     return Err(self.type_error("".to_string()))
                 }
@@ -275,7 +291,7 @@ impl<'gc> VM<'gc> {
                 let key = self.reg_to_val(key);
 
                 if let Some(value) = Value::mem_load(store, key) {
-                    self.set_reg(value, dest, mu);
+                    self.set_reg_with_value(value, dest, mu);
                 } else {
                     return Err(self.type_error("".to_string()))
                 }
@@ -310,17 +326,64 @@ impl<'gc> VM<'gc> {
                     vm_str.push_char(c, mu);
                 }
 
-                self.set_reg(Value::String(Gc::new(mu, vm_str)), dest, mu);
+                self.set_reg_with_value(Value::String(Gc::new(mu, vm_str)), dest, mu);
             }
-            ByteCode::StoreUpvalue { func, src } => todo!(),
-            ByteCode::LoadUpvalue { dest, id } => todo!(),
+            ByteCode::LoadUpvalue { dest, id } => {
+                let cf = self.get_top_call_frame();
+                let upval = cf.get_upvalue(id);
+
+                self.set_reg(upval, dest, mu);
+            }
 
             // BELOW REQUIRES A GC MAP TO BE IMPLEMENTED
             ByteCode::LoadGlobal { dest, sym } => todo!(),
             ByteCode::StoreGlobal { .. } => todo!(),
             ByteCode::NewMap { dest } => todo!(),
         }
+
         Ok(false)
+    }
+
+    fn collect_upvalues(&self, upvalues: usize, mu: &'gc Mutator) -> Gc<'gc, [TaggedValue<'gc>]> {
+        let ip = self.get_ip() - 1;
+
+        mu.alloc_array_from_fn(upvalues, |idx| {
+            if let ByteCode::StoreUpvalue { src, .. } = self.get_instr_at(ip - idx) {
+                self.get_reg(src)
+            } else {
+                todo!("this should be unreachable but maybe return an error")
+            }
+        })
+    }
+
+    fn create_closure(&self, dest: Reg, upvalues: Gc<'gc, [TaggedValue<'gc>]>, recursive_upval_idx: Option<usize>, mu: &'gc Mutator) -> Result<(), RuntimeError> {
+        match self.reg_to_val(dest) {
+            Value::Func(func) => {
+                let closure = Gc::new(mu, Closure::new(func, upvalues));
+                if let Some(idx) = recursive_upval_idx {
+                    Closure::backpatch_recursive_upvalue(closure.clone(), idx, mu);
+                }
+                let value = Value::Closure(closure);
+
+                self.set_reg_with_value(value, dest, mu);
+
+                Ok(())
+            }
+            _ => todo!(),
+        }
+    }
+
+    fn read_args_then_call(&self, mut arg_count: usize, mu: &'gc Mutator) -> Result<(), RuntimeError> {
+        loop {
+            match self.get_next_instruction() {
+                ByteCode::Call { src, dest } => {
+                    self.call_function(dest, src, arg_count, mu)?;
+                    return Ok(())
+                }
+                ByteCode::StoreArg { .. } => arg_count += 1,
+                _ => todo!("internal runtime error")
+            }
+        }
     }
 
     fn unimplemented(&self) -> RuntimeError {
@@ -354,7 +417,7 @@ impl<'gc> VM<'gc> {
         }
 
         if let ByteCode::Call { dest, .. } = self.get_prev_instruction() {
-            self.set_reg(return_val, dest, mu);
+            self.set_reg_with_value(return_val, dest, mu);
         } else {
             todo!("bad return from function")
         }
@@ -382,18 +445,24 @@ impl<'gc> VM<'gc> {
         self.get_instr_at(ip)
     }
 
-    fn call_function(&self, dest: Reg, src: Reg, arg_count: usize, mu: &'gc Mutator) -> Result<(), RuntimeError> {
+    fn call_function(&self, dest: Reg, src: Reg, supplied_args: usize, mu: &'gc Mutator) -> Result<(), RuntimeError> {
         match self.reg_to_val(src) {
             Value::Func(func) => {
-                if func.arg_count() as usize != arg_count {
-                    let msg = format!("Expect {} args, was given {}", func.arg_count(), arg_count);
-                    return Err(self.wrong_num_args(msg));
-                }
 
-                self.call_natural_func(func, mu);
+                self.call_natural_func(func, supplied_args, mu)?;
+            }
+            Value::Closure(closure) => {
+                let func = closure.get_func();
+
+                self.call_natural_func(func, supplied_args, mu)?;
+
+                let cf = self.get_top_call_frame();
+                let upvalues = closure.get_upvalues();
+
+                CallFrame::set_upvalues(cf, upvalues, mu);
             }
             Value::SymId(sym_id) => {
-                self.call_intrinsic_func(sym_id, dest, arg_count, mu)?;
+                self.call_intrinsic_func(sym_id, dest, supplied_args, mu)?;
             }
             _ => todo!("return runtime error for calling non func"),
         }
@@ -401,8 +470,14 @@ impl<'gc> VM<'gc> {
         Ok(())
     }
 
-    fn call_natural_func(&self, func: Gc<'gc, LoadedFunc<'gc>>, mu: &'gc Mutator) {
+    fn call_natural_func(&self, func: Gc<'gc, LoadedFunc<'gc>>, supplied_args: usize, mu: &'gc Mutator) -> Result<(), RuntimeError> {
         let mut arg_count = func.arg_count() as usize;
+
+        if supplied_args != arg_count {
+            let msg = format!("Expect {} args, was given {}", func.arg_count(), arg_count);
+            return Err(self.wrong_num_args(msg));
+        }
+
         let new_frame_start = self.frame_start.get()
             + self.get_top_call_frame().get_reg_count() as usize;
 
@@ -429,6 +504,8 @@ impl<'gc> VM<'gc> {
 
         self.frame_start.set(new_frame_start);
         self.call_frames.push(mu, GcOpt::new(mu, init_frame));
+
+        Ok(())
     }
 
     fn call_intrinsic_func(&self, sym_id: SymID, dest: Reg, arg_count: usize, mu: &'gc Mutator) -> Result<(), RuntimeError> {
@@ -446,12 +523,12 @@ impl<'gc> VM<'gc> {
                         Value::List(list) => {
                             let val = Value::Int(list.len() as i64);
 
-                            self.set_reg(val, dest, mu);
+                            self.set_reg_with_value(val, dest, mu);
                         }
                         Value::String(list) => {
                             let val = Value::Int(list.len() as i64);
 
-                            self.set_reg(val, dest, mu);
+                            self.set_reg_with_value(val, dest, mu);
                         }
                         _ => todo!("unimplemented")
                     }
@@ -477,7 +554,7 @@ impl<'gc> VM<'gc> {
 
                             let val = Value::Bool(true);
 
-                            self.set_reg(val, dest, mu);
+                            self.set_reg_with_value(val, dest, mu);
                         }
                         _ => todo!("runtime error")
                     }
@@ -489,6 +566,12 @@ impl<'gc> VM<'gc> {
         }
 
         Ok(())
+    }
+
+    fn rewind_ip(&self) {
+        let cf = self.get_top_call_frame();
+
+        cf.rewind_ip()
     }
 
     fn get_ip(&self) -> usize {
@@ -509,15 +592,27 @@ impl<'gc> VM<'gc> {
         cf.get_instr_at(idx)
     }
 
+    fn get_reg(&self, raw_idx: u8) -> TaggedValue<'gc> {
+        let idx = raw_idx as usize + self.frame_start.get();
+
+        self.registers.get_idx(idx).unwrap()
+    }
+
     fn reg_to_val(&self, raw_idx: u8) -> Value<'gc> {
         let idx = raw_idx as usize + self.frame_start.get();
 
         Value::from(&self.registers.get_idx(idx).unwrap())
     }
 
-    fn set_reg(&self, val: Value<'gc>, raw_idx: u8, mu: &'gc Mutator) {
+    fn set_reg_with_value(&self, val: Value<'gc>, raw_idx: u8, mu: &'gc Mutator) {
         let idx = raw_idx as usize + self.frame_start.get();
 
         self.registers.set(mu, Value::into_tagged(val, mu), idx);
+    }
+
+    fn set_reg(&self, val: TaggedValue<'gc>, raw_idx: u8, mu: &'gc Mutator) {
+        let idx = raw_idx as usize + self.frame_start.get();
+
+        self.registers.set(mu, val, idx);
     }
 }

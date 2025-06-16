@@ -6,6 +6,7 @@ mod tagged_value;
 mod value;
 mod vm;
 mod string;
+mod closure;
 
 use crate::parser::Span;
 

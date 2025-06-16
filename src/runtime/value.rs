@@ -2,6 +2,7 @@ use std::fmt::Display;
 
 use sandpit::{Gc, Mutator};
 
+use super::closure::Closure;
 use super::func::LoadedFunc;
 use super::list::List;
 use super::string::VMString;
@@ -32,7 +33,8 @@ impl Display for Value<'_> {
                 }
                 write!(f, "\n")
             }
-            _ => write!(f, "unimplemented display"),
+            Value::Closure(_) => write!(f, "closure"),
+            Value::Func(_) => write!(f, "func"),
         }
     }
 }
@@ -46,6 +48,7 @@ pub enum Value<'gc> {
     List(Gc<'gc, List<'gc>>),
     Func(Gc<'gc, LoadedFunc<'gc>>),
     String(Gc<'gc, VMString<'gc>>),
+    Closure(Gc<'gc, Closure<'gc>>)
 }
 
 impl<'gc> Value<'gc> {
@@ -60,6 +63,7 @@ impl<'gc> Value<'gc> {
             Value::Float(f) => ValueTag::from_float(Gc::new(mu, f)),
             Value::Int(i) => ValueTag::from_int(Gc::new(mu, i)),
             Value::String(s) => ValueTag::from_string(s),
+            Value::Closure(c) => ValueTag::from_closure(c),
             _ => panic!("failed to tagg value"),
         }
     }
