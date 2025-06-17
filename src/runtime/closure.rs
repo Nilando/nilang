@@ -1,8 +1,7 @@
-use sandpit::{field, Gc, Mutator, Trace, WriteBarrier};
+use sandpit::{Gc, Mutator, Trace};
 
 use super::func::LoadedFunc;
 use super::tagged_value::{TaggedValue, ValueTag};
-use super::value::Value;
 
 #[derive(Trace)]
 pub struct Closure<'gc> {
@@ -29,7 +28,7 @@ impl<'gc> Closure<'gc> {
 
     pub fn backpatch_recursive_upvalue(closure: Gc<'gc, Closure<'gc>>, upval_idx: usize, mu: &'gc Mutator) {
         closure.clone().upvalues.write_barrier(mu, |barrier| {
-            barrier.at(upval_idx).set(ValueTag::from_closure(closure));
+            barrier.at(upval_idx).set(ValueTag::from_closure(closure.clone()));
         });
     }
 }

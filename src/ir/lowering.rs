@@ -2,9 +2,11 @@ use super::func::Func;
 use super::func_builder::FuncBuilder;
 use super::tac::{FuncID, LabelID, Tac, TacConst};
 use super::VReg;
+
 use crate::parser::{Expr, LhsExpr, MapKey, Op, Span, Spanned, Stmt, Value};
 use crate::symbol_map::{SymID, SymbolMap};
-use std::collections::{BTreeSet, HashSet};
+
+use std::collections::BTreeSet;
 
 pub const MAIN_FUNC_ID: u32 = 0;
 
@@ -281,7 +283,7 @@ impl LoweringCtx {
         &mut self,
         inputs: Spanned<Vec<SymID>>,
         stmts: Vec<Stmt>,
-    ) -> (FuncID, HashSet<SymID>) {
+    ) -> (FuncID, Vec<SymID>) {
         let func_id = self.new_func_id();
         let generator = FuncLoweringCtx::new(func_id, inputs.item, self.pretty_ir);
 
@@ -366,10 +368,12 @@ impl LoweringCtx {
                 .position(|uv| *uv == sym_id)
                 .unwrap();
 
-            self.emit(Tac::LoadUpvalue {
+            let tac = Tac::LoadUpvalue {
                 dest,
                 id: u16::try_from(upvalue).unwrap(),
-            });
+            };
+
+            self.emit(tac);
 
             dest
         } else {
@@ -558,7 +562,11 @@ impl LoweringCtx {
     }
 
     fn set_upvalue(&mut self, sym: SymID) {
-        self.get_current_func_mut().builder.upvalues.insert(sym);
+        if self.get_current_func().builder.upvalues.contains(&sym) {
+            return;
+        }
+
+        self.get_current_func_mut().builder.upvalues.push(sym);
     }
 
     fn lower_stmts(&mut self, stmts: Vec<Stmt>) {

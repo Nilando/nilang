@@ -33,8 +33,12 @@ impl Display for Value<'_> {
                 }
                 write!(f, "\n")
             }
-            Value::Closure(_) => write!(f, "closure"),
-            Value::Func(_) => write!(f, "func"),
+            Value::Closure(closure) => {
+                let func = closure.get_func();
+
+                write!(f, "Closure(id: {}, args: {}, upvalues: {})", func.get_id(), func.arg_count(), closure.get_upvalues().len())
+            }
+            Value::Func(func) => write!(f, "Func(id: {}, args: {})", func.get_id(), func.arg_count()),
         }
     }
 }
@@ -168,9 +172,7 @@ impl<'gc> Value<'gc> {
         match (lhs, rhs) {
             (Value::Float(lhs), Value::Float(rhs)) => Some(Value::Bool(lhs == rhs)),
             (Value::Int(lhs), Value::Int(rhs)) => Some(Value::Bool(lhs == rhs)),
-            (Value::Float(f), Value::Int(i)) | (Value::Int(i), Value::Float(f)) => {
-                Some(Value::Bool(f == i as f64))
-            }
+            (Value::Float(f), Value::Int(i)) | (Value::Int(i), Value::Float(f)) => Some(Value::Bool(f == i as f64)),
             (Value::String(lhs), Value::String(rhs)) => {
                 if lhs.len() != rhs.len() {
                     return Some(Value::Bool(false));
@@ -226,6 +228,11 @@ impl<'gc> Value<'gc> {
     pub fn mem_store(store: Value<'gc>, key: Value<'gc>, src: Value<'gc>, mu: &'gc Mutator) -> Option<()> {
         match (store, key) {
             (Value::List(list), Value::Int(idx)) => {
+                let null = Value::into_tagged(Value::Null, mu);
+                while list.len() <= u64::try_from(idx).unwrap() {
+                    list.push(null.clone(), mu);
+                }
+
                 list.set(usize::try_from(idx).unwrap(), Value::into_tagged(src, mu), mu);
 
                 Some(())

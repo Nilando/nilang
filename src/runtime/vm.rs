@@ -332,6 +332,7 @@ impl<'gc> VM<'gc> {
                 let cf = self.get_top_call_frame();
                 let upval = cf.get_upvalue(id);
 
+
                 self.set_reg(upval, dest, mu);
             }
 
@@ -345,10 +346,10 @@ impl<'gc> VM<'gc> {
     }
 
     fn collect_upvalues(&self, upvalues: usize, mu: &'gc Mutator) -> Gc<'gc, [TaggedValue<'gc>]> {
-        let ip = self.get_ip() - 1;
+        let ip = self.get_ip() - upvalues;
 
         mu.alloc_array_from_fn(upvalues, |idx| {
-            if let ByteCode::StoreUpvalue { src, .. } = self.get_instr_at(ip - idx) {
+            if let ByteCode::StoreUpvalue { src, .. } = self.get_instr_at(ip + idx) {
                 self.get_reg(src)
             } else {
                 todo!("this should be unreachable but maybe return an error")
@@ -448,7 +449,6 @@ impl<'gc> VM<'gc> {
     fn call_function(&self, dest: Reg, src: Reg, supplied_args: usize, mu: &'gc Mutator) -> Result<(), RuntimeError> {
         match self.reg_to_val(src) {
             Value::Func(func) => {
-
                 self.call_natural_func(func, supplied_args, mu)?;
             }
             Value::Closure(closure) => {

@@ -11,7 +11,7 @@ use std::collections::{HashMap, HashSet};
 pub struct FuncBuilder {
     id: FuncID,
     inputs: Vec<VReg>,
-    pub upvalues: HashSet<SymID>,
+    pub upvalues: Vec<SymID>,
     blocks: Vec<Block>,
     block_jump_map: HashMap<LabelID, Vec<BlockId>>, // label is jumped to by the block id
     non_jump_edges: Vec<(BlockId, BlockId)>,        // 0 -> 1
@@ -27,7 +27,7 @@ impl FuncBuilder {
         let mut this = Self {
             id,
             inputs: vec![],
-            upvalues: HashSet::new(),
+            upvalues: Vec::new(),
             blocks: vec![],
             block_jump_map: HashMap::new(),
             non_jump_edges: vec![],

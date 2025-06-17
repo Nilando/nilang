@@ -56,6 +56,10 @@ impl<'gc> LoadedFunc<'gc> {
         }
     }
 
+    pub fn get_id(&self) -> u32 {
+        self.id
+    }
+
     pub fn get_max_clique(&self) -> u8 {
         self.max_clique
     }
