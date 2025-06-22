@@ -13,6 +13,7 @@ mod closure;
 mod tests;
 
 use crate::parser::Span;
+use crate::symbol_map::SymbolMap;
 
 use self::func::{LoadedFunc, LoadedLocal};
 use self::vm::VMCommand;
@@ -25,11 +26,12 @@ pub use vm::VM;
 
 pub struct Runtime {
     arena: Arena<Root![VM<'_>]>,
+    symbols: SymbolMap,
     saved_output: Option<String>,
 }
 
 impl Runtime {
-    pub fn init(program: Vec<Func>) -> Self {
+    pub fn init(program: Vec<Func>, symbols: SymbolMap) -> Self {
         let arena = Arena::new(|mu| {
             let loaded_program = load_program(program, mu);
 
@@ -38,8 +40,13 @@ impl Runtime {
 
         Runtime {
             arena,
+            symbols,
             saved_output: None,
         }
+    }
+
+    pub fn into_symbols(self) -> SymbolMap {
+        self.symbols
     }
 
     pub fn take_saved_output(&mut self) -> Option<String> {

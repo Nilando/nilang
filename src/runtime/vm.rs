@@ -5,6 +5,7 @@ use super::bytecode::Reg;
 use super::call_frame::CallFrame;
 use super::closure::Closure;
 use super::func::LoadedFunc;
+use super::hash_map::GcHashMap;
 use super::list::List;
 use super::tagged_value::TaggedValue;
 use super::value::Value;
@@ -26,8 +27,8 @@ pub enum VMCommand {
 #[derive(Trace)]
 pub struct VM<'gc> {
     registers: GcVec<'gc, TaggedValue<'gc>>, // set number of registers
-    call_frames: GcVec<'gc, GcOpt<'gc, CallFrame<'gc>>>, // set number of call frames
-    frame_start: Cell<usize>,                // globals
+    call_frames: GcVec<'gc, GcOpt<'gc, CallFrame<'gc>>>,
+    frame_start: Cell<usize>,                
 }
 
 impl<'gc> VM<'gc> {
@@ -72,6 +73,11 @@ impl<'gc> VM<'gc> {
             ByteCode::Noop => {}
             ByteCode::NewList { dest } => {
                 let value = Value::List(Gc::new(mu, List::alloc(mu)));
+
+                self.set_reg_with_value(value, dest, mu);
+            }
+            ByteCode::NewMap { dest } => {
+                let value = Value::Map(GcHashMap::alloc(mu));
 
                 self.set_reg_with_value(value, dest, mu);
             }
@@ -280,7 +286,7 @@ impl<'gc> VM<'gc> {
                 let store = self.reg_to_val(store);
                 let key = self.reg_to_val(key);
 
-                if let Some(value) = Value::mem_load(store, key) {
+                if let Some(value) = Value::mem_load(store, key, mu) {
                     self.set_reg_with_value(value, dest, mu);
                 } else {
                     return Err(self.type_error("".to_string()))
@@ -328,7 +334,6 @@ impl<'gc> VM<'gc> {
             // BELOW REQUIRES A GC MAP TO BE IMPLEMENTED
             ByteCode::LoadGlobal { dest, sym } => todo!(),
             ByteCode::StoreGlobal { .. } => todo!(),
-            ByteCode::NewMap { dest } => todo!(),
         }
 
         Ok(None)

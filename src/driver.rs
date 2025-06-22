@@ -82,7 +82,7 @@ fn run_script(mut config: Config) {
         return;
     }
 
-    let mut runtime = Runtime::init(program);
+    let mut runtime = Runtime::init(program, symbols);
     match runtime.run() {
         Ok(()) => {}
         Err(err) => {
@@ -161,13 +161,15 @@ fn run_repl(config: Config) {
                     return;
                 }
 
-                let mut runtime = Runtime::init(program);
+                let mut runtime = Runtime::init(program, symbols);
                 match runtime.run() {
                     Ok(()) => {}
                     Err(err) => {
                         println!("{err:#?}");
                     }
                 }
+
+                symbols = runtime.into_symbols();
 
                 let _ = stdout.activate_raw_mode();
 

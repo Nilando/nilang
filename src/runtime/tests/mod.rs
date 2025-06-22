@@ -51,7 +51,7 @@ fn test_golden_output(filename: &str) {
         program.push(func);
     }
 
-    let mut runtime = Runtime::init(program);
+    let mut runtime = Runtime::init(program, syms);
     runtime.save_output();
 
     match runtime.run() {

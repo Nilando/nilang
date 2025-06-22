@@ -2,6 +2,7 @@ use sandpit::{Tag, Tagged};
 
 use super::closure::Closure;
 use super::func::LoadedFunc;
+use super::hash_map::GcHashMap;
 use super::list::List;
 use super::string::VMString;
 use super::value::Value;
@@ -23,6 +24,8 @@ pub enum ValueTag {
     String,
     #[ptr(Closure<'gc>)]
     Closure,
+    #[ptr(GcHashMap<'gc>)]
+    Map,
 }
 
 impl<'gc> From<&TaggedValue<'gc>> for Value<'gc> {
@@ -57,6 +60,11 @@ impl<'gc> From<&TaggedValue<'gc>> for Value<'gc> {
                 let s = ValueTag::get_string(value.clone()).unwrap();
 
                 Value::String(s)
+            }
+            ValueTag::Map => {
+                let s = ValueTag::get_map(value.clone()).unwrap();
+
+                Value::Map(s)
             }
             ValueTag::Packed => {
                 let raw = value.get_stripped_raw() as u64;
@@ -170,8 +178,7 @@ mod tests {
     #[test]
     fn pack_and_unpack_null_value() {
         let _: Arena<Root![()]> = Arena::new(|mu| {
-            let v = Value::Null;
-            let tagged = Value::into_tagged(v, mu);
+            let tagged = Value::into_tagged(Value::Null, mu);
 
             assert_eq!(tagged.get_tag(), ValueTag::Packed);
 

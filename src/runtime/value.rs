@@ -4,6 +4,7 @@ use sandpit::{Gc, Mutator};
 
 use super::closure::Closure;
 use super::func::LoadedFunc;
+use super::hash_map::GcHashMap;
 use super::list::List;
 use super::string::VMString;
 use super::tagged_value::{pack_tagged_value, TaggedValue, ValueTag};
@@ -27,11 +28,13 @@ impl Display for Value<'_> {
                 }
                 write!(f, "]")
             }
+            Value::Map(map) => write!(f, "{}", map.scoped_deref()),
             Value::String(s) => {
+                write!(f, "\"")?;
                 for i in 0 ..s.len() {
                     write!(f, "{}", s.at(i))?;
                 }
-                write!(f, "\n")
+                write!(f, "\"")
             }
             Value::Closure(closure) => {
                 let func = closure.get_func();
@@ -52,7 +55,8 @@ pub enum Value<'gc> {
     List(Gc<'gc, List<'gc>>),
     Func(Gc<'gc, LoadedFunc<'gc>>),
     String(Gc<'gc, VMString<'gc>>),
-    Closure(Gc<'gc, Closure<'gc>>)
+    Closure(Gc<'gc, Closure<'gc>>),
+    Map(Gc<'gc, GcHashMap<'gc>>)
 }
 
 impl<'gc> Value<'gc> {
@@ -68,8 +72,13 @@ impl<'gc> Value<'gc> {
             Value::Int(i) => ValueTag::from_int(Gc::new(mu, i)),
             Value::String(s) => ValueTag::from_string(s),
             Value::Closure(c) => ValueTag::from_closure(c),
+            Value::Map(c) => ValueTag::from_map(c),
             _ => panic!("failed to tagg value"),
         }
+    }
+
+    pub fn tagged_null() -> TaggedValue<'gc> {
+        pack_tagged_value(&Value::Null).unwrap()
     }
 
     pub fn is_truthy(&self) -> bool {
@@ -185,7 +194,7 @@ impl<'gc> Value<'gc> {
 
                 Some(Value::Bool(true))
             }
-            _ => todo!(),
+            _ => Some(Value::Bool(false)),
         }
     }
 
@@ -212,10 +221,17 @@ impl<'gc> Value<'gc> {
         }
     }
 
-    pub fn mem_load(store: Value<'gc>, key: Value<'gc>) -> Option<Self> {
+    pub fn mem_load(store: Value<'gc>, key: Value<'gc>, mu: &'gc Mutator) -> Option<Self> {
         match (store, key) {
             (Value::List(list), Value::Int(idx)) => {
                 Some(list.at(idx))
+            }
+            (Value::Map(map), key) => {
+                if let Some(val) = map.get(Value::into_tagged(key, mu)) {
+                    Some(Value::from(&val))
+                } else {
+                    Some(Value::Null)
+                }
             }
             // here you could check if the thing we are loading is a function,
             // and if its first arg is self, load the thing we are calling this on 
@@ -234,6 +250,11 @@ impl<'gc> Value<'gc> {
                 }
 
                 list.set(usize::try_from(idx).unwrap(), Value::into_tagged(src, mu), mu);
+
+                Some(())
+            }
+            (Value::Map(map), key) => {
+                GcHashMap::insert(map, key.into_tagged(mu), src.into_tagged(mu), mu);
 
                 Some(())
             }
