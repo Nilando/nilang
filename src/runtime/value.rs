@@ -182,6 +182,7 @@ impl<'gc> Value<'gc> {
             (Value::Float(lhs), Value::Float(rhs)) => Some(Value::Bool(lhs == rhs)),
             (Value::Int(lhs), Value::Int(rhs)) => Some(Value::Bool(lhs == rhs)),
             (Value::SymId(lhs), Value::SymId(rhs)) => Some(Value::Bool(lhs == rhs)),
+            (Value::Bool(lhs), Value::Bool(rhs)) => Some(Value::Bool(lhs == rhs)),
             (Value::Float(f), Value::Int(i)) | (Value::Int(i), Value::Float(f)) => Some(Value::Bool(f == i as f64)),
             (Value::String(lhs), Value::String(rhs)) => {
                 if lhs.len() != rhs.len() {
