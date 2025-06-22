@@ -29,6 +29,7 @@ pub struct VM<'gc> {
     registers: GcVec<'gc, TaggedValue<'gc>>, // set number of registers
     call_frames: GcVec<'gc, GcOpt<'gc, CallFrame<'gc>>>,
     frame_start: Cell<usize>,                
+    globals: Gc<'gc, GcHashMap<'gc>>,
 }
 
 impl<'gc> VM<'gc> {
@@ -49,7 +50,7 @@ impl<'gc> VM<'gc> {
             registers,
             call_frames,
             frame_start,
-            // globals
+            globals: GcHashMap::alloc(mu)
         }
     }
 
@@ -331,9 +332,22 @@ impl<'gc> VM<'gc> {
                 self.set_reg(upval, dest, mu);
             }
 
-            // BELOW REQUIRES A GC MAP TO BE IMPLEMENTED
-            ByteCode::LoadGlobal { dest, sym } => todo!(),
-            ByteCode::StoreGlobal { .. } => todo!(),
+            ByteCode::LoadGlobal { dest, sym } => {
+                let sym_val = self.reg_to_val(sym);
+                let tagged_val = 
+                match self.globals.get(sym_val.into_tagged(mu)) {
+                    Some(tagged) => tagged,
+                    None => Value::tagged_null()
+                };
+
+                self.set_reg(tagged_val, dest, mu);
+            }
+            ByteCode::StoreGlobal { src, sym } => {
+                let sym_val = self.reg_to_val(sym);
+                let src_val = self.reg_to_val(src);
+
+                GcHashMap::insert(self.globals.clone(), sym_val.into_tagged(mu), src_val.into_tagged(mu), mu);
+            }
         }
 
         Ok(None)

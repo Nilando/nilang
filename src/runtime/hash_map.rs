@@ -200,15 +200,15 @@ fn hash_value(v: &Value<'_>) -> usize {
         }
         Value::SymId(id) => {
             buffer.push(2);
-            buffer.extend_from_slice(&id.to_le_bytes());
+            buffer.extend_from_slice(&id.to_ne_bytes());
         }
         Value::Int(i) => {
             buffer.push(3);
-            buffer.extend_from_slice(&i.to_le_bytes());
+            buffer.extend_from_slice(&i.to_ne_bytes());
         }
         Value::Float(f) => {
             buffer.push(4);
-            buffer.extend_from_slice(&f.to_le_bytes());
+            buffer.extend_from_slice(&f.to_ne_bytes());
         }
         Value::List(gc_list) => {
             buffer.push(5);
@@ -234,7 +234,7 @@ fn hash_value(v: &Value<'_>) -> usize {
 
     let result = murmurhash3_x64_128(&buffer, 0);
 
-    result.0 as usize
+    result.0 as usize ^ result.1 as usize
 }
 
 impl Display for GcHashMap<'_> {
@@ -270,6 +270,21 @@ mod tests {
         let _: Arena<Root![()]> = Arena::new(|mu| {
             let map = GcHashMap::alloc(mu);
             let key = Value::into_tagged(Value::Int(1), mu);
+            let val = Value::into_tagged(Value::Bool(true), mu);
+
+            GcHashMap::insert(map.clone(), key.clone(), val, mu);
+
+            let found = map.get(key).unwrap();
+
+            matches!(Value::from(&found), Value::Bool(true));
+        });
+    }
+
+    #[test]
+    fn insert_and_get_key_sym() {
+        let _: Arena<Root![()]> = Arena::new(|mu| {
+            let map = GcHashMap::alloc(mu);
+            let key = Value::into_tagged(Value::SymId(1), mu);
             let val = Value::into_tagged(Value::Bool(true), mu);
 
             GcHashMap::insert(map.clone(), key.clone(), val, mu);
