@@ -6,7 +6,7 @@ use super::tac::{FuncID, LabelID, Tac, VReg};
 use crate::ir::TacConst;
 use crate::parser::Span;
 use crate::symbol_map::SymID;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 pub struct FuncBuilder {
     id: FuncID,

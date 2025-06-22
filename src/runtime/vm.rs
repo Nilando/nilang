@@ -547,9 +547,11 @@ impl<'gc> VM<'gc> {
         Ok(())
     }
 
+    /*
     fn unimplemented(&self) -> RuntimeError {
         self.new_error(RuntimeErrorKind::Unimplemented, "this is not implemented".to_string())
     }
+    */
 
     fn wrong_num_args(&self, msg: String) -> RuntimeError {
         self.new_error(RuntimeErrorKind::WrongNumArgs, msg)

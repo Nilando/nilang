@@ -11,8 +11,8 @@ pub struct SymbolMap {
     id_to_str: Vec<Rc<String>>,
 }
 
-pub const LEN_SYM: SymID = 0;
-pub const PUSH_SYM: SymID = 1;
+pub const LEN_SYM: SymID = 1;
+pub const PUSH_SYM: SymID = 2;
 
 impl SymbolMap {
     pub fn new() -> Self {
@@ -47,6 +47,7 @@ impl SymbolMap {
     }
 
     fn init(&mut self) {
+        self.insert("self".to_string());
         self.insert("len".to_string());
         self.insert("push".to_string());
     }

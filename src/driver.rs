@@ -165,7 +165,7 @@ fn run_repl(config: Config) {
                 match runtime.run() {
                     Ok(()) => {}
                     Err(err) => {
-                        println!("{err:#?}");
+                        display_runtime_error(&input, err);
                     }
                 }
 

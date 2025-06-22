@@ -210,23 +210,23 @@ fn hash_value(v: &Value<'_>) -> usize {
             buffer.push(4);
             buffer.extend_from_slice(&f.to_ne_bytes());
         }
-        Value::List(gc_list) => {
+        Value::List(_) => {
             buffer.push(5);
             todo!()
         }
-        Value::Func(gc_func) => {
+        Value::Func(_) => {
             buffer.push(6);
             todo!()
         }
-        Value::String(gc_str) => {
+        Value::String(_) => {
             buffer.push(7);
             todo!()
         }
-        Value::Closure(gc_closure) => {
+        Value::Closure(_) => {
             buffer.push(8);
             todo!()
         }
-        Value::Map(gc_map) => {
+        Value::Map(_) => {
             buffer.push(9);
             todo!()
         }

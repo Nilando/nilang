@@ -177,7 +177,7 @@ impl RuntimeError {
 
 #[derive(Debug)]
 pub enum RuntimeErrorKind {
-    Unimplemented,
+    //Unimplemented,
     TypeError,
     WrongNumArgs
 }
