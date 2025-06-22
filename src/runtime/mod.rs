@@ -76,7 +76,7 @@ impl Runtime {
                             if let Some(output) = &mut self.saved_output {
                                 output.push_str(str.as_str());
                             } else {
-                                println!("{str}");
+                                print!("{str}");
                             }
                         }
                         VMCommand::Read => {

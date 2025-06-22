@@ -8,6 +8,11 @@ fn one_plus_one() {
 }
 
 #[test]
+fn globals_test() {
+  super::test_golden_output("./src/runtime/tests/golden/globals_test.golden")
+}
+
+#[test]
 fn closure_printing() {
   super::test_golden_output("./src/runtime/tests/golden/closure_printing.golden")
 }
