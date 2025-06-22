@@ -11,10 +11,17 @@ use super::value::Value;
 
 pub use super::bytecode::ByteCode;
 
-use sandpit::{field, Gc, GcOpt, GcVec, Mutator, Trace};
+use sandpit::{Gc, GcOpt, GcVec, Mutator, Trace};
 use std::cell::Cell;
 
 use super::{RuntimeError, RuntimeErrorKind};
+
+pub enum VMCommand {
+  Print(String),
+  Read,
+  Yield,
+  Exit,
+}
 
 #[derive(Trace)]
 pub struct VM<'gc> {
@@ -45,39 +52,21 @@ impl<'gc> VM<'gc> {
         }
     }
 
-    fn get_next_instruction(&self) -> ByteCode {
-        let call_frame = self.get_top_call_frame();
-
-        call_frame.get_next_instr()
-    }
-
-    fn get_top_call_frame(&self) -> Gc<'gc, CallFrame<'gc>> {
-        let l = self.call_frames.len() - 1;
-        self.call_frames.get_idx(l).unwrap().unwrap()
-    }
-
-    fn get_local(&self, local_id: u16, mu: &'gc Mutator) -> Value<'gc> {
-        let call_frame = self.get_top_call_frame();
-        let local = call_frame.get_local(local_id);
-
-        local.as_value(mu)
-    }
-
-    pub fn run(&self, mu: &'gc Mutator) -> Result<bool, RuntimeError> {
+    pub fn run(&self, mu: &'gc Mutator) -> Result<VMCommand, RuntimeError> {
         loop {
             if mu.gc_yield() {
-                return Ok(false);
+                return Ok(VMCommand::Yield);
             }
 
             for _ in 0..100 {
-                if self.dispatch_instruction(mu)? {
-                    return Ok(true)
+                if let Some(command) = self.dispatch_instruction(mu)? {
+                    return Ok(command)
                 }
             }
         }
     }
 
-    fn dispatch_instruction(&self, mu: &'gc Mutator) -> Result<bool, RuntimeError> {
+    fn dispatch_instruction(&self, mu: &'gc Mutator) -> Result<Option<VMCommand>, RuntimeError> {
         let instr = self.get_next_instruction();
         match instr {
             ByteCode::Noop => {}
@@ -113,8 +102,9 @@ impl<'gc> VM<'gc> {
             }
             ByteCode::Print { src } => {
                 let val = self.reg_to_val(src);
+                let output = format!("{val}\n");
 
-                println!("{val}");
+                return Ok(Some(VMCommand::Print(output)));
             }
             ByteCode::Swap { r1, r2 } => {
                 let r1_val = self.reg_to_val(r1);
@@ -311,7 +301,7 @@ impl<'gc> VM<'gc> {
 
                 self.handle_return(val, mu);
                 if self.registers.is_empty() {
-                    return Ok(true);
+                    return Ok(Some(VMCommand::Exit));
                 }
             }
             ByteCode::Read { dest } => {
@@ -332,7 +322,6 @@ impl<'gc> VM<'gc> {
                 let cf = self.get_top_call_frame();
                 let upval = cf.get_upvalue(id);
 
-
                 self.set_reg(upval, dest, mu);
             }
 
@@ -342,7 +331,7 @@ impl<'gc> VM<'gc> {
             ByteCode::NewMap { dest } => todo!(),
         }
 
-        Ok(false)
+        Ok(None)
     }
 
     fn collect_upvalues(&self, upvalues: usize, mu: &'gc Mutator) -> Gc<'gc, [TaggedValue<'gc>]> {
@@ -387,29 +376,6 @@ impl<'gc> VM<'gc> {
         }
     }
 
-    fn unimplemented(&self) -> RuntimeError {
-        self.new_error(RuntimeErrorKind::Unimplemented, "this is not implemented".to_string())
-    }
-
-    fn wrong_num_args(&self, msg: String) -> RuntimeError {
-        self.new_error(RuntimeErrorKind::WrongNumArgs, msg)
-    }
-
-    fn type_error(&self, msg: String) -> RuntimeError {
-        self.new_error(RuntimeErrorKind::TypeError, msg)
-    }
-
-    fn new_error(&self, kind: RuntimeErrorKind, msg: String) -> RuntimeError {
-        let cf = self.get_top_call_frame();
-        let span = cf.get_current_span();
-
-        RuntimeError::new(
-            kind,
-            span,
-            Some(msg)
-        )
-    }
-
     fn handle_return(&self, return_val: Value<'gc>, mu: &'gc Mutator) {
         self.pop_callframe();
 
@@ -438,12 +404,6 @@ impl<'gc> VM<'gc> {
         let new_frame_start = self.frame_start.get() - new_cf.get_reg_count() as usize;
 
         self.frame_start.set(new_frame_start);
-    }
-
-    fn get_prev_instruction(&self) -> ByteCode {
-        let ip = self.get_ip() - 1;
-
-        self.get_instr_at(ip)
     }
 
     fn call_function(&self, dest: Reg, src: Reg, supplied_args: usize, mu: &'gc Mutator) -> Result<(), RuntimeError> {
@@ -566,6 +526,54 @@ impl<'gc> VM<'gc> {
         }
 
         Ok(())
+    }
+
+    fn unimplemented(&self) -> RuntimeError {
+        self.new_error(RuntimeErrorKind::Unimplemented, "this is not implemented".to_string())
+    }
+
+    fn wrong_num_args(&self, msg: String) -> RuntimeError {
+        self.new_error(RuntimeErrorKind::WrongNumArgs, msg)
+    }
+
+    fn type_error(&self, msg: String) -> RuntimeError {
+        self.new_error(RuntimeErrorKind::TypeError, msg)
+    }
+
+    fn new_error(&self, kind: RuntimeErrorKind, msg: String) -> RuntimeError {
+        let cf = self.get_top_call_frame();
+        let span = cf.get_current_span();
+
+        RuntimeError::new(
+            kind,
+            span,
+            Some(msg)
+        )
+    }
+
+
+    fn get_next_instruction(&self) -> ByteCode {
+        let call_frame = self.get_top_call_frame();
+
+        call_frame.get_next_instr()
+    }
+
+    fn get_prev_instruction(&self) -> ByteCode {
+        let ip = self.get_ip() - 1;
+
+        self.get_instr_at(ip)
+    }
+
+    fn get_top_call_frame(&self) -> Gc<'gc, CallFrame<'gc>> {
+        let l = self.call_frames.len() - 1;
+        self.call_frames.get_idx(l).unwrap().unwrap()
+    }
+
+    fn get_local(&self, local_id: u16, mu: &'gc Mutator) -> Value<'gc> {
+        let call_frame = self.get_top_call_frame();
+        let local = call_frame.get_local(local_id);
+
+        local.as_value(mu)
     }
 
     fn rewind_ip(&self) {

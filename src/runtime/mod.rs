@@ -6,11 +6,16 @@ mod tagged_value;
 mod value;
 mod vm;
 mod string;
+mod hash_map;
 mod closure;
+
+#[cfg(test)]
+mod tests;
 
 use crate::parser::Span;
 
 use self::func::{LoadedFunc, LoadedLocal};
+use self::vm::VMCommand;
 use sandpit::*;
 use std::collections::HashMap;
 
@@ -20,6 +25,7 @@ pub use vm::VM;
 
 pub struct Runtime {
     arena: Arena<Root![VM<'_>]>,
+    saved_output: Option<String>,
 }
 
 impl Runtime {
@@ -30,21 +36,49 @@ impl Runtime {
             VM::init(loaded_program.last().unwrap().clone(), mu)
         });
 
-        Runtime { arena }
+        Runtime {
+            arena,
+            saved_output: None,
+        }
     }
 
-    pub fn run(&self) -> Result<(), RuntimeError> {
-        loop {
-            let mut vm_result = Ok(false);
+    pub fn take_saved_output(&mut self) -> Option<String> {
+        self.saved_output.take()
+    }
 
+    pub fn save_output(&mut self) {
+        if let None = self.saved_output {
+            self.saved_output = Some("".to_string());
+        } 
+    }
+
+    pub fn run(&mut self) -> Result<(), RuntimeError> {
+        let mut vm_result = Ok(VMCommand::Yield);
+
+        loop {
             self.arena.mutate(|mu, vm| {
                 vm_result = vm.run(mu);
             });
 
             match vm_result {
-                Ok(finished) => {
-                    if finished {
-                        break;
+                Ok(ref command) => {
+                    match command {
+                        VMCommand::Exit => return Ok(()),
+                        VMCommand::Yield => {}
+                        VMCommand::Print(str) => {
+                            if let Some(output) = &mut self.saved_output {
+                                output.push_str(str.as_str());
+                            } else {
+                                println!("{str}");
+                            }
+                        }
+                        VMCommand::Read => {
+                            todo!()
+                            // vm.input_string(buf)
+                            // read a string
+                            // then mutate the arena and place the 
+                            // read
+                        }
                     }
                 }
                 Err(err) => {
@@ -52,8 +86,6 @@ impl Runtime {
                 }
             }
         }
-
-        Ok(())
     }
 }
 

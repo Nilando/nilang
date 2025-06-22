@@ -82,7 +82,7 @@ fn run_script(mut config: Config) {
         return;
     }
 
-    let runtime = Runtime::init(program);
+    let mut runtime = Runtime::init(program);
     match runtime.run() {
         Ok(()) => {}
         Err(err) => {
@@ -161,7 +161,7 @@ fn run_repl(config: Config) {
                     return;
                 }
 
-                let runtime = Runtime::init(program);
+                let mut runtime = Runtime::init(program);
                 match runtime.run() {
                     Ok(()) => {}
                     Err(err) => {
