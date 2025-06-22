@@ -49,6 +49,10 @@ generation_targets = [
     path: './src/codegen/tests',
     testing_function: 'super::test_golden_bytecode'
   },
+  {
+    path: './src/runtime/tests',
+    testing_function: 'super::test_golden_output'
+  },
 ]
 
 generation_targets.each do |target|

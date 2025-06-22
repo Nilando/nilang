@@ -4,35 +4,35 @@
 */
 #[test]
 fn constant_folding() {
-    super::test_golden_ir("./src/ir/tests/golden/constant_folding.golden")
+  super::test_golden_ir("./src/ir/tests/golden/constant_folding.golden")
 }
 
 #[test]
 fn dead_code() {
-    super::test_golden_ir("./src/ir/tests/golden/dead_code.golden")
+  super::test_golden_ir("./src/ir/tests/golden/dead_code.golden")
 }
 
 #[test]
 fn lucky_number() {
-    super::test_golden_ir("./src/ir/tests/golden/lucky_number.golden")
+  super::test_golden_ir("./src/ir/tests/golden/lucky_number.golden")
 }
 
 #[test]
 fn if_else() {
-    super::test_golden_ir("./src/ir/tests/golden/if_else.golden")
+  super::test_golden_ir("./src/ir/tests/golden/if_else.golden")
 }
 
 #[test]
 fn shortcircuit() {
-    super::test_golden_ir("./src/ir/tests/golden/shortcircuit.golden")
+  super::test_golden_ir("./src/ir/tests/golden/shortcircuit.golden")
 }
 
 #[test]
 fn lowering_no_input() {
-    super::test_golden_ir("./src/ir/tests/golden/lowering_no_input.golden")
+  super::test_golden_ir("./src/ir/tests/golden/lowering_no_input.golden")
 }
 
 #[test]
 fn lowering_closure() {
-    super::test_golden_ir("./src/ir/tests/golden/lowering_closure.golden")
+  super::test_golden_ir("./src/ir/tests/golden/lowering_closure.golden")
 }

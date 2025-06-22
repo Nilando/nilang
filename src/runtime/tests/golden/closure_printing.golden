@@ -1,0 +1,18 @@
+a = 1;
+c = 3;
+
+fn print_stuff(b, d) {
+  print(a);
+  print(b);
+  print(c);
+  print(d);
+}
+
+print_stuff(2, 4);
+
+%%%%
+
+1
+2
+3
+4
