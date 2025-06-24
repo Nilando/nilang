@@ -35,8 +35,7 @@ fn test_golden_output(filename: &str) {
     }
 
     let mut syms = SymbolMap::new();
-    let parse_result = parse_program(input, &mut syms);
-    let ast = parse_result.value.unwrap();
+    let ast = parse_program(input, &mut syms).unwrap();
     let mut ir = lower_ast(ast, !no_pretty);
 
     for func in ir.iter_mut() {

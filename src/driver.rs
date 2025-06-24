@@ -30,13 +30,11 @@ fn run_script(mut config: Config) {
     let mut symbols = SymbolMap::new();
     let parse_result = parse_program(input.as_str(), &mut symbols);
 
-    if !parse_result.errors.is_empty() {
-        display_parse_errors(&input, &parse_result.errors, config.file);
-
-        return;
+    if let Err(ref parse_errors) = parse_result {
+        display_parse_errors(&input, parse_errors, config.file);
     }
 
-    let ast = parse_result.value.unwrap();
+    let ast = parse_result.unwrap();
 
     if let Some(path) = config.ast_output_path.as_ref() {
         let ast_string = format!("{:#?}", ast);
@@ -118,11 +116,13 @@ fn run_repl(config: Config) {
                 let parse_result = parse_program(&input, &mut symbols);
 
                 let _ = stdout.suspend_raw_mode();
-                if !parse_result.errors.is_empty() {
-                    display_parse_errors(&input, &parse_result.errors, None);
+                if let Err(ref parse_errors) = parse_result {
+                    display_parse_errors(&input, parse_errors, None);
                 }
 
-                let mut ir = lower_ast(parse_result.value.unwrap(), false);
+                let ast = parse_result.unwrap();
+
+                let mut ir = lower_ast(ast, false);
 
                 if !config.no_optimize {
                     for func in ir.iter_mut() {
