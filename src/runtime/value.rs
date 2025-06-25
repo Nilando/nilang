@@ -30,11 +30,10 @@ impl Display for Value<'_> {
             }
             Value::Map(map) => write!(f, "{}", map.scoped_deref()),
             Value::String(s) => {
-                write!(f, "\"")?;
                 for i in 0 ..s.len() {
-                    write!(f, "{}", s.at(i))?;
+                    write!(f, "{}", s.at(i).unwrap())?;
                 }
-                write!(f, "\"")
+                write!(f, "")
             }
             Value::Closure(closure) => {
                 let func = closure.get_func();
@@ -85,7 +84,11 @@ impl<'gc> Value<'gc> {
         !matches!(self, Value::Null | Value::Bool(false))
     }
 
-    pub fn add(lhs: Value<'gc>, rhs: Value<'gc>) -> Option<Self> {
+    pub fn is_string(&self) -> bool {
+        matches!(self, Value::String(_))
+    }
+
+    pub fn add(lhs: Value<'gc>, rhs: Value<'gc>, mu: &'gc Mutator) -> Option<Self> {
         match (lhs, rhs) {
             (Value::Float(lhs), Value::Float(rhs)) => Some(Value::Float(lhs + rhs)),
             (Value::Int(lhs), Value::Int(rhs)) => Some(Value::Int(lhs + rhs)),
@@ -179,6 +182,7 @@ impl<'gc> Value<'gc> {
 
     pub fn equal(lhs: Value<'gc>, rhs: Value<'gc>) -> Option<Self> {
         match (lhs, rhs) {
+            (Value::Null, Value::Null) => Some(Value::Bool(true)),
             (Value::Float(lhs), Value::Float(rhs)) => Some(Value::Bool(lhs == rhs)),
             (Value::Int(lhs), Value::Int(rhs)) => Some(Value::Bool(lhs == rhs)),
             (Value::SymId(lhs), Value::SymId(rhs)) => Some(Value::Bool(lhs == rhs)),
@@ -202,6 +206,7 @@ impl<'gc> Value<'gc> {
 
     pub fn not_equal(lhs: Value<'gc>, rhs: Value<'gc>) -> Option<Self> {
         match (lhs, rhs) {
+            (Value::Null, Value::Null) => Some(Value::Bool(false)),
             (Value::Float(lhs), Value::Float(rhs)) => Some(Value::Bool(lhs != rhs)),
             (Value::Int(lhs), Value::Int(rhs)) => Some(Value::Bool(lhs != rhs)),
             (Value::Float(f), Value::Int(i)) | (Value::Int(i), Value::Float(f)) => {
@@ -219,7 +224,10 @@ impl<'gc> Value<'gc> {
 
                 Some(Value::Bool(false))
             }
-            _ => todo!(),
+            (lhs, rhs) => {
+                println!("lhs: {}, rhs: {}", lhs, rhs);
+                todo!()
+            }
         }
     }
 
@@ -227,6 +235,16 @@ impl<'gc> Value<'gc> {
         match (store, key) {
             (Value::List(list), Value::Int(idx)) => {
                 Some(list.at(idx))
+            }
+            (Value::String(s), Value::Int(idx)) => {
+                if let Some(c) = s.at(usize::try_from(idx).unwrap()) {
+                    let text: [char; 1] = [c];
+                    let vm_str = VMString::alloc(&text, mu);
+
+                    Some(Value::String(Gc::new(mu, vm_str)))
+                } else {
+                    Some(Value::Null)
+                }
             }
             (Value::Map(map), key) => {
                 if let Some(val) = map.get(Value::into_tagged(key, mu)) {
