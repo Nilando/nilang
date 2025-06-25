@@ -23,7 +23,7 @@ floor(self) -> int
 ceil(self) -> int
 
 String methods:
-split(self, string) -> string
+split(self, string) -> List
 push(self, string) -> self
 trim(self) -> string
 
@@ -32,6 +32,7 @@ len -> int
 push(self, value) -> self
 find(self, value) -> int
 contains(self, value) -> bool
+compact(self, value) -> list
 filter(self, fn(x)) -> list
 concat(self, list) -> list
 join(self, str) -> string
@@ -39,14 +40,13 @@ join(self, str) -> string
 // this means that you can't really store the 
 // the symbols "keys", "values", or "entries" on a map
 Map methods:
-keys(self) -> [..]
-values(self) -> [..]
-entries(self) -> [[..]]
+keys(self) -> list
+values(self) -> list
+entries(self) -> list
 
 Func methods: 
 args -> Int
 bind(self, List) -> Func
-
 
 self_fn = fn(self) { print("test"); };
 a = { b: self_fn };
