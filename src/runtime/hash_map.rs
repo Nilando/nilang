@@ -1,4 +1,5 @@
 use std::cell::Cell;
+use super::op::equal;
 use std::fmt::Display;
 
 use murmurhash3::murmurhash3_x64_128;
@@ -173,7 +174,7 @@ impl<'gc> GcHashMap<'gc> {
                     let v1 = Value::from(key);
                     let v2 = Value::from(&entry.key);
 
-                    if let Some(Value::Bool(true)) = Value::equal(v1, v2) {
+                    if let Some(Value::Bool(true)) = equal(v1, v2) {
                         return Some(probe_pos)
                     }
                 }
@@ -319,7 +320,7 @@ mod tests {
                 let key = Value::into_tagged(Value::Int(i), mu);
                 let found = Value::from(&map.get(key).unwrap());
 
-                if let Some(Value::Bool(true)) = Value::equal(found, Value::Int(i)) {
+                if let Some(Value::Bool(true)) = equal(found, Value::Int(i)) {
                 } else {
                     assert!(false)
                 }

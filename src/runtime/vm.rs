@@ -1,6 +1,22 @@
 use crate::runtime::string::VMString;
 use crate::symbol_map::{SymID, INT_SYM, LEN_SYM, PUSH_SYM};
 
+use super::op::{
+    add,
+    sub,
+    multiply,
+    divide,
+    modulo,
+    less_than,
+    less_than_or_equal,
+    greater_than,
+    greater_than_or_equal,
+    equal,
+    not_equal,
+    mem_load,
+    mem_store,
+};
+
 use super::bytecode::Reg;
 use super::call_frame::CallFrame;
 use super::closure::Closure;
@@ -17,7 +33,7 @@ use std::cell::Cell;
 
 use super::{RuntimeError, RuntimeErrorKind};
 
-pub enum VMCommand {
+pub enum ExitCode {
   Print(String),
   Read,
   Yield,
@@ -54,10 +70,10 @@ impl<'gc> VM<'gc> {
         }
     }
 
-    pub fn run(&self, mu: &'gc Mutator) -> Result<VMCommand, RuntimeError> {
+    pub fn run(&self, mu: &'gc Mutator) -> Result<ExitCode, RuntimeError> {
         loop {
             if mu.gc_yield() {
-                return Ok(VMCommand::Yield);
+                return Ok(ExitCode::Yield);
             }
 
             for _ in 0..100 {
@@ -68,7 +84,7 @@ impl<'gc> VM<'gc> {
         }
     }
 
-    fn dispatch_instruction(&self, mu: &'gc Mutator) -> Result<Option<VMCommand>, RuntimeError> {
+    fn dispatch_instruction(&self, mu: &'gc Mutator) -> Result<Option<ExitCode>, RuntimeError> {
         let instr = self.get_next_instruction();
         match instr {
             ByteCode::Noop => {}
@@ -111,7 +127,7 @@ impl<'gc> VM<'gc> {
                 let val = self.reg_to_val(src);
                 let output = format!("{val}\n");
 
-                return Ok(Some(VMCommand::Print(output)));
+                return Ok(Some(ExitCode::Print(output)));
             }
             ByteCode::Swap { r1, r2 } => {
                 let r1_val = self.reg_to_val(r1);
@@ -177,57 +193,72 @@ impl<'gc> VM<'gc> {
                 let lhs = self.reg_to_val(lhs);
                 let rhs = self.reg_to_val(rhs);
 
-                if let Some(value) = Value::add(lhs, rhs, mu) {
-                    self.set_reg_with_value(value, dest, mu);
-                } else {
-                    return Err(self.type_error("".to_string()))
+                match add(lhs, rhs) {
+                    Ok(value) => {
+                        self.set_reg_with_value(value, dest, mu);
+                    }
+                    Err(err) => {
+                        return Err(self.type_error(err))
+                    }
                 }
             }
             ByteCode::Sub { dest, lhs, rhs } => {
                 let lhs = self.reg_to_val(lhs);
                 let rhs = self.reg_to_val(rhs);
 
-                if let Some(value) = Value::sub(lhs, rhs) {
-                    self.set_reg_with_value(value, dest, mu);
-                } else {
-                    return Err(self.type_error("uh oh!".to_string()))
+                match sub(lhs, rhs) {
+                    Ok(value) => {
+                        self.set_reg_with_value(value, dest, mu);
+                    }
+                    Err(err) => {
+                        return Err(self.type_error(err))
+                    }
                 }
             }
             ByteCode::Mult { dest, lhs, rhs } => {
                 let lhs = self.reg_to_val(lhs);
                 let rhs = self.reg_to_val(rhs);
 
-                if let Some(value) = Value::multiply(lhs, rhs) {
-                    self.set_reg_with_value(value, dest, mu);
-                } else {
-                    return Err(self.type_error("".to_string()))
+                match multiply(lhs, rhs) {
+                    Ok(value) => {
+                        self.set_reg_with_value(value, dest, mu);
+                    }
+                    Err(err) => {
+                        return Err(self.type_error(err))
+                    }
                 }
             }
             ByteCode::Div { dest, lhs, rhs } => {
                 let lhs = self.reg_to_val(lhs);
                 let rhs = self.reg_to_val(rhs);
 
-                if let Some(value) = Value::divide(lhs, rhs) {
-                    self.set_reg_with_value(value, dest, mu);
-                } else {
-                    return Err(self.type_error("".to_string()))
+                match divide(lhs, rhs) {
+                    Ok(value) => {
+                        self.set_reg_with_value(value, dest, mu);
+                    }
+                    Err(err) => {
+                        return Err(self.type_error(err))
+                    }
                 }
             }
             ByteCode::Modulo { dest, lhs, rhs } => {
                 let lhs = self.reg_to_val(lhs);
                 let rhs = self.reg_to_val(rhs);
 
-                if let Some(value) = Value::modulo(lhs, rhs) {
-                    self.set_reg_with_value(value, dest, mu);
-                } else {
-                    return Err(self.type_error("".to_string()))
+                match modulo(lhs, rhs) {
+                    Ok(value) => {
+                        self.set_reg_with_value(value, dest, mu);
+                    }
+                    Err(err) => {
+                        return Err(self.type_error(err))
+                    }
                 }
             }
             ByteCode::Lt { dest, lhs, rhs } => {
                 let lhs = self.reg_to_val(lhs);
                 let rhs = self.reg_to_val(rhs);
 
-                if let Some(value) = Value::less_than(lhs, rhs) {
+                if let Some(value) = less_than(lhs, rhs) {
                     self.set_reg_with_value(value, dest, mu);
                 } else {
                     return Err(self.type_error("".to_string()))
@@ -237,7 +268,7 @@ impl<'gc> VM<'gc> {
                 let lhs = self.reg_to_val(lhs);
                 let rhs = self.reg_to_val(rhs);
 
-                if let Some(value) = Value::less_than_or_equal(lhs, rhs) {
+                if let Some(value) = less_than_or_equal(lhs, rhs) {
                     self.set_reg_with_value(value, dest, mu);
                 } else {
                     return Err(self.type_error("".to_string()))
@@ -247,7 +278,7 @@ impl<'gc> VM<'gc> {
                 let lhs = self.reg_to_val(lhs);
                 let rhs = self.reg_to_val(rhs);
 
-                if let Some(value) = Value::greater_than(lhs, rhs) {
+                if let Some(value) = greater_than(lhs, rhs) {
                     self.set_reg_with_value(value, dest, mu);
                 } else {
                     return Err(self.type_error("".to_string()))
@@ -257,7 +288,7 @@ impl<'gc> VM<'gc> {
                 let lhs = self.reg_to_val(lhs);
                 let rhs = self.reg_to_val(rhs);
 
-                if let Some(value) = Value::greater_than_or_equal(lhs, rhs) {
+                if let Some(value) = greater_than_or_equal(lhs, rhs) {
                     self.set_reg_with_value(value, dest, mu);
                 } else {
                     return Err(self.type_error("".to_string()))
@@ -267,7 +298,7 @@ impl<'gc> VM<'gc> {
                 let lhs = self.reg_to_val(lhs);
                 let rhs = self.reg_to_val(rhs);
 
-                if let Some(value) = Value::equal(lhs, rhs) {
+                if let Some(value) = equal(lhs, rhs) {
                     self.set_reg_with_value(value, dest, mu);
                 } else {
                     return Err(self.type_error("".to_string()))
@@ -277,7 +308,7 @@ impl<'gc> VM<'gc> {
                 let lhs = self.reg_to_val(lhs);
                 let rhs = self.reg_to_val(rhs);
 
-                if let Some(value) = Value::not_equal(lhs, rhs) {
+                if let Some(value) = not_equal(lhs, rhs) {
                     self.set_reg_with_value(value, dest, mu);
                 } else {
                     return Err(self.type_error("".to_string()))
@@ -287,7 +318,7 @@ impl<'gc> VM<'gc> {
                 let store = self.reg_to_val(store);
                 let key = self.reg_to_val(key);
 
-                if let Some(value) = Value::mem_load(store, key, mu) {
+                if let Some(value) = mem_load(store, key, mu) {
                     self.set_reg_with_value(value, dest, mu);
                 } else {
                     return Err(self.type_error("".to_string()))
@@ -298,7 +329,7 @@ impl<'gc> VM<'gc> {
                 let key = self.reg_to_val(key);
                 let src = self.reg_to_val(src);
 
-                if let Some(()) = Value::mem_store(store, key, src, mu) {
+                if let Some(()) = mem_store(store, key, src, mu) {
                 } else {
                     return Err(self.type_error("".to_string()))
                 }
@@ -308,7 +339,7 @@ impl<'gc> VM<'gc> {
 
                 self.handle_return(val, mu);
                 if self.registers.is_empty() {
-                    return Ok(Some(VMCommand::Exit));
+                    return Ok(Some(ExitCode::Exit));
                 }
             }
             ByteCode::Read { dest } => {
@@ -443,19 +474,25 @@ impl<'gc> VM<'gc> {
             Value::SymId(sym_id) => {
                 self.call_intrinsic_func(sym_id, dest, supplied_args, mu)?;
             }
-            _ => return Err(self.type_error("".to_string())),
+            calle => return Err(self.type_error(format!("Tried to call {} type", calle.type_str()))),
         }
 
         Ok(())
     }
 
+    fn expect_args(&self, expected_args: usize, supplied_args: usize) -> Result<(), RuntimeError> {
+        if supplied_args != expected_args {
+            let msg = format!("Expected {} args, was given {}", expected_args, supplied_args);
+            Err(self.wrong_num_args(msg))
+        } else {
+            Ok(())
+        }
+    }
+
     fn call_natural_func(&self, func: Gc<'gc, LoadedFunc<'gc>>, supplied_args: usize, mu: &'gc Mutator) -> Result<(), RuntimeError> {
         let mut arg_count = func.arg_count() as usize;
 
-        if supplied_args != arg_count {
-            let msg = format!("Expect {} args, was given {}", func.arg_count(), arg_count);
-            return Err(self.wrong_num_args(msg));
-        }
+        self.expect_args(func.arg_count().into(), supplied_args)?;
 
         let new_frame_start = self.frame_start.get()
             + self.get_top_call_frame().get_reg_count() as usize;
@@ -490,10 +527,7 @@ impl<'gc> VM<'gc> {
     fn call_intrinsic_func(&self, sym_id: SymID, dest: Reg, arg_count: usize, mu: &'gc Mutator) -> Result<(), RuntimeError> {
         match sym_id {
             LEN_SYM => {
-                if 1 != arg_count {
-                    let msg = format!("Expect {} args, was given {}", 1, arg_count);
-                    return Err(self.wrong_num_args(msg));
-                }
+                self.expect_args(1, arg_count)?;
 
                 let ip = self.get_ip() - 2;
                 if let ByteCode::StoreArg { src } = self.get_instr_at(ip) {
@@ -516,10 +550,7 @@ impl<'gc> VM<'gc> {
                 }
             },
             PUSH_SYM => {
-                if 2 != arg_count {
-                    let msg = format!("Expect {} args, was given {}", 2, arg_count);
-                    return Err(self.wrong_num_args(msg));
-                }
+                self.expect_args(2, arg_count)?;
 
                 let list_ip = self.get_ip() - 3;
                 let item_ip = self.get_ip() - 2;
@@ -542,10 +573,7 @@ impl<'gc> VM<'gc> {
                 }
             }
             INT_SYM => {
-                if 1 != arg_count {
-                    let msg = format!("Expect {} args, was given {}", 1, arg_count);
-                    return Err(self.wrong_num_args(msg));
-                }
+                self.expect_args(1, arg_count)?;
 
                 let ip = self.get_ip() - 2;
                 if let ByteCode::StoreArg { src } = self.get_instr_at(ip) {
@@ -560,7 +588,7 @@ impl<'gc> VM<'gc> {
                             self.set_reg_with_value(val, dest, mu);
                         }
                         Value::String(s) => {
-                            todo!("try to conver string into int");
+                            todo!("try to convert string into int");
                         }
                         _ => return Err(self.type_error("xxx".to_string())),
                     }

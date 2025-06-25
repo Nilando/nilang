@@ -8,6 +8,7 @@ mod vm;
 mod string;
 mod hash_map;
 mod closure;
+mod op;
 
 #[cfg(test)]
 mod tests;
@@ -16,7 +17,7 @@ use crate::parser::Span;
 use crate::symbol_map::SymbolMap;
 
 use self::func::{LoadedFunc, LoadedLocal};
-use self::vm::VMCommand;
+use self::vm::ExitCode;
 use sandpit::*;
 use std::collections::HashMap;
 
@@ -60,7 +61,7 @@ impl Runtime {
     }
 
     pub fn run(&mut self) -> Result<(), RuntimeError> {
-        let mut vm_result = Ok(VMCommand::Yield);
+        let mut vm_result = Ok(ExitCode::Yield);
 
         loop {
             self.arena.mutate(|mu, vm| {
@@ -70,16 +71,16 @@ impl Runtime {
             match vm_result {
                 Ok(ref command) => {
                     match command {
-                        VMCommand::Exit => return Ok(()),
-                        VMCommand::Yield => {}
-                        VMCommand::Print(str) => {
+                        ExitCode::Exit => return Ok(()),
+                        ExitCode::Yield => {}
+                        ExitCode::Print(str) => {
                             if let Some(output) = &mut self.saved_output {
                                 output.push_str(str.as_str());
                             } else {
                                 print!("{str}");
                             }
                         }
-                        VMCommand::Read => {
+                        ExitCode::Read => {
                             todo!()
                             // vm.input_string(buf)
                             // read a string
