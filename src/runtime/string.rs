@@ -1,4 +1,5 @@
 use std::cell::Cell;
+use std::fmt::{Debug, Display};
 
 use sandpit::{GcVec, Mutator, Trace};
 
@@ -6,7 +7,6 @@ use sandpit::{GcVec, Mutator, Trace};
 pub struct VMString<'gc> {
     vec: GcVec<'gc, Cell<char>>,
 }
-
 
 impl<'gc> VMString<'gc> {
     pub fn alloc(text: &[char], mu: &'gc Mutator) -> Self {
@@ -25,8 +25,8 @@ impl<'gc> VMString<'gc> {
         self.vec.push(mu, Cell::new(c));
     }
 
-    pub fn at(&self, idx: usize) -> char {
-        self.vec.get_idx(idx).unwrap().get()
+    pub fn at(&self, idx: usize) -> Option<char> {
+        Some(self.vec.get_idx(idx)?.get())
     }
 
     pub fn len(&self) -> usize {

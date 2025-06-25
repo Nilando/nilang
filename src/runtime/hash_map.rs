@@ -246,7 +246,16 @@ impl Display for GcHashMap<'_> {
             let v = Value::from(&entry.val);
 
             if entry.is_used() {
-                write!(f, "{}: {}, ", k, v)?;
+                if k.is_string() {
+                    write!(f, "\"{}\": ", k)?;
+                } else {
+                    write!(f, "{}: ", k)?;
+                }
+                if v.is_string() {
+                    write!(f, "\"{}\"", v)?;
+                } else {
+                    write!(f, "{}", v)?;
+                }
             }
         }
         write!(f, "}}")
