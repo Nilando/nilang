@@ -1,9 +1,9 @@
 fn contains_letter(s, letter) {
-  for c in s {
+  s.each(fn(c) {
     if letter == c {
       return true;
     }
-  }
+  });
 
   return false;
 }
@@ -15,6 +15,7 @@ fn fizzbuzz(n) {
 
   if fizz && buzz {
     print("fizzbuzz");
+    return;
   }
 
   if fizz {
