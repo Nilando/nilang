@@ -1,5 +1,5 @@
 use crate::runtime::string::VMString;
-use crate::symbol_map::{SymID, LEN_SYM, PUSH_SYM};
+use crate::symbol_map::{SymID, INT_SYM, LEN_SYM, PUSH_SYM};
 
 use super::bytecode::Reg;
 use super::call_frame::CallFrame;
@@ -177,7 +177,7 @@ impl<'gc> VM<'gc> {
                 let lhs = self.reg_to_val(lhs);
                 let rhs = self.reg_to_val(rhs);
 
-                if let Some(value) = Value::add(lhs, rhs) {
+                if let Some(value) = Value::add(lhs, rhs, mu) {
                     self.set_reg_with_value(value, dest, mu);
                 } else {
                     return Err(self.type_error("".to_string()))
@@ -443,7 +443,7 @@ impl<'gc> VM<'gc> {
             Value::SymId(sym_id) => {
                 self.call_intrinsic_func(sym_id, dest, supplied_args, mu)?;
             }
-            _ => todo!("return runtime error for calling non func"),
+            _ => return Err(self.type_error("".to_string())),
         }
 
         Ok(())
@@ -539,6 +539,33 @@ impl<'gc> VM<'gc> {
                     }
                 } else {
                     todo!("runtime error")
+                }
+            }
+            INT_SYM => {
+                if 1 != arg_count {
+                    let msg = format!("Expect {} args, was given {}", 1, arg_count);
+                    return Err(self.wrong_num_args(msg));
+                }
+
+                let ip = self.get_ip() - 2;
+                if let ByteCode::StoreArg { src } = self.get_instr_at(ip) {
+                    let val = self.reg_to_val(src);
+                    match val {
+                        Value::Int(_) => {
+                            self.set_reg_with_value(val, dest, mu);
+                        }
+                        Value::Float(f) => {
+                            let val = Value::Int(f as i64);
+
+                            self.set_reg_with_value(val, dest, mu);
+                        }
+                        Value::String(s) => {
+                            todo!("try to conver string into int");
+                        }
+                        _ => return Err(self.type_error("xxx".to_string())),
+                    }
+                } else {
+                    todo!("internal error");
                 }
             }
             _ => todo!()
