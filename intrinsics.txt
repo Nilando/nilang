@@ -1,0 +1,56 @@
+Intrinsic Functions:
+
+Global Functions:
+int(string, int, float, null)
+str(symid, string, int, float, null)
+float(string, int, float, null)
+bool(any)
+sym(string)
+
+Bool methods:
+none for now
+
+Int methods:
+abs(self) -> int
+pow(self, (int, float)) -> int
+log(self, (int, float)) -> int
+
+Float methods:
+abs(self) -> float
+pow(self, (int, float)) -> float
+log(self, (int, float)) -> float
+floor(self) -> int
+ceil(self) -> int
+
+String methods:
+split(self, string) -> string
+push(self, string) -> self
+trim(self) -> string
+
+List methods:
+len -> int
+push(self, value) -> self
+find(self, value) -> int
+contains(self, value) -> bool
+filter(self, fn(x)) -> list
+concat(self, list) -> list
+join(self, str) -> string
+
+// this means that you can't really store the 
+// the symbols "keys", "values", or "entries" on a map
+Map methods:
+keys(self) -> [..]
+values(self) -> [..]
+entries(self) -> [[..]]
+
+Func methods: 
+args -> Int
+bind(self, List) -> Func
+
+
+self_fn = fn(self) { print("test"); };
+a = { b: self_fn };
+
+// The following are equivalent.
+a.b();
+self_fn.bind(a)();
