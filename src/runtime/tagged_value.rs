@@ -4,6 +4,7 @@ use super::closure::Closure;
 use super::func::LoadedFunc;
 use super::hash_map::GcHashMap;
 use super::list::List;
+use super::partial::Partial;
 use super::string::VMString;
 use super::value::Value;
 
@@ -14,8 +15,6 @@ pub enum ValueTag {
     Packed,
     #[ptr(f64)]
     Float,
-    #[ptr(i64)]
-    Int,
     #[ptr(List<'gc>)]
     List,
     #[ptr(LoadedFunc<'gc>)]
@@ -24,6 +23,8 @@ pub enum ValueTag {
     String,
     #[ptr(Closure<'gc>)]
     Closure,
+    #[ptr(Partial<'gc>)]
+    Partial,
     #[ptr(GcHashMap<'gc>)]
     Map,
 }
@@ -35,11 +36,6 @@ impl<'gc> From<&TaggedValue<'gc>> for Value<'gc> {
                 let v = ValueTag::get_float(value.clone()).unwrap();
 
                 Value::Float(*v)
-            }
-            ValueTag::Int => {
-                let v = ValueTag::get_int(value.clone()).unwrap();
-
-                Value::Int(*v)
             }
             ValueTag::Func => {
                 let v = ValueTag::get_func(value.clone()).unwrap();
@@ -65,6 +61,11 @@ impl<'gc> From<&TaggedValue<'gc>> for Value<'gc> {
                 let s = ValueTag::get_map(value.clone()).unwrap();
 
                 Value::Map(s)
+            }
+            ValueTag::Partial => {
+                let s = ValueTag::get_partial(value.clone()).unwrap();
+
+                Value::Partial(s)
             }
             ValueTag::Packed => {
                 let raw = value.get_stripped_raw() as u64;
@@ -158,7 +159,7 @@ pub fn unpack_tagged_value<'gc>(raw: u64) -> Value<'gc> {
     if (PackedTag::Int as u64) == packed_tag {
         let packed_int = i32::from_ne_bytes(packed_value.to_ne_bytes());
 
-        return Value::Int(packed_int as i64);
+        return Value::Int(packed_int);
     }
 
     if (PackedTag::Bool as u64) == packed_tag {

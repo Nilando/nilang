@@ -1,5 +1,5 @@
 use crate::runtime::string::VMString;
-use crate::symbol_map::{SymID, INT_SYM, LEN_SYM, PUSH_SYM};
+use crate::symbol_map::{SymID, LEN_SYM, PUSH_SYM};
 
 use super::op::{
     add,
@@ -109,7 +109,7 @@ impl<'gc> VM<'gc> {
                 self.set_reg_with_value(local, dest, mu);
             }
             ByteCode::LoadInt { dest, val } => {
-                let value = Value::Int(val as i64);
+                let value = Value::Int(val as i32);
 
                 self.set_reg_with_value(value, dest, mu);
             }
@@ -527,74 +527,8 @@ impl<'gc> VM<'gc> {
     fn call_intrinsic_func(&self, sym_id: SymID, dest: Reg, arg_count: usize, mu: &'gc Mutator) -> Result<(), RuntimeError> {
         match sym_id {
             LEN_SYM => {
-                self.expect_args(1, arg_count)?;
-
-                let ip = self.get_ip() - 2;
-                if let ByteCode::StoreArg { src } = self.get_instr_at(ip) {
-                    let val = self.reg_to_val(src);
-                    match val {
-                        Value::List(list) => {
-                            let val = Value::Int(list.len() as i64);
-
-                            self.set_reg_with_value(val, dest, mu);
-                        }
-                        Value::String(list) => {
-                            let val = Value::Int(list.len() as i64);
-
-                            self.set_reg_with_value(val, dest, mu);
-                        }
-                        _ => todo!("unimplemented")
-                    }
-                } else {
-                    todo!("runtime error")
-                }
             },
             PUSH_SYM => {
-                self.expect_args(2, arg_count)?;
-
-                let list_ip = self.get_ip() - 3;
-                let item_ip = self.get_ip() - 2;
-                if let (ByteCode::StoreArg { src: list_reg }, ByteCode::StoreArg { src: item_reg }) = (self.get_instr_at(list_ip), self.get_instr_at(item_ip)) {
-                    let list = self.reg_to_val(list_reg);
-                    let item = self.reg_to_val(item_reg);
-
-                    match (list, item) {
-                        (Value::List(list), item)=> {
-                            list.push(Value::into_tagged(item, mu), mu);
-
-                            let val = Value::Bool(true);
-
-                            self.set_reg_with_value(val, dest, mu);
-                        }
-                        _ => todo!("runtime error")
-                    }
-                } else {
-                    todo!("runtime error")
-                }
-            }
-            INT_SYM => {
-                self.expect_args(1, arg_count)?;
-
-                let ip = self.get_ip() - 2;
-                if let ByteCode::StoreArg { src } = self.get_instr_at(ip) {
-                    let val = self.reg_to_val(src);
-                    match val {
-                        Value::Int(_) => {
-                            self.set_reg_with_value(val, dest, mu);
-                        }
-                        Value::Float(f) => {
-                            let val = Value::Int(f as i64);
-
-                            self.set_reg_with_value(val, dest, mu);
-                        }
-                        Value::String(s) => {
-                            todo!("try to convert string into int");
-                        }
-                        _ => return Err(self.type_error("xxx".to_string())),
-                    }
-                } else {
-                    todo!("internal error");
-                }
             }
             _ => todo!()
         }

@@ -127,9 +127,18 @@ fn translate_load_const(
                 val: immediate,
             },
             _ => {
-                let local = Local::Int(*i);
-                let id = get_or_create_local(local, func);
-                ByteCode::LoadLocal { dest: dest_reg, id }
+                match i32::try_from(*i) {
+                    Ok(local) => {
+                        let local = Local::Int(local);
+                        let id = get_or_create_local(local, func);
+                        ByteCode::LoadLocal { dest: dest_reg, id }
+                    }
+                    _ => {
+                        let local = Local::Float(*i as f64);
+                        let id = get_or_create_local(local, func);
+                        ByteCode::LoadLocal { dest: dest_reg, id }
+                    }
+                }
             }
         },
         TacConst::Sym(i) => match u16::try_from(*i) {

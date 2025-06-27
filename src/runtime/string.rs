@@ -1,5 +1,4 @@
 use std::cell::Cell;
-use std::fmt::{Debug, Display};
 
 use sandpit::{GcVec, Mutator, Trace};
 

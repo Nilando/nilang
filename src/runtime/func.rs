@@ -10,7 +10,7 @@ use super::vm::ByteCode;
 pub enum LoadedLocal<'gc> {
     Func(Gc<'gc, LoadedFunc<'gc>>),
     SymId(u32),
-    Int(i64),
+    Int(i32),
     Float(f64),
     Text(Gc<'gc, [char]>),
 }
@@ -96,7 +96,7 @@ impl<'gc> LoadedFunc<'gc> {
 pub enum Local {
     FuncId(u32),
     Sym(u32),
-    Int(i64),
+    Int(i32),
     Float(f64),
     String(String),
 }

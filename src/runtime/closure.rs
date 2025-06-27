@@ -7,7 +7,6 @@ use super::tagged_value::{TaggedValue, ValueTag};
 pub struct Closure<'gc> {
     func: Gc<'gc, LoadedFunc<'gc>>,
     upvalues: Gc<'gc, [TaggedValue<'gc>]>,
-    // bound_args: GcVec<'gc, TaggedValue<'gc>>
 }
 
 impl<'gc> Closure<'gc> {

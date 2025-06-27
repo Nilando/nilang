@@ -15,8 +15,8 @@ impl<'gc> List<'gc> {
         }
     }
 
-    pub fn at(&self, idx: i64) -> Value<'gc> {
-        Value::from(&self.vec.get_idx(idx as usize).unwrap())
+    pub fn at(&self, idx: i32) -> Value<'gc> {
+        Value::from(&self.vec.get_idx(usize::try_from(idx).unwrap()).unwrap())
     }
 
     pub fn len(&self) -> u64 {

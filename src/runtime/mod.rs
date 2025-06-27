@@ -9,6 +9,7 @@ mod string;
 mod hash_map;
 mod closure;
 mod op;
+mod partial;
 
 #[cfg(test)]
 mod tests;

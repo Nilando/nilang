@@ -6,7 +6,14 @@ use super::string::VMString;
 pub fn add<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, String> {
     match (lhs, rhs) {
         (Value::Float(lhs), Value::Float(rhs)) => Ok(Value::Float(lhs + rhs)),
-        (Value::Int(lhs), Value::Int(rhs)) => Ok(Value::Int(lhs + rhs)),
+        (Value::Int(lhs), Value::Int(rhs)) => {
+            Ok(
+                match lhs.checked_add(rhs) {
+                    Some(val) => Value::Int(val),
+                    None => Value::Float(lhs as f64 + rhs as f64)
+                }
+            )
+        }
         (Value::Float(f), Value::Int(i)) | (Value::Int(i), Value::Float(f)) => {
             Ok(Value::Float(f + i as f64))
         }
