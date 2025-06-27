@@ -1,9 +1,8 @@
 Intrinsic Functions:
 
 Global Functions:
-int(string, int, float, null)
-str(symid, string, int, float, null)
-float(string, int, float, null)
+num(string, num, null)
+str(symid, string, num, null)
 bool(any)
 sym(string)
 
@@ -11,16 +10,11 @@ Bool methods:
 none for now
 
 Int methods:
-abs(self) -> int
-pow(self, (int, float)) -> int
-log(self, (int, float)) -> int
-
-Float methods:
-abs(self) -> float
-pow(self, (int, float)) -> float
-log(self, (int, float)) -> float
-floor(self) -> int
-ceil(self) -> int
+abs(self) -> num
+pow(self, num) -> num
+log(self, num) -> num
+floor(self) -> num
+ceil(self) -> num
 
 String methods:
 split(self, string) -> List
@@ -28,9 +22,9 @@ push(self, string) -> self
 trim(self) -> string
 
 List methods:
-len -> int
+len -> num
 push(self, value) -> self
-find(self, value) -> int
+find(self, value) -> num
 contains(self, value) -> bool
 compact(self, value) -> list
 filter(self, fn(x)) -> list
@@ -45,7 +39,7 @@ values(self) -> list
 entries(self) -> list
 
 Func methods: 
-args -> Int
+args -> num
 bind(self, List) -> Func
 
 self_fn = fn(self) { print("test"); };

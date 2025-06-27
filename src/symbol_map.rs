@@ -15,9 +15,9 @@ pub struct SymbolMap {
 pub const SELF_SYM:     SymID = 0;
 pub const LEN_SYM:      SymID = 1;
 pub const PUSH_SYM:     SymID = 2;
-pub const INT_SYM:      SymID = 3;
+pub const NUM_SYM:      SymID = 3;
 pub const STR_SYM:      SymID = 4;
-pub const FLOAT_SYM:    SymID = 5;
+// pub const FLOAT_SYM:    SymID = 5;
 pub const BOOL_SYM:     SymID = 6;
 pub const SYM_SYM:      SymID = 7;
 pub const ABS_SYM:      SymID = 8;
@@ -61,7 +61,7 @@ impl SymbolMap {
     pub fn is_intrinsic(sym: SymID) -> bool {
         match sym {
             LEN_SYM
-            | INT_SYM
+            | NUM_SYM
             | PUSH_SYM => true,
             _ => false
         }

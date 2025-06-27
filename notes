@@ -2,7 +2,6 @@ VERSION 0.1.0
 
 FEATURE BACKLOG:
 - String Interpolation
-- add partials
 - implement intrinsics
 - importing and exporting
 - save assigned vars in repl
@@ -23,6 +22,10 @@ GOALS
 - complete AOC 2025 with this language
 - learn about compilers and interpreters
 - have fun
+
+IMPORTANT LESSONS
+- Nanboxing is probably better than tagged pointers
+- conservative GC is probably better than exact GC
 
 DECEMBER -> COMPLETE AOC
 NOVEMBER
