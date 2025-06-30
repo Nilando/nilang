@@ -1,5 +1,5 @@
 use crate::runtime::string::VMString;
-use crate::symbol_map::{SymID, LEN_SYM, PUSH_SYM};
+use crate::symbol_map::{SymID, NUM_SYM, LEN_SYM, PUSH_SYM};
 
 use super::op::{
     add,
@@ -526,9 +526,11 @@ impl<'gc> VM<'gc> {
 
     fn call_intrinsic_func(&self, sym_id: SymID, dest: Reg, arg_count: usize, mu: &'gc Mutator) -> Result<(), RuntimeError> {
         match sym_id {
-            LEN_SYM => {
-            },
-            PUSH_SYM => {
+            NUM_SYM => {
+                if arg_count == 0 {
+                    self.set_reg_with_value(Value::Int(0), dest, mu);
+                    return Ok(());
+                }
             }
             _ => todo!()
         }

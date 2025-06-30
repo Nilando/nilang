@@ -1,0 +1,17 @@
+
+print(num());
+print(num(1));
+
+/*
+print(num("2"));
+print(num("3.5"));
+
+num = 4;
+print(num);
+print(x(5));
+*/
+
+%%%%
+
+0
+1

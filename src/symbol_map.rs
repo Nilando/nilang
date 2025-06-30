@@ -3,9 +3,6 @@ use std::rc::Rc;
 
 pub type SymID = u32;
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub struct SmallSymID(u16);
-
 pub struct SymbolMap {
     str_to_id: HashMap<Rc<String>, SymID>,
     id_to_str: Vec<Rc<String>>,
@@ -75,7 +72,7 @@ impl SymbolMap {
         self.insert("self".to_string());
         self.insert("len".to_string());
         self.insert("push".to_string());
-        self.insert("int".to_string());
+        self.insert("num".to_string());
     }
 
     fn insert(&mut self, str: String) -> SymID {
