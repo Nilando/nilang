@@ -31,21 +31,14 @@ pub enum Op {
     Lte,
     Gt,
     Gte,
-    Modulo
+    Modulo,
 }
 
 impl Op {
     pub fn is_commutative(&self) -> bool {
         // TODO: And and Or are commutative BUT they can't always be treated
         // as such due to short circuiting and the possibility for side effects
-        match self {
-            Op::Plus |
-            Op::Multiply |
-            Op::Equal |
-            Op::NotEqual
-            => true,
-            _ => false
-        }
+        matches!(self, Op::Plus | Op::Multiply | Op::Equal | Op::NotEqual)
     }
 }
 
@@ -139,7 +132,11 @@ impl<'a> Lexer<'a> {
     }
 
     // 0 is equivalent to peek(), 1 would be the token after peek() and so on
-    pub fn peek_nth(&mut self, mut n: usize, syms: &mut SymbolMap) -> Result<Spanned<Token<'a>>, Spanned<LexError>> {
+    pub fn peek_nth(
+        &mut self,
+        mut n: usize,
+        syms: &mut SymbolMap,
+    ) -> Result<Spanned<Token<'a>>, Spanned<LexError>> {
         if n == 0 {
             return self.peek(syms);
         }
@@ -153,7 +150,6 @@ impl<'a> Lexer<'a> {
             n += 1;
         }
 
-
         for _ in 1..n {
             let _ = self.lex_token(syms);
         }
@@ -163,7 +159,9 @@ impl<'a> Lexer<'a> {
         // rewind to where we started
         self.eof = eof;
         self.pos = starting_pos;
-        self.chars = self.input[starting_pos..(self.input.len())].chars().peekable();
+        self.chars = self.input[starting_pos..(self.input.len())]
+            .chars()
+            .peekable();
 
         token
     }
@@ -224,7 +222,7 @@ impl<'a> Lexer<'a> {
     fn skip_ignored_input(&mut self) -> Result<(), Spanned<LexError>> {
         loop {
             if !self.lex_whitespace() && !self.lex_comment()? {
-                return Ok(())
+                return Ok(());
             }
         }
     }
@@ -444,7 +442,7 @@ impl<'a> Lexer<'a> {
                     self.advance();
 
                     if self.read('=') {
-                        return Ok(Some(Token::Op(Op::Lte)))
+                        return Ok(Some(Token::Op(Op::Lte)));
                     } else {
                         return Ok(Some(Token::Op(Op::Lt)));
                     }
@@ -496,15 +494,11 @@ impl<'a> Lexer<'a> {
     }
 
     fn read_until(&mut self, c: char) {
-        loop {
-            if let Some(peek) = self.chars.peek() {
-                if *peek == c {
-                    break;
-                } else {
-                    self.advance();
-                }
-            } else {
+        while let Some(peek) = self.chars.peek() {
+            if *peek == c {
                 break;
+            } else {
+                self.advance();
             }
         }
     }
@@ -535,8 +529,8 @@ impl<'a> Lexer<'a> {
 
 #[cfg(test)]
 mod tests {
-    use pretty_assertions::assert_eq;
     use super::*;
+    use pretty_assertions::assert_eq;
 
     fn assert_src_tokens(source: &str, tokens: Vec<Token>, mut symbol_map: SymbolMap) {
         let mut lexer = Lexer::new(source);
@@ -642,7 +636,10 @@ mod tests {
         let mut lexer = Lexer::new(source);
 
         for i in 0..5 {
-            assert_eq!(lexer.peek_nth(i, &mut syms).unwrap().item, Token::Int(i as i64));
+            assert_eq!(
+                lexer.peek_nth(i, &mut syms).unwrap().item,
+                Token::Int(i as i64)
+            );
         }
 
         for i in 0..5 {
@@ -665,9 +662,7 @@ mod tests {
 
         "#;
 
-        let tokens = vec![
-            Token::Int(69),
-        ];
+        let tokens = vec![Token::Int(69)];
 
         assert_src_tokens(source, tokens, syms);
     }

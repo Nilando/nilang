@@ -25,7 +25,7 @@ block. Keep a stack of versions to iteratively apply to each memory access.
 Every time an instruction clobbers an access apply a new version to that access.
 
 step 5: Output
-The final output of the algorithm is a map of numbered "Versions" that map to 
+The final output of the algorithm is a map of numbered "Versions" that map to
 instructions that perform a memory access, like store/load. This versioning map
 can be used by a subsequent GVN pass perform better optimization by equating same
 versioned accesses to be accessing the same value.

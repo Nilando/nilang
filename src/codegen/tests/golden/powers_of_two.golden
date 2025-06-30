@@ -32,12 +32,12 @@ JNT  3, 2
 INT  0, 1
 RTN  0
 INT  2, 1
-SUB  5, 1, 2
-COPY 1, 0
-GT   4, 5, 3
+SUB  1, 1, 2
+SWAP 0, 1
+GT   4, 0, 3
 JNT  4, 4
 MULT 1, 1, 1
-SUB  5, 5, 2
+SUB  0, 0, 2
 JMP  -4
 RTN  1
 === END ===

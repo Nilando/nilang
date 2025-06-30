@@ -1,0 +1,42 @@
+use sandpit::TraceLeaf;
+
+pub type Reg = u8;
+
+#[derive(TraceLeaf, Debug, Copy, Clone)]
+pub enum ByteCode {
+    Noop,
+    Swap { r1: Reg, r2: Reg },
+    Copy { dest: Reg, src: Reg },
+    Print { src: Reg },
+    Read { dest: Reg },
+    LoadGlobal { dest: Reg, sym: Reg },
+    StoreGlobal { src: Reg, sym: Reg },
+    MemLoad { dest: Reg, store: Reg, key: Reg },
+    MemStore { store: Reg, key: Reg, src: Reg },
+    NewList { dest: Reg },
+    NewMap { dest: Reg },
+    LoadBool { dest: Reg, val: bool },
+    LoadNull { dest: Reg },
+    LoadInt { dest: Reg, val: i16 },
+    LoadSym { dest: Reg, val: u16 },
+    LoadLocal { dest: Reg, id: u16 },
+    LoadUpvalue { dest: Reg, id: u16 },
+    StoreUpvalue { func: Reg, src: Reg },
+    Equality { dest: Reg, lhs: Reg, rhs: Reg },
+    Inequality { dest: Reg, lhs: Reg, rhs: Reg },
+    Gt { dest: Reg, lhs: Reg, rhs: Reg },
+    Gte { dest: Reg, lhs: Reg, rhs: Reg },
+    Lt { dest: Reg, lhs: Reg, rhs: Reg },
+    Lte { dest: Reg, lhs: Reg, rhs: Reg },
+    Div { dest: Reg, lhs: Reg, rhs: Reg },
+    Mult { dest: Reg, lhs: Reg, rhs: Reg },
+    Add { dest: Reg, lhs: Reg, rhs: Reg },
+    Sub { dest: Reg, lhs: Reg, rhs: Reg },
+    Modulo { dest: Reg, lhs: Reg, rhs: Reg },
+    StoreArg { src: Reg },
+    Call { dest: Reg, src: Reg },
+    Return { src: Reg },
+    Jump { offset: i16 },
+    Jnt { src: Reg, offset: i16 },
+    Jit { src: Reg, offset: i16 },
+}

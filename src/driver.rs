@@ -1,21 +1,21 @@
 mod config;
 
-use crate::runtime::vm::{func_to_string as bytecode_to_string};
 use crate::codegen::generate_func;
-use crate::parser::{parse_program, ParseError, Spanned};
-use crate::symbol_map::SymbolMap;
 use crate::ir::{func_to_string, lower_ast, optimize_func};
+use crate::parser::{parse_program, ParseError, Spanned};
+use crate::runtime::{func_to_string as bytecode_to_string, Runtime, RuntimeError};
+use crate::symbol_map::SymbolMap;
 
 pub use config::Config;
 
-use std::io::{stdin, stdout, Write};
 use std::fs::File;
+use std::io::{stdin, stdout, Write};
 
 use termion::color;
+use termion::cursor::DetectCursorPos;
 use termion::event::{Event, Key};
 use termion::input::TermRead;
 use termion::raw::IntoRawMode;
-use termion::cursor::DetectCursorPos;
 
 pub fn execute(config: Config) {
     if config.repl_mode() {
@@ -30,13 +30,11 @@ fn run_script(mut config: Config) {
     let mut symbols = SymbolMap::new();
     let parse_result = parse_program(input.as_str(), &mut symbols);
 
-    if !parse_result.errors.is_empty() {
-        display_parse_errors(&input, &parse_result.errors, config.file);
-
-        return;
+    if let Err(ref parse_errors) = parse_result {
+        display_parse_errors(&input, parse_errors, config.file);
     }
 
-    let ast = parse_result.value.unwrap();
+    let ast = parse_result.unwrap();
 
     if let Some(path) = config.ast_output_path.as_ref() {
         let ast_string = format!("{:#?}", ast);
@@ -56,7 +54,6 @@ fn run_script(mut config: Config) {
 
         for f in ir.iter() {
             ir_string.push_str(&func_to_string(f, &mut symbols));
-
         }
 
         output_string(ir_string, path);
@@ -78,11 +75,21 @@ fn run_script(mut config: Config) {
         output_string(bc_str, path);
     }
 
-    // TODO: Fix run_program to work with Vec<Func>
-    // run_program(program);
+    if config.dry_run {
+        println!("DRY RUN: program compiled successfully");
+        return;
+    }
+
+    let mut runtime = Runtime::init(program, symbols);
+    match runtime.run() {
+        Ok(()) => {}
+        Err(err) => {
+            display_runtime_error(&input, err);
+        }
+    }
 }
 
-fn run_repl(_config: Config) {
+fn run_repl(config: Config) {
     println!("ENTERING REPL");
     let stdin = stdin();
     let mut stdout = stdout().into_raw_mode().unwrap();
@@ -109,11 +116,61 @@ fn run_repl(_config: Config) {
                 let parse_result = parse_program(&input, &mut symbols);
 
                 let _ = stdout.suspend_raw_mode();
-                if !parse_result.errors.is_empty() {
-                    display_parse_errors(&input, &parse_result.errors, None);
+                if let Err(ref parse_errors) = parse_result {
+                    display_parse_errors(&input, parse_errors, None);
                 }
 
-                lower_ast(parse_result.value.unwrap(), false);
+                let ast = parse_result.unwrap();
+
+                let mut ir = lower_ast(ast, false);
+
+                if !config.no_optimize {
+                    for func in ir.iter_mut() {
+                        optimize_func(func);
+                    }
+                }
+
+                if let Some(path) = config.ir_output_path.as_ref() {
+                    let mut ir_string = String::new();
+
+                    for f in ir.iter() {
+                        ir_string.push_str(&func_to_string(f, &mut symbols));
+                    }
+
+                    output_string(ir_string, path);
+                }
+
+                let mut program = vec![];
+                for ir_func in ir.into_iter() {
+                    let func = generate_func(ir_func);
+                    program.push(func);
+                }
+
+                if let Some(path) = config.bytecode_output_path.as_ref() {
+                    let mut bc_str = String::new();
+
+                    for func in program.iter() {
+                        bc_str.push_str(&bytecode_to_string(func));
+                    }
+
+                    output_string(bc_str, path);
+                }
+
+                if config.dry_run {
+                    println!("DRY RUN: program compiled successfully");
+                    return;
+                }
+
+                let mut runtime = Runtime::init(program, symbols);
+                match runtime.run() {
+                    Ok(()) => {}
+                    Err(err) => {
+                        display_runtime_error(&input, err);
+                    }
+                }
+
+                symbols = runtime.into_symbols();
+
                 let _ = stdout.activate_raw_mode();
 
                 inputs.push(input.clone());
@@ -152,7 +209,9 @@ fn run_repl(_config: Config) {
                 let left = termion::cursor::Left(1);
                 let (x, _) = stdout.cursor_pos().expect("failed to get cursor position");
 
-                if x <= 3 { continue; }
+                if x <= 3 {
+                    continue;
+                }
 
                 write!(stdout, "{}", left).unwrap();
                 input_pos -= 1;
@@ -174,7 +233,14 @@ fn run_repl(_config: Config) {
 
                 input_pos += 1;
 
-                write!(stdout, "\r{}\r> {} {}", " ".repeat(80), input, termion::cursor::Left(((input.len() + 1) - input_pos) as u16)).unwrap();
+                write!(
+                    stdout,
+                    "\r{}\r> {} {}",
+                    " ".repeat(80),
+                    input,
+                    termion::cursor::Left(((input.len() + 1) - input_pos) as u16)
+                )
+                .unwrap();
             }
             Event::Key(Key::Backspace) => {
                 if !input.is_empty() {
@@ -184,7 +250,14 @@ fn run_repl(_config: Config) {
                     } else {
                         input.pop();
                     }
-                    write!(stdout, "\r{}\r> {} {}", " ".repeat(80), input, termion::cursor::Left(((input.len() + 1) - input_pos) as u16)).unwrap();
+                    write!(
+                        stdout,
+                        "\r{}\r> {} {}",
+                        " ".repeat(80),
+                        input,
+                        termion::cursor::Left(((input.len() + 1) - input_pos) as u16)
+                    )
+                    .unwrap();
                 }
             }
             Event::Key(Key::Ctrl('c')) | Event::Key(Key::Ctrl('d')) => {
@@ -197,7 +270,14 @@ fn run_repl(_config: Config) {
             }
             Event::Key(Key::Ctrl('a')) => {
                 input_pos = 0;
-                write!(stdout, "\r{}\r> {} {}", " ".repeat(80), input, termion::cursor::Left(((input.len() + 1) - input_pos) as u16)).unwrap();
+                write!(
+                    stdout,
+                    "\r{}\r> {} {}",
+                    " ".repeat(80),
+                    input,
+                    termion::cursor::Left(((input.len() + 1) - input_pos) as u16)
+                )
+                .unwrap();
             }
             _ => {}
         }
@@ -205,11 +285,64 @@ fn run_repl(_config: Config) {
     }
 }
 
-fn display_parse_errors(
-    input: &str,
-    errors: &[Spanned<ParseError>],
-    file_name: Option<String>,
-) {
+fn display_runtime_error(input: &str, err: RuntimeError) {
+    let mut line_start = 0;
+    let mut line_num = 1;
+    let lines: Vec<&str> = input.lines().collect();
+    let blue = color::Fg(color::Blue);
+    let red = color::Fg(color::Red);
+    let reset = color::Fg(color::Reset);
+    let file_name = Some("temp");
+
+    for line in lines.iter() {
+        let line_end = line_start + line.len();
+        let span = err.span.unwrap();
+
+        while span.start < line_end {
+            if span.start >= line_start && span.start < line_end {
+                println!("{}Runtime Error{}: {:?}", red, reset, err.kind);
+                if let Some(msg) = err.message {
+                    println!("msg: {}", msg);
+                }
+
+                if let Some(ref file_name) = file_name {
+                    println!(
+                        "{}-->{} {}:{}:{}",
+                        blue,
+                        reset,
+                        file_name,
+                        line_num,
+                        span.start - line_start
+                    );
+                    println!("   {}|{}", blue, reset);
+                    println!("{}{} |{} {}", blue, line_num, reset, line);
+                } else {
+                    println!("   {}|{}", blue, reset);
+                    println!("   | {}", line);
+                }
+
+                let mut highlight_line = format!("   {}|{} ", blue, reset);
+                for (i, _) in line.chars().enumerate() {
+                    let pos = line_start + i;
+                    if pos >= span.start && pos < span.end {
+                        highlight_line.push_str(&format!("{}^{}", red, reset));
+                    } else {
+                        highlight_line.push(' ');
+                    }
+                }
+
+                println!("{}", highlight_line);
+                println!();
+                return;
+            }
+        }
+
+        line_start = line_end + 1;
+        line_num += 1;
+    }
+}
+
+fn display_parse_errors(input: &str, errors: &[Spanned<ParseError>], file_name: Option<String>) {
     let mut line_start = 0;
     let mut line_num = 1;
     let mut error_idx = 0;
@@ -267,7 +400,8 @@ fn output_string(output: String, path: &Option<String>) {
     if let Some(path) = path.as_ref() {
         let mut file = File::create(path).expect("Failed to create file");
 
-        file.write_all(output.as_bytes()).expect("Failed to write to file");
+        file.write_all(output.as_bytes())
+            .expect("Failed to write to file");
     } else {
         println!("{}", output);
     }

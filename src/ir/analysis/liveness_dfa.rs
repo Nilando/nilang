@@ -1,9 +1,9 @@
 use crate::ir::Func;
 
-use super::super::block::{BlockId, Block};
+use super::super::block::{Block, BlockId};
 use super::super::tac::VReg;
 use super::dfa::DFA;
-use std::collections::{BTreeSet, BTreeMap};
+use std::collections::{BTreeMap, BTreeSet};
 
 // This works whether or not the IR is in SSA form.
 // That is helpful b/c a liveness analysis is needed to put the IR into SSA form,
@@ -17,14 +17,14 @@ pub struct LivenessDFA {
 
 impl LivenessDFA {
     pub fn is_live_on_entry(&self, block_id: BlockId, var: &VReg) -> bool {
-        self.live_in.get(&block_id).unwrap().get(&var).is_some()
+        self.live_in.get(&block_id).unwrap().get(var).is_some()
     }
 
     pub fn get_live_out(&mut self, block_id: BlockId) -> &mut BTreeSet<VReg> {
         self.live_out.get_mut(&block_id).unwrap()
     }
 
-    pub fn new() -> Self { 
+    pub fn new() -> Self {
         Self {
             live_in: BTreeMap::new(),
             live_out: BTreeMap::new(),
@@ -37,8 +37,11 @@ impl DFA for LivenessDFA {
 
     type Data = BTreeSet<VReg>;
 
-
-    fn complete(&mut self, inputs: BTreeMap<BlockId, Self::Data>, outputs: BTreeMap<BlockId, Self::Data>) {
+    fn complete(
+        &mut self,
+        inputs: BTreeMap<BlockId, Self::Data>,
+        outputs: BTreeMap<BlockId, Self::Data>,
+    ) {
         self.live_in = inputs;
         self.live_out = outputs;
     }
@@ -52,7 +55,7 @@ impl DFA for LivenessDFA {
 
             for phi_node in successor.get_phi_nodes() {
                 let arg = phi_node.srcs.get(&block.get_id()).unwrap();
-                
+
                 live_out.insert(*arg);
             }
         }
@@ -77,7 +80,7 @@ impl DFA for LivenessDFA {
         for instr in block.get_instrs().iter() {
             for v in instr.used_regs() {
                 if let Some(var) = v {
-                    if defined.get(&var).is_none() {
+                    if defined.get(var).is_none() {
                         updated_flag |= live_in.insert(*var);
                     }
                 }
@@ -93,7 +96,6 @@ impl DFA for LivenessDFA {
         for var in live_out.difference(&defined) {
             updated_flag |= live_in.insert(*var);
         }
-
 
         updated_flag
     }

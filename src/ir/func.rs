@@ -1,6 +1,6 @@
-use super::func_printer::VRegMap;
-use super::tac::{VReg, FuncID, LabelID};
 use super::block::{Block, BlockId};
+use super::func_printer::VRegMap;
+use super::tac::{FuncID, LabelID, VReg};
 use std::fmt::Debug;
 use std::iter::Iterator;
 
@@ -10,7 +10,7 @@ pub struct Func {
     args: Vec<VReg>,
     blocks: Vec<Block>,
     vreg_counter: u32,
-    vreg_map: Option<VRegMap>
+    vreg_map: Option<VRegMap>,
 }
 
 impl Func {
@@ -20,7 +20,7 @@ impl Func {
             args,
             blocks,
             vreg_counter,
-            vreg_map: None
+            vreg_map: None,
         }
     }
 
@@ -64,7 +64,11 @@ impl Func {
     }
 
     pub fn get_block_from_label(&self, label: LabelID) -> BlockId {
-        self.blocks.iter().find(|block| block.get_label() == Some(label)).unwrap().get_id()
+        self.blocks
+            .iter()
+            .find(|block| block.get_label() == Some(label))
+            .unwrap()
+            .get_id()
     }
 
     pub fn get_entry_block(&self) -> &Block {
@@ -88,6 +92,8 @@ impl Func {
     }
 
     pub fn try_get_block_mut(&mut self, block_id: BlockId) -> Option<&mut Block> {
-        self.blocks.iter_mut().find(|block| block.get_id() == block_id)
+        self.blocks
+            .iter_mut()
+            .find(|block| block.get_id() == block_id)
     }
 }

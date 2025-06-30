@@ -1,6 +1,13 @@
+use sandpit::{Gc, Mutator, Trace, TraceLeaf};
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct PackedSpans {
     spans: Vec<(Span, usize)>,
+}
+
+#[derive(Trace, Clone)]
+pub struct GcPackedSpans<'gc> {
+    spans: Gc<'gc, [(Span, usize)]>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -9,10 +16,10 @@ pub struct Spanned<T> {
     pub span: (usize, usize),
 }
 
-#[derive(Debug, PartialEq, Eq, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone, TraceLeaf)]
 pub struct Span {
-    start: usize,
-    end: usize
+    pub start: usize,
+    pub end: usize,
 }
 
 /*
@@ -22,6 +29,27 @@ impl Span {
     }
 }
 */
+impl<'gc> GcPackedSpans<'gc> {
+    pub fn get(&self, i: usize) -> Option<&Span> {
+        for k in 0..self.spans.len() {
+            let (span, span_start) = &self.spans[k];
+            if i < *span_start {
+                continue;
+            }
+
+            if k + 1 == self.spans.len() {
+                return Some(span);
+            }
+
+            let span_end = &self.spans[k + 1].1;
+            if i >= *span_start && i < *span_end {
+                return Some(span);
+            }
+        }
+
+        None
+    }
+}
 
 impl<T> Spanned<T> {
     pub fn new(item: T, span: (usize, usize)) -> Self {
@@ -29,7 +57,10 @@ impl<T> Spanned<T> {
     }
 
     pub fn get_span(&self) -> Span {
-        Span { start: self.span.0, end: self.span.1 }
+        Span {
+            start: self.span.0,
+            end: self.span.1,
+        }
     }
 
     pub fn map<F, B>(self, f: F) -> Spanned<B>
@@ -45,9 +76,7 @@ impl<T> Spanned<T> {
 
 impl PackedSpans {
     pub fn new() -> Self {
-        Self {
-            spans: vec![],
-        }
+        Self { spans: vec![] }
     }
 
     pub fn push(&mut self, span: Span, item_number: usize) {
@@ -60,7 +89,13 @@ impl PackedSpans {
         }
     }
 
-    pub fn is_empty(&self) -> bool {
+    pub fn into_gc<'gc>(&self, mu: &'gc Mutator) -> GcPackedSpans<'gc> {
+        GcPackedSpans {
+            spans: mu.alloc_array_from_slice(self.spans.as_slice()),
+        }
+    }
+
+    pub fn _is_empty(&self) -> bool {
         self.spans.is_empty()
     }
 
@@ -72,12 +107,12 @@ impl PackedSpans {
             }
 
             if k + 1 == self.spans.len() {
-                return Some(&span);
+                return Some(span);
             }
 
             let span_end = &self.spans[k + 1].1;
             if i >= *span_start && i < *span_end {
-                return Some(&span);
+                return Some(span);
             }
         }
 
@@ -109,7 +144,6 @@ impl PackedSpans {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -125,8 +159,8 @@ mod tests {
     fn single_span() {
         let mut ps = PackedSpans::new();
 
-        ps.push(Span { start: 0, end: 1}, 1);
-        
+        ps.push(Span { start: 0, end: 1 }, 1);
+
         assert_eq!(ps.get(0), None);
         assert_eq!(ps.get(1), Some(&Span { start: 0, end: 1 }));
         assert_eq!(ps.get(2), Some(&Span { start: 0, end: 1 }));
@@ -136,10 +170,10 @@ mod tests {
     fn multiple_spans_close_together() {
         let mut ps = PackedSpans::new();
 
-        ps.push(Span { start: 0, end: 0}, 1);
-        ps.push(Span { start: 1, end: 1}, 2);
-        ps.push(Span { start: 2, end: 2}, 3);
-        
+        ps.push(Span { start: 0, end: 0 }, 1);
+        ps.push(Span { start: 1, end: 1 }, 2);
+        ps.push(Span { start: 2, end: 2 }, 3);
+
         assert_eq!(ps.get(0), None);
         assert_eq!(ps.get(1), Some(&Span { start: 0, end: 0 }));
         assert_eq!(ps.get(2), Some(&Span { start: 1, end: 1 }));
@@ -151,14 +185,13 @@ mod tests {
     fn multiple_spans_spread_out() {
         let mut ps = PackedSpans::new();
 
-        ps.push(Span { start: 0, end: 0}, 10);
-        ps.push(Span { start: 1, end: 1}, 20);
-        ps.push(Span { start: 2, end: 2}, 30);
-        
+        ps.push(Span { start: 0, end: 0 }, 10);
+        ps.push(Span { start: 1, end: 1 }, 20);
+        ps.push(Span { start: 2, end: 2 }, 30);
+
         assert_eq!(ps.get(0), None);
         assert_eq!(ps.get(5), None);
         assert_eq!(ps.get(9), None);
-
 
         assert_eq!(ps.get(10), Some(&Span { start: 0, end: 0 }));
         assert_eq!(ps.get(15), Some(&Span { start: 0, end: 0 }));
@@ -177,102 +210,102 @@ mod tests {
     fn push_the_same_span() {
         let mut ps = PackedSpans::new();
 
-        ps.push(Span { start: 0, end: 0}, 10);
-        ps.push(Span { start: 0, end: 0}, 11);
-        ps.push(Span { start: 0, end: 0}, 12);
+        ps.push(Span { start: 0, end: 0 }, 10);
+        ps.push(Span { start: 0, end: 0 }, 11);
+        ps.push(Span { start: 0, end: 0 }, 12);
 
-        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 0, end: 0}, 10));
+        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 0, end: 0 }, 10));
     }
 
     #[test]
     fn removing_span() {
         let mut ps = PackedSpans::new();
 
-        ps.push(Span { start: 0, end: 0}, 0);
+        ps.push(Span { start: 0, end: 0 }, 0);
         ps.remove(1);
 
-        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 0, end: 0}, 0));
+        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 0, end: 0 }, 0));
     }
 
     #[test]
     fn removing_sandwhiched_span() {
         let mut ps = PackedSpans::new();
 
-        ps.push(Span { start: 0, end: 0}, 0);
-        ps.push(Span { start: 1, end: 1}, 1);
-        ps.push(Span { start: 2, end: 2}, 2);
+        ps.push(Span { start: 0, end: 0 }, 0);
+        ps.push(Span { start: 1, end: 1 }, 1);
+        ps.push(Span { start: 2, end: 2 }, 2);
         ps.remove(1);
 
-        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 2, end: 2}, 1));
-        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 0, end: 0}, 0));
+        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 2, end: 2 }, 1));
+        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 0, end: 0 }, 0));
     }
 
     #[test]
     fn removing_past_span_end() {
         let mut ps = PackedSpans::new();
 
-        ps.push(Span { start: 0, end: 0}, 0);
+        ps.push(Span { start: 0, end: 0 }, 0);
         ps.remove(10);
 
-        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 0, end: 0}, 0));
+        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 0, end: 0 }, 0));
     }
 
     #[test]
     fn removing_before_span_start() {
         let mut ps = PackedSpans::new();
 
-        ps.push(Span { start: 0, end: 0}, 1);
+        ps.push(Span { start: 0, end: 0 }, 1);
         ps.remove(0);
 
-        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 0, end: 0}, 0));
+        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 0, end: 0 }, 0));
     }
 
     #[test]
     fn removing_span_completely() {
         let mut ps = PackedSpans::new();
 
-        ps.push(Span { start: 0, end: 0}, 0);
-        ps.push(Span { start: 1, end: 1}, 1);
-        ps.push(Span { start: 2, end: 2}, 2);
-        ps.push(Span { start: 3, end: 3}, 3);
+        ps.push(Span { start: 0, end: 0 }, 0);
+        ps.push(Span { start: 1, end: 1 }, 1);
+        ps.push(Span { start: 2, end: 2 }, 2);
+        ps.push(Span { start: 3, end: 3 }, 3);
         ps.remove(1);
 
-        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 3, end: 3}, 2));
-        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 2, end: 2}, 1));
-        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 0, end: 0}, 0));
+        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 3, end: 3 }, 2));
+        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 2, end: 2 }, 1));
+        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 0, end: 0 }, 0));
     }
 
     #[test]
     fn removing_start_of_span() {
         let mut ps = PackedSpans::new();
 
-        ps.push(Span { start: 0, end: 0}, 10);
-        ps.push(Span { start: 1, end: 1}, 20);
+        ps.push(Span { start: 0, end: 0 }, 10);
+        ps.push(Span { start: 1, end: 1 }, 20);
         ps.remove(10);
 
-        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 1, end: 1}, 19));
-        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 0, end: 0}, 10));
+        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 1, end: 1 }, 19));
+        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 0, end: 0 }, 10));
     }
 
     #[test]
     fn removing_start_of_lone_span() {
         let mut ps = PackedSpans::new();
 
-        ps.push(Span { start: 0, end: 0}, 10);
+        ps.push(Span { start: 0, end: 0 }, 10);
         ps.remove(10);
 
-        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 0, end: 0}, 10));
+        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 0, end: 0 }, 10));
     }
 
     #[test]
     fn push_wrapping_span() {
         let mut ps = PackedSpans::new();
 
-        ps.push(Span { start: 0, end: 10}, 0);
-        ps.push(Span { start: 5, end: 8}, 1);
+        ps.push(Span { start: 0, end: 10 }, 0);
+        ps.push(Span { start: 5, end: 8 }, 1);
 
-        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 5, end: 8}, 1));
-        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 0, end: 10}, 0));
+        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 5, end: 8 }, 1));
+        assert_eq!(ps.spans.pop().unwrap(), (Span { start: 0, end: 10 }, 0));
     }
 }
 /*

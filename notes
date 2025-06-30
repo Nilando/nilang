@@ -1,18 +1,20 @@
 VERSION 0.1.0
 
-TODO:
-- turn program into loaded program
-- load 'loaded program' into VM
-- create VM dispatch loop
+FEATURE BACKLOG:
+- String Interpolation
+- implement intrinsics
+- importing and exporting
+- save assigned vars in repl
+- backtraces
 
-BACKLOG:
-- Modular Intrinsic functions
+OPTIMIZATION BACKLOG
+- GC updates:
+  - GcSync derive (reduce allocating callframes)
+  - view option (helps with printing)
+- string internment
 - Memory SSA
 - Jump threading pass
 - Loop Invariant Code Motion
-- String Interpolation
-- For loops on strings, lists, and maps
-- importing and exporting
 - Peephole pass
 - AST pass
 
@@ -21,37 +23,45 @@ GOALS
 - learn about compilers and interpreters
 - have fun
 
-ABOVE AND BEYOND
-- async execution
-- debugger
+IMPORTANT LESSONS
+- Nanboxing is probably better than tagged pointers
+- conservative GC is probably better than exact GC
 
 DECEMBER -> COMPLETE AOC
 NOVEMBER
 OCTOBER
+SEPTEMBER
 AUGUST
 JULY
+
 JUNE
+- ran first program, and many more
+- added intrinsic functions
+- added 'pretty' runtime errors
+- added lists, strings, closures, & hash maps, and more!
+- run some successful concurrent GC tests
+- added global variables
 
 MAY
 - dead code elimination
 - global value numbering pass 
 - register allocation
 - first draft of bytecode
-- TAC Updates: 
-  - Var -> VReg (much smaller!)
+- tac updates: 
+  - var -> vreg (much smaller!)
 - testing via golden files
-- beginning to draft out runtime/VM
+- beginning to draft out runtime/vm
 
 APRIL
-- implemented CFG creation from TAC
-- implemented converting CFG to SSA form
+- implemented cfg creation from tac
+- implemented converting cfg to ssa form
 - added boolean shortcircuiting
 - symbol map can convert 2 ways
-- completed escape DFA
-- CFG printing and graph vizualization
+- completed escape dfa
+- cfg printing and graph vizualization
 
 MARCH
 - refactored the lexer to be much more functional
 - completely redesigned the parser by using parser combinators
   - this gave a huge improvement in readability
-- started redesign of the TAC generator
+- started redesign of the tac generator

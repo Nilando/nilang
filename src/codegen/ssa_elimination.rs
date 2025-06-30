@@ -1,8 +1,13 @@
-use crate::ir::Block;
-use crate::runtime::vm::{ByteCode, Func};
 use crate::codegen::InterferenceGraph;
+use crate::ir::Block;
+use crate::runtime::{ByteCode, Func};
 
-pub fn ssa_elimination(func: &mut Func, next_block: &Block, current_block: &Block, graph: &InterferenceGraph) {
+pub fn ssa_elimination(
+    func: &mut Func,
+    next_block: &Block,
+    current_block: &Block,
+    graph: &InterferenceGraph,
+) {
     if next_block.get_phi_nodes().is_empty() {
         return;
     }
@@ -33,32 +38,27 @@ pub fn ssa_elimination(func: &mut Func, next_block: &Block, current_block: &Bloc
     }
 
     while let Some(free_reg) = free_regs.pop() {
-        let i = copy_pairs.iter().position(|(_, dest)| *dest == free_reg).unwrap();
+        let i = copy_pairs
+            .iter()
+            .position(|(_, dest)| *dest == free_reg)
+            .unwrap();
         let (src, dest) = copy_pairs.remove(i);
-        let copy_instr = ByteCode::Copy {
-            dest,
-            src,
-        };
+        let copy_instr = ByteCode::Copy { dest, src };
 
         func.push_instr(copy_instr);
 
-        if copy_pairs.iter().find(|(s, _)| *s == src).is_none() {
-            if copy_pairs.iter().find(|(_, d)| src == *d).is_some() {
-                free_regs.push(src);
-            }
+        if !copy_pairs.iter().any(|(s, _)| *s == src) && copy_pairs.iter().any(|(_, d)| src == *d) {
+            free_regs.push(src);
         }
     }
 
     // STEP 2: INSERT SWAP INSTRUCTIONS (break cycles)
-    while let Some((dest, src)) = copy_pairs.pop() {
+    while let Some((src, dest)) = copy_pairs.pop() {
         if dest == src {
             continue;
         }
 
-        let swap_instr = ByteCode::Swap {
-            r1: dest,
-            r2: src,
-        };
+        let swap_instr = ByteCode::Swap { r1: dest, r2: src };
 
         func.push_instr(swap_instr);
 

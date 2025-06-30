@@ -22,16 +22,17 @@ print(my_array); // [4, 1, 2, 3]
 %%%%
 
 === FN 1 START ===
-INT  6, 0
+INT  3, 0
 INT  4, 1
 INT  2, -1
 MEML 5, 0[2]
+COPY 2, 3
 SUB  3, 1, 4
-LT   3, 6, 3
+LT   3, 2, 3
 JNT  6, 3
-MEML 3, 0[6]
-MEMS 0[6], 5
-ADD  6, 6, 4
+MEML 3, 0[2]
+MEMS 0[2], 5
+ADD  2, 2, 4
 COPY 5, 3
 JMP  -7
 LDN  0

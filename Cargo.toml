@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 clap = { version = "4.5.8", features = ["derive"] }
 graphviz-rust = "0.9.4"
+murmurhash3 = "0.0.5"
 sandpit = { git = "https://github.com/Nilando/sandpit", branch = "develop" }
 termion = "4.0.4"
 
@@ -13,9 +14,9 @@ termion = "4.0.4"
 criterion = "0.5.1"
 pretty_assertions = "1.4.1"
 
-[[bench]]
-name = "lexer"
-harness = false
+# [[bench]]
+# name = "lexer"
+# harness = false
 
 # uncomment when generating flamegraphs
 #[profile.release]

@@ -2,7 +2,7 @@ use crate::parser::Op;
 use crate::symbol_map::SymID;
 
 pub type LabelID = usize;
-pub type FuncID = u64;
+pub type FuncID = u32;
 pub type VReg = u32;
 pub type UpValId = u16;
 
@@ -19,7 +19,7 @@ pub enum TacConst {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Tac {
-    Binop { 
+    Binop {
         dest: VReg,
         op: Op,
         lhs: VReg,
@@ -74,7 +74,7 @@ pub enum Tac {
         src: VReg,
     },
     StoreArg {
-        src: VReg
+        src: VReg,
     },
     Call {
         dest: VReg,
@@ -107,17 +107,17 @@ impl Tac {
 
             Tac::LoadGlobal { sym, .. } => [Some(sym), None, None],
             Tac::StoreGlobal { src, sym, .. } => [Some(src), Some(sym), None],
-            Tac::Copy { src, .. } |
-            Tac::Print { src, .. } |
-            Tac::StoreArg { src, .. } |
-            Tac::Call { src, .. } |
-            Tac::Return { src, .. } |
-            Tac::Jnt { src, .. } | 
-            Tac::Jit { src, .. } => [Some(src), None, None],
+            Tac::Copy { src, .. }
+            | Tac::Print { src, .. }
+            | Tac::StoreArg { src, .. }
+            | Tac::Call { src, .. }
+            | Tac::Return { src, .. }
+            | Tac::Jnt { src, .. }
+            | Tac::Jit { src, .. } => [Some(src), None, None],
             Tac::MemLoad { store, key, .. } => [Some(store), Some(key), None],
             Tac::MemStore { store, key, src } => [Some(store), Some(key), Some(src)],
             Tac::StoreUpvalue { func, src } => [Some(func), Some(src), None],
-            _ => [None, None, None]
+            _ => [None, None, None],
         }
     }
     pub fn used_regs_mut(&mut self) -> [Option<&mut VReg>; 3] {
@@ -126,57 +126,57 @@ impl Tac {
 
             Tac::LoadGlobal { sym, .. } => [Some(sym), None, None],
             Tac::StoreGlobal { src, sym, .. } => [Some(src), Some(sym), None],
-            Tac::Copy { src, .. } |
-            Tac::Print { src, .. } |
-            Tac::StoreArg { src, .. } |
-            Tac::Call { src, .. } |
-            Tac::Return { src, .. } |
-            Tac::Jnt { src, .. } | 
-            Tac::Jit { src, .. } => [Some(src), None, None],
+            Tac::Copy { src, .. }
+            | Tac::Print { src, .. }
+            | Tac::StoreArg { src, .. }
+            | Tac::Call { src, .. }
+            | Tac::Return { src, .. }
+            | Tac::Jnt { src, .. }
+            | Tac::Jit { src, .. } => [Some(src), None, None],
             Tac::MemLoad { store, key, .. } => [Some(store), Some(key), None],
             Tac::MemStore { store, key, src } => [Some(store), Some(key), Some(src)],
             Tac::StoreUpvalue { func, src } => [Some(func), Some(src), None],
 
-            _ => [None, None, None]
+            _ => [None, None, None],
         }
     }
 
     pub fn dest_reg(&self) -> Option<&VReg> {
         match self {
-            Tac::LoadUpvalue { dest, .. } |
-            Tac::LoadGlobal { dest, .. } |
-            Tac::Call { dest, .. } |
-            Tac::LoadConst { dest, .. } |
-            Tac::MemLoad { dest, .. } |
-            Tac::Copy { dest, .. } |
-            Tac::Read { dest, .. } |
-            Tac::NewMap { dest, .. } |
-            Tac::NewList { dest, .. } |
-            Tac::Binop { dest, .. } => Some(dest),
-            _ => None
+            Tac::LoadUpvalue { dest, .. }
+            | Tac::LoadGlobal { dest, .. }
+            | Tac::Call { dest, .. }
+            | Tac::LoadConst { dest, .. }
+            | Tac::MemLoad { dest, .. }
+            | Tac::Copy { dest, .. }
+            | Tac::Read { dest, .. }
+            | Tac::NewMap { dest, .. }
+            | Tac::NewList { dest, .. }
+            | Tac::Binop { dest, .. } => Some(dest),
+            _ => None,
         }
     }
 
     pub fn dest_reg_mut(&mut self) -> Option<&mut VReg> {
         match self {
-            Tac::LoadUpvalue { dest, .. } |
-            Tac::LoadGlobal { dest, .. } |
-            Tac::Call { dest, .. } |
-            Tac::LoadConst { dest, .. } |
-            Tac::MemLoad { dest, .. } |
-            Tac::Copy { dest, .. } |
-            Tac::Read { dest, .. } |
-            Tac::NewMap { dest, .. } |
-            Tac::NewList { dest, .. } |
-            Tac::Binop { dest, .. } => Some(dest),
-            _ => None
+            Tac::LoadUpvalue { dest, .. }
+            | Tac::LoadGlobal { dest, .. }
+            | Tac::Call { dest, .. }
+            | Tac::LoadConst { dest, .. }
+            | Tac::MemLoad { dest, .. }
+            | Tac::Copy { dest, .. }
+            | Tac::Read { dest, .. }
+            | Tac::NewMap { dest, .. }
+            | Tac::NewList { dest, .. }
+            | Tac::Binop { dest, .. } => Some(dest),
+            _ => None,
         }
     }
 
     pub fn has_side_effects(&self) -> bool {
-        match self {
-            Tac::Read { .. } | Tac::Print { .. } | Tac::Call { .. } => true,
-            _ => false
-        }
+        matches!(
+            self,
+            Tac::Read { .. } | Tac::Print { .. } | Tac::Call { .. }
+        )
     }
 }

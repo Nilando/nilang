@@ -1,6 +1,6 @@
-use std::collections::HashMap;
 use crate::ir::LabelID;
-use crate::runtime::vm::{ByteCode, Func};
+use crate::runtime::{ByteCode, Func};
+use std::collections::HashMap;
 
 #[derive(Eq, PartialEq, Hash, Copy, Clone)]
 pub enum BackPatchLabel {
@@ -48,20 +48,19 @@ impl BackpatchContext {
 
             for jump_pos in positions.iter() {
                 match &mut instrs[*jump_pos] {
-                    ByteCode::Jnt { offset, .. } |
-                    ByteCode::Jit { offset, .. } |
-                    ByteCode::Jump { offset } => {
+                    ByteCode::Jnt { offset, .. }
+                    | ByteCode::Jit { offset, .. }
+                    | ByteCode::Jump { offset } => {
                         let abs_diff: usize = label_position.abs_diff(*jump_pos);
-                        let signed_offset: isize =
-                        if *label_position < *jump_pos {
-                            isize::try_from(abs_diff).unwrap() * -1
+                        let signed_offset: isize = if *label_position < *jump_pos {
+                            -isize::try_from(abs_diff).unwrap()
                         } else {
                             isize::try_from(abs_diff).unwrap()
                         };
 
                         *offset = i16::try_from(signed_offset).unwrap();
                     }
-                    _ => panic!("CODEGEN ERROR during Back Patching")
+                    _ => panic!("CODEGEN ERROR during Back Patching"),
                 }
             }
         }
@@ -73,11 +72,15 @@ impl BackpatchContext {
         self.push_generic_jump_instr(instr, func, label);
     }
 
-    pub fn push_generic_jump_instr(&mut self, instr: ByteCode, func: &mut Func, label: BackPatchLabel) {
+    pub fn push_generic_jump_instr(
+        &mut self,
+        instr: ByteCode,
+        func: &mut Func,
+        label: BackPatchLabel,
+    ) {
         let position = func.len();
 
         func.push_instr(instr);
         self.add_jump_position(label, position);
     }
 }
-

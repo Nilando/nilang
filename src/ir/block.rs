@@ -1,11 +1,11 @@
-use super::tac::VReg;
-use crate::parser::Span;
-use super::tac::{Tac, LabelID};
 use super::ssa::PhiNode;
+use super::tac::VReg;
+use super::tac::{LabelID, Tac};
 use crate::parser::PackedSpans;
+use crate::parser::Span;
 use std::collections::BTreeSet;
 
-pub type BlockId =usize;
+pub type BlockId = usize;
 const ENTRY_BLOCK_ID: usize = 0;
 
 #[derive(Debug)]
@@ -32,7 +32,7 @@ impl Block {
             predecessors: vec![],
             successors: vec![],
             phi_nodes: vec![],
-            spans: PackedSpans::new()
+            spans: PackedSpans::new(),
         }
     }
 
@@ -60,7 +60,7 @@ impl Block {
         let mut dead_indexes = vec![];
 
         // find which instructions are dead
-        for (idx, instr) in self.instrs.iter().enumerate().rev()  {
+        for (idx, instr) in self.instrs.iter().enumerate().rev() {
             let retain = f(instr);
 
             if !retain {
@@ -123,17 +123,17 @@ impl Block {
     pub fn continues(&self) -> bool {
         match self.instrs.last() {
             Some(Tac::Return { .. }) | Some(Tac::Jump { .. }) => false,
-            _ => true
+            _ => true,
         }
     }
 
     pub fn falls_through(&self) -> Option<BlockId> {
         match self.instrs.last() {
-            Some(Tac::Return { .. }) | 
-            Some(Tac::Jump { .. }) |
-            Some(Tac::Jnt { .. }) |
-            Some(Tac::Jit { .. }) => None,
-            _ => self.successors.last().copied()
+            Some(Tac::Return { .. })
+            | Some(Tac::Jump { .. })
+            | Some(Tac::Jnt { .. })
+            | Some(Tac::Jit { .. }) => None,
+            _ => self.successors.last().copied(),
         }
     }
 

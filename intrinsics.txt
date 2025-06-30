@@ -1,0 +1,50 @@
+Intrinsic Functions:
+
+Global Functions:
+num(string, num, null)
+str(symid, string, num, null)
+bool(any)
+sym(string)
+
+Bool methods:
+none for now
+
+Int methods:
+abs(self) -> num
+pow(self, num) -> num
+log(self, num) -> num
+floor(self) -> num
+ceil(self) -> num
+
+String methods:
+split(self, string) -> List
+push(self, string) -> self
+trim(self) -> string
+
+List methods:
+len -> num
+push(self, value) -> self
+find(self, value) -> num
+contains(self, value) -> bool
+compact(self, value) -> list
+filter(self, fn(x)) -> list
+concat(self, list) -> list
+join(self, str) -> string
+
+// this means that you can't really store the 
+// the symbols "keys", "values", or "entries" on a map
+Map methods:
+keys(self) -> list
+values(self) -> list
+entries(self) -> list
+
+Func methods: 
+args -> num
+bind(self, List) -> Func
+
+self_fn = fn(self) { print("test"); };
+a = { b: self_fn };
+
+// The following are equivalent.
+a.b();
+self_fn.bind(a)();

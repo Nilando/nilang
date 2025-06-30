@@ -1,7 +1,7 @@
 use graphviz_rust::{
-    dot_structures::*,
-    dot_generator::*,
     cmd::{CommandArg, Format},
+    dot_generator::*,
+    dot_structures::*,
     exec,
     printer::PrinterContext,
 };
@@ -29,8 +29,13 @@ pub fn func_to_svg(func: &Func) {
 
     let svg_name = format!("{}.svg", name);
 
-    exec(g.clone(), &mut PrinterContext::default(), vec![
-        CommandArg::Format(Format::Svg),
-        CommandArg::Output(svg_name)
-    ]).unwrap();
+    exec(
+        g.clone(),
+        &mut PrinterContext::default(),
+        vec![
+            CommandArg::Format(Format::Svg),
+            CommandArg::Output(svg_name),
+        ],
+    )
+    .unwrap();
 }

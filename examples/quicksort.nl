@@ -34,10 +34,14 @@ fn inner_quicksort(A, lo, hi) {
   }
 }
 
-fn quicksort(numbers) {
+fn sort(numbers) {
   inner_quicksort(numbers, 0, len(numbers) - 1);
 }
 
-unsorted_list = [6, 3, 5, 9, 0, 8, 7, 4, 6, 2, 1];
+unsorted_list = [3, 5, 9, 0, 8, 7, 4, 6, 2, 1];
 
-print(quicksort(unsorted_list)); // [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+print(unsorted_list);
+
+sort(unsorted_list);
+
+print(unsorted_list);
