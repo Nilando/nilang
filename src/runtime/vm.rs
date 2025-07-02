@@ -259,10 +259,13 @@ impl<'gc> VM<'gc> {
                 let lhs = self.reg_to_val(lhs);
                 let rhs = self.reg_to_val(rhs);
 
-                if let Some(value) = less_than(lhs, rhs) {
-                    self.set_reg_with_value(value, dest, mu);
-                } else {
-                    return Err(self.type_error("".to_string()))
+                match less_than(lhs, rhs) {
+                    Ok(value) => {
+                        self.set_reg_with_value(value, dest, mu);
+                    }
+                    Err(err) => {
+                        return Err(self.type_error(err))
+                    }
                 }
             }
             ByteCode::Lte { dest, lhs, rhs } => {
@@ -347,7 +350,7 @@ impl<'gc> VM<'gc> {
             ByteCode::Read { dest } => {
                 let stdin = std::io::stdin();
                 let mut buf = String::new();
-                let vm_str = VMString::alloc(&[], mu);
+                let vm_str = VMString::alloc([].iter().map(|c| *c), mu);
 
                 stdin.read_line(&mut buf).expect("failed to read from stdin");
                 buf = buf.trim_end().to_string();

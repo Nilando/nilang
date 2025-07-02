@@ -38,7 +38,10 @@ pub struct Config {
 
     /// File to be run (exclude for repl)
     pub file: Option<String>,
-}
+
+    /// Arguments passed to the script after this flag
+    #[clap(last = true)]
+    pub script_args: Vec<String>,}
 
 impl Config {
     pub fn get_script(&mut self) -> Option<String> {

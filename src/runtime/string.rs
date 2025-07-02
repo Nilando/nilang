@@ -8,11 +8,11 @@ pub struct VMString<'gc> {
 }
 
 impl<'gc> VMString<'gc> {
-    pub fn alloc(text: &[char], mu: &'gc Mutator) -> Self {
+    pub fn alloc(text: impl Iterator<Item = char>, mu: &'gc Mutator) -> Self {
         let vec = GcVec::new(mu);
 
-        for char in text.iter() {
-            vec.push(mu, Cell::new(*char));
+        for char in text {
+            vec.push(mu, Cell::new(char));
         }
 
         Self {

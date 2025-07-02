@@ -72,13 +72,15 @@ pub fn modulo<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, Strin
     }
 }
 
-pub fn less_than<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Option<Value<'gc>> {
+pub fn less_than<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, String> {
     match (lhs, rhs) {
-        (Value::Float(lhs), Value::Float(rhs)) => Some(Value::Bool(lhs < rhs)),
-        (Value::Int(lhs), Value::Int(rhs)) => Some(Value::Bool(lhs < rhs)),
-        (Value::Float(lhs), Value::Int(rhs)) => Some(Value::Bool(lhs < rhs as f64)),
-        (Value::Int(lhs), Value::Float(rhs)) => Some(Value::Bool((lhs as f64) < rhs)),
-        _ => None,
+        (Value::Float(lhs), Value::Float(rhs)) => Ok(Value::Bool(lhs < rhs)),
+        (Value::Int(lhs), Value::Int(rhs)) => Ok(Value::Bool(lhs < rhs)),
+        (Value::Float(lhs), Value::Int(rhs)) => Ok(Value::Bool(lhs < rhs as f64)),
+        (Value::Int(lhs), Value::Float(rhs)) => Ok(Value::Bool((lhs as f64) < rhs)),
+        (lhs, rhs) => {
+            Err(format!("Attempted to perform a comparison between {} and {}", lhs.type_str(), rhs.type_str()))
+        },
     }
 }
 
@@ -171,7 +173,7 @@ pub fn mem_load<'gc>(store: Value<'gc>, key: Value<'gc>, mu: &'gc Mutator) -> Op
         (Value::String(s), Value::Int(idx)) => {
             if let Some(c) = s.at(usize::try_from(idx).unwrap()) {
                 let text: [char; 1] = [c];
-                let vm_str = VMString::alloc(&text, mu);
+                let vm_str = VMString::alloc(text.into_iter(), mu);
 
                 Some(Value::String(Gc::new(mu, vm_str)))
             } else {
