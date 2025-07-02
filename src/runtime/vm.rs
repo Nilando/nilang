@@ -1,5 +1,5 @@
 use crate::runtime::string::VMString;
-use crate::symbol_map::{SymID, NUM_SYM, LEN_SYM, PUSH_SYM};
+use crate::symbol_map::SymID;
 
 use super::intrinsics::{call_single_arg_intrinsic, call_two_arg_intrinsic, call_zero_arg_intrinsic};
 use super::op::{
