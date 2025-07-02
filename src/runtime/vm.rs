@@ -1,6 +1,7 @@
 use crate::runtime::string::VMString;
 use crate::symbol_map::{SymID, NUM_SYM, LEN_SYM, PUSH_SYM};
 
+use super::intrinsics::{call_single_arg_intrinsic, call_two_arg_intrinsic, call_zero_arg_intrinsic};
 use super::op::{
     add,
     sub,
@@ -442,7 +443,7 @@ impl<'gc> VM<'gc> {
     }
 
     fn pop_callframe(&self) {
-        let cf = self.call_frames.pop().unwrap();
+        self.call_frames.pop();
 
         // TODO: Its probably best to use some kind of heuristic, to detect when 
         // to shrink the stack. Like we could just check if the frame start
@@ -478,7 +479,6 @@ impl<'gc> VM<'gc> {
 
                 CallFrame::set_upvalues(cf, upvalues, mu);
             }
-            // TODO: Call a partial
             Value::SymId(sym_id) => {
                 self.call_intrinsic_natural_func(sym_id, dest, supplied_args, mu)?;
             }
@@ -488,7 +488,7 @@ impl<'gc> VM<'gc> {
                 //natural
                 //closure
                 //intrinsic
-                todo!()
+                todo!("implement partial calls")
             }
             calle => return Err(self.type_error(format!("Tried to call {} type", calle.type_str()))),
         }
@@ -506,7 +506,8 @@ impl<'gc> VM<'gc> {
     }
 
     fn call_natural_func(&self, func: Gc<'gc, LoadedFunc<'gc>>, supplied_args: usize, mu: &'gc Mutator) -> Result<(), RuntimeError> {
-        let mut arg_count = func.arg_count() as usize;
+        let arg_count = func.arg_count() as usize;
+        let call_instr_ip = self.get_ip() - 1;
 
         self.expect_args(func.arg_count().into(), supplied_args)?;
 
@@ -517,20 +518,12 @@ impl<'gc> VM<'gc> {
             self.registers.push(mu, Value::tagged_null());
         }
 
-        let mut ip = self.get_ip() - 2;
-        while arg_count > 0 {
-            if let ByteCode::StoreArg { src } = self.get_instr_at(ip) {
-                let val = self.reg_to_val(src);
-                let idx = new_frame_start + (arg_count - 1);
+        self.iterate_args(arg_count, call_instr_ip, |reg, arg_num| {
+            let val = self.reg_to_val(reg);
+            let idx = new_frame_start + arg_num;
 
-                self.registers.set(mu, Value::into_tagged(val, mu), idx);
-
-                arg_count -= 1;
-                ip -= 1;
-            } else {
-                break;
-            }
-        }
+            self.registers.set(mu, Value::into_tagged(val, mu), idx);
+        });
 
         let init_frame = CallFrame::new(func.clone());
 
@@ -540,23 +533,88 @@ impl<'gc> VM<'gc> {
         Ok(())
     }
 
+    fn iterate_args(&self, arg_count: usize, call_ip: usize, f: impl Fn(u8, usize)) {
+        let first_arg_ip = call_ip - arg_count;
+
+        for arg_num in 0..arg_count {
+            let store_arg_ip = first_arg_ip + arg_num;
+            if let ByteCode::StoreArg { src } = self.get_instr_at(store_arg_ip) {
+                f(src, arg_num)
+            } else {
+                panic!("TODO: bad bytecode/internal error");
+            }
+        }
+    }
+
+    fn load_single_arg(&self, call_ip: usize) -> Value<'gc> {
+        let store_arg_ip = call_ip - 1;
+        if let ByteCode::StoreArg { src } = self.get_instr_at(store_arg_ip) {
+            self.reg_to_val(src)
+        } else {
+            panic!("TODO: bad bytecode/internal error");
+        }
+    }
+
+    fn load_two_args(&self, call_ip: usize) -> (Value<'gc>, Value<'gc>) {
+        let store_arg1_ip = call_ip - 2;
+        let store_arg2_ip = call_ip - 1;
+
+        let arg1 = 
+        if let ByteCode::StoreArg { src } = self.get_instr_at(store_arg1_ip) {
+            self.reg_to_val(src)
+        } else {
+            panic!("TODO: bad bytecode/internal error");
+        };
+
+        let arg2 =
+        if let ByteCode::StoreArg { src } = self.get_instr_at(store_arg2_ip) {
+            self.reg_to_val(src)
+        } else {
+            panic!("TODO: bad bytecode/internal error");
+        };
+
+        (arg1, arg2)
+    }
+
     fn call_intrinsic_natural_func(&self, sym_id: SymID, dest: Reg, arg_count: usize, mu: &'gc Mutator) -> Result<(), RuntimeError> {
-        todo!()
+        let call_instr_ip = self.get_ip() - 1;
+
+        let result =
+        match arg_count {
+            0 => call_zero_arg_intrinsic(sym_id, mu),
+            1 => {
+                let arg = self.load_single_arg(call_instr_ip);
+
+                call_single_arg_intrinsic(arg, sym_id, mu)
+            }
+            2 => {
+                let (arg1, arg2) = self.load_two_args(call_instr_ip);
+
+                call_two_arg_intrinsic(arg1, arg2, sym_id, mu)
+            }
+            _ => {
+                // currently there are no "top level" intrinsic functions
+                // with more than 2 args
+                panic!("internal error/bad bytecode")
+            }
+        };
+
+        match result {
+            Ok(return_val) => {
+                self.set_reg_with_value(return_val, dest, mu);
+
+                Ok(())
+            }
+            Err((kind, msg)) => {
+                Err(self.new_error(kind, msg))
+            }
+        }
+
     }
 
     fn call_intrinsic_partial_func(&self, sym_id: SymID, dest: Reg, arg_count: usize, mu: &'gc Mutator) -> Result<(), RuntimeError> {
-        // It would be nice to abstract the calling of intrinsic funcs away from
-        // the VM. 
-        // There are 3 kinds of intrinsic funcs 
-        // - 0 args
-        // - 1 arg
-        // - 0 or 1 args
         //
-        //
-        // call_intrinsic(&self.registers, args_start, arg_count, sym_id, mu)?;
-        //
-
-        Ok(())
+        todo!()
     }
 
     /*

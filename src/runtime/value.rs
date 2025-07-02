@@ -30,11 +30,8 @@ impl Display for Value<'_> {
                 write!(f, "]")
             }
             Value::Map(map) => write!(f, "{}", map.scoped_deref()),
-            Value::String(s) => {
-                for i in 0 ..s.len() {
-                    write!(f, "{}", s.at(i).unwrap())?;
-                }
-                write!(f, "")
+            Value::String(vm_str) => {
+                write!(f, "{}", vm_str.as_string())
             }
             Value::Closure(closure) => {
                 let func = closure.get_func();

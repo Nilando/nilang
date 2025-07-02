@@ -2,18 +2,25 @@
 null, bool, sym, num, string, list, map, fn
 
 ## Top Level Functions:
-num(null/bool/string)  -> num/null
+
+### zero args
+args() -> list
+now() -> num
+
+### one arg
+num(null/bool/string) -> num/null
 str(null/bool/sym/num) -> string
-bool(any)              -> bool
-sym(string)            -> sym
-type(any)              -> sym
-read_file(string)      -> string
-args()                 -> list
+bool(any) -> bool
+sym(string) -> sym
+type(any) -> sym
+read_file(string) -> string
 clone(string/list/map) -> string/list/map
-sleep(num)             -> null
-range(num, num)        -> list
-repeat(num, any)       -> list
-now()                  -> num
+sleep(num) -> null
+
+### two args
+range(num, num) -> list
+repeat(num, any) -> list
+
 
 ## null Methods:
 none

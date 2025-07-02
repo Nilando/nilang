@@ -31,4 +31,18 @@ impl<'gc> VMString<'gc> {
     pub fn len(&self) -> usize {
         self.vec.len()
     }
+
+    // TODO: this is just temporary, and is usually inefficient
+    // The places that are calling this should instead implement custom
+    // functions. This is just a placeholder to allow those places to uses The
+    // methods that are already implemented on String.
+    pub fn as_string(&self) -> String {
+        let mut result = String::new();
+
+        for i in 0..self.len() {
+            result.push(self.at(i).unwrap());
+        }
+
+        result
+    }
 }
