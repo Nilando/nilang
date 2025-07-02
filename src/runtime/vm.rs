@@ -42,7 +42,7 @@ pub enum ExitCode {
 
 #[derive(Trace)]
 pub struct VM<'gc> {
-    registers: GcVec<'gc, TaggedValue<'gc>>, // set number of registers
+    registers: GcVec<'gc, TaggedValue<'gc>>,
     call_frames: GcVec<'gc, GcOpt<'gc, CallFrame<'gc>>>,
     frame_start: Cell<usize>,                
     globals: Gc<'gc, GcHashMap<'gc>>,
@@ -338,7 +338,8 @@ impl<'gc> VM<'gc> {
                 let val = self.reg_to_val(src);
 
                 self.handle_return(val, mu);
-                if self.registers.is_empty() {
+
+                if self.call_frames.len() == 0 {
                     return Ok(Some(ExitCode::Exit));
                 }
             }
@@ -442,9 +443,15 @@ impl<'gc> VM<'gc> {
 
     fn pop_callframe(&self) {
         let cf = self.call_frames.pop().unwrap();
-        for _ in 0..cf.unwrap().get_reg_count() {
-            self.registers.pop();
-        }
+
+        // TODO: Its probably best to use some kind of heuristic, to detect when 
+        // to shrink the stack. Like we could just check if the frame start
+        // is less than half of the register stack, maybe we shrink the capacity
+        // by some factor.
+        //
+        //for _ in 0..cf.unwrap().get_reg_count() {
+        //    self.registers.pop();
+        //}
 
         if self.call_frames.is_empty() {
             return;
@@ -471,8 +478,17 @@ impl<'gc> VM<'gc> {
 
                 CallFrame::set_upvalues(cf, upvalues, mu);
             }
+            // TODO: Call a partial
             Value::SymId(sym_id) => {
-                self.call_intrinsic_func(sym_id, dest, supplied_args, mu)?;
+                self.call_intrinsic_natural_func(sym_id, dest, supplied_args, mu)?;
+            }
+            Value::Partial(partial) => {
+                //self.call_partial_func()
+                //match callable
+                //natural
+                //closure
+                //intrinsic
+                todo!()
             }
             calle => return Err(self.type_error(format!("Tried to call {} type", calle.type_str()))),
         }
@@ -497,8 +513,8 @@ impl<'gc> VM<'gc> {
         let new_frame_start = self.frame_start.get()
             + self.get_top_call_frame().get_reg_count() as usize;
 
-        for _ in 0..func.get_max_clique() {
-            self.registers.push(mu, Value::into_tagged(Value::Null, mu));
+        while new_frame_start + (func.get_max_clique() as usize) > self.registers.len() {
+            self.registers.push(mu, Value::tagged_null());
         }
 
         let mut ip = self.get_ip() - 2;
@@ -524,16 +540,21 @@ impl<'gc> VM<'gc> {
         Ok(())
     }
 
-    fn call_intrinsic_func(&self, sym_id: SymID, dest: Reg, arg_count: usize, mu: &'gc Mutator) -> Result<(), RuntimeError> {
-        match sym_id {
-            NUM_SYM => {
-                if arg_count == 0 {
-                    self.set_reg_with_value(Value::Int(0), dest, mu);
-                    return Ok(());
-                }
-            }
-            _ => todo!()
-        }
+    fn call_intrinsic_natural_func(&self, sym_id: SymID, dest: Reg, arg_count: usize, mu: &'gc Mutator) -> Result<(), RuntimeError> {
+        todo!()
+    }
+
+    fn call_intrinsic_partial_func(&self, sym_id: SymID, dest: Reg, arg_count: usize, mu: &'gc Mutator) -> Result<(), RuntimeError> {
+        // It would be nice to abstract the calling of intrinsic funcs away from
+        // the VM. 
+        // There are 3 kinds of intrinsic funcs 
+        // - 0 args
+        // - 1 arg
+        // - 0 or 1 args
+        //
+        //
+        // call_intrinsic(&self.registers, args_start, arg_count, sym_id, mu)?;
+        //
 
         Ok(())
     }

@@ -10,6 +10,7 @@ mod hash_map;
 mod closure;
 mod op;
 mod partial;
+mod intrinsics;
 
 #[cfg(test)]
 mod tests;

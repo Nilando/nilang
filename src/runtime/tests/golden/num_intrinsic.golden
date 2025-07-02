@@ -1,17 +1,19 @@
-
-print(num());
-print(num(1));
-
-/*
+print(num(null));
+print(num(false));
+print(num(bool));
 print(num("2"));
 print(num("3.5"));
-
+num_fn_copy = num
 num = 4;
 print(num);
-print(x(5));
-*/
+print(num_fn_copy(5));
 
 %%%%
 
 0
+0
 1
+2
+3.5
+4
+5
