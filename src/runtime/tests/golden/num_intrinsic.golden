@@ -1,3 +1,4 @@
+print(num("foo"));
 print(num(null));
 print(num(false));
 print(num(true));
@@ -10,6 +11,7 @@ print(num_fn_copy("5.0"));
 
 %%%%
 
+null
 0
 0
 1
