@@ -52,7 +52,9 @@ macro_rules! generate_intrinsics {
 // Use the macro to generate the necessary parts.
 generate_intrinsics! {
     NUM_SYM,
-    ARGS_SYM
+    ARGS_SYM,
+    STR_SYM,
+    BOOL_SYM
 }
 
 impl SymbolMap {

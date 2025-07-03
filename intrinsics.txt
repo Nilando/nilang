@@ -5,10 +5,9 @@ null, bool, sym, num, string, list, map, fn
 
 ### zero args
 args() -> list
-now() -> num
 
 ### one arg
-num(null/bool/string) -> num/null
+num(null/bool/num/string) -> num/null
 str(null/bool/sym/num) -> string
 bool(any) -> bool
 sym(string) -> sym

@@ -3,6 +3,11 @@
   This file is generated programatically by golden_test_generator.rb
 */
 #[test]
+fn str_intrinsic() {
+  super::test_golden_output("./src/runtime/tests/golden/str_intrinsic.golden")
+}
+
+#[test]
 fn num_intrinsic() {
   super::test_golden_output("./src/runtime/tests/golden/num_intrinsic.golden")
 }
