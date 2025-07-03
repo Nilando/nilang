@@ -57,14 +57,8 @@ fn range<'gc>(start: Value<'gc>, end: Value<'gc>, mu: &'gc Mutator) -> Result<Va
 fn repeat<'gc>(times: Value<'gc>, val: Value<'gc>, mu: &'gc Mutator) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
     let n = 
     match times {
-        Value::Int(i) => u64::try_from(i).unwrap_or(0),
-        Value::Float(f) => {
-            if f < 0.0 {
-                0
-            } else {
-                f as u64
-            }
-        }
+        Value::Int(i) => i as u64,
+        Value::Float(f) => f as u64,
         _ => return Err((RuntimeErrorKind::TypeError, format!("Unexpected arg of type {}", times.type_str())))
     };
 

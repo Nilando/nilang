@@ -322,10 +322,13 @@ impl<'gc> VM<'gc> {
                 let store = self.reg_to_val(store);
                 let key = self.reg_to_val(key);
 
-                if let Some(value) = mem_load(store, key, mu) {
-                    self.set_reg_with_value(value, dest, mu);
-                } else {
-                    return Err(self.type_error("".to_string()))
+                match mem_load(store, key, mu) {
+                    Ok(value) => {
+                        self.set_reg_with_value(value, dest, mu);
+                    }
+                    Err(err) => {
+                        return Err(self.type_error(err))
+                    }
                 }
             }
             ByteCode::MemStore { store, key, src } => {

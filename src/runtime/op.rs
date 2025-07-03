@@ -2,6 +2,7 @@ use sandpit::{Gc, Mutator};
 use super::value::Value;
 use super::hash_map::GcHashMap;
 use super::string::VMString;
+use super::RuntimeErrorKind;
 
 pub fn add<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, String> {
     match (lhs, rhs) {
@@ -165,33 +166,35 @@ pub fn not_equal<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Option<Value<'gc>> {
     }
 }
 
-pub fn mem_load<'gc>(store: Value<'gc>, key: Value<'gc>, mu: &'gc Mutator) -> Option<Value<'gc>> {
+pub fn mem_load<'gc>(store: Value<'gc>, key: Value<'gc>, mu: &'gc Mutator) -> Result<Value<'gc>, String> {
     match (store, key) {
         (Value::List(list), Value::Int(idx)) => {
-            Some(list.at(idx))
+            Ok(list.at(idx))
         }
         (Value::String(s), Value::Int(idx)) => {
             if let Some(c) = s.at(usize::try_from(idx).unwrap()) {
                 let text: [char; 1] = [c];
                 let vm_str = VMString::alloc(text.into_iter(), mu);
 
-                Some(Value::String(Gc::new(mu, vm_str)))
+                Ok(Value::String(Gc::new(mu, vm_str)))
             } else {
-                Some(Value::Null)
+                Ok(Value::Null)
             }
         }
         (Value::Map(map), key) => {
             if let Some(val) = map.get(Value::into_tagged(key, mu)) {
-                Some(Value::from(&val))
+                Ok(Value::from(&val))
             } else {
-                Some(Value::Null)
+                Ok(Value::Null)
             }
         }
+        (lhs, rhs) => {
+            Err(format!("Attempted to access a {} via a {}", lhs.type_str(), rhs.type_str()))
+        },
         // here you could check if the thing we are loading is a function,
         // and if its first arg is Value<'gc>, load the thing we are calling this on 
         // into Value<'gc> as a upvalue?
         // can also be a value::map, followed by any value
-        _ => todo!(),
     }
 }
 
