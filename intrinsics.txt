@@ -1,12 +1,12 @@
 PROGRESS: 
-top level:      7/11
+top level:      9/11
 num methods:    0/6
 string methods: 0/5
 list methods:   0/16
 map methods:    0/6
 fn methods:     0/2
 ---------------------
-TOTAL:          7/46
+TOTAL:          9/46
 
 # TYPES:
 null, bool, sym, num, string, list, map, fn

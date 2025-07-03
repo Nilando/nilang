@@ -3,7 +3,7 @@ use std::time::Duration;
 use sandpit::{Gc, Mutator};
 
 use crate::runtime::string::VMString;
-use crate::symbol_map::{SymID, ARGS_SYM, BOOL_SYM, FN_SYM, LIST_SYM, MAP_SYM, NUM_SYM, READ_FILE_SYM, SLEEP_SYM, STR_SYM, SYM_SYM, TYPE_SYM};
+use crate::symbol_map::{SymID, ARGS_SYM, BOOL_SYM, FN_SYM, LIST_SYM, MAP_SYM, NUM_SYM, RANGE_SYM, READ_FILE_SYM, REPEAT_SYM, SLEEP_SYM, STR_SYM, SYM_SYM, TYPE_SYM};
 
 use super::list::List;
 use super::value::Value;
@@ -14,7 +14,6 @@ pub fn call_zero_arg_intrinsic<'gc>(sym_id: SymID, mu: &'gc Mutator) -> Result<V
     match sym_id {
         ARGS_SYM => args(mu),
         _ => todo!() 
-
     }
 }
 pub fn call_single_arg_intrinsic<'gc>(arg: Value<'gc>, sym_id: SymID, mu: &'gc Mutator) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
@@ -30,11 +29,57 @@ pub fn call_single_arg_intrinsic<'gc>(arg: Value<'gc>, sym_id: SymID, mu: &'gc M
     }
 }
 pub fn call_two_arg_intrinsic<'gc>(arg1: Value<'gc>, arg2: Value<'gc>, sym_id: SymID, mu: &'gc Mutator) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+    match sym_id {
+        REPEAT_SYM => repeat(arg1, arg2, mu),
+        RANGE_SYM => range(arg1, arg2, mu),
+        _ => todo!() 
+    }
+}
 
-    todo!()
+fn range<'gc>(start: Value<'gc>, end: Value<'gc>, mu: &'gc Mutator) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+    fn value_to_i64<'gc>(value: Value<'gc>) -> Result<i64, (RuntimeErrorKind, String)> {
+        match value {
+            Value::Int(i) => Ok(i as i64),
+            Value::Float(f) => Ok(f as i64),
+            _ => return Err((RuntimeErrorKind::TypeError, format!("Unexpected arg of type {}", value.type_str())))
+        }
+    }
+    let s = value_to_i64(start)?;
+    let e = value_to_i64(end)?;
+
+    let gc_list = Gc::new(mu, List::alloc(mu));
+    for i in s..e {
+        gc_list.push(Value::Float(i as f64).into_tagged(mu), mu);
+    }
+    Ok(Value::List(gc_list))
+}
+
+fn repeat<'gc>(times: Value<'gc>, val: Value<'gc>, mu: &'gc Mutator) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+    let n = 
+    match times {
+        Value::Int(i) => u64::try_from(i).unwrap_or(0),
+        Value::Float(f) => {
+            if f < 0.0 {
+                0
+            } else {
+                f as u64
+            }
+        }
+        _ => return Err((RuntimeErrorKind::TypeError, format!("Unexpected arg of type {}", times.type_str())))
+    };
+
+    let gc_list = Gc::new(mu, List::alloc(mu));
+    let tagged_value = val.into_tagged(mu);
+    for _ in 0..n {
+        gc_list.push(tagged_value.clone(), mu);
+
+    }
+
+    Ok(Value::List(gc_list))
 }
 
 fn read_file<'gc>(arg: Value<'gc>, mu: &'gc Mutator) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+    // TODO: this could also be done via "ExitCode"
     let file_name = arg.to_string();
     let file_str = std::fs::read_to_string(file_name).expect("open file");
 
