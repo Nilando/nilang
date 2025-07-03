@@ -1,7 +1,9 @@
+use std::time::Duration;
+
 use sandpit::{Gc, Mutator};
 
 use crate::runtime::string::VMString;
-use crate::symbol_map::{SymID, NUM_SYM, ARGS_SYM, STR_SYM, BOOL_SYM};
+use crate::symbol_map::{SymID, ARGS_SYM, BOOL_SYM, FN_SYM, LIST_SYM, MAP_SYM, NUM_SYM, READ_FILE_SYM, SLEEP_SYM, STR_SYM, SYM_SYM, TYPE_SYM};
 
 use super::list::List;
 use super::value::Value;
@@ -19,7 +21,10 @@ pub fn call_single_arg_intrinsic<'gc>(arg: Value<'gc>, sym_id: SymID, mu: &'gc M
     match sym_id {
         NUM_SYM => num(arg),
         STR_SYM => str(arg, mu),
-        BOOL_SYM => bool_intrinsic(arg),
+        BOOL_SYM => bbool(arg),
+        SLEEP_SYM => sleep(arg),
+        TYPE_SYM => ttype(arg),
+        READ_FILE_SYM => read_file(arg, mu),
         _ => todo!() 
 
     }
@@ -29,7 +34,46 @@ pub fn call_two_arg_intrinsic<'gc>(arg1: Value<'gc>, arg2: Value<'gc>, sym_id: S
     todo!()
 }
 
-fn bool_intrinsic<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+fn read_file<'gc>(arg: Value<'gc>, mu: &'gc Mutator) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+    let file_name = arg.to_string();
+    let file_str = std::fs::read_to_string(file_name).expect("open file");
+
+    return Ok(Value::String(Gc::new(mu, VMString::alloc(file_str.chars(), mu))));
+}
+
+fn ttype<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+    match arg {
+        Value::Null => Ok(Value::SymId(NUM_SYM)),
+        Value::Bool(_) => Ok(Value::SymId(BOOL_SYM)),
+        Value::SymId(_) => Ok(Value::SymId(SYM_SYM)),
+        Value::Int(_) | Value::Float(_) => Ok(Value::SymId(NUM_SYM)),
+        Value::String(_) => Ok(Value::SymId(STR_SYM)),
+        Value::List(_) => Ok(Value::SymId(LIST_SYM)),
+        Value::Map(_) => Ok(Value::SymId(MAP_SYM)),
+        Value::Func(_) 
+        | Value::Closure(_) 
+        | Value::Partial(_ )=> Ok(Value::SymId(FN_SYM)),
+    }
+}
+
+fn sleep<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+    // TODO: add sleep ExitCode, this way gc can happen during sleep
+    match arg {
+        Value::Int(i) => {
+            std::thread::sleep(Duration::from_secs(u64::try_from(i).unwrap()));
+
+            Ok(Value::Null)
+        },
+        Value::Float(f) => {
+            std::thread::sleep(Duration::from_secs(f as u64));
+
+            Ok(Value::Null)
+        },
+        _ => return Err((RuntimeErrorKind::TypeError, format!("Unexpected arg of type {}", arg.type_str())))
+    }
+}
+
+fn bbool<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
     match arg {
         Value::Null | Value::Bool(false) => Ok(Value::Bool(false)),
         _ => Ok(Value::Bool(true))

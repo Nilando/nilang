@@ -9,7 +9,7 @@ pub struct SymbolMap {
 }
 
 // special symbols
-macro_rules! generate_intrinsics {
+macro_rules! generate_intrinsic_syms {
     ($($name:ident),*) => {
         // Generate consts for each intrinsic symbol with sequential SymID.
         #[allow(non_camel_case_types)]
@@ -50,11 +50,18 @@ macro_rules! generate_intrinsics {
 }
 
 // Use the macro to generate the necessary parts.
-generate_intrinsics! {
+generate_intrinsic_syms! {
     NUM_SYM,
     ARGS_SYM,
     STR_SYM,
-    BOOL_SYM
+    BOOL_SYM,
+    SLEEP_SYM,
+    TYPE_SYM,
+    SYM_SYM,
+    LIST_SYM,
+    MAP_SYM,
+    FN_SYM,
+    READ_FILE_SYM
 }
 
 impl SymbolMap {
