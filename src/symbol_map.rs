@@ -63,7 +63,9 @@ generate_intrinsic_syms! {
     FN_SYM,
     READ_FILE_SYM,
     REPEAT_SYM,
-    RANGE_SYM
+    RANGE_SYM,
+    CLONE_SYM,
+    NULL_SYM
 }
 
 impl SymbolMap {

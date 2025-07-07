@@ -67,7 +67,7 @@ impl Runtime {
 
         loop {
             self.arena.mutate(|mu, vm| {
-                vm_result = vm.run(mu);
+                vm_result = vm.run(mu, &mut self.symbols);
             });
 
             match vm_result {

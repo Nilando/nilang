@@ -1,6 +1,8 @@
 use std::cell::Cell;
+use crate::symbol_map::SymbolMap;
+
 use super::op::equal;
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 
 use murmurhash3::murmurhash3_x64_128;
 use sandpit::{field, Gc, Mutator, Trace, TraceLeaf};
@@ -188,6 +190,40 @@ impl<'gc> GcHashMap<'gc> {
             }
         }
     }
+
+    pub fn to_string(&self, syms: &mut SymbolMap) -> String {
+        let mut s = String::new();
+
+        s.push('{');
+
+        for i in 0..self.buckets.len() {
+            let entry = &self.buckets[i];
+            let k = Value::from(&entry.key);
+            let v = Value::from(&entry.val);
+
+            if entry.is_used() {
+                let key_str = 
+                if k.is_string() {
+                    format!("\"{}\": ", k.to_string(syms))
+                } else {
+                    format!("{}: ", k.to_string(syms))
+                };
+
+                let val_str = 
+                if v.is_string() {
+                    format!("\"{}\", ", v.to_string(syms))
+                } else {
+                    format!("{}, ", v.to_string(syms))
+                };
+
+                s.push_str(&key_str);
+                s.push_str(&val_str);
+            }
+        }
+
+        s.push('}');
+        s
+    }
 }
 
 fn hash_value(v: &Value<'_>) -> usize {
@@ -242,7 +278,7 @@ fn hash_value(v: &Value<'_>) -> usize {
     result.0 as usize ^ result.1 as usize
 }
 
-impl Display for GcHashMap<'_> {
+impl Debug for GcHashMap<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{{")?;
         for i in 0..self.buckets.len() {
@@ -252,14 +288,14 @@ impl Display for GcHashMap<'_> {
 
             if entry.is_used() {
                 if k.is_string() {
-                    write!(f, "\"{}\": ", k)?;
+                    write!(f, "\"{:?}\": ", k)?;
                 } else {
-                    write!(f, "{}: ", k)?;
+                    write!(f, "{:?}: ", k)?;
                 }
                 if v.is_string() {
-                    write!(f, "\"{}\"", v)?;
+                    write!(f, "\"{:?}\"", v)?;
                 } else {
-                    write!(f, "{}", v)?;
+                    write!(f, "{:?}", v)?;
                 }
             }
         }

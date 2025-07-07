@@ -1,5 +1,5 @@
 use crate::runtime::string::VMString;
-use crate::symbol_map::SymID;
+use crate::symbol_map::{SymID, SymbolMap};
 
 use super::intrinsics::{call_single_arg_intrinsic, call_two_arg_intrinsic, call_zero_arg_intrinsic};
 use super::op::{
@@ -71,21 +71,21 @@ impl<'gc> VM<'gc> {
         }
     }
 
-    pub fn run(&self, mu: &'gc Mutator) -> Result<ExitCode, RuntimeError> {
+    pub fn run(&self, mu: &'gc Mutator, symbols: &mut SymbolMap) -> Result<ExitCode, RuntimeError> {
         loop {
             if mu.gc_yield() {
                 return Ok(ExitCode::Yield);
             }
 
             for _ in 0..100 {
-                if let Some(command) = self.dispatch_instruction(mu)? {
+                if let Some(command) = self.dispatch_instruction(mu, symbols)? {
                     return Ok(command)
                 }
             }
         }
     }
 
-    fn dispatch_instruction(&self, mu: &'gc Mutator) -> Result<Option<ExitCode>, RuntimeError> {
+    fn dispatch_instruction(&self, mu: &'gc Mutator, symbols: &mut SymbolMap) -> Result<Option<ExitCode>, RuntimeError> {
         let instr = self.get_next_instruction();
         match instr {
             ByteCode::Noop => {}
@@ -126,7 +126,7 @@ impl<'gc> VM<'gc> {
             }
             ByteCode::Print { src } => {
                 let val = self.reg_to_val(src);
-                let output = format!("{val}\n");
+                let output = val.to_string(symbols);
 
                 return Ok(Some(ExitCode::Print(output)));
             }
@@ -168,10 +168,10 @@ impl<'gc> VM<'gc> {
                 }
             }
             ByteCode::StoreArg { .. } => {
-                self.read_args_then_call(1, mu)?;
+                self.read_args_then_call(1, mu, symbols)?;
             }
             ByteCode::Call { dest, src } => {
-                self.call_function(dest, src, 0, mu)?;
+                self.call_function(dest, src, 0, mu, symbols)?;
             }
             ByteCode::Jump { offset } => {
                 self.offset_ip(offset);
@@ -421,11 +421,11 @@ impl<'gc> VM<'gc> {
         }
     }
 
-    fn read_args_then_call(&self, mut arg_count: usize, mu: &'gc Mutator) -> Result<(), RuntimeError> {
+    fn read_args_then_call(&self, mut arg_count: usize, mu: &'gc Mutator, syms: &mut SymbolMap) -> Result<(), RuntimeError> {
         loop {
             match self.get_next_instruction() {
                 ByteCode::Call { src, dest } => {
-                    self.call_function(dest, src, arg_count, mu)?;
+                    self.call_function(dest, src, arg_count, mu, syms)?;
                     return Ok(())
                 }
                 ByteCode::StoreArg { .. } => arg_count += 1,
@@ -470,7 +470,7 @@ impl<'gc> VM<'gc> {
         self.frame_start.set(new_frame_start);
     }
 
-    fn call_function(&self, dest: Reg, src: Reg, supplied_args: usize, mu: &'gc Mutator) -> Result<(), RuntimeError> {
+    fn call_function(&self, dest: Reg, src: Reg, supplied_args: usize, mu: &'gc Mutator, syms: &mut SymbolMap) -> Result<(), RuntimeError> {
         match self.reg_to_val(src) {
             Value::Func(func) => {
                 self.call_natural_func(func, supplied_args, mu)?;
@@ -486,7 +486,7 @@ impl<'gc> VM<'gc> {
                 CallFrame::set_upvalues(cf, upvalues, mu);
             }
             Value::SymId(sym_id) => {
-                self.call_intrinsic_natural_func(sym_id, dest, supplied_args, mu)?;
+                self.call_intrinsic_natural_func(sym_id, dest, supplied_args, mu, syms)?;
             }
             Value::Partial(partial) => {
                 //self.call_partial_func()
@@ -582,7 +582,7 @@ impl<'gc> VM<'gc> {
         (arg1, arg2)
     }
 
-    fn call_intrinsic_natural_func(&self, sym_id: SymID, dest: Reg, arg_count: usize, mu: &'gc Mutator) -> Result<(), RuntimeError> {
+    fn call_intrinsic_natural_func(&self, sym_id: SymID, dest: Reg, arg_count: usize, mu: &'gc Mutator, syms: &mut SymbolMap) -> Result<(), RuntimeError> {
         let call_instr_ip = self.get_ip() - 1;
 
         let result =
@@ -591,7 +591,7 @@ impl<'gc> VM<'gc> {
             1 => {
                 let arg = self.load_single_arg(call_instr_ip);
 
-                call_single_arg_intrinsic(arg, sym_id, mu)
+                call_single_arg_intrinsic(arg, sym_id, mu, syms)
             }
             2 => {
                 let (arg1, arg2) = self.load_two_args(call_instr_ip);

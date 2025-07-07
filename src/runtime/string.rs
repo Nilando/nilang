@@ -8,6 +8,12 @@ pub struct VMString<'gc> {
 }
 
 impl<'gc> VMString<'gc> {
+    pub fn alloc_empty(mu: &'gc Mutator) -> Self {
+        Self {
+            vec: GcVec::new(mu)
+        }
+    }
+
     pub fn alloc(text: impl Iterator<Item = char>, mu: &'gc Mutator) -> Self {
         let vec = GcVec::new(mu);
 

@@ -160,7 +160,7 @@ pub fn not_equal<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Option<Value<'gc>> {
             Some(Value::Bool(false))
         }
         (lhs, rhs) => {
-            println!("lhs: {}, rhs: {}", lhs, rhs);
+            println!("lhs: {:?}, rhs: {:?}", lhs, rhs);
             todo!()
         }
     }
