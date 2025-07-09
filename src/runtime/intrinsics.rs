@@ -3,38 +3,138 @@ use std::time::Duration;
 use sandpit::{Gc, Mutator};
 
 use crate::runtime::string::VMString;
-use crate::symbol_map::{SymID, SymbolMap, ARGS_SYM, BOOL_SYM, CLONE_SYM, FN_SYM, LIST_SYM, MAP_SYM, NULL_SYM, NUM_SYM, RANGE_SYM, READ_FILE_SYM, REPEAT_SYM, SLEEP_SYM, STR_SYM, SYM_SYM, TYPE_SYM};
+use crate::symbol_map::{SymID, SymbolMap, ABS_SYM, ARGS_SYM, BOOL_SYM, CEIL_SYM, CLONE_SYM, FLOOR_SYM, FN_SYM, LIST_SYM, MAP_SYM, NULL_SYM, NUM_SYM, RANGE_SYM, READ_FILE_SYM, REPEAT_SYM, SLEEP_SYM, STR_SYM, SYM_SYM, TYPE_SYM};
 
 use super::list::List;
+use super::tagged_value::TaggedValue;
 use super::value::Value;
+use super::vm::ArgIter;
 use super::RuntimeErrorKind;
 
- 
-pub fn call_zero_arg_intrinsic<'gc>(sym_id: SymID, mu: &'gc Mutator) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+pub fn call_intrinsic<'a, 'gc>(
+    stack_args: ArgIter<'a, 'gc>,
+    partial_args: Option<Gc<'gc, [TaggedValue<'gc>]>>,
+    sym_id: SymID,
+    symbol_map: &mut SymbolMap,
+    mu: &'gc Mutator<'gc>
+) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+
     match sym_id {
-        ARGS_SYM => args(mu),
-        _ => todo!() 
-    }
-}
-pub fn call_single_arg_intrinsic<'gc>(arg: Value<'gc>, sym_id: SymID, mu: &'gc Mutator, syms: &mut SymbolMap) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
-    match sym_id {
-        NUM_SYM => num(arg),
-        STR_SYM => str(arg, mu, syms),
-        SYM_SYM => sym(arg, mu, syms),
-        BOOL_SYM => bbool(arg),
-        SLEEP_SYM => sleep(arg),
-        TYPE_SYM => ttype(arg),
-        READ_FILE_SYM => read_file(arg, mu),
-        CLONE_SYM => clone(arg, mu),
-        _ => todo!() 
+        // ZERO ARG FUNCS
+        ARGS_SYM => {
+            let partial_arg_count = if let Some(args) = partial_args {
+                args.len()
+            } else {
+                0
+            };
+            let stack_arg_count = stack_args.get_arg_count();
+
+            expect_arg_count(0, stack_arg_count, partial_arg_count)?;
+
+            args(mu)
+        }
+
+        // SINGLE ARG FUNCS
+        NUM_SYM => {
+            let arg = extract_single_arg(stack_args, partial_args)?;
+            num(arg)
+        }
+        STR_SYM => {
+            let arg = extract_single_arg(stack_args, partial_args)?;
+            str(arg, mu, symbol_map)
+        }
+        SYM_SYM => {
+            let arg = extract_single_arg(stack_args, partial_args)?;
+            sym(arg, mu, symbol_map)
+        }
+        BOOL_SYM => {
+            let arg = extract_single_arg(stack_args, partial_args)?;
+            bbool(arg)
+        }
+        SLEEP_SYM => {
+            let arg = extract_single_arg(stack_args, partial_args)?;
+            sleep(arg)
+        }
+        TYPE_SYM => {
+            let arg = extract_single_arg(stack_args, partial_args)?;
+            ttype(arg)
+        }
+        READ_FILE_SYM => {
+            let arg = extract_single_arg(stack_args, partial_args)?;
+            read_file(arg, mu)
+        }
+        CLONE_SYM => {
+            let arg = extract_single_arg(stack_args, partial_args)?;
+            clone(arg, mu)
+        }
+        ABS_SYM => {
+            let arg = extract_single_arg(stack_args, partial_args)?;
+            abs(arg)
+        }
+        FLOOR_SYM => {
+            let arg = extract_single_arg(stack_args, partial_args)?;
+            floor(arg)
+        }
+        CEIL_SYM => {
+            let arg = extract_single_arg(stack_args, partial_args)?;
+            ceil(arg)
+        }
+        REPEAT_SYM => {
+            let (arg1, arg2) = extract_two_args(stack_args, partial_args)?;
+            repeat(arg1, arg2, mu)
+        }
+        RANGE_SYM => {
+            let (arg1, arg2) = extract_two_args(stack_args, partial_args)?;
+            range(arg1, arg2, mu)
+        }
+        _ => todo!()
     }
 }
 
-pub fn call_two_arg_intrinsic<'gc>(arg1: Value<'gc>, arg2: Value<'gc>, sym_id: SymID, mu: &'gc Mutator) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
-    match sym_id {
-        REPEAT_SYM => repeat(arg1, arg2, mu),
-        RANGE_SYM => range(arg1, arg2, mu),
-        _ => todo!() 
+fn extract_two_args<'a, 'gc>(mut stack_args: ArgIter<'a, 'gc>, partial_args: Option<Gc<'gc, [TaggedValue<'gc>]>>) -> Result<(Value<'gc>, Value<'gc>), (RuntimeErrorKind, String)> {
+    let partial_arg_count = if let Some(ref args) = partial_args {
+        args.len()
+    } else {
+        0
+    };
+    let stack_arg_count = stack_args.get_arg_count();
+
+    todo!("implement extract two args")
+}
+
+fn extract_single_arg<'a, 'gc>(mut stack_args: ArgIter<'a, 'gc>, partial_args: Option<Gc<'gc, [TaggedValue<'gc>]>>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+    let partial_arg_count = if let Some(ref args) = partial_args {
+        args.len()
+    } else {
+        0
+    };
+    let stack_arg_count = stack_args.get_arg_count();
+
+    expect_arg_count(1, stack_arg_count, partial_arg_count)?;
+
+    if let Some(args) = partial_args {
+        return Ok(Value::from(&args[0]));
+    }
+
+    Ok(Value::from(&stack_args.next().unwrap()))
+}
+
+fn expect_arg_count(total_args: usize, stack_args: usize, partial_args: usize) -> Result<(), (RuntimeErrorKind, String)> {
+    if total_args != (stack_args + partial_args) {
+        let expected_args = total_args - partial_args;
+        let msg = format!("Expected {} args, was given {}", expected_args, stack_args);
+
+        Err((RuntimeErrorKind::WrongNumArgs, msg))
+    } else {
+        Ok(())
+    }
+}
+
+fn get_arg_count(arg_iter: &ArgIter<'_, '_>, partial_args: &Option<Gc<'_, [TaggedValue<'_>]>>) -> usize {
+    if let Some(args) = partial_args {
+        arg_iter.get_arg_count() + args.len()
+    } else {
+        arg_iter.get_arg_count()
     }
 }
 
@@ -72,6 +172,30 @@ fn repeat<'gc>(times: Value<'gc>, val: Value<'gc>, mu: &'gc Mutator) -> Result<V
     }
 
     Ok(Value::List(gc_list))
+}
+
+fn abs<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+    match arg {
+        Value::Int(i) => Ok(Value::Int(i.abs())),
+        Value::Float(f) => Ok(Value::Float(f.abs())),
+        _ => return Err((RuntimeErrorKind::TypeError, format!("Unexpected arg of type {}", arg.type_str())))
+    }
+}
+
+fn floor<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+    match arg {
+        Value::Int(i) => Ok(Value::Int(i)),
+        Value::Float(f) => Ok(Value::Float(f.floor())),
+        _ => return Err((RuntimeErrorKind::TypeError, format!("Unexpected arg of type {}", arg.type_str())))
+    }
+}
+
+fn ceil<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+    match arg {
+        Value::Int(i) => Ok(Value::Int(i)),
+        Value::Float(f) => Ok(Value::Float(f.ceil())),
+        _ => return Err((RuntimeErrorKind::TypeError, format!("Unexpected arg of type {}", arg.type_str())))
+    }
 }
 
 fn read_file<'gc>(arg: Value<'gc>, mu: &'gc Mutator) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {

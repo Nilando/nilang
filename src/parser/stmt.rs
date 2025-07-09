@@ -313,4 +313,13 @@ mod tests {
 
         assert_eq!(result.errors.pop().unwrap().item, ParseError::DuplicateArgs);
     }
+
+    #[test]
+    fn sym_access_num_expr_stmt() {
+        let mut syms = SymbolMap::new();
+        let input = "333.foo;";
+        let result = stmt().parse_str(input, &mut syms);
+
+        assert!(result.errors.is_empty());
+    }
 }

@@ -65,7 +65,10 @@ generate_intrinsic_syms! {
     REPEAT_SYM,
     RANGE_SYM,
     CLONE_SYM,
-    NULL_SYM
+    NULL_SYM,
+    ABS_SYM,
+    FLOOR_SYM,
+    CEIL_SYM
 }
 
 impl SymbolMap {

@@ -354,11 +354,21 @@ impl<'a> Lexer<'a> {
 
             if *p == '.' {
                 if is_float {
-                    return Err(LexError::InvalidNumber);
+                    break;
                 } else {
                     is_float = true;
                     self.advance();
-                    continue;
+
+                    if let Some(p) = self.chars.peek() {
+                        if p.is_ascii_digit() {
+                            continue;
+                        }
+                    }
+
+                    is_float = false;
+                    self.pos -= 1;
+                    self.reset_iter();
+                    break;
                 }
             }
 
@@ -727,5 +737,19 @@ mod tests {
         let error = result.unwrap_err().item;
 
         assert_eq!(error, LexError::Unknown);
+    }
+
+    #[test]
+    fn int_followed_by_sym_access() {
+        let mut syms = SymbolMap::new();
+        let input = "333.foo;";
+        let tokens = vec![
+            Token::Int(333),
+            Token::Ctrl(Ctrl::Period),
+            Token::Ident(syms.get_id("foo")),
+            Token::Ctrl(Ctrl::SemiColon),
+        ];
+
+        assert_src_tokens(input, tokens, syms);
     }
 }

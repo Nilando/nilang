@@ -1,7 +1,5 @@
-use crate::runtime::string::VMString;
 use crate::symbol_map::{SymID, SymbolMap};
 
-use super::intrinsics::{call_single_arg_intrinsic, call_two_arg_intrinsic, call_zero_arg_intrinsic};
 use super::op::{
     add,
     sub,
@@ -26,13 +24,15 @@ use super::hash_map::GcHashMap;
 use super::list::List;
 use super::tagged_value::TaggedValue;
 use super::value::Value;
+use super::intrinsics::call_intrinsic;
+use super::partial::Callable;
+use super::string::VMString;
+use super::{RuntimeError, RuntimeErrorKind};
 
 pub use super::bytecode::ByteCode;
 
 use sandpit::{Gc, GcOpt, GcVec, Mutator, Trace};
 use std::cell::Cell;
-
-use super::{RuntimeError, RuntimeErrorKind};
 
 pub enum ExitCode {
   Print(String),
@@ -47,6 +47,7 @@ pub struct VM<'gc> {
     call_frames: GcVec<'gc, GcOpt<'gc, CallFrame<'gc>>>,
     frame_start: Cell<usize>,                
     globals: Gc<'gc, GcHashMap<'gc>>,
+    // print_value
 }
 
 impl<'gc> VM<'gc> {
@@ -143,29 +144,7 @@ impl<'gc> VM<'gc> {
                 self.set_reg_with_value(val, dest, mu);
             }
             ByteCode::StoreUpvalue { func, src } => {
-                let mut upval_count: usize = 1;
-                let mut recursive_upval_index = None; 
-                if func == src {
-                    recursive_upval_index = Some(upval_count - 1);
-                }
-
-                loop {
-                    match self.get_next_instruction() {
-                        ByteCode::StoreUpvalue { func, src } => {
-                            if func == src {
-                                recursive_upval_index = Some(upval_count);
-                            }
-                            upval_count += 1;
-                        }
-                        _ => {
-                            self.rewind_ip();
-                            let upvalues = self.collect_upvalues(upval_count, mu);
-
-                            self.create_closure(func, upvalues, recursive_upval_index, mu)?;
-                            break;
-                        }
-                    }
-                }
+                self.collect_upvalues_and_create_closure(func, src, mu)?;
             }
             ByteCode::StoreArg { .. } => {
                 self.read_args_then_call(1, mu, symbols)?;
@@ -392,6 +371,32 @@ impl<'gc> VM<'gc> {
         Ok(None)
     }
 
+    fn collect_upvalues_and_create_closure(&self, func: Reg, src: Reg, mu: &'gc Mutator<'gc>) -> Result<(), RuntimeError> {
+        let mut upval_count: usize = 1;
+        let mut recursive_upval_index = None; 
+        if func == src {
+            recursive_upval_index = Some(upval_count - 1);
+        }
+
+        loop {
+            match self.get_next_instruction() {
+                ByteCode::StoreUpvalue { func, src } => {
+                    if func == src {
+                        recursive_upval_index = Some(upval_count);
+                    }
+                    upval_count += 1;
+                }
+                _ => {
+                    self.rewind_ip();
+                    let upvalues = self.collect_upvalues(upval_count, mu);
+
+                    self.create_closure(func, upvalues, recursive_upval_index, mu)?;
+                    return Ok(())
+                }
+            }
+        }
+    }
+
     fn collect_upvalues(&self, upvalues: usize, mu: &'gc Mutator) -> Gc<'gc, [TaggedValue<'gc>]> {
         let ip = self.get_ip() - upvalues;
 
@@ -489,12 +494,26 @@ impl<'gc> VM<'gc> {
                 self.call_intrinsic_natural_func(sym_id, dest, supplied_args, mu, syms)?;
             }
             Value::Partial(partial) => {
-                //self.call_partial_func()
-                //match callable
-                //natural
-                //closure
-                //intrinsic
-                todo!("implement partial calls")
+                match partial.get_callable() {
+                    Callable::Intrinsic(sym) => {
+                        let call_instr_ip = self.get_ip() - 1;
+                        let first_arg_ip = call_instr_ip - supplied_args;
+                        let arg_iter = self.arg_iter(first_arg_ip, supplied_args);
+                        let result = call_intrinsic(arg_iter, Some(partial.get_args()), sym, syms, mu);
+
+                        match result {
+                            Ok(return_val) => {
+                                self.set_reg_with_value(return_val, dest, mu);
+
+                                return Ok(());
+                            }
+                            Err((kind, msg)) => {
+                                return Err(self.new_error(kind, msg));
+                            }
+                        }
+                    }
+                    _ => todo!()
+                }
             }
             calle => return Err(self.type_error(format!("Tried to call {} type", calle.type_str()))),
         }
@@ -514,6 +533,7 @@ impl<'gc> VM<'gc> {
     fn call_natural_func(&self, func: Gc<'gc, LoadedFunc<'gc>>, supplied_args: usize, mu: &'gc Mutator) -> Result<(), RuntimeError> {
         let arg_count = func.arg_count() as usize;
         let call_instr_ip = self.get_ip() - 1;
+        let first_arg_ip = call_instr_ip - arg_count;
 
         self.expect_args(func.arg_count().into(), supplied_args)?;
 
@@ -524,12 +544,12 @@ impl<'gc> VM<'gc> {
             self.registers.push(mu, Value::tagged_null());
         }
 
-        self.iterate_args(arg_count, call_instr_ip, |reg, arg_num| {
-            let val = self.reg_to_val(reg);
+        for (arg_num, tagged_val) in self.arg_iter(first_arg_ip, arg_count).enumerate() {
+            let val = Value::from(&tagged_val);
             let idx = new_frame_start + arg_num;
 
             self.registers.set(mu, Value::into_tagged(val, mu), idx);
-        });
+        }
 
         let init_frame = CallFrame::new(func.clone());
 
@@ -539,73 +559,12 @@ impl<'gc> VM<'gc> {
         Ok(())
     }
 
-    fn iterate_args(&self, arg_count: usize, call_ip: usize, f: impl Fn(u8, usize)) {
-        let first_arg_ip = call_ip - arg_count;
-
-        for arg_num in 0..arg_count {
-            let store_arg_ip = first_arg_ip + arg_num;
-            if let ByteCode::StoreArg { src } = self.get_instr_at(store_arg_ip) {
-                f(src, arg_num)
-            } else {
-                panic!("TODO: bad bytecode/internal error");
-            }
-        }
-    }
-
-    fn load_single_arg(&self, call_ip: usize) -> Value<'gc> {
-        let store_arg_ip = call_ip - 1;
-        if let ByteCode::StoreArg { src } = self.get_instr_at(store_arg_ip) {
-            self.reg_to_val(src)
-        } else {
-            panic!("TODO: bad bytecode/internal error");
-        }
-    }
-
-    fn load_two_args(&self, call_ip: usize) -> (Value<'gc>, Value<'gc>) {
-        let store_arg1_ip = call_ip - 2;
-        let store_arg2_ip = call_ip - 1;
-
-        let arg1 = 
-        if let ByteCode::StoreArg { src } = self.get_instr_at(store_arg1_ip) {
-            self.reg_to_val(src)
-        } else {
-            panic!("TODO: bad bytecode/internal error");
-        };
-
-        let arg2 =
-        if let ByteCode::StoreArg { src } = self.get_instr_at(store_arg2_ip) {
-            self.reg_to_val(src)
-        } else {
-            panic!("TODO: bad bytecode/internal error");
-        };
-
-        (arg1, arg2)
-    }
-
     fn call_intrinsic_natural_func(&self, sym_id: SymID, dest: Reg, arg_count: usize, mu: &'gc Mutator, syms: &mut SymbolMap) -> Result<(), RuntimeError> {
         let call_instr_ip = self.get_ip() - 1;
+        let first_arg_ip = call_instr_ip - arg_count;
+        let arg_iter = self.arg_iter(first_arg_ip, arg_count);
 
-        let result =
-        match arg_count {
-            0 => call_zero_arg_intrinsic(sym_id, mu),
-            1 => {
-                let arg = self.load_single_arg(call_instr_ip);
-
-                call_single_arg_intrinsic(arg, sym_id, mu, syms)
-            }
-            2 => {
-                let (arg1, arg2) = self.load_two_args(call_instr_ip);
-
-                call_two_arg_intrinsic(arg1, arg2, sym_id, mu)
-            }
-            _ => {
-                // currently there are no "top level" intrinsic functions
-                // with more than 2 args
-                panic!("internal error/bad bytecode")
-            }
-        };
-
-        match result {
+        match call_intrinsic(arg_iter, None, sym_id, syms, mu) {
             Ok(return_val) => {
                 self.set_reg_with_value(return_val, dest, mu);
 
@@ -615,19 +574,7 @@ impl<'gc> VM<'gc> {
                 Err(self.new_error(kind, msg))
             }
         }
-
     }
-
-    fn call_intrinsic_partial_func(&self, sym_id: SymID, dest: Reg, arg_count: usize, mu: &'gc Mutator) -> Result<(), RuntimeError> {
-        //
-        todo!()
-    }
-
-    /*
-    fn unimplemented(&self) -> RuntimeError {
-        self.new_error(RuntimeErrorKind::Unimplemented, "this is not implemented".to_string())
-    }
-    */
 
     fn wrong_num_args(&self, msg: String) -> RuntimeError {
         self.new_error(RuntimeErrorKind::WrongNumArgs, msg)
@@ -719,5 +666,49 @@ impl<'gc> VM<'gc> {
         let idx = raw_idx as usize + self.frame_start.get();
 
         self.registers.set(mu, val, idx);
+    }
+
+    fn arg_iter<'a>(&'a self, first_arg_ip: usize, arg_count: usize) -> ArgIter<'a, 'gc> {
+        ArgIter {
+            arg_count,
+            frame_start: self.frame_start.get(),
+            registers: &self.registers,
+            call_frame: self.get_top_call_frame(),
+            ip: first_arg_ip
+        }
+    }
+}
+
+pub struct ArgIter<'a, 'gc> {
+    arg_count: usize,
+    frame_start: usize,
+    registers: &'a GcVec<'gc, TaggedValue<'gc>>,
+    call_frame: Gc<'gc, CallFrame<'gc>>,
+    ip: usize,
+}
+
+impl<'a, 'gc> ArgIter<'a, 'gc> {
+    pub fn get_arg_count(&self) -> usize {
+        self.arg_count
+    }
+}
+
+impl<'a, 'gc> Iterator for ArgIter<'a, 'gc>  {
+    type Item = TaggedValue<'gc>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let ByteCode::StoreArg { src } = self.call_frame.get_instr_at(self.ip) {
+            let reg_idx = self.frame_start + src as usize;
+
+            if reg_idx >= self.registers.len() {
+                return None;
+            }
+
+            self.ip += 1;
+
+            self.registers.get_idx(reg_idx)
+        } else {
+            None
+        }
     }
 }

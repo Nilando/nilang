@@ -1,8 +1,10 @@
 use sandpit::{Gc, Mutator};
+use crate::symbol_map::{ABS_SYM, CEIL_SYM, FLOOR_SYM};
+
+use super::partial::Partial;
 use super::value::Value;
 use super::hash_map::GcHashMap;
 use super::string::VMString;
-use super::RuntimeErrorKind;
 
 pub fn add<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, String> {
     match (lhs, rhs) {
@@ -167,7 +169,7 @@ pub fn not_equal<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Option<Value<'gc>> {
 }
 
 pub fn mem_load<'gc>(store: Value<'gc>, key: Value<'gc>, mu: &'gc Mutator) -> Result<Value<'gc>, String> {
-    match (store, key) {
+    match (&store, key) {
         (Value::List(list), Value::Int(idx)) => {
             Ok(list.at(idx))
         }
@@ -186,6 +188,20 @@ pub fn mem_load<'gc>(store: Value<'gc>, key: Value<'gc>, mu: &'gc Mutator) -> Re
                 Ok(Value::from(&val))
             } else {
                 Ok(Value::Null)
+            }
+        }
+        (Value::Int(_), Value::SymId(sym)) | (Value::Float(_), Value::SymId(sym)) => {
+            match sym {
+                ABS_SYM 
+                | FLOOR_SYM 
+                | CEIL_SYM => {
+                    let partial = Partial::alloc_intrinsic(sym, mu, Value::into_tagged(store, mu));
+
+                    Ok(Value::Partial(Gc::new(mu, partial)))
+                }
+                // TIMES_SYM
+                // let partial = Partial::alloc_intrinsic(TIMES_FUNC_ID, mu, Value::into_tagged(store, mu));
+                _ => todo!("undefined method")
             }
         }
         (lhs, rhs) => {

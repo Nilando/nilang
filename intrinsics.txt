@@ -1,12 +1,12 @@
 PROGRESS: 
 top level:      11/11
-num methods:    0/6
+num methods:    3/6
 string methods: 0/5
 list methods:   0/16
 map methods:    0/6
 fn methods:     0/2
 ---------------------
-TOTAL:          11/46
+TOTAL:          14/46
 
 # TYPES:
 null, bool, sym, num, string, list, map, fn
@@ -41,10 +41,10 @@ none
 
 ## num methods:
 abs(self) -> num
-pow(self, num) -> num
-log(self, num) -> num
 floor(self) -> num
 ceil(self) -> num
+pow(self, num) -> num
+log(self, num) -> num
 times(self, fn(num)) -> list
 
 ## string methods:

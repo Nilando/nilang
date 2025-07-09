@@ -77,9 +77,9 @@ impl Runtime {
                         ExitCode::Yield => {}
                         ExitCode::Print(str) => {
                             if let Some(output) = &mut self.saved_output {
-                                output.push_str(str.as_str());
+                                output.push_str(&format!("{}\n", str.as_str()));
                             } else {
-                                print!("{str}");
+                                println!("{str}");
                             }
                         }
                         ExitCode::Read => {
@@ -180,7 +180,10 @@ impl RuntimeError {
 
 #[derive(Debug)]
 pub enum RuntimeErrorKind {
-    //Unimplemented,
     TypeError,
-    WrongNumArgs
+    WrongNumArgs,
+    UndefinedMethod,
+    InvalidByteCode,
+    InternalError,
+    Unimplemented
 }
