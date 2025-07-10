@@ -68,7 +68,9 @@ generate_intrinsic_syms! {
     NULL_SYM,
     ABS_SYM,
     FLOOR_SYM,
-    CEIL_SYM
+    CEIL_SYM,
+    POW_SYM,
+    LOG_SYM
 }
 
 impl SymbolMap {

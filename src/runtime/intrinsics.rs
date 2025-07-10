@@ -3,7 +3,7 @@ use std::time::Duration;
 use sandpit::{Gc, Mutator};
 
 use crate::runtime::string::VMString;
-use crate::symbol_map::{SymID, SymbolMap, ABS_SYM, ARGS_SYM, BOOL_SYM, CEIL_SYM, CLONE_SYM, FLOOR_SYM, FN_SYM, LIST_SYM, MAP_SYM, NULL_SYM, NUM_SYM, RANGE_SYM, READ_FILE_SYM, REPEAT_SYM, SLEEP_SYM, STR_SYM, SYM_SYM, TYPE_SYM};
+use crate::symbol_map::{SymID, SymbolMap, ABS_SYM, ARGS_SYM, BOOL_SYM, CEIL_SYM, CLONE_SYM, FLOOR_SYM, FN_SYM, LIST_SYM, LOG_SYM, MAP_SYM, NULL_SYM, NUM_SYM, POW_SYM, RANGE_SYM, READ_FILE_SYM, REPEAT_SYM, SLEEP_SYM, STR_SYM, SYM_SYM, TYPE_SYM};
 
 use super::list::List;
 use super::tagged_value::TaggedValue;
@@ -87,6 +87,14 @@ pub fn call_intrinsic<'a, 'gc>(
             let (arg1, arg2) = extract_two_args(stack_args, partial_args)?;
             range(arg1, arg2, mu)
         }
+        POW_SYM => {
+            let (arg1, arg2) = extract_two_args(stack_args, partial_args)?;
+            pow(arg1, arg2, mu)
+        }
+        LOG_SYM => {
+            let (arg1, arg2) = extract_two_args(stack_args, partial_args)?;
+            log(arg1, arg2, mu)
+        }
         _ => todo!()
     }
 }
@@ -99,7 +107,30 @@ fn extract_two_args<'a, 'gc>(mut stack_args: ArgIter<'a, 'gc>, partial_args: Opt
     };
     let stack_arg_count = stack_args.get_arg_count();
 
-    todo!("implement extract two args")
+    expect_arg_count(2, stack_arg_count, partial_arg_count)?;
+
+    if let Some(args) = partial_args {
+        match args.len() {
+            1 => {
+                let arg1 = Value::from(&args[0]);
+                let arg2 = Value::from(&stack_args.next().unwrap());
+
+                Ok((arg1, arg2))
+            }
+            2 => {
+                let arg1 = Value::from(&args[0]);
+                let arg2 = Value::from(&args[1]);
+
+                Ok((arg1, arg2))
+            }
+            _ => panic!("this shouldnt be reachable")
+        }
+    } else {
+        let arg1 = Value::from(&stack_args.next().unwrap());
+        let arg2 = Value::from(&stack_args.next().unwrap());
+
+        Ok((arg1, arg2))
+    }
 }
 
 fn extract_single_arg<'a, 'gc>(mut stack_args: ArgIter<'a, 'gc>, partial_args: Option<Gc<'gc, [TaggedValue<'gc>]>>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
@@ -135,6 +166,42 @@ fn get_arg_count(arg_iter: &ArgIter<'_, '_>, partial_args: &Option<Gc<'_, [Tagge
         arg_iter.get_arg_count() + args.len()
     } else {
         arg_iter.get_arg_count()
+    }
+}
+
+fn log<'gc>(base: Value<'gc>, exponent: Value<'gc>, mu: &'gc Mutator) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+    match (base, &exponent) {
+        (Value::Int(a), Value::Int(b)) => {
+            Ok(Value::Float((a as f64).log(*b as f64)))
+        }
+        (Value::Int(a), Value::Float(b)) => {
+            Ok(Value::Float((a as f64).log(*b)))
+        }
+        (Value::Float(a), Value::Int(b)) => {
+            Ok(Value::Float(a.log(*b as f64)))
+        }
+        (Value::Float(a), Value::Float(b)) => {
+            Ok(Value::Float(a.log(*b)))
+        }
+        _ => return Err((RuntimeErrorKind::TypeError, format!("Unexpected arg of type {}", exponent.type_str())))
+    }
+}
+
+fn pow<'gc>(base: Value<'gc>, exponent: Value<'gc>, mu: &'gc Mutator) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+    match (base, &exponent) {
+        (Value::Int(a), Value::Int(b)) => {
+            Ok(Value::Float((a as f64).powf(*b as f64)))
+        }
+        (Value::Int(a), Value::Float(b)) => {
+            Ok(Value::Float((a as f64).powf(*b)))
+        }
+        (Value::Float(a), Value::Int(b)) => {
+            Ok(Value::Float(a.powf(*b as f64)))
+        }
+        (Value::Float(a), Value::Float(b)) => {
+            Ok(Value::Float(a.powf(*b)))
+        }
+        _ => return Err((RuntimeErrorKind::TypeError, format!("Unexpected arg of type {}", exponent.type_str())))
     }
 }
 

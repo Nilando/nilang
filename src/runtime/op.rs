@@ -1,5 +1,5 @@
 use sandpit::{Gc, Mutator};
-use crate::symbol_map::{ABS_SYM, CEIL_SYM, FLOOR_SYM};
+use crate::symbol_map::{ABS_SYM, CEIL_SYM, FLOOR_SYM, LOG_SYM, POW_SYM};
 
 use super::partial::Partial;
 use super::value::Value;
@@ -194,7 +194,9 @@ pub fn mem_load<'gc>(store: Value<'gc>, key: Value<'gc>, mu: &'gc Mutator) -> Re
             match sym {
                 ABS_SYM 
                 | FLOOR_SYM 
-                | CEIL_SYM => {
+                | CEIL_SYM
+                | POW_SYM 
+                | LOG_SYM => {
                     let partial = Partial::alloc_intrinsic(sym, mu, Value::into_tagged(store, mu));
 
                     Ok(Value::Partial(Gc::new(mu, partial)))
