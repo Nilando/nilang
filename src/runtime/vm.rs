@@ -1,5 +1,7 @@
-use crate::symbol_map::{SymID, SymbolMap};
+use crate::ir::DFA;
+use crate::symbol_map::{SymID, SymbolMap, TIMES_SYM};
 
+use super::builtin_funcs::times;
 use super::op::{
     add,
     sub,
@@ -47,6 +49,7 @@ pub struct VM<'gc> {
     call_frames: GcVec<'gc, GcOpt<'gc, CallFrame<'gc>>>,
     frame_start: Cell<usize>,                
     globals: Gc<'gc, GcHashMap<'gc>>,
+    built_ins: Gc<'gc, [Gc<'gc, LoadedFunc<'gc>>]>
     // print_value
 }
 
@@ -61,6 +64,7 @@ impl<'gc> VM<'gc> {
         let init_frame = CallFrame::new(main_func);
         let frame_start = Cell::new(0);
         let call_frame_ptr = GcOpt::new(mu, init_frame);
+        let built_ins = mu.alloc_array_from_fn(1, |_| Gc::new(mu, times(mu)));
 
         call_frames.push(mu, call_frame_ptr);
 
@@ -68,11 +72,14 @@ impl<'gc> VM<'gc> {
             registers,
             call_frames,
             frame_start,
-            globals: GcHashMap::alloc(mu)
+            globals: GcHashMap::alloc(mu),
+            built_ins
         }
     }
 
-    pub fn run(&self, mu: &'gc Mutator, symbols: &mut SymbolMap) -> Result<ExitCode, RuntimeError> {
+    pub fn run(&self, mu: &'gc Mutator, symbols: &mut SymbolMap) 
+    -> Result<ExitCode, RuntimeError> 
+    {
         loop {
             if mu.gc_yield() {
                 return Ok(ExitCode::Yield);
@@ -301,7 +308,7 @@ impl<'gc> VM<'gc> {
                 let store = self.reg_to_val(store);
                 let key = self.reg_to_val(key);
 
-                match mem_load(store, key, mu) {
+                match mem_load(store, key, mu, &self.built_ins) {
                     Ok(value) => {
                         self.set_reg_with_value(value, dest, mu);
                     }
@@ -478,12 +485,12 @@ impl<'gc> VM<'gc> {
     fn call_function(&self, dest: Reg, src: Reg, supplied_args: usize, mu: &'gc Mutator, syms: &mut SymbolMap) -> Result<(), RuntimeError> {
         match self.reg_to_val(src) {
             Value::Func(func) => {
-                self.call_natural_func(func, supplied_args, mu)?;
+                self.load_function_callframe(func, None, supplied_args, mu)?;
             }
             Value::Closure(closure) => {
                 let func = closure.get_func();
 
-                self.call_natural_func(func, supplied_args, mu)?;
+                self.load_function_callframe(func, None, supplied_args, mu)?;
 
                 let cf = self.get_top_call_frame();
                 let upvalues = closure.get_upvalues();
@@ -491,7 +498,32 @@ impl<'gc> VM<'gc> {
                 CallFrame::set_upvalues(cf, upvalues, mu);
             }
             Value::SymId(sym_id) => {
-                self.call_intrinsic_natural_func(sym_id, dest, supplied_args, mu, syms)?;
+                let call_instr_ip = self.get_ip() - 1;
+                let first_arg_ip = call_instr_ip - supplied_args;
+                let arg_iter = self.arg_iter(first_arg_ip, supplied_args);
+
+                if !SymbolMap::is_intrinsic(sym_id) {
+                    return Err(self.new_error(RuntimeErrorKind::TypeError, "Tried to call non intrinsic symbol".to_string()));
+                }
+
+                if sym_id == TIMES_SYM {
+                    let func = self.built_ins[0].clone();
+                    self.load_function_callframe(func, None, supplied_args, mu)?;
+                    return Ok(());
+                }
+
+                let result = call_intrinsic(arg_iter, None, sym_id, syms, mu);
+
+                match result {
+                    Ok(return_val) => {
+                        self.set_reg_with_value(return_val, dest, mu);
+
+                        return Ok(());
+                    }
+                    Err((kind, msg)) => {
+                        return Err(self.new_error(kind, msg));
+                    }
+                }
             }
             Value::Partial(partial) => {
                 match partial.get_callable() {
@@ -512,7 +544,19 @@ impl<'gc> VM<'gc> {
                             }
                         }
                     }
-                    _ => todo!()
+                    Callable::Func(func) => {
+                        self.load_function_callframe(func, Some(partial.get_args()), supplied_args, mu)?;
+                    }
+                    Callable::Closure(closure) => {
+                        let func = closure.get_func();
+
+                        self.load_function_callframe(func, Some(partial.get_args()), supplied_args, mu)?;
+
+                        let cf = self.get_top_call_frame();
+                        let upvalues = closure.get_upvalues();
+
+                        CallFrame::set_upvalues(cf, upvalues, mu);
+                    }
                 }
             }
             calle => return Err(self.type_error(format!("Tried to call {} type", calle.type_str()))),
@@ -530,12 +574,18 @@ impl<'gc> VM<'gc> {
         }
     }
 
-    fn call_natural_func(&self, func: Gc<'gc, LoadedFunc<'gc>>, supplied_args: usize, mu: &'gc Mutator) -> Result<(), RuntimeError> {
+    fn load_function_callframe(&self, func: Gc<'gc, LoadedFunc<'gc>>, partial_args: Option<Gc<'gc, [TaggedValue<'gc>]>>, stack_args: usize, mu: &'gc Mutator) -> Result<(), RuntimeError> {
         let arg_count = func.arg_count() as usize;
+        let partial_args_count = if let Some(ref args) = partial_args {
+            args.len()
+        } else {
+            0
+        };
+        let expected_args = arg_count - partial_args_count;
         let call_instr_ip = self.get_ip() - 1;
-        let first_arg_ip = call_instr_ip - arg_count;
+        let first_arg_ip = call_instr_ip - expected_args;
 
-        self.expect_args(func.arg_count().into(), supplied_args)?;
+        self.expect_args(expected_args, stack_args)?;
 
         let new_frame_start = self.frame_start.get()
             + self.get_top_call_frame().get_reg_count() as usize;
@@ -544,9 +594,18 @@ impl<'gc> VM<'gc> {
             self.registers.push(mu, Value::tagged_null());
         }
 
-        for (arg_num, tagged_val) in self.arg_iter(first_arg_ip, arg_count).enumerate() {
+        if let Some(args) = partial_args {
+            for (arg_num, tagged_val) in args.iter().enumerate() {
+                let val = Value::from(tagged_val);
+                let idx = new_frame_start + arg_num;
+
+                self.registers.set(mu, Value::into_tagged(val, mu), idx);
+            }
+        }
+
+        for (arg_num, tagged_val) in self.arg_iter(first_arg_ip, stack_args).enumerate() {
             let val = Value::from(&tagged_val);
-            let idx = new_frame_start + arg_num;
+            let idx = new_frame_start + arg_num + partial_args_count;
 
             self.registers.set(mu, Value::into_tagged(val, mu), idx);
         }
@@ -557,23 +616,6 @@ impl<'gc> VM<'gc> {
         self.call_frames.push(mu, GcOpt::new(mu, init_frame));
 
         Ok(())
-    }
-
-    fn call_intrinsic_natural_func(&self, sym_id: SymID, dest: Reg, arg_count: usize, mu: &'gc Mutator, syms: &mut SymbolMap) -> Result<(), RuntimeError> {
-        let call_instr_ip = self.get_ip() - 1;
-        let first_arg_ip = call_instr_ip - arg_count;
-        let arg_iter = self.arg_iter(first_arg_ip, arg_count);
-
-        match call_intrinsic(arg_iter, None, sym_id, syms, mu) {
-            Ok(return_val) => {
-                self.set_reg_with_value(return_val, dest, mu);
-
-                Ok(())
-            }
-            Err((kind, msg)) => {
-                Err(self.new_error(kind, msg))
-            }
-        }
     }
 
     fn wrong_num_args(&self, msg: String) -> RuntimeError {

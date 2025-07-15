@@ -3,7 +3,7 @@ use std::time::Duration;
 use sandpit::{Gc, Mutator};
 
 use crate::runtime::string::VMString;
-use crate::symbol_map::{SymID, SymbolMap, ABS_SYM, ARGS_SYM, BOOL_SYM, CEIL_SYM, CLONE_SYM, FLOOR_SYM, FN_SYM, LIST_SYM, LOG_SYM, MAP_SYM, NULL_SYM, NUM_SYM, POW_SYM, RANGE_SYM, READ_FILE_SYM, REPEAT_SYM, SLEEP_SYM, STR_SYM, SYM_SYM, TYPE_SYM};
+use crate::symbol_map::{SymID, SymbolMap, ABS_SYM, ARGS_SYM, BOOL_SYM, CEIL_SYM, CLONE_SYM, FLOOR_SYM, FN_SYM, LEN_SYM, LIST_SYM, LOG_SYM, MAP_SYM, NULL_SYM, NUM_SYM, POW_SYM, RANGE_SYM, READ_FILE_SYM, REPEAT_SYM, SLEEP_SYM, STR_SYM, SYM_SYM, TYPE_SYM};
 
 use super::list::List;
 use super::tagged_value::TaggedValue;
@@ -94,6 +94,11 @@ pub fn call_intrinsic<'a, 'gc>(
         LOG_SYM => {
             let (arg1, arg2) = extract_two_args(stack_args, partial_args)?;
             log(arg1, arg2, mu)
+        }
+        LEN_SYM => {
+            todo!()
+            // arg1 can either be a 
+            // get the partial_args
         }
         _ => todo!()
     }

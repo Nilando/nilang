@@ -70,7 +70,9 @@ generate_intrinsic_syms! {
     FLOOR_SYM,
     CEIL_SYM,
     POW_SYM,
-    LOG_SYM
+    LOG_SYM,
+    TIMES_SYM,
+    LEN_SYM
 }
 
 impl SymbolMap {

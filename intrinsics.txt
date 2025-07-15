@@ -1,12 +1,12 @@
 PROGRESS: 
 top level:      11/11
-num methods:    5/6
+num methods:    6/6
 string methods: 0/5
 list methods:   0/16
 map methods:    0/6
 fn methods:     0/2
 ---------------------
-TOTAL:          16/46
+TOTAL:          17/46
 
 # TYPES:
 null, bool, sym, num, string, list, map, fn
@@ -54,6 +54,7 @@ push(self, string) -> null
 trim(self) -> string
 // the following do *not* mutate in place
 slice(self, start, end) -> string
+contains(self, string) -> bool
 
 ## list methods:
 len(self) -> num
@@ -71,7 +72,7 @@ unique(self) -> list
 reverse(self) -> list
 flatten(self) -> list
 slice(self, start, end) -> list
-sort_by(self, fn(2)) -> list
+sort_by(self, fn(1)) -> list
 sort(self) -> list
 
 ## map methods:

@@ -11,6 +11,7 @@ mod closure;
 mod op;
 mod partial;
 mod intrinsics;
+mod builtin_funcs;
 
 #[cfg(test)]
 mod tests;
@@ -37,6 +38,7 @@ impl Runtime {
     pub fn init(program: Vec<Func>, symbols: SymbolMap) -> Self {
         let arena = Arena::new(|mu| {
             let loaded_program = load_program(program, mu);
+            // let builtins = load_builtins(mu);
 
             VM::init(loaded_program.last().unwrap().clone(), mu)
         });
@@ -108,7 +110,7 @@ fn load_program<'gc>(program: Vec<Func>, mu: &'gc Mutator) -> Vec<Gc<'gc, Loaded
             mu.alloc_array_from_fn(0, |_| LoadedLocal::Int(0));
         let code = mu.alloc_array_from_slice(func.get_instrs().as_slice());
         let spans = func.spans().into_gc(mu);
-        let loaded_func = LoadedFunc::new(func.id(), func.arg_count(), func.max_clique(), locals, code, spans);
+        let loaded_func = LoadedFunc::new(func.id(), func.arg_count(), func.max_clique(), locals, code, Some(spans));
         let loaded_func_ptr = Gc::new(mu, loaded_func);
 
         loaded_funcs.insert(func.id(), loaded_func_ptr.clone());

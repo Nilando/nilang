@@ -21,6 +21,15 @@ pub struct Partial<'gc> {
 }
 
 impl<'gc> Partial<'gc> {
+    pub fn from_func(func: Gc<'gc, LoadedFunc<'gc>>, mu: &'gc Mutator<'gc>, tagged_val: TaggedValue<'gc>) -> Self {
+        // ensure that func has enough
+
+        Self {
+            callable: Callable::Func(func),
+            bound_args: mu.alloc_array_from_fn(1, |_| tagged_val.clone()),
+        }
+    }
+
     pub fn alloc_intrinsic(sym: SymID, mu: &'gc Mutator<'gc>, tagged_val: TaggedValue<'gc>) -> Self {
 
         Self {

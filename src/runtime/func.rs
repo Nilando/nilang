@@ -34,7 +34,7 @@ pub struct LoadedFunc<'gc> {
     max_clique: u8,
     locals: Gc<'gc, [LoadedLocal<'gc>]>,
     code: Gc<'gc, [ByteCode]>,
-    spans: GcPackedSpans<'gc>,
+    spans: Option<GcPackedSpans<'gc>>,
 }
 
 impl<'gc> LoadedFunc<'gc> {
@@ -44,7 +44,7 @@ impl<'gc> LoadedFunc<'gc> {
         max_clique: u8,
         locals: Gc<'gc, [LoadedLocal<'gc>]>,
         code: Gc<'gc, [ByteCode]>,
-        spans: GcPackedSpans<'gc>,
+        spans: Option<GcPackedSpans<'gc>>,
     ) -> Self {
         Self {
             id,
@@ -88,7 +88,7 @@ impl<'gc> LoadedFunc<'gc> {
     }
 
     pub fn get_spans(&self) -> GcPackedSpans {
-        self.spans.clone()
+        self.spans.clone().unwrap()
     }
 }
 
