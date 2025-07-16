@@ -28,6 +28,11 @@ fn shortcircuit() {
 }
 
 #[test]
+fn switch_print() {
+  super::test_golden_ir("./src/ir/tests/golden/switch_print.golden")
+}
+
+#[test]
 fn lowering_no_input() {
   super::test_golden_ir("./src/ir/tests/golden/lowering_no_input.golden")
 }
