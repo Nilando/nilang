@@ -1,4 +1,4 @@
-use std::fmt::{Debug, Display};
+use std::fmt::Debug;
 
 use sandpit::{Gc, Mutator};
 
@@ -41,7 +41,7 @@ impl Debug for Value<'_> {
                 write!(f, "Closure(id: {}, args: {}, upvalues: {})", func.get_id(), func.arg_count(), closure.get_upvalues().len())
             }
             Value::Func(func) => write!(f, "Func(id: {}, args: {})", func.get_id(), func.arg_count()),
-            Value::Partial(func) => write!(f, "Partial"),
+            Value::Partial(_) => write!(f, "Partial"),
         }
     }
 }
@@ -61,7 +61,7 @@ pub enum Value<'gc> {
 }
 
 impl<'gc> Value<'gc> {
-    pub fn to_string(self, syms: &mut SymbolMap) -> String {
+    pub fn to_string(self, syms: &mut SymbolMap, top_level: bool) -> String {
         match self {
             Value::Null => "null".to_string(),
             Value::Int(i) => format!("{i}"),
@@ -76,7 +76,7 @@ impl<'gc> Value<'gc> {
                 for i in 0..list.len() {
                     let item = list.at(i as i32);
 
-                    s.push_str(item.to_string(syms).as_str());
+                    s.push_str(item.to_string(syms, false).as_str());
 
                     if i != list.len() - 1 {
                         s.push(',');
@@ -88,14 +88,22 @@ impl<'gc> Value<'gc> {
                 s
             }
             Value::Map(map) => map.to_string(syms),
-            Value::String(vm_str) => vm_str.as_string(),
+            Value::String(vm_str) => {
+                let s = vm_str.as_string();
+
+                if top_level {
+                    s
+                } else {
+                    format!("\"{s}\"")
+                }
+            }
             Value::Closure(closure) => {
                 let func = closure.get_func();
 
                 format!("Closure(id: {}, args: {}, upvalues: {})", func.get_id(), func.arg_count(), closure.get_upvalues().len())
             }
             Value::Func(func) => format!("Func(id: {}, args: {})", func.get_id(), func.arg_count()),
-            Value::Partial(func) => format!("Partial"),
+            Value::Partial(_) => format!("Partial"),
         }
     }
     pub fn into_tagged(self, mu: &'gc Mutator) -> TaggedValue<'gc> {

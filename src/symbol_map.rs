@@ -72,7 +72,12 @@ generate_intrinsic_syms! {
     POW_SYM,
     LOG_SYM,
     TIMES_SYM,
-    LEN_SYM
+    LEN_SYM,
+    TRIM_SYM,
+    PUSH_SYM,
+    SPLIT_SYM,
+    CONTAINS_SYM,
+    EACH_SYM
 }
 
 impl SymbolMap {

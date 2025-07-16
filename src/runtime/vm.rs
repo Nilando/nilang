@@ -1,7 +1,6 @@
-use crate::ir::DFA;
-use crate::symbol_map::{SymID, SymbolMap, TIMES_SYM};
+use crate::symbol_map::{SymbolMap, TIMES_SYM};
 
-use super::builtin_funcs::times;
+use super::builtin_funcs::{string_each, times};
 use super::op::{
     add,
     sub,
@@ -38,7 +37,7 @@ use std::cell::Cell;
 
 pub enum ExitCode {
   Print(String),
-  Read,
+  // Read,
   Yield,
   Exit,
 }
@@ -64,7 +63,12 @@ impl<'gc> VM<'gc> {
         let init_frame = CallFrame::new(main_func);
         let frame_start = Cell::new(0);
         let call_frame_ptr = GcOpt::new(mu, init_frame);
-        let built_ins = mu.alloc_array_from_fn(1, |_| Gc::new(mu, times(mu)));
+
+        let built_ins_slice = [
+            Gc::new(mu, times(mu)), 
+            Gc::new(mu, string_each(mu))
+        ];
+        let built_ins = mu.alloc_array_from_fn(2, |i| built_ins_slice[i].clone());
 
         call_frames.push(mu, call_frame_ptr);
 
@@ -134,7 +138,7 @@ impl<'gc> VM<'gc> {
             }
             ByteCode::Print { src } => {
                 let val = self.reg_to_val(src);
-                let output = val.to_string(symbols);
+                let output = val.to_string(symbols, true);
 
                 return Ok(Some(ExitCode::Print(output)));
             }

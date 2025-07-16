@@ -2,7 +2,7 @@ use std::cell::Cell;
 use crate::symbol_map::SymbolMap;
 
 use super::op::equal;
-use std::fmt::{Debug, Display};
+use std::fmt::Debug;
 
 use murmurhash3::murmurhash3_x64_128;
 use sandpit::{field, Gc, Mutator, Trace, TraceLeaf};
@@ -202,19 +202,8 @@ impl<'gc> GcHashMap<'gc> {
             let v = Value::from(&entry.val);
 
             if entry.is_used() {
-                let key_str = 
-                if k.is_string() {
-                    format!("\"{}\": ", k.to_string(syms))
-                } else {
-                    format!("{}: ", k.to_string(syms))
-                };
-
-                let val_str = 
-                if v.is_string() {
-                    format!("\"{}\", ", v.to_string(syms))
-                } else {
-                    format!("{}, ", v.to_string(syms))
-                };
+                let key_str = format!("{}: ", k.to_string(syms, false));
+                let val_str = format!("{}, ", v.to_string(syms, false));
 
                 s.push_str(&key_str);
                 s.push_str(&val_str);

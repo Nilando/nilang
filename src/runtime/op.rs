@@ -1,5 +1,5 @@
 use sandpit::{Gc, Mutator};
-use crate::symbol_map::{ABS_SYM, CEIL_SYM, FLOOR_SYM, LEN_SYM, LOG_SYM, POW_SYM, TIMES_SYM};
+use crate::symbol_map::{ABS_SYM, CEIL_SYM, CONTAINS_SYM, EACH_SYM, FLOOR_SYM, LEN_SYM, LOG_SYM, POW_SYM, PUSH_SYM, SPLIT_SYM, TIMES_SYM, TRIM_SYM};
 
 use super::func::LoadedFunc;
 use super::partial::Partial;
@@ -162,10 +162,7 @@ pub fn not_equal<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Option<Value<'gc>> {
 
             Some(Value::Bool(false))
         }
-        (lhs, rhs) => {
-            println!("lhs: {:?}, rhs: {:?}", lhs, rhs);
-            todo!()
-        }
+        _ => Some(Value::Bool(true)),
     }
 }
 
@@ -210,10 +207,30 @@ pub fn mem_load<'gc>(store: Value<'gc>, key: Value<'gc>, mu: &'gc Mutator, built
                 _ => todo!("undefined method")
             }
         }
-        (Value::String(s), Value::SymId(sym)) => {
+        (Value::List(_), Value::SymId(sym)) => {
             match sym {
-                LEN_SYM => {
-                    todo!()
+                LEN_SYM  => {
+                    let partial = Partial::alloc_intrinsic(sym, mu, Value::into_tagged(store, mu));
+
+                    Ok(Value::Partial(Gc::new(mu, partial)))
+                }
+                _ => todo!()
+            }
+        }
+        (Value::String(_), Value::SymId(sym)) => {
+            match sym {
+                LEN_SYM 
+                | TRIM_SYM
+                | PUSH_SYM
+                | CONTAINS_SYM
+                | SPLIT_SYM => {
+                    let partial = Partial::alloc_intrinsic(sym, mu, Value::into_tagged(store, mu));
+
+                    Ok(Value::Partial(Gc::new(mu, partial)))
+                }
+                EACH_SYM => {
+                    let partial = Partial::from_func(builtins[1].clone(), mu, Value::into_tagged(store, mu));
+                    Ok(Value::Partial(Gc::new(mu, partial)))
                 }
                 _ => todo!(), 
             }

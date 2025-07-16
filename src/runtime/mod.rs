@@ -84,13 +84,13 @@ impl Runtime {
                                 println!("{str}");
                             }
                         }
-                        ExitCode::Read => {
-                            todo!()
+                        // TODO:
+                        // ExitCode::Read => {
                             // vm.input_string(buf)
                             // read a string
                             // then mutate the arena and place the 
                             // read
-                        }
+                        //}
                     }
                 }
                 Err(err) => {
