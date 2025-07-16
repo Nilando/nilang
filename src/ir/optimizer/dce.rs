@@ -21,7 +21,7 @@ pub fn remove_dead_instructions(func: &mut Func) -> usize {
     let mut removed_instructions = 0;
 
     for block in func.get_blocks_mut().iter_mut() {
-        removed_instructions += dce_inner(block, liveness.get_live_out(block.get_id()));
+        removed_instructions += dce_inner(block, liveness.get_live_out_mut(block.get_id()));
     }
 
     removed_instructions

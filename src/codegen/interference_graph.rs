@@ -37,7 +37,7 @@ impl InterferenceGraph {
         liveness.exec(func);
 
         for block in func.get_blocks().iter() {
-            let live_vars = liveness.get_live_out(block.get_id());
+            let live_vars = liveness.get_live_out_mut(block.get_id());
 
             for var in live_vars.iter() {
                 graph.add_node(*var);

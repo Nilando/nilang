@@ -8,6 +8,11 @@ fn str_intrinsic() {
 }
 
 #[test]
+fn switching_value() {
+  super::test_golden_output("./src/runtime/tests/golden/switching_value.golden")
+}
+
+#[test]
 fn num_intrinsic() {
   super::test_golden_output("./src/runtime/tests/golden/num_intrinsic.golden")
 }

@@ -85,13 +85,16 @@ pub fn compute_dominated_blocks(func: &Func, seed_block: &Block) -> BTreeSet<Blo
 
 pub fn compute_dominance_frontier(func: &Func, seed_block: &Block) -> BTreeSet<BlockId> {
     let mut dominance_frontier: BTreeSet<BlockId> = BTreeSet::new();
-    let dominated_blocks = compute_dominated_blocks(func, seed_block);
+    let mut strictly_dominated_blocks = compute_dominated_blocks(func, seed_block);
+    let work_list: Vec<BlockId> = strictly_dominated_blocks.iter().copied().collect();
 
-    for id in dominated_blocks.iter() {
+    strictly_dominated_blocks.remove(&seed_block.get_id());
+
+    for id in work_list.iter() {
         let block = func.get_block(*id);
 
         for successor_id in block.get_successors().iter() {
-            if dominated_blocks.get(successor_id).is_none() {
+            if strictly_dominated_blocks.get(successor_id).is_none() {
                 dominance_frontier.insert(*successor_id);
             }
         }

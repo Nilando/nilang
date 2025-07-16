@@ -19,9 +19,10 @@ fn insert_phi_nodes(func: &mut Func) {
     let mut liveness = LivenessDFA::new();
     liveness.exec(func);
 
-    for block_id in func.get_block_ids() {
-        let dominating_block = func.get_block(block_id);
-        let defined_vars = dominating_block.defined_vars();
+    let mut work_list = func.get_block_ids();
+    while let Some(block_id) = work_list.pop() {
+        let dominator_block = func.get_block(block_id);
+        let defined_vars = dominator_block.defined_vars();
         let dominance_frontier = compute_dominance_frontier(func, func.get_block(block_id));
 
         for phi_block_id in dominance_frontier.iter() {
@@ -51,6 +52,7 @@ fn insert_phi_nodes(func: &mut Func) {
                 }
 
                 phi_block.push_phi_node(phi);
+                work_list.push(*phi_block_id);
             }
         }
     }
