@@ -192,6 +192,7 @@ impl LoweringCtx {
             Value::Float(f) => self.load_const(TacConst::Float(f)),
             Value::Bool(b) => self.load_const(TacConst::Bool(b)),
             Value::String(s) => self.load_const(TacConst::String(s)),
+            Value::Symbol(s) => self.load_const(TacConst::Sym(s)),
             Value::Global(sym_id) => self.load_global(sym_id),
             Value::Ident(sym_id) => self.lower_ident(sym_id),
             Value::Map(map) => self.lower_map(map),

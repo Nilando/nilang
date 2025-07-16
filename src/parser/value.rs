@@ -11,6 +11,7 @@ pub enum Value {
     Null,
     Float(f64),
     Int(i64),
+    Symbol(SymID),
     String(String),
     Bool(bool),
     List(Vec<Spanned<Expr>>),
@@ -95,6 +96,7 @@ fn atom_value<'a>() -> Parser<'a, Value> {
             let value = match spanned_token.item {
                 Token::Ident(sym_id) => Value::Ident(sym_id),
                 Token::Global(sym_id) => Value::Global(sym_id),
+                Token::Sym(sym_id) => Value::Symbol(sym_id),
                 Token::Float(f) => Value::Float(f),
                 Token::Int(i) => Value::Int(i),
                 Token::String(s) => Value::String(s.to_string()),
