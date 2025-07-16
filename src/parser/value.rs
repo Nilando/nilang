@@ -135,11 +135,19 @@ mod tests {
     }
 
     #[test]
-    fn parse_symbol() {
+    fn parse_ident() {
         let mut syms = SymbolMap::new();
         let v = parse_value_with_syms("testing", &mut syms).value;
 
         assert_eq!(v, Some(Value::Ident(syms.get_id("testing"))));
+    }
+
+    #[test]
+    fn parse_symbol() {
+        let mut syms = SymbolMap::new();
+        let v = parse_value_with_syms("#testing", &mut syms).value;
+
+        assert_eq!(v, Some(Value::Symbol(syms.get_id("testing"))));
     }
 
     #[test]

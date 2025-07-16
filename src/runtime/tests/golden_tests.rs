@@ -36,3 +36,8 @@ fn closure_printing() {
 fn euclidean_gcd() {
   super::test_golden_output("./src/runtime/tests/golden/euclidean_gcd.golden")
 }
+
+#[test]
+fn symbol_comparison_test() {
+  super::test_golden_output("./src/runtime/tests/golden/symbol_comparison_test.golden")
+}

@@ -1,0 +1,8 @@
+a = (#test == #sym("test"));
+b = (#str(#test) == "test");
+
+print(a && b);
+
+%%%%
+
+true

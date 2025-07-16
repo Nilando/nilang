@@ -776,4 +776,15 @@ mod tests {
 
         assert_src_tokens(input, tokens, syms);
     }
+
+    #[test]
+    fn lex_symbol() {
+        let mut syms = SymbolMap::new();
+        let input = "#potato";
+        let tokens = vec![
+            Token::Sym(syms.get_id("potato")),
+        ];
+
+        assert_src_tokens(input, tokens, syms);
+    }
 }

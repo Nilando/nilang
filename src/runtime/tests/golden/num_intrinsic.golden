@@ -1,10 +1,10 @@
-print(num("foo"));
-print(num(null));
-print(num(false));
-print(num(true));
-print(num("2"));
-print(num("3.5"));
-num_fn_copy = num;
+print(#num("foo"));
+print(#num(null));
+print(#num(false));
+print(#num(true));
+print(#num("2"));
+print(#num("3.5"));
+num_fn_copy = #num;
 num = 4;
 print(num);
 print(num_fn_copy("5.0"));
