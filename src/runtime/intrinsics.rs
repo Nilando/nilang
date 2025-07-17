@@ -3,7 +3,7 @@ use std::time::Duration;
 use sandpit::{Gc, Mutator};
 
 use crate::runtime::string::VMString;
-use crate::symbol_map::{SymID, SymbolMap, ABS_SYM, ARGS_SYM, BOOL_SYM, CEIL_SYM, CLONE_SYM, CONTAINS_SYM, FLOOR_SYM, FN_SYM, LEN_SYM, LIST_SYM, LOG_SYM, MAP_SYM, NULL_SYM, NUM_SYM, POW_SYM, PUSH_SYM, RANGE_SYM, READ_FILE_SYM, REPEAT_SYM, SLEEP_SYM, SPLIT_SYM, STR_SYM, SYM_SYM, TRIM_SYM, TYPE_SYM};
+use crate::symbol_map::{SymID, SymbolMap, ABS_SYM, ARGS_SYM, BOOL_SYM, CEIL_SYM, CLONE_SYM, FLOOR_SYM, LEN_SYM, LIST_SYM, LOG_SYM, MAP_SYM, NULL_SYM, NUM_SYM, POW_SYM, PUSH_SYM, READ_FILE_SYM, SLEEP_SYM, STR_SYM, SYM_SYM, FN_SYM, TYPE_SYM};
 
 use super::list::List;
 use super::tagged_value::TaggedValue;
@@ -79,14 +79,6 @@ pub fn call_intrinsic<'a, 'gc>(
             let arg = extract_single_arg(stack_args, partial_args)?;
             ceil(arg)
         }
-        REPEAT_SYM => {
-            let (arg1, arg2) = extract_two_args(stack_args, partial_args)?;
-            repeat(arg1, arg2, mu)
-        }
-        RANGE_SYM => {
-            let (arg1, arg2) = extract_two_args(stack_args, partial_args)?;
-            range(arg1, arg2, mu)
-        }
         POW_SYM => {
             let (arg1, arg2) = extract_two_args(stack_args, partial_args)?;
             pow(arg1, arg2, mu)
@@ -102,18 +94,6 @@ pub fn call_intrinsic<'a, 'gc>(
         PUSH_SYM => {
             let (arg1, arg2) = extract_two_args(stack_args, partial_args)?;
             push(arg1, arg2, mu)
-        }
-        TRIM_SYM => {
-            let arg = extract_single_arg(stack_args, partial_args)?;
-            trim(arg, mu)
-        }
-        SPLIT_SYM => {
-            let (arg1, arg2) = extract_two_args(stack_args, partial_args)?;
-            split(arg1, arg2, mu)
-        }
-        CONTAINS_SYM => {
-            let (arg1, arg2) = extract_two_args(stack_args, partial_args)?;
-            contains(arg1, arg2, mu)
         }
         _ => todo!()
     }
@@ -181,38 +161,6 @@ fn expect_arg_count(total_args: usize, stack_args: usize, partial_args: usize) -
     }
 }
 
-fn contains<'gc>(store: Value<'gc>, item: Value<'gc>, mu: &'gc Mutator) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
-    match (store, &item) {
-        (Value::String(a), Value::String(b)) => {
-            let s = a.as_string();
-            let pat = b.as_string();
-            let result = s.contains(&pat);
-
-            Ok(Value::Bool(result))
-        }
-        _ => return Err((RuntimeErrorKind::TypeError, format!("Unexpected arg of type {}", item.type_str())))
-    }
-}
-
-fn split<'gc>(store: Value<'gc>, item: Value<'gc>, mu: &'gc Mutator) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
-    match (store, &item) {
-        (Value::String(a), Value::String(b)) => {
-            let store = a.as_string();
-            let pat = b.as_string();
-
-            let gc_list = Gc::new(mu, List::alloc(mu));
-            for sub_seq in store.split(&pat) {
-                let val = Value::String(Gc::new(mu, VMString::alloc(sub_seq.chars(), mu)));
-                let tagged = Value::into_tagged(val, mu);
-                gc_list.push(tagged, mu);
-            }
-
-            Ok(Value::List(gc_list))
-        }
-        _ => return Err((RuntimeErrorKind::TypeError, format!("Unexpected arg of type {}", item.type_str())))
-    }
-}
-
 fn push<'gc>(store: Value<'gc>, item: Value<'gc>, mu: &'gc Mutator) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
     match (store, &item) {
         (Value::String(a), Value::String(b)) => {
@@ -233,19 +181,6 @@ fn len<'gc>(arg: Value<'gc>, mu: &'gc Mutator) -> Result<Value<'gc>, (RuntimeErr
         }
         Value::List(list) => {
             Ok(Value::Int(list.len() as i32))
-        }
-        _ => return Err((RuntimeErrorKind::TypeError, format!("Unexpected arg of type {}", arg.type_str())))
-    }
-}
-
-fn trim<'gc>(arg: Value<'gc>, mu: &'gc Mutator) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
-    match arg {
-        Value::String(vm_str) => {
-            // TODO: make this efficient :P
-            let s = vm_str.as_string();
-            let trimmed = s.trim();
-
-            Ok(Value::String(Gc::new(mu, VMString::alloc(trimmed.chars(), mu))))
         }
         _ => return Err((RuntimeErrorKind::TypeError, format!("Unexpected arg of type {}", arg.type_str())))
     }
@@ -285,42 +220,6 @@ fn pow<'gc>(base: Value<'gc>, exponent: Value<'gc>, mu: &'gc Mutator) -> Result<
         }
         _ => return Err((RuntimeErrorKind::TypeError, format!("Unexpected arg of type {}", exponent.type_str())))
     }
-}
-
-fn range<'gc>(start: Value<'gc>, end: Value<'gc>, mu: &'gc Mutator) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
-    fn value_to_i64<'gc>(value: Value<'gc>) -> Result<i64, (RuntimeErrorKind, String)> {
-        match value {
-            Value::Int(i) => Ok(i as i64),
-            Value::Float(f) => Ok(f as i64),
-            _ => return Err((RuntimeErrorKind::TypeError, format!("Unexpected arg of type {}", value.type_str())))
-        }
-    }
-    let s = value_to_i64(start)?;
-    let e = value_to_i64(end)?;
-
-    let gc_list = Gc::new(mu, List::alloc(mu));
-    for i in s..e {
-        gc_list.push(Value::Float(i as f64).into_tagged(mu), mu);
-    }
-    Ok(Value::List(gc_list))
-}
-
-fn repeat<'gc>(times: Value<'gc>, val: Value<'gc>, mu: &'gc Mutator) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
-    let n = 
-    match times {
-        Value::Int(i) => i as u64,
-        Value::Float(f) => f as u64,
-        _ => return Err((RuntimeErrorKind::TypeError, format!("Unexpected arg of type {}", times.type_str())))
-    };
-
-    let gc_list = Gc::new(mu, List::alloc(mu));
-    let tagged_value = val.into_tagged(mu);
-    for _ in 0..n {
-        gc_list.push(tagged_value.clone(), mu);
-
-    }
-
-    Ok(Value::List(gc_list))
 }
 
 fn abs<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {

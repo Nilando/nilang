@@ -1,4 +1,4 @@
-use crate::symbol_map::{SymbolMap, TIMES_SYM};
+use crate::symbol_map::SymbolMap;
 
 use super::op::{
     add,
