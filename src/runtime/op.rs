@@ -1,7 +1,6 @@
 use sandpit::{Gc, Mutator};
 use crate::symbol_map::{ABS_SYM, CEIL_SYM, CONTAINS_SYM, EACH_SYM, FLOOR_SYM, LEN_SYM, LOG_SYM, POW_SYM, PUSH_SYM, SPLIT_SYM, TIMES_SYM, TRIM_SYM};
 
-use super::func::LoadedFunc;
 use super::partial::Partial;
 use super::value::Value;
 use super::hash_map::GcHashMap;
@@ -166,7 +165,7 @@ pub fn not_equal<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Option<Value<'gc>> {
     }
 }
 
-pub fn mem_load<'gc>(store: Value<'gc>, key: Value<'gc>, mu: &'gc Mutator, builtins: &[Gc<'gc, LoadedFunc<'gc>>]) -> Result<Value<'gc>, String> {
+pub fn mem_load<'gc>(store: Value<'gc>, key: Value<'gc>, mu: &'gc Mutator) -> Result<Value<'gc>, String> {
     match (&store, key) {
         (Value::List(list), Value::Int(idx)) => {
             Ok(list.at(idx))
@@ -199,10 +198,6 @@ pub fn mem_load<'gc>(store: Value<'gc>, key: Value<'gc>, mu: &'gc Mutator, built
 
                     Ok(Value::Partial(Gc::new(mu, partial)))
                 }
-                TIMES_SYM => {
-                    let partial = Partial::from_func(builtins[0].clone(), mu, Value::into_tagged(store, mu));
-                    Ok(Value::Partial(Gc::new(mu, partial)))
-                }
                 // let partial = Partial::alloc_intrinsic(TIMES_FUNC_ID, mu, Value::into_tagged(store, mu));
                 _ => todo!("undefined method")
             }
@@ -226,10 +221,6 @@ pub fn mem_load<'gc>(store: Value<'gc>, key: Value<'gc>, mu: &'gc Mutator, built
                 | SPLIT_SYM => {
                     let partial = Partial::alloc_intrinsic(sym, mu, Value::into_tagged(store, mu));
 
-                    Ok(Value::Partial(Gc::new(mu, partial)))
-                }
-                EACH_SYM => {
-                    let partial = Partial::from_func(builtins[1].clone(), mu, Value::into_tagged(store, mu));
                     Ok(Value::Partial(Gc::new(mu, partial)))
                 }
                 _ => todo!(), 

@@ -1,6 +1,5 @@
 use crate::symbol_map::{SymbolMap, TIMES_SYM};
 
-use super::builtin_funcs::{string_each, times};
 use super::op::{
     add,
     sub,
@@ -48,7 +47,6 @@ pub struct VM<'gc> {
     call_frames: GcVec<'gc, GcOpt<'gc, CallFrame<'gc>>>,
     frame_start: Cell<usize>,                
     globals: Gc<'gc, GcHashMap<'gc>>,
-    built_ins: Gc<'gc, [Gc<'gc, LoadedFunc<'gc>>]>
     // print_value
 }
 
@@ -64,11 +62,6 @@ impl<'gc> VM<'gc> {
         let frame_start = Cell::new(0);
         let call_frame_ptr = GcOpt::new(mu, init_frame);
 
-        let built_ins_slice = [
-            Gc::new(mu, times(mu)), 
-            Gc::new(mu, string_each(mu))
-        ];
-        let built_ins = mu.alloc_array_from_fn(2, |i| built_ins_slice[i].clone());
 
         call_frames.push(mu, call_frame_ptr);
 
@@ -77,7 +70,6 @@ impl<'gc> VM<'gc> {
             call_frames,
             frame_start,
             globals: GcHashMap::alloc(mu),
-            built_ins
         }
     }
 
@@ -312,7 +304,7 @@ impl<'gc> VM<'gc> {
                 let store = self.reg_to_val(store);
                 let key = self.reg_to_val(key);
 
-                match mem_load(store, key, mu, &self.built_ins) {
+                match mem_load(store, key, mu) {
                     Ok(value) => {
                         self.set_reg_with_value(value, dest, mu);
                     }
@@ -508,12 +500,6 @@ impl<'gc> VM<'gc> {
 
                 if !SymbolMap::is_intrinsic(sym_id) {
                     return Err(self.new_error(RuntimeErrorKind::TypeError, "Tried to call non intrinsic symbol".to_string()));
-                }
-
-                if sym_id == TIMES_SYM {
-                    let func = self.built_ins[0].clone();
-                    self.load_function_callframe(func, None, supplied_args, mu)?;
-                    return Ok(());
                 }
 
                 let result = call_intrinsic(arg_iter, None, sym_id, syms, mu);

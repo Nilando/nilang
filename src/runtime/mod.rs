@@ -11,7 +11,6 @@ mod closure;
 mod op;
 mod partial;
 mod intrinsics;
-mod builtin_funcs;
 
 #[cfg(test)]
 mod tests;
