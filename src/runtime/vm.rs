@@ -25,7 +25,7 @@ use super::list::List;
 use super::tagged_value::TaggedValue;
 use super::value::Value;
 use super::intrinsics::call_intrinsic;
-use super::partial::Callable;
+use super::partial::{Callable, Partial};
 use super::string::VMString;
 use super::{RuntimeError, RuntimeErrorKind};
 
@@ -478,11 +478,44 @@ impl<'gc> VM<'gc> {
         self.frame_start.set(new_frame_start);
     }
 
+    fn call_partial(&self, dest: Reg, partial: Gc<'gc, Partial<'gc>>,supplied_args: usize, mu: &'gc Mutator, syms: &mut SymbolMap) -> Result<(), RuntimeError> {
+        match partial.get_callable() {
+            Callable::Intrinsic(sym) => {
+                let call_instr_ip = self.get_ip() - 1;
+                let first_arg_ip = call_instr_ip - supplied_args;
+                let arg_iter = self.arg_iter(first_arg_ip, supplied_args);
+                let result = call_intrinsic(arg_iter, Some(partial.get_args()), sym, syms, mu);
+
+                match result {
+                    Ok(return_val) => {
+                        self.set_reg_with_value(return_val, dest, mu);
+
+                        Ok(())
+                    }
+                    Err((kind, msg)) => Err(self.new_error(kind, msg)),
+                }
+            }
+            Callable::Func(func) => {
+                self.load_function_callframe(func, Some(partial.get_args()), supplied_args, mu)
+            }
+            Callable::Closure(closure) => {
+                let func = closure.get_func();
+
+                self.load_function_callframe(func, Some(partial.get_args()), supplied_args, mu)?;
+
+                let cf = self.get_top_call_frame();
+                let upvalues = closure.get_upvalues();
+
+                CallFrame::set_upvalues(cf, upvalues, mu);
+
+                Ok(())
+            }
+        }
+    }
+
     fn call_function(&self, dest: Reg, src: Reg, supplied_args: usize, mu: &'gc Mutator, syms: &mut SymbolMap) -> Result<(), RuntimeError> {
         match self.reg_to_val(src) {
-            Value::Func(func) => {
-                self.load_function_callframe(func, None, supplied_args, mu)?;
-            }
+            Value::Func(func) => self.load_function_callframe(func, None, supplied_args, mu),
             Value::Closure(closure) => {
                 let func = closure.get_func();
 
@@ -492,6 +525,8 @@ impl<'gc> VM<'gc> {
                 let upvalues = closure.get_upvalues();
 
                 CallFrame::set_upvalues(cf, upvalues, mu);
+
+                Ok(())
             }
             Value::SymId(sym_id) => {
                 let call_instr_ip = self.get_ip() - 1;
@@ -515,44 +550,9 @@ impl<'gc> VM<'gc> {
                     }
                 }
             }
-            Value::Partial(partial) => {
-                match partial.get_callable() {
-                    Callable::Intrinsic(sym) => {
-                        let call_instr_ip = self.get_ip() - 1;
-                        let first_arg_ip = call_instr_ip - supplied_args;
-                        let arg_iter = self.arg_iter(first_arg_ip, supplied_args);
-                        let result = call_intrinsic(arg_iter, Some(partial.get_args()), sym, syms, mu);
-
-                        match result {
-                            Ok(return_val) => {
-                                self.set_reg_with_value(return_val, dest, mu);
-
-                                return Ok(());
-                            }
-                            Err((kind, msg)) => {
-                                return Err(self.new_error(kind, msg));
-                            }
-                        }
-                    }
-                    Callable::Func(func) => {
-                        self.load_function_callframe(func, Some(partial.get_args()), supplied_args, mu)?;
-                    }
-                    Callable::Closure(closure) => {
-                        let func = closure.get_func();
-
-                        self.load_function_callframe(func, Some(partial.get_args()), supplied_args, mu)?;
-
-                        let cf = self.get_top_call_frame();
-                        let upvalues = closure.get_upvalues();
-
-                        CallFrame::set_upvalues(cf, upvalues, mu);
-                    }
-                }
-            }
-            calle => return Err(self.type_error(format!("Tried to call {} type", calle.type_str()))),
+            Value::Partial(partial) => self.call_partial(dest, partial, supplied_args, mu, syms),
+            calle => Err(self.type_error(format!("Tried to call {} type", calle.type_str()))),
         }
-
-        Ok(())
     }
 
     fn expect_args(&self, expected_args: usize, supplied_args: usize) -> Result<(), RuntimeError> {
