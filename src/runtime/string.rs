@@ -30,6 +30,10 @@ impl<'gc> VMString<'gc> {
         self.vec.push(mu, Cell::new(c));
     }
 
+    pub fn pop_char(&self) -> Option<char> {
+        self.vec.pop().map(|cell| cell.get())
+    }
+
     pub fn at(&self, idx: usize) -> Option<char> {
         Some(self.vec.get_idx(idx)?.get())
     }

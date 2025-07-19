@@ -1,5 +1,5 @@
 use sandpit::{Gc, Mutator};
-use crate::symbol_map::{ABS_SYM, CEIL_SYM, FLOOR_SYM, LEN_SYM, LOG_SYM, POW_SYM, PUSH_SYM};
+use crate::symbol_map::{ABS_SYM, ARITY_SYM, CEIL_SYM, FLOOR_SYM, LEN_SYM, LOG_SYM, POP_SYM, POW_SYM, PUSH_SYM};
 
 use super::partial::Partial;
 use super::value::Value;
@@ -205,19 +205,39 @@ pub fn mem_load<'gc>(store: Value<'gc>, key: Value<'gc>, mu: &'gc Mutator) -> Re
         (Value::List(list), Value::SymId(sym)) => {
             match sym {
                 LEN_SYM  => Ok(Value::Int(list.len().try_into().unwrap())),
+                PUSH_SYM | POP_SYM  => {
+                    let partial = Partial::alloc_intrinsic(sym, mu, Value::into_tagged(store, mu));
+
+                    Ok(Value::Partial(Gc::new(mu, partial)))
+                }
                 _ => todo!()
             }
         }
         (Value::String(s), Value::SymId(sym)) => {
             match sym {
                 LEN_SYM  => Ok(Value::Int(s.len().try_into().unwrap())),
-                PUSH_SYM  => {
+                PUSH_SYM | POP_SYM  => {
                     let partial = Partial::alloc_intrinsic(sym, mu, Value::into_tagged(store, mu));
 
                     Ok(Value::Partial(Gc::new(mu, partial)))
                 }
                 _ => todo!(), 
             }
+        }
+        (Value::Func(f), Value::SymId(sym)) => {
+            match sym {
+                ARITY_SYM => Ok(Value::Int(f.arg_count().try_into().unwrap())),
+                _ => todo!(), 
+            }
+        }
+        (Value::Closure(f), Value::SymId(sym)) => {
+            match sym {
+                ARITY_SYM => Ok(Value::Int(f.get_func().arg_count().try_into().unwrap())),
+                _ => todo!(), 
+            }
+        }
+        (Value::Partial(f), Value::SymId(sym)) => {
+            todo!()
         }
         (lhs, rhs) => {
             Err(format!("Attempted to access a {} via a {}", lhs.type_str(), rhs.type_str()))

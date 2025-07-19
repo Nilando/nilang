@@ -3,7 +3,7 @@ use std::time::Duration;
 use sandpit::{Gc, Mutator};
 
 use crate::runtime::string::VMString;
-use crate::symbol_map::{SymID, SymbolMap, ABS_SYM, ARGS_SYM, BOOL_SYM, CEIL_SYM, CLONE_SYM, FLOOR_SYM, LEN_SYM, LIST_SYM, LOG_SYM, MAP_SYM, NULL_SYM, NUM_SYM, POW_SYM, PUSH_SYM, READ_FILE_SYM, SLEEP_SYM, STR_SYM, SYM_SYM, FN_SYM, TYPE_SYM};
+use crate::symbol_map::{SymID, SymbolMap, ABS_SYM, ARGS_SYM, BOOL_SYM, CEIL_SYM, CLONE_SYM, FLOOR_SYM, FN_SYM, LEN_SYM, LIST_SYM, LOG_SYM, MAP_SYM, NULL_SYM, NUM_SYM, POP_SYM, POW_SYM, PUSH_SYM, READ_FILE_SYM, SLEEP_SYM, STR_SYM, SYM_SYM, TYPE_SYM};
 
 use super::list::List;
 use super::tagged_value::TaggedValue;
@@ -91,6 +91,10 @@ pub fn call_intrinsic<'a, 'gc>(
             let (arg1, arg2) = extract_two_args(stack_args, partial_args)?;
             push(arg1, arg2, mu)
         }
+        POP_SYM => {
+            let arg = extract_single_arg(stack_args, partial_args)?;
+            pop(arg, mu)
+        }
         // POP
         _ => todo!()
     }
@@ -159,7 +163,7 @@ fn expect_arg_count(total_args: usize, stack_args: usize, partial_args: usize) -
 }
 
 fn push<'gc>(store: Value<'gc>, item: Value<'gc>, mu: &'gc Mutator) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
-    match (store, &item) {
+    match (store, item) {
         (Value::String(a), Value::String(b)) => {
             for i in 0..b.len() {
                 a.push_char(b.at(i).unwrap(), mu);
@@ -167,7 +171,33 @@ fn push<'gc>(store: Value<'gc>, item: Value<'gc>, mu: &'gc Mutator) -> Result<Va
 
             Ok(Value::Null)
         }
-        _ => return Err((RuntimeErrorKind::TypeError, format!("Unexpected arg of type {}", item.type_str())))
+        (Value::List(list), any) => {
+            list.push(Value::into_tagged(any, mu), mu);
+
+            Ok(Value::Null)
+        }
+        (_, item) => return Err((RuntimeErrorKind::TypeError, format!("Unexpected arg of type {}", item.type_str())))
+    }
+}
+
+fn pop<'gc>(store: Value<'gc>, mu: &'gc Mutator) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+    match store {
+        Value::String(s) => {
+            match s.pop_char() {
+                None => Ok(Value::Null),
+                Some(c) => {
+                    let new_string = VMString::alloc_empty(mu);
+                    new_string.push_char(c, mu);
+
+                    Ok(Value::String(Gc::new(mu, new_string)))
+                }
+            }
+
+        }
+        Value::List(list) => {
+            Ok(Value::from(&list.pop()))
+        }
+        item => return Err((RuntimeErrorKind::TypeError, format!("Unexpected arg of type {}", item.type_str())))
     }
 }
 

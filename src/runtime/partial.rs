@@ -11,7 +11,7 @@ use super::tagged_value::TaggedValue;
 pub enum Callable<'gc> {
     Func(Gc<'gc, LoadedFunc<'gc>>),
     Closure(Gc<'gc, Closure<'gc>>),
-    Intrinsic(SymID)
+    Intrinsic(SymID),
 }
 
 #[derive(Trace)]
@@ -22,7 +22,7 @@ pub struct Partial<'gc> {
 
 impl<'gc> Partial<'gc> {
     pub fn from_func(func: Gc<'gc, LoadedFunc<'gc>>, mu: &'gc Mutator<'gc>, tagged_val: TaggedValue<'gc>) -> Self {
-        // ensure that func has enough
+        // TODO: ensure that func has enough args
 
         Self {
             callable: Callable::Func(func),
