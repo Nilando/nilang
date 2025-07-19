@@ -202,20 +202,16 @@ pub fn mem_load<'gc>(store: Value<'gc>, key: Value<'gc>, mu: &'gc Mutator) -> Re
                 _ => todo!("undefined method")
             }
         }
-        (Value::List(_), Value::SymId(sym)) => {
+        (Value::List(list), Value::SymId(sym)) => {
             match sym {
-                LEN_SYM  => {
-                    let partial = Partial::alloc_intrinsic(sym, mu, Value::into_tagged(store, mu));
-
-                    Ok(Value::Partial(Gc::new(mu, partial)))
-                }
+                LEN_SYM  => Ok(Value::Int(list.len().try_into().unwrap())),
                 _ => todo!()
             }
         }
-        (Value::String(_), Value::SymId(sym)) => {
+        (Value::String(s), Value::SymId(sym)) => {
             match sym {
-                LEN_SYM 
-                | PUSH_SYM  => {
+                LEN_SYM  => Ok(Value::Int(s.len().try_into().unwrap())),
+                PUSH_SYM  => {
                     let partial = Partial::alloc_intrinsic(sym, mu, Value::into_tagged(store, mu));
 
                     Ok(Value::Partial(Gc::new(mu, partial)))

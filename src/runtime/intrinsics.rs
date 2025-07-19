@@ -87,14 +87,11 @@ pub fn call_intrinsic<'a, 'gc>(
             let (arg1, arg2) = extract_two_args(stack_args, partial_args)?;
             log(arg1, arg2, mu)
         }
-        LEN_SYM => {
-            let arg = extract_single_arg(stack_args, partial_args)?;
-            len(arg, mu)
-        }
         PUSH_SYM => {
             let (arg1, arg2) = extract_two_args(stack_args, partial_args)?;
             push(arg1, arg2, mu)
         }
+        // POP
         _ => todo!()
     }
 }
@@ -171,18 +168,6 @@ fn push<'gc>(store: Value<'gc>, item: Value<'gc>, mu: &'gc Mutator) -> Result<Va
             Ok(Value::Null)
         }
         _ => return Err((RuntimeErrorKind::TypeError, format!("Unexpected arg of type {}", item.type_str())))
-    }
-}
-
-fn len<'gc>(arg: Value<'gc>, mu: &'gc Mutator) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
-    match arg {
-        Value::String(vm_str) => {
-            Ok(Value::Int(vm_str.len() as i32))
-        }
-        Value::List(list) => {
-            Ok(Value::Int(list.len() as i32))
-        }
-        _ => return Err((RuntimeErrorKind::TypeError, format!("Unexpected arg of type {}", arg.type_str())))
     }
 }
 
