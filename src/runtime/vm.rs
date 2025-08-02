@@ -34,7 +34,10 @@ pub use super::bytecode::ByteCode;
 use sandpit::{Gc, GcOpt, GcVec, Mutator, Trace};
 use std::cell::Cell;
 
+pub const DISPATCH_LOOP_LENGTH: usize = 100;
+
 pub enum ExitCode {
+  LoadModule(String),
   Print(String),
   // Read,
   Yield,
@@ -47,7 +50,7 @@ pub struct VM<'gc> {
     call_frames: GcVec<'gc, GcOpt<'gc, CallFrame<'gc>>>,
     frame_start: Cell<usize>,                
     globals: Gc<'gc, GcHashMap<'gc>>,
-    // print_value
+    module_map: Gc<'gc, GcHashMap<'gc>>, // string -> export value
 }
 
 impl<'gc> VM<'gc> {
@@ -61,7 +64,8 @@ impl<'gc> VM<'gc> {
         let init_frame = CallFrame::new(main_func);
         let frame_start = Cell::new(0);
         let call_frame_ptr = GcOpt::new(mu, init_frame);
-
+        let module_map = GcHashMap::alloc(mu);
+        let globals = GcHashMap::alloc(mu);
 
         call_frames.push(mu, call_frame_ptr);
 
@@ -69,7 +73,8 @@ impl<'gc> VM<'gc> {
             registers,
             call_frames,
             frame_start,
-            globals: GcHashMap::alloc(mu),
+            globals,
+            module_map
         }
     }
 
@@ -81,12 +86,35 @@ impl<'gc> VM<'gc> {
                 return Ok(ExitCode::Yield);
             }
 
-            for _ in 0..100 {
+            for _ in 0..DISPATCH_LOOP_LENGTH {
                 if let Some(command) = self.dispatch_instruction(mu, symbols)? {
                     return Ok(command)
                 }
             }
         }
+    }
+
+    // can only be called right after an import module instruction was run
+    pub fn import_module_hook(&self, mu: &'gc Mutator, symbols: &mut SymbolMap, entry_func: Gc<'gc, LoadedFunc<'gc>>) -> Result<ExitCode, RuntimeError> {
+        let new_frame_start = self.frame_start.get()
+            + self.get_top_call_frame().get_reg_count() as usize;
+        let module_path =
+        if let ByteCode::Import { path, .. } = self.get_prev_instruction() {
+            self.get_reg(path)
+        } else {
+            todo!("previous instruction has to be an import instr")
+        };
+        let init_frame = CallFrame::new_with_module_path(entry_func.clone(), GcOpt::new(mu, module_path));
+
+        while new_frame_start + (entry_func.get_max_clique() as usize) > self.registers.len() {
+            self.registers.push(mu, Value::tagged_null());
+        }
+
+        self.frame_start.set(new_frame_start);
+        self.call_frames.push(mu, GcOpt::new(mu, init_frame));
+
+
+        self.run(mu, symbols)
     }
 
     fn dispatch_instruction(&self, mu: &'gc Mutator, symbols: &mut SymbolMap) -> Result<Option<ExitCode>, RuntimeError> {
@@ -354,9 +382,9 @@ impl<'gc> VM<'gc> {
             }
 
             ByteCode::LoadGlobal { dest, sym } => {
-                let sym_val = self.reg_to_val(sym);
+                let sym_val = self.get_reg(sym);
                 let tagged_val = 
-                match self.globals.get(sym_val.into_tagged(mu)) {
+                match self.globals.get(sym_val) {
                     Some(tagged) => tagged,
                     None => Value::tagged_null()
                 };
@@ -364,10 +392,34 @@ impl<'gc> VM<'gc> {
                 self.set_reg(tagged_val, dest, mu);
             }
             ByteCode::StoreGlobal { src, sym } => {
-                let sym_val = self.reg_to_val(sym);
-                let src_val = self.reg_to_val(src);
+                let sym_val = self.get_reg(sym);
+                let src_val = self.get_reg(src);
 
-                GcHashMap::insert(self.globals.clone(), sym_val.into_tagged(mu), src_val.into_tagged(mu), mu);
+                GcHashMap::insert(self.globals.clone(), sym_val, src_val, mu);
+            }
+            ByteCode::Import { dest, path } => {
+                let module_path_val = self.get_reg(path);
+
+                // TODO: assert(module_path_val) is a string
+
+                match self.module_map.get(module_path_val) {
+                    None => {
+                        let val = self.reg_to_val(path);
+                        let path = val.to_string(symbols, true);
+
+                        return Ok(Some(ExitCode::LoadModule(path)));
+                    }
+                    Some(export_value) => {
+                        self.set_reg(export_value, dest, mu);
+                    }
+                }
+            }
+            ByteCode::Export { src } => {
+                let callframe = self.get_top_call_frame();
+                let module_path = callframe.get_module_path();
+                let export_val = self.get_reg(src);
+
+                GcHashMap::insert(self.module_map.clone(), module_path, export_val, mu);
             }
         }
 
@@ -443,6 +495,7 @@ impl<'gc> VM<'gc> {
     }
 
     fn handle_return(&self, return_val: Value<'gc>, mu: &'gc Mutator) {
+        let popped_callframe = self.get_top_call_frame();
         self.pop_callframe();
 
         if self.call_frames.is_empty() {
@@ -451,7 +504,10 @@ impl<'gc> VM<'gc> {
 
         if let ByteCode::Call { dest, .. } = self.get_prev_instruction() {
             self.set_reg_with_value(return_val, dest, mu);
-        } else {
+        } else if let ByteCode::Import { dest, .. } = self.get_prev_instruction() {
+            let export_value = self.module_map.get(popped_callframe.get_module_path()).unwrap();
+            self.set_reg(export_value, dest, mu);
+        }else {
             todo!("bad return from function")
         }
     }
@@ -459,14 +515,7 @@ impl<'gc> VM<'gc> {
     fn pop_callframe(&self) {
         self.call_frames.pop();
 
-        // TODO: Its probably best to use some kind of heuristic, to detect when 
-        // to shrink the stack. Like we could just check if the frame start
-        // is less than half of the register stack, maybe we shrink the capacity
-        // by some factor.
-        //
-        //for _ in 0..cf.unwrap().get_reg_count() {
-        //    self.registers.pop();
-        //}
+        // TODO: have Gc reduce vec capacity
 
         if self.call_frames.is_empty() {
             return;

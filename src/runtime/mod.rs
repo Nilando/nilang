@@ -15,8 +15,10 @@ mod intrinsics;
 #[cfg(test)]
 mod tests;
 
+use crate::driver::compile_source;
 use crate::parser::Span;
 use crate::symbol_map::SymbolMap;
+use crate::Config;
 
 use self::func::{LoadedFunc, LoadedLocal};
 use self::vm::ExitCode;
@@ -31,10 +33,11 @@ pub struct Runtime {
     arena: Arena<Root![VM<'_>]>,
     symbols: SymbolMap,
     saved_output: Option<String>,
+    config: Config
 }
 
 impl Runtime {
-    pub fn init(program: Vec<Func>, symbols: SymbolMap) -> Self {
+    pub fn init(program: Vec<Func>, symbols: SymbolMap, config: Config) -> Self {
         let arena = Arena::new(|mu| {
             let loaded_program = load_program(program, mu);
             // let builtins = load_builtins(mu);
@@ -46,6 +49,7 @@ impl Runtime {
             arena,
             symbols,
             saved_output: None,
+            config
         }
     }
 
@@ -67,21 +71,32 @@ impl Runtime {
         let mut vm_result = Ok(ExitCode::Yield);
 
         loop {
-            self.arena.mutate(|mu, vm| {
-                vm_result = vm.run(mu, &mut self.symbols);
-            });
-
             match vm_result {
                 Ok(ref command) => {
                     match command {
-                        ExitCode::Exit => return Ok(()),
                         ExitCode::Yield => {}
+                        ExitCode::Exit => return Ok(()),
                         ExitCode::Print(str) => {
+                            // TODO: instead of having to copy the string out 
+                            // of GC mem, create a way to view the string and print without copying
                             if let Some(output) = &mut self.saved_output {
                                 output.push_str(&format!("{}\n", str.as_str()));
                             } else {
                                 println!("{str}");
                             }
+                        }
+                        ExitCode::LoadModule(path) => {
+                            let module = std::fs::read_to_string(path).expect("Failed to read file");
+                            let program = compile_source(&self.config, &mut self.symbols, &module).expect("Failed to load module");
+
+                            self.arena.mutate(|mu, vm| {
+                                let loaded_program = load_program(program, mu);
+                                let module_func = loaded_program.last().unwrap().clone();
+
+                                vm_result = vm.import_module_hook(mu, &mut self.symbols, module_func);
+                            });
+
+                            continue;
                         }
                         // TODO:
                         // ExitCode::Read => {
@@ -96,6 +111,10 @@ impl Runtime {
                     return Err(err);
                 }
             }
+
+            self.arena.mutate(|mu, vm| {
+                vm_result = vm.run(mu, &mut self.symbols);
+            });
         }
     }
 }

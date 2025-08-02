@@ -224,6 +224,8 @@ pub fn func_to_string(func: &Func) -> String {
             ByteCode::LoadGlobal { dest, sym } => format!("LDGB {dest}, #{sym}"),
             ByteCode::StoreGlobal { sym, src } => format!("STGB {src}, #{sym}"),
             ByteCode::Noop => "NOOP".to_string(),
+            ByteCode::Import { dest, path } => format!("IMPO {dest}, {path}"),
+            ByteCode::Export { src } => format!("EXPO {src}"),
         };
 
         result.push_str(&s);

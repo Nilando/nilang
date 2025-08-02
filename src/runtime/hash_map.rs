@@ -244,9 +244,14 @@ fn hash_value(v: &Value<'_>) -> usize {
             buffer.push(6);
             todo!()
         }
-        Value::String(_) => {
+        Value::String(vm_str) => {
             buffer.push(7);
-            todo!()
+
+            for i in 0..vm_str.len() {
+                let b = vm_str.at(i).unwrap() as u8;
+
+                buffer.push(b);
+            }
         }
         Value::Closure(_) => {
             buffer.push(8);

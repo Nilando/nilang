@@ -64,6 +64,8 @@ pub enum KeyWord {
     True,
     Print,
     Read,
+    Export,
+    Import
     // Eval
 }
 
@@ -320,6 +322,8 @@ impl<'a> Lexer<'a> {
             "false" => Token::KeyWord(KeyWord::False),
             "return" => Token::KeyWord(KeyWord::Return),
             "continue" => Token::KeyWord(KeyWord::Continue),
+            "export" => Token::KeyWord(KeyWord::Export),
+            "import" => Token::KeyWord(KeyWord::Import),
             _ => {
                 let id = syms.get_id(word);
 

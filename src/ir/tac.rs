@@ -55,7 +55,6 @@ pub enum Tac {
         dest: VReg,
         src: TacConst,
     },
-
     LoadGlobal {
         dest: VReg,
         sym: VReg,
@@ -64,7 +63,6 @@ pub enum Tac {
         src: VReg,
         sym: VReg,
     },
-
     LoadUpvalue {
         dest: VReg,
         id: UpValId,
@@ -98,6 +96,13 @@ pub enum Tac {
         label: LabelID,
     },
     Noop,
+    Export { 
+        src: VReg
+    },
+    Import { 
+        dest: VReg,
+        path: VReg,
+    },
 }
 
 impl Tac {
@@ -112,8 +117,10 @@ impl Tac {
             | Tac::StoreArg { src, .. }
             | Tac::Call { src, .. }
             | Tac::Return { src, .. }
+            | Tac::Export { src }
             | Tac::Jnt { src, .. }
             | Tac::Jit { src, .. } => [Some(src), None, None],
+            Tac::Import { path, .. } => [Some(path), None, None],
             Tac::MemLoad { store, key, .. } => [Some(store), Some(key), None],
             Tac::MemStore { store, key, src } => [Some(store), Some(key), Some(src)],
             Tac::StoreUpvalue { func, src } => [Some(func), Some(src), None],
@@ -131,8 +138,10 @@ impl Tac {
             | Tac::StoreArg { src, .. }
             | Tac::Call { src, .. }
             | Tac::Return { src, .. }
+            | Tac::Export { src }
             | Tac::Jnt { src, .. }
             | Tac::Jit { src, .. } => [Some(src), None, None],
+            Tac::Import { path, .. } => [Some(path), None, None],
             Tac::MemLoad { store, key, .. } => [Some(store), Some(key), None],
             Tac::MemStore { store, key, src } => [Some(store), Some(key), Some(src)],
             Tac::StoreUpvalue { func, src } => [Some(func), Some(src), None],
@@ -152,6 +161,7 @@ impl Tac {
             | Tac::Read { dest, .. }
             | Tac::NewMap { dest, .. }
             | Tac::NewList { dest, .. }
+            | Tac::Import { dest, .. }
             | Tac::Binop { dest, .. } => Some(dest),
             _ => None,
         }
@@ -176,7 +186,7 @@ impl Tac {
     pub fn has_side_effects(&self) -> bool {
         matches!(
             self,
-            Tac::Read { .. } | Tac::Print { .. } | Tac::Call { .. }
+            Tac::Read { .. } | Tac::Print { .. } | Tac::Call { .. } | Tac::Import { .. } | Tac::Export { .. }
         )
     }
 }

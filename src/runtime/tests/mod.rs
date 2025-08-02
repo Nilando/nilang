@@ -3,6 +3,7 @@ use crate::codegen::generate_func;
 use crate::ir::{lower_ast, optimize_func};
 use crate::parser::parse_program;
 use crate::symbol_map::SymbolMap;
+use crate::Config;
 use std::fs::File;
 use std::io::read_to_string;
 
@@ -50,7 +51,7 @@ fn test_golden_output(filename: &str) {
         program.push(func);
     }
 
-    let mut runtime = Runtime::init(program, syms);
+    let mut runtime = Runtime::init(program, syms, Config::default());
     runtime.save_output();
 
     match runtime.run() {

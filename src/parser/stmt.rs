@@ -1,6 +1,7 @@
 use super::expr::{expr, Expr, LhsExpr};
 use super::lexer::{Ctrl, KeyWord, Token};
 use super::spanned::Spanned;
+use super::value::string;
 use super::{block, ctrl, inputs, keyword, nothing, recursive, symbol, ParseError, Parser};
 
 use crate::symbol_map::SymID;
@@ -31,6 +32,11 @@ pub enum Stmt {
         else_stmts: Vec<Stmt>,
     },
     Return(Option<Spanned<Expr>>),
+    Export(Spanned<Expr>),
+    Import {
+        ident: SymID,
+        path: Spanned<String>,
+    },
     Continue,
     Break,
 }
@@ -40,8 +46,27 @@ pub fn stmt<'a>() -> Parser<'a, Stmt> {
         func_decl(stmt_parser.clone())
             .or(closed_stmt(stmt_parser.clone()))
             .or(if_or_ifelse_stmt(stmt_parser.clone()))
-            .or(while_stmt(stmt_parser))
+            .or(while_stmt(stmt_parser.clone()))
+            .or(import_stmt(stmt_parser))
     })
+}
+
+fn import_stmt(_: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
+    keyword(KeyWord::Import)
+        .then(symbol())
+        .append(
+            ctrl(Ctrl::Colon)
+            .then(string().spanned())
+        )
+        .map(|(ident, path)| {
+            Stmt::Import { ident, path }
+        })
+}
+
+fn export_stmt(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
+    keyword(KeyWord::Export)
+        .then(expr(sp))
+        .map(Stmt::Export)
 }
 
 fn func_decl(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
@@ -113,9 +138,10 @@ fn if_stmt(sp: Parser<'_, Stmt>) -> Parser<'_, (Spanned<Expr>, Vec<Stmt>)> {
 
 fn closed_stmt(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
     basic_stmt(sp.clone())
-        .or(return_stmt(sp))
+        .or(return_stmt(sp.clone()))
         .or(break_stmt())
         .or(continue_stmt())
+        .or(export_stmt(sp))
         .closed_by(ctrl(Ctrl::SemiColon).expect("expected ';' at end of stmt"))
 }
 

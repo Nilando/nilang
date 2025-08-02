@@ -114,6 +114,22 @@ fn atom_value<'a>() -> Parser<'a, Value> {
     })
 }
 
+pub fn string<'a>() -> Parser<'a, String> {
+    Parser::new(|ctx| match ctx.peek() {
+        Some(spanned_token) => {
+            let value = match spanned_token.item {
+                Token::String(s) => s.to_string(),
+                _ => return None,
+            };
+
+            ctx.adv();
+
+            Some(value)
+        }
+        None => None,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::super::expr::expr;

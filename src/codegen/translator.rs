@@ -58,6 +58,13 @@ pub fn translate_tac(tac: &Tac, graph: &InterferenceGraph, func: &mut Func) -> O
             key: graph.get_reg(key),
             src: graph.get_reg(src),
         }),
+        Tac::Import { dest, path } => Some(ByteCode::Import {
+            dest: graph.get_reg(dest),
+            path: graph.get_reg(path)
+        }),
+        Tac::Export { src } => Some(ByteCode::Export {
+            src: graph.get_reg(src)
+        }),
         Tac::Binop { dest, op, lhs, rhs } => Some(translate_binop(*dest, *op, *lhs, *rhs, graph)),
         Tac::LoadConst { dest, src } => Some(translate_load_const(*dest, src, graph, func)),
         // These are handled specially in the main loop
