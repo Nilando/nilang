@@ -2,7 +2,7 @@ mod dce;
 mod gvn;
 
 use super::func::Func;
-use dce::{remove_dead_blocks, remove_dead_instructions};
+pub use dce::{remove_dead_blocks, remove_dead_instructions};
 use gvn::global_value_numbering;
 
 pub fn optimize_func(func: &mut Func) {

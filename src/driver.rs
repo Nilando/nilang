@@ -3,7 +3,7 @@ mod config;
 use crate::codegen::generate_func;
 use crate::ir::{func_to_string, lower_ast, optimize_func};
 use crate::parser::{parse_program, ParseError, Spanned};
-use crate::runtime::{func_to_string as bytecode_to_string, Runtime, RuntimeError};
+use crate::runtime::{func_to_string as bytecode_to_string, Runtime, RuntimeError, Func};
 use crate::symbol_map::SymbolMap;
 
 pub use config::Config;
@@ -25,13 +25,12 @@ pub fn execute(config: Config) {
     }
 }
 
-fn run_script(mut config: Config) {
-    let input = config.get_script().unwrap();
-    let mut symbols = SymbolMap::new();
-    let parse_result = parse_program(input.as_str(), &mut symbols);
+pub fn compile_source(config: &Config, symbols: &mut SymbolMap, source: &String) -> Result<Vec<Func>, ()> {
+    let parse_result = parse_program(source.as_str(), symbols);
 
     if let Err(ref parse_errors) = parse_result {
-        display_parse_errors(&input, parse_errors, config.file);
+        display_parse_errors(&source, parse_errors, config.file.clone());
+        return Err(());
     }
 
     let ast = parse_result.unwrap();
@@ -53,7 +52,7 @@ fn run_script(mut config: Config) {
         let mut ir_string = String::new();
 
         for f in ir.iter() {
-            ir_string.push_str(&func_to_string(f, &mut symbols));
+            ir_string.push_str(&func_to_string(f, symbols));
         }
 
         output_string(ir_string, path);
@@ -75,16 +74,24 @@ fn run_script(mut config: Config) {
         output_string(bc_str, path);
     }
 
+    Ok(program)
+}
+
+fn run_script(mut config: Config) {
+    let source = config.get_script().unwrap();
+    let mut symbols = SymbolMap::new();
+    let program = compile_source(&config, &mut symbols, &source).expect("Failed to compile program");
+
     if config.dry_run {
         println!("DRY RUN: program compiled successfully");
         return;
     }
 
-    let mut runtime = Runtime::init(program, symbols);
+    let mut runtime = Runtime::init(program, symbols, config);
     match runtime.run() {
         Ok(()) => {}
         Err(err) => {
-            display_runtime_error(&input, err);
+            display_runtime_error(&source, err);
         }
     }
 }
@@ -113,55 +120,14 @@ fn run_repl(config: Config) {
                 write!(stdout, "\r\n").unwrap();
                 stdout.flush().unwrap();
 
-                let parse_result = parse_program(&input, &mut symbols);
-
-                let _ = stdout.suspend_raw_mode();
-                if let Err(ref parse_errors) = parse_result {
-                    display_parse_errors(&input, parse_errors, None);
-                }
-
-                let ast = parse_result.unwrap();
-
-                let mut ir = lower_ast(ast, false);
-
-                if !config.no_optimize {
-                    for func in ir.iter_mut() {
-                        optimize_func(func);
-                    }
-                }
-
-                if let Some(path) = config.ir_output_path.as_ref() {
-                    let mut ir_string = String::new();
-
-                    for f in ir.iter() {
-                        ir_string.push_str(&func_to_string(f, &mut symbols));
-                    }
-
-                    output_string(ir_string, path);
-                }
-
-                let mut program = vec![];
-                for ir_func in ir.into_iter() {
-                    let func = generate_func(ir_func);
-                    program.push(func);
-                }
-
-                if let Some(path) = config.bytecode_output_path.as_ref() {
-                    let mut bc_str = String::new();
-
-                    for func in program.iter() {
-                        bc_str.push_str(&bytecode_to_string(func));
-                    }
-
-                    output_string(bc_str, path);
-                }
+                let program = compile_source(&config, &mut symbols, &input).expect("Failed to compile program");
 
                 if config.dry_run {
                     println!("DRY RUN: program compiled successfully");
                     return;
                 }
 
-                let mut runtime = Runtime::init(program, symbols);
+                let mut runtime = Runtime::init(program, symbols, config.clone());
                 match runtime.run() {
                     Ok(()) => {}
                     Err(err) => {

@@ -154,6 +154,10 @@ impl Block {
             }
         }
 
+        for node in self.phi_nodes.iter() {
+            defined.insert(node.dest);
+        }
+
         defined
     }
 }

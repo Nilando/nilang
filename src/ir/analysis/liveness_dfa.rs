@@ -20,8 +20,12 @@ impl LivenessDFA {
         self.live_in.get(&block_id).unwrap().get(var).is_some()
     }
 
-    pub fn get_live_out(&mut self, block_id: BlockId) -> &mut BTreeSet<VReg> {
+    pub fn get_live_out_mut(&mut self, block_id: BlockId) -> &mut BTreeSet<VReg> {
         self.live_out.get_mut(&block_id).unwrap()
+    }
+
+    pub fn get_live_out(&self, block_id: BlockId) -> &BTreeSet<VReg> {
+        self.live_out.get(&block_id).unwrap()
     }
 
     pub fn new() -> Self {

@@ -64,6 +64,8 @@ pub enum KeyWord {
     True,
     Print,
     Read,
+    Export,
+    Import
     // Eval
 }
 
@@ -72,6 +74,7 @@ pub enum Token<'a> {
     Ctrl(Ctrl),
     Op(Op),
     Ident(SymID),
+    Sym(SymID),
     Global(SymID),
     Float(f64),
     Int(i64),
@@ -193,7 +196,7 @@ impl<'a> Lexer<'a> {
     }
 
     fn lex_token_inner(&mut self, syms: &mut SymbolMap) -> Result<Token<'a>, LexError> {
-        if let Some(token) = self.lex_word(syms)? {
+        if let Some(token) = self.lex_symbolic(syms)? {
             return Ok(token);
         }
 
@@ -268,30 +271,70 @@ impl<'a> Lexer<'a> {
         Ok(false)
     }
 
-    fn lex_word(&mut self, syms: &mut SymbolMap) -> Result<Option<Token<'a>>, LexError> {
-        let is_global;
+    fn lex_symbolic(&mut self, syms: &mut SymbolMap) -> Result<Option<Token<'a>>, LexError> {
         if self.read('@') {
-            is_global = true;
-
-            if let Some(p) = self.chars.peek() {
-                if !p.is_alphabetic() {
-                    return Err(LexError::Unknown);
-                }
-            } else {
-                return Err(LexError::Unknown);
-            }
+            self.lex_global(syms)
+        } else if self.read('#') {
+            self.lex_symbol(syms)
+        } else if self.peek_alphabetic() {
+            self.lex_ident_or_keyword(syms)
         } else {
-            is_global = false;
+            Ok(None)
+        }
+    }
 
-            if let Some(p) = self.chars.peek() {
-                if !p.is_alphabetic() {
-                    return Ok(None);
-                }
-            } else {
-                return Ok(None);
-            };
+    fn lex_global(&mut self, syms: &mut SymbolMap) -> Result<Option<Token<'a>>, LexError> {
+        if !self.peek_alphabetic() {
+            return Err(LexError::Unknown);
         }
 
+        let word: &str = self.lex_word();
+        let id = syms.get_id(word);
+
+        Ok(Some(Token::Global(id)))
+    }
+
+    fn lex_symbol(&mut self, syms: &mut SymbolMap) -> Result<Option<Token<'a>>, LexError> {
+        if !self.peek_alphabetic() {
+            return Err(LexError::Unknown);
+        }
+
+        let word: &str = self.lex_word();
+        let id = syms.get_id(word);
+
+        Ok(Some(Token::Sym(id)))
+    }
+
+    fn lex_ident_or_keyword(&mut self, syms: &mut SymbolMap) -> Result<Option<Token<'a>>, LexError> {
+        let word: &str = self.lex_word();
+
+        let ident =
+        match word {
+            "fn" => Token::KeyWord(KeyWord::Fn),
+            "if" => Token::KeyWord(KeyWord::If),
+            "print" => Token::KeyWord(KeyWord::Print),
+            "read" => Token::KeyWord(KeyWord::Read),
+            "else" => Token::KeyWord(KeyWord::Else),
+            "null" => Token::KeyWord(KeyWord::Null),
+            "true" => Token::KeyWord(KeyWord::True),
+            "while" => Token::KeyWord(KeyWord::While),
+            "break" => Token::KeyWord(KeyWord::Break),
+            "false" => Token::KeyWord(KeyWord::False),
+            "return" => Token::KeyWord(KeyWord::Return),
+            "continue" => Token::KeyWord(KeyWord::Continue),
+            "export" => Token::KeyWord(KeyWord::Export),
+            "import" => Token::KeyWord(KeyWord::Import),
+            _ => {
+                let id = syms.get_id(word);
+
+                Token::Ident(id)
+            }
+        };
+
+        Ok(Some(ident))
+    }
+
+    fn lex_word(&mut self) -> &str {
         let starting_pos = self.pos;
 
         while let Some(p) = self.chars.peek() {
@@ -303,33 +346,18 @@ impl<'a> Lexer<'a> {
         }
 
         let ending_pos = self.pos;
-        let word = &self.input[starting_pos..ending_pos];
 
-        Ok(Some(if is_global {
-            let id = syms.get_id(word);
+        &self.input[starting_pos..ending_pos]
+    }
 
-            Token::Global(id)
-        } else {
-            match word {
-                "fn" => Token::KeyWord(KeyWord::Fn),
-                "if" => Token::KeyWord(KeyWord::If),
-                "print" => Token::KeyWord(KeyWord::Print),
-                "read" => Token::KeyWord(KeyWord::Read),
-                "else" => Token::KeyWord(KeyWord::Else),
-                "null" => Token::KeyWord(KeyWord::Null),
-                "true" => Token::KeyWord(KeyWord::True),
-                "while" => Token::KeyWord(KeyWord::While),
-                "break" => Token::KeyWord(KeyWord::Break),
-                "false" => Token::KeyWord(KeyWord::False),
-                "return" => Token::KeyWord(KeyWord::Return),
-                "continue" => Token::KeyWord(KeyWord::Continue),
-                _ => {
-                    let id = syms.get_id(word);
-
-                    Token::Ident(id)
-                }
+    fn peek_alphabetic(&mut self) -> bool {
+        if let Some(p) = self.chars.peek() {
+            if p.is_alphabetic() {
+                return true;
             }
-        }))
+        }
+
+        false
     }
 
     fn lex_num(&mut self) -> Result<Option<Token<'a>>, LexError> {
@@ -354,11 +382,21 @@ impl<'a> Lexer<'a> {
 
             if *p == '.' {
                 if is_float {
-                    return Err(LexError::InvalidNumber);
+                    break;
                 } else {
                     is_float = true;
                     self.advance();
-                    continue;
+
+                    if let Some(p) = self.chars.peek() {
+                        if p.is_ascii_digit() {
+                            continue;
+                        }
+                    }
+
+                    is_float = false;
+                    self.pos -= 1;
+                    self.reset_iter();
+                    break;
                 }
             }
 
@@ -727,5 +765,30 @@ mod tests {
         let error = result.unwrap_err().item;
 
         assert_eq!(error, LexError::Unknown);
+    }
+
+    #[test]
+    fn int_followed_by_sym_access() {
+        let mut syms = SymbolMap::new();
+        let input = "333.foo;";
+        let tokens = vec![
+            Token::Int(333),
+            Token::Ctrl(Ctrl::Period),
+            Token::Ident(syms.get_id("foo")),
+            Token::Ctrl(Ctrl::SemiColon),
+        ];
+
+        assert_src_tokens(input, tokens, syms);
+    }
+
+    #[test]
+    fn lex_symbol() {
+        let mut syms = SymbolMap::new();
+        let input = "#potato";
+        let tokens = vec![
+            Token::Sym(syms.get_id("potato")),
+        ];
+
+        assert_src_tokens(input, tokens, syms);
     }
 }

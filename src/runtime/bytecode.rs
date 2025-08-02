@@ -39,4 +39,6 @@ pub enum ByteCode {
     Jump { offset: i16 },
     Jnt { src: Reg, offset: i16 },
     Jit { src: Reg, offset: i16 },
+    Import { dest: Reg, path: Reg },
+    Export { src: Reg },
 }

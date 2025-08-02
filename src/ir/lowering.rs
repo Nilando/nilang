@@ -73,7 +73,24 @@ impl LoweringCtx {
                 stmts,
             } => self.lower_func_decl(ident, inputs, stmts),
             Stmt::Assign { dest, src } => self.lower_assign(dest, src),
+            Stmt::Export(expr) => self.lower_export(expr),
+            Stmt::Import { ident, path } => self.lower_import(ident, path),
         };
+    }
+
+    fn lower_import(&mut self, ident: SymID, module_path: Spanned<String>) {
+        self.define_var(ident);
+
+        let dest = self.sym_to_reg(&ident);
+        let path = self.load_const(TacConst::String(module_path.item));
+
+        self.emit(Tac::Import { dest, path });
+    }
+
+    fn lower_export(&mut self, export_expr: Spanned<Expr>) {
+        let src = self.lower_expr(export_expr);
+
+        self.emit(Tac::Export { src });
     }
 
     fn lower_return(&mut self, return_expr: Option<Spanned<Expr>>) {
@@ -192,6 +209,7 @@ impl LoweringCtx {
             Value::Float(f) => self.load_const(TacConst::Float(f)),
             Value::Bool(b) => self.load_const(TacConst::Bool(b)),
             Value::String(s) => self.load_const(TacConst::String(s)),
+            Value::Symbol(s) => self.load_const(TacConst::Sym(s)),
             Value::Global(sym_id) => self.load_global(sym_id),
             Value::Ident(sym_id) => self.lower_ident(sym_id),
             Value::Map(map) => self.lower_map(map),
@@ -380,17 +398,10 @@ impl LoweringCtx {
             // this is an uninitialized variable
             let dest = self.sym_to_reg(&sym_id);
 
-            if SymbolMap::is_intrinsic(sym_id) {
-                self.emit(Tac::LoadConst {
-                    dest,
-                    src: TacConst::Sym(sym_id),
-                });
-            } else {
-                self.emit(Tac::LoadConst {
-                    dest,
-                    src: TacConst::Null,
-                });
-            }
+            self.emit(Tac::LoadConst {
+                dest,
+                src: TacConst::Null,
+            });
 
             dest
         }

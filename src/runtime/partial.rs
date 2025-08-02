@@ -1,4 +1,4 @@
-use sandpit::{Gc, Trace};
+use sandpit::{Gc, Mutator, Trace};
 
 use crate::symbol_map::SymID;
 
@@ -7,15 +7,42 @@ use super::func::LoadedFunc;
 use super::tagged_value::TaggedValue;
 
 
-#[derive(Trace)]
-enum Callable<'gc> {
+#[derive(Trace, Clone)]
+pub enum Callable<'gc> {
     Func(Gc<'gc, LoadedFunc<'gc>>),
     Closure(Gc<'gc, Closure<'gc>>),
-    IntrinsicSym(SymID)
+    Intrinsic(SymID),
 }
 
 #[derive(Trace)]
 pub struct Partial<'gc> {
     callable: Callable<'gc>,
     bound_args: Gc<'gc, [TaggedValue<'gc>]>,
+}
+
+impl<'gc> Partial<'gc> {
+    pub fn from_func(func: Gc<'gc, LoadedFunc<'gc>>, mu: &'gc Mutator<'gc>, tagged_val: TaggedValue<'gc>) -> Self {
+        // TODO: ensure that func has enough args
+
+        Self {
+            callable: Callable::Func(func),
+            bound_args: mu.alloc_array_from_fn(1, |_| tagged_val.clone()),
+        }
+    }
+
+    pub fn alloc_intrinsic(sym: SymID, mu: &'gc Mutator<'gc>, tagged_val: TaggedValue<'gc>) -> Self {
+
+        Self {
+            callable: Callable::Intrinsic(sym),
+            bound_args: mu.alloc_array_from_fn(1, |_| tagged_val.clone()),
+        }
+    }
+
+    pub fn get_callable(&self) -> Callable<'gc> {
+        self.callable.clone()
+    }
+
+    pub fn get_args(&self) -> Gc<'gc, [TaggedValue<'gc>]> {
+        self.bound_args.clone()
+    }
 }

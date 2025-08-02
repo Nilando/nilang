@@ -11,6 +11,7 @@ pub enum Value {
     Null,
     Float(f64),
     Int(i64),
+    Symbol(SymID),
     String(String),
     Bool(bool),
     List(Vec<Spanned<Expr>>),
@@ -95,12 +96,29 @@ fn atom_value<'a>() -> Parser<'a, Value> {
             let value = match spanned_token.item {
                 Token::Ident(sym_id) => Value::Ident(sym_id),
                 Token::Global(sym_id) => Value::Global(sym_id),
+                Token::Sym(sym_id) => Value::Symbol(sym_id),
                 Token::Float(f) => Value::Float(f),
                 Token::Int(i) => Value::Int(i),
                 Token::String(s) => Value::String(s.to_string()),
                 Token::KeyWord(KeyWord::True) => Value::Bool(true),
                 Token::KeyWord(KeyWord::False) => Value::Bool(false),
                 Token::KeyWord(KeyWord::Null) => Value::Null,
+                _ => return None,
+            };
+
+            ctx.adv();
+
+            Some(value)
+        }
+        None => None,
+    })
+}
+
+pub fn string<'a>() -> Parser<'a, String> {
+    Parser::new(|ctx| match ctx.peek() {
+        Some(spanned_token) => {
+            let value = match spanned_token.item {
+                Token::String(s) => s.to_string(),
                 _ => return None,
             };
 
@@ -133,11 +151,19 @@ mod tests {
     }
 
     #[test]
-    fn parse_symbol() {
+    fn parse_ident() {
         let mut syms = SymbolMap::new();
         let v = parse_value_with_syms("testing", &mut syms).value;
 
         assert_eq!(v, Some(Value::Ident(syms.get_id("testing"))));
+    }
+
+    #[test]
+    fn parse_symbol() {
+        let mut syms = SymbolMap::new();
+        let v = parse_value_with_syms("#testing", &mut syms).value;
+
+        assert_eq!(v, Some(Value::Symbol(syms.get_id("testing"))));
     }
 
     #[test]

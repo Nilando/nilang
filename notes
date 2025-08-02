@@ -1,11 +1,13 @@
 VERSION 0.1.0
 
 FEATURE BACKLOG:
+- redo intrinsics
 - String Interpolation
-- implement intrinsics
-- importing and exporting
+- for loops
 - save assigned vars in repl
 - backtraces
+- rework error messages (they are scuffed)
+- fix major collection bug (sandpit)
 
 OPTIMIZATION BACKLOG
 - GC updates:
@@ -17,6 +19,7 @@ OPTIMIZATION BACKLOG
 - Loop Invariant Code Motion
 - Peephole pass
 - AST pass
+- JIT?
 
 GOALS
 - complete AOC 2025 with this language
@@ -30,9 +33,14 @@ IMPORTANT LESSONS
 DECEMBER -> COMPLETE AOC
 NOVEMBER
 OCTOBER
-SEPTEMBER
+SEPTEMBER (new job)
 AUGUST
 JULY
+- made an initial draft of intrinsic functions to add
+- added partial functions
+- implemented top level intrinsic functions
+- implemented num intrinsics
+- rough draft of importing/exporting
 
 JUNE
 - ran first program, and many more

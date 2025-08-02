@@ -38,9 +38,27 @@ pub struct Config {
 
     /// File to be run (exclude for repl)
     pub file: Option<String>,
-}
+
+    /// Arguments passed to the script after this flag
+    #[clap(last = true)]
+    pub script_args: Vec<String>,}
 
 impl Config {
+    pub fn default() -> Self {
+        Self {
+            ast_output_path: None,
+            ir_output_path: None,
+            bytecode_output_path: None,
+            pretty_ir: false,
+            no_optimize: false,
+            inline: None,
+            stdin: true,
+            dry_run: false,
+            file: None,
+            script_args: vec![],
+        }
+    }
+
     pub fn get_script(&mut self) -> Option<String> {
         if self.inline.is_some() {
             return self.inline.take();

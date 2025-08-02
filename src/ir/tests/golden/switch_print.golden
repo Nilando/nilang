@@ -1,0 +1,47 @@
+x = 1;
+
+while true {
+  print(x);
+
+  if x == 1 {
+    x = 0;
+  } else {
+    x = 1;
+  }
+}
+
+%%%%
+
+MAIN () {
+block0:
+  x_0 = 1
+  next block1(x_0)
+
+block1(x_1):
+  t2 = true
+  jnt t2 block6
+  next block2
+
+block2:
+  PRINT x_1
+  t4 = 1
+  t5 = x_1 == t4
+  jnt t5 block4
+  next block3
+
+block3:
+  x_4 = 0
+  jump block5(x_4)
+
+block4:
+  x_2 = 1
+  next block5(x_2)
+
+block5(x_3):
+  jump block1(x_3)
+
+block6:
+  t8 = null
+  RETURN t8
+
+}

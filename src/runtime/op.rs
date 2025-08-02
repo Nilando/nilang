@@ -1,4 +1,7 @@
 use sandpit::{Gc, Mutator};
+use crate::symbol_map::{ABS_SYM, ARITY_SYM, CEIL_SYM, FLOOR_SYM, LEN_SYM, LOG_SYM, POP_SYM, POW_SYM, PUSH_SYM};
+
+use super::partial::Partial;
 use super::value::Value;
 use super::hash_map::GcHashMap;
 use super::string::VMString;
@@ -72,13 +75,15 @@ pub fn modulo<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, Strin
     }
 }
 
-pub fn less_than<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Option<Value<'gc>> {
+pub fn less_than<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, String> {
     match (lhs, rhs) {
-        (Value::Float(lhs), Value::Float(rhs)) => Some(Value::Bool(lhs < rhs)),
-        (Value::Int(lhs), Value::Int(rhs)) => Some(Value::Bool(lhs < rhs)),
-        (Value::Float(lhs), Value::Int(rhs)) => Some(Value::Bool(lhs < rhs as f64)),
-        (Value::Int(lhs), Value::Float(rhs)) => Some(Value::Bool((lhs as f64) < rhs)),
-        _ => None,
+        (Value::Float(lhs), Value::Float(rhs)) => Ok(Value::Bool(lhs < rhs)),
+        (Value::Int(lhs), Value::Int(rhs)) => Ok(Value::Bool(lhs < rhs)),
+        (Value::Float(lhs), Value::Int(rhs)) => Ok(Value::Bool(lhs < rhs as f64)),
+        (Value::Int(lhs), Value::Float(rhs)) => Ok(Value::Bool((lhs as f64) < rhs)),
+        (lhs, rhs) => {
+            Err(format!("Attempted to perform a comparison between {} and {}", lhs.type_str(), rhs.type_str()))
+        },
     }
 }
 
@@ -156,40 +161,91 @@ pub fn not_equal<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Option<Value<'gc>> {
 
             Some(Value::Bool(false))
         }
-        (lhs, rhs) => {
-            println!("lhs: {}, rhs: {}", lhs, rhs);
-            todo!()
-        }
+        _ => Some(Value::Bool(true)),
     }
 }
 
-pub fn mem_load<'gc>(store: Value<'gc>, key: Value<'gc>, mu: &'gc Mutator) -> Option<Value<'gc>> {
-    match (store, key) {
+pub fn mem_load<'gc>(store: Value<'gc>, key: Value<'gc>, mu: &'gc Mutator) -> Result<Value<'gc>, String> {
+    match (&store, key) {
         (Value::List(list), Value::Int(idx)) => {
-            Some(list.at(idx))
+            Ok(list.at(idx))
         }
         (Value::String(s), Value::Int(idx)) => {
             if let Some(c) = s.at(usize::try_from(idx).unwrap()) {
                 let text: [char; 1] = [c];
-                let vm_str = VMString::alloc(&text, mu);
+                let vm_str = VMString::alloc(text.into_iter(), mu);
 
-                Some(Value::String(Gc::new(mu, vm_str)))
+                Ok(Value::String(Gc::new(mu, vm_str)))
             } else {
-                Some(Value::Null)
+                Ok(Value::Null)
             }
         }
         (Value::Map(map), key) => {
             if let Some(val) = map.get(Value::into_tagged(key, mu)) {
-                Some(Value::from(&val))
+                Ok(Value::from(&val))
             } else {
-                Some(Value::Null)
+                Ok(Value::Null)
             }
         }
+        (Value::Int(_), Value::SymId(sym)) | (Value::Float(_), Value::SymId(sym)) => {
+            match sym {
+                ABS_SYM 
+                | FLOOR_SYM 
+                | CEIL_SYM
+                | POW_SYM 
+                | LOG_SYM => {
+                    let partial = Partial::alloc_intrinsic(sym, mu, Value::into_tagged(store, mu));
+
+                    Ok(Value::Partial(Gc::new(mu, partial)))
+                }
+                // let partial = Partial::alloc_intrinsic(TIMES_FUNC_ID, mu, Value::into_tagged(store, mu));
+                _ => todo!("undefined method")
+            }
+        }
+        (Value::List(list), Value::SymId(sym)) => {
+            match sym {
+                LEN_SYM  => Ok(Value::Int(list.len().try_into().unwrap())),
+                PUSH_SYM | POP_SYM  => {
+                    let partial = Partial::alloc_intrinsic(sym, mu, Value::into_tagged(store, mu));
+
+                    Ok(Value::Partial(Gc::new(mu, partial)))
+                }
+                _ => todo!()
+            }
+        }
+        (Value::String(s), Value::SymId(sym)) => {
+            match sym {
+                LEN_SYM  => Ok(Value::Int(s.len().try_into().unwrap())),
+                PUSH_SYM | POP_SYM  => {
+                    let partial = Partial::alloc_intrinsic(sym, mu, Value::into_tagged(store, mu));
+
+                    Ok(Value::Partial(Gc::new(mu, partial)))
+                }
+                _ => todo!(), 
+            }
+        }
+        (Value::Func(f), Value::SymId(sym)) => {
+            match sym {
+                ARITY_SYM => Ok(Value::Int(f.arg_count().try_into().unwrap())),
+                _ => todo!(), 
+            }
+        }
+        (Value::Closure(f), Value::SymId(sym)) => {
+            match sym {
+                ARITY_SYM => Ok(Value::Int(f.get_func().arg_count().try_into().unwrap())),
+                _ => todo!(), 
+            }
+        }
+        (Value::Partial(f), Value::SymId(sym)) => {
+            todo!()
+        }
+        (lhs, rhs) => {
+            Err(format!("Attempted to access a {} via a {}", lhs.type_str(), rhs.type_str()))
+        },
         // here you could check if the thing we are loading is a function,
         // and if its first arg is Value<'gc>, load the thing we are calling this on 
         // into Value<'gc> as a upvalue?
         // can also be a value::map, followed by any value
-        _ => todo!(),
     }
 }
 

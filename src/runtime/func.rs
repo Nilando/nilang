@@ -22,7 +22,7 @@ impl<'gc> LoadedLocal<'gc> {
             LoadedLocal::Int(i) => Value::Int(*i),
             LoadedLocal::Float(f) => Value::Float(*f),
             LoadedLocal::Func(f) => Value::Func(f.clone()),
-            LoadedLocal::Text(gc_text) => Value::String(Gc::new(mu, VMString::alloc(gc_text, mu)))
+            LoadedLocal::Text(gc_text) => Value::String(Gc::new(mu, VMString::alloc(gc_text.iter().map(|c| *c), mu)))
         }
     }
 }
@@ -34,7 +34,7 @@ pub struct LoadedFunc<'gc> {
     max_clique: u8,
     locals: Gc<'gc, [LoadedLocal<'gc>]>,
     code: Gc<'gc, [ByteCode]>,
-    spans: GcPackedSpans<'gc>,
+    spans: Option<GcPackedSpans<'gc>>,
 }
 
 impl<'gc> LoadedFunc<'gc> {
@@ -44,7 +44,7 @@ impl<'gc> LoadedFunc<'gc> {
         max_clique: u8,
         locals: Gc<'gc, [LoadedLocal<'gc>]>,
         code: Gc<'gc, [ByteCode]>,
-        spans: GcPackedSpans<'gc>,
+        spans: Option<GcPackedSpans<'gc>>,
     ) -> Self {
         Self {
             id,
@@ -88,7 +88,7 @@ impl<'gc> LoadedFunc<'gc> {
     }
 
     pub fn get_spans(&self) -> GcPackedSpans {
-        self.spans.clone()
+        self.spans.clone().unwrap()
     }
 }
 
@@ -224,6 +224,8 @@ pub fn func_to_string(func: &Func) -> String {
             ByteCode::LoadGlobal { dest, sym } => format!("LDGB {dest}, #{sym}"),
             ByteCode::StoreGlobal { sym, src } => format!("STGB {src}, #{sym}"),
             ByteCode::Noop => "NOOP".to_string(),
+            ByteCode::Import { dest, path } => format!("IMPO {dest}, {path}"),
+            ByteCode::Export { src } => format!("EXPO {src}"),
         };
 
         result.push_str(&s);

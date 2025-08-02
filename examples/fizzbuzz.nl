@@ -1,29 +1,18 @@
-fn contains_letter(s, letter) {
-  s.each(fn(c) {
-    if letter == c {
-      return true;
-    }
-  });
-
-  return false;
-}
-
 fn fizzbuzz(n) {
   s = str(n);
-  fizz = ((n % 5) == 0) || contains_letter(s "5");
-  buzz = ((n % 7) == 0) || contains_letter(s, "7");
+  fizz = ((n % 5) == 0) || s.contains("5");
+  buzz = ((n % 7) == 0) || s.contains("7");
 
   if fizz && buzz {
-    print("fizzbuzz");
-    return;
+    return "fizzbuzz";
   }
 
   if fizz {
-    print("fizz");
+    return "fizz";
   }
 
   if buzz {
-    print("buzz");
+    return "buzz";
   }
 }
 

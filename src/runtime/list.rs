@@ -27,6 +27,13 @@ impl<'gc> List<'gc> {
         self.vec.push(mu, tagged_value);
     }
 
+    pub fn pop(&self) -> TaggedValue<'gc> {
+        match self.vec.pop() {
+            Some(tagged) => tagged,
+            None => Value::tagged_null(),
+        }
+    }
+
     pub fn set(&self, idx: usize, tagged_value: TaggedValue<'gc>, mu: &'gc Mutator) {
         self.vec.set(mu, tagged_value, idx);
     }

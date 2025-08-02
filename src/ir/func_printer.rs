@@ -200,6 +200,16 @@ impl FuncPrinter<'_> {
                     self.result.push_str("LOAD_UPVAL ");
                     self.push_var(dest);
                 }
+                Tac::Export { src } => {
+                    self.result.push_str("EXPORT ");
+                    self.push_var(src);
+                }
+                Tac::Import { dest, path } => {
+                    self.result.push_str("IMPORT ");
+                    self.push_var(dest);
+                    self.result.push_str(", ");
+                    self.push_var(path);
+                }
             }
             self.result.push('\n');
         }

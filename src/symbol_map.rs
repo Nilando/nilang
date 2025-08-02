@@ -9,31 +9,71 @@ pub struct SymbolMap {
 }
 
 // special symbols
-pub const SELF_SYM:     SymID = 0;
-pub const LEN_SYM:      SymID = 1;
-pub const PUSH_SYM:     SymID = 2;
-pub const NUM_SYM:      SymID = 3;
-pub const STR_SYM:      SymID = 4;
-// pub const FLOAT_SYM:    SymID = 5;
-pub const BOOL_SYM:     SymID = 6;
-pub const SYM_SYM:      SymID = 7;
-pub const ABS_SYM:      SymID = 8;
-pub const POW_SYM:      SymID = 9;
-pub const LOG_SYM:      SymID = 10;
-pub const FLOOR_SYM:    SymID = 11;
-pub const CEIL_SYM:     SymID = 12;
-pub const SPLIT_SYM:    SymID = 13;
-pub const TRIM_SYM:     SymID = 14;
-pub const FIND_SYM:     SymID = 15;
-pub const CONTAINS_SYM: SymID = 16;
-pub const FILTER_SYM:   SymID = 17;
-pub const CONCAT_SYM:   SymID = 18;
-pub const JOIN_SYM:     SymID = 19;
-pub const KEYS_SYM:     SymID = 20;
-pub const VALUES_SYM:   SymID = 21;
-pub const ENTRIES_SYM:  SymID = 22;
-pub const ARGS_SYM:     SymID = 23;
-pub const BIND_SYM:     SymID = 24;
+macro_rules! generate_intrinsic_syms {
+    ($($name:ident),*) => {
+        // Generate consts for each intrinsic symbol with sequential SymID.
+        #[allow(non_camel_case_types)]
+        #[repr(u32)]
+        enum Intrinsics {
+            $($name,)*
+        }
+
+        $(
+            pub const $name: SymID = Intrinsics::$name as u32;
+        )*
+
+        impl SymbolMap {
+            // Create the is_intrinsic function to check if a symbol is intrinsic.
+            pub fn is_intrinsic(sym: SymID) -> bool {
+                match sym {
+                    $(
+                        $name => true,
+                    )*
+                    _ => false,
+                }
+            }
+
+            // Create the init function to insert each intrinsic symbol in the correct order.
+            pub fn init(&mut self) {
+                let symbols = vec![
+                    $(
+                        stringify!($name).trim_end_matches("_SYM").to_ascii_lowercase(),
+                    )*
+                ];
+
+                for symbol in symbols {
+                    self.insert(symbol.to_string());
+                }
+            }
+        }
+    };
+}
+
+// Use the macro to generate the necessary parts.
+generate_intrinsic_syms! {
+    NUM_SYM,
+    ARGS_SYM,
+    STR_SYM,
+    BOOL_SYM,
+    SLEEP_SYM,
+    TYPE_SYM,
+    SYM_SYM,
+    LIST_SYM,
+    MAP_SYM,
+    FN_SYM,
+    READ_FILE_SYM,
+    CLONE_SYM,
+    NULL_SYM,
+    ABS_SYM,
+    FLOOR_SYM,
+    CEIL_SYM,
+    POW_SYM,
+    LOG_SYM,
+    LEN_SYM,
+    PUSH_SYM,
+    ARITY_SYM,
+    POP_SYM
+}
 
 impl SymbolMap {
     pub fn new() -> Self {
@@ -55,24 +95,8 @@ impl SymbolMap {
         }
     }
 
-    pub fn is_intrinsic(sym: SymID) -> bool {
-        match sym {
-            LEN_SYM
-            | NUM_SYM
-            | PUSH_SYM => true,
-            _ => false
-        }
-    }
-
     pub fn get_str(&mut self, id: SymID) -> &str {
         &self.id_to_str[id as usize]
-    }
-
-    fn init(&mut self) {
-        self.insert("self".to_string());
-        self.insert("len".to_string());
-        self.insert("push".to_string());
-        self.insert("num".to_string());
     }
 
     fn insert(&mut self, str: String) -> SymID {
