@@ -72,6 +72,10 @@ pub fn call_intrinsic<'a, 'gc>(
             let arg = extract_single_arg(args)?;
             pop(arg, mu)
         }
+        LEN_SYM => {
+            let arg = extract_single_arg(args)?;
+            len(arg)
+        }
         POW_SYM => {
             let (arg1, arg2) = extract_two_args(args)?;
             pow(arg1, arg2, mu)
@@ -115,6 +119,18 @@ fn expect_arg_count(expected_args: usize, given_args: usize) -> Result<(), (Runt
         Err((RuntimeErrorKind::WrongNumArgs, msg))
     } else {
         Ok(())
+    }
+}
+
+fn len<'gc>(val: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+    match val {
+        Value::String(s) => {
+            Ok(Value::Int(s.len() as i32))
+        }
+        Value::List(list) => {
+            Ok(Value::Int(list.len() as i32))
+        }
+        item => return Err((RuntimeErrorKind::TypeError, format!("Unexpected arg of type {}", item.type_str())))
     }
 }
 
