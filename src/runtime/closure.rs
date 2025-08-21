@@ -11,10 +11,7 @@ pub struct Closure<'gc> {
 
 impl<'gc> Closure<'gc> {
     pub fn new(func: Gc<'gc, LoadedFunc<'gc>>, upvalues: Gc<'gc, [TaggedValue<'gc>]>) -> Self {
-        Self {
-            func,
-            upvalues
-        }
+        Self { func, upvalues }
     }
 
     pub fn get_func(&self) -> Gc<'gc, LoadedFunc<'gc>> {
@@ -25,9 +22,15 @@ impl<'gc> Closure<'gc> {
         self.upvalues.clone()
     }
 
-    pub fn backpatch_recursive_upvalue(closure: Gc<'gc, Closure<'gc>>, upval_idx: usize, mu: &'gc Mutator) {
+    pub fn backpatch_recursive_upvalue(
+        closure: Gc<'gc, Closure<'gc>>,
+        upval_idx: usize,
+        mu: &'gc Mutator,
+    ) {
         closure.clone().upvalues.write_barrier(mu, |barrier| {
-            barrier.at(upval_idx).set(ValueTag::from_closure(closure.clone()));
+            barrier
+                .at(upval_idx)
+                .set(ValueTag::from_closure(closure.clone()));
         });
     }
 }

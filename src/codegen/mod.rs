@@ -1,17 +1,17 @@
 mod backpatch;
 mod control_flow_translator;
+mod func;
 mod interference_graph;
 mod ssa_elimination;
 mod translator;
-mod func;
 
 #[cfg(test)]
 mod tests;
 
 use backpatch::BackpatchContext;
 use control_flow_translator::{handle_block_fall_through, handle_control_flow_instruction};
-pub use interference_graph::{find_copy_edges, InterferenceGraph};
 pub use func::{Func, Local};
+pub use interference_graph::{find_copy_edges, InterferenceGraph};
 use translator::translate_tac;
 
 use crate::ir::Func as IRFunc;
@@ -34,7 +34,11 @@ pub fn generate_func(ir_func: IRFunc) -> Func {
 }
 
 fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph, max_clique: u8) -> Func {
-    let mut func = Func::new(ir_func.get_id(), u8::try_from(ir_func.get_args().len()).unwrap(),max_clique);
+    let mut func = Func::new(
+        ir_func.get_id(),
+        u8::try_from(ir_func.get_args().len()).unwrap(),
+        max_clique,
+    );
     let mut backpatch_ctx = BackpatchContext::new();
 
     for block in ir_func.get_blocks() {

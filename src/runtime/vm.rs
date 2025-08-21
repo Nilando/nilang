@@ -1,19 +1,8 @@
 use crate::symbol_map::SymbolMap;
 
 use super::op::{
-    add,
-    sub,
-    multiply,
-    divide,
-    modulo,
-    less_than,
-    less_than_or_equal,
-    greater_than,
-    greater_than_or_equal,
-    equal,
-    not_equal,
-    mem_load,
-    mem_store,
+    add, divide, equal, greater_than, greater_than_or_equal, less_than, less_than_or_equal,
+    mem_load, mem_store, modulo, multiply, not_equal, sub,
 };
 
 use super::bytecode::Reg;
@@ -21,12 +10,12 @@ use super::call_frame::CallFrame;
 use super::closure::Closure;
 use super::func::LoadedFunc;
 use super::hash_map::GcHashMap;
-use super::list::List;
-use super::tagged_value::TaggedValue;
-use super::value::Value;
 use super::intrinsics::call_intrinsic;
+use super::list::List;
 use super::partial::{Callable, Partial};
 use super::string::VMString;
+use super::tagged_value::TaggedValue;
+use super::value::Value;
 use super::{RuntimeError, RuntimeErrorKind};
 
 pub use super::bytecode::ByteCode;
@@ -37,18 +26,18 @@ use std::cell::Cell;
 pub const DISPATCH_LOOP_LENGTH: usize = 100;
 
 pub enum ExitCode {
-  LoadModule(String),
-  Print(String),
-  // Read,
-  Yield,
-  Exit,
+    LoadModule(String),
+    Print(String),
+    // Read,
+    Yield,
+    Exit,
 }
 
 #[derive(Trace)]
 pub struct VM<'gc> {
     registers: GcVec<'gc, TaggedValue<'gc>>,
     call_frames: GcVec<'gc, GcOpt<'gc, CallFrame<'gc>>>,
-    frame_start: Cell<usize>,                
+    frame_start: Cell<usize>,
     globals: Gc<'gc, GcHashMap<'gc>>,
     module_map: Gc<'gc, GcHashMap<'gc>>, // string -> export value
 }
@@ -74,13 +63,11 @@ impl<'gc> VM<'gc> {
             call_frames,
             frame_start,
             globals,
-            module_map
+            module_map,
         }
     }
 
-    pub fn run(&self, mu: &'gc Mutator, symbols: &mut SymbolMap) 
-    -> Result<ExitCode, RuntimeError> 
-    {
+    pub fn run(&self, mu: &'gc Mutator, symbols: &mut SymbolMap) -> Result<ExitCode, RuntimeError> {
         loop {
             if mu.gc_yield() {
                 return Ok(ExitCode::Yield);
@@ -88,23 +75,28 @@ impl<'gc> VM<'gc> {
 
             for _ in 0..DISPATCH_LOOP_LENGTH {
                 if let Some(command) = self.dispatch_instruction(mu, symbols)? {
-                    return Ok(command)
+                    return Ok(command);
                 }
             }
         }
     }
 
     // can only be called right after an import module instruction was run
-    pub fn import_module_hook(&self, mu: &'gc Mutator, symbols: &mut SymbolMap, entry_func: Gc<'gc, LoadedFunc<'gc>>) -> Result<ExitCode, RuntimeError> {
-        let new_frame_start = self.frame_start.get()
-            + self.get_top_call_frame().get_reg_count() as usize;
-        let module_path =
-        if let ByteCode::Import { path, .. } = self.get_prev_instruction() {
+    pub fn import_module_hook(
+        &self,
+        mu: &'gc Mutator,
+        symbols: &mut SymbolMap,
+        entry_func: Gc<'gc, LoadedFunc<'gc>>,
+    ) -> Result<ExitCode, RuntimeError> {
+        let new_frame_start =
+            self.frame_start.get() + self.get_top_call_frame().get_reg_count() as usize;
+        let module_path = if let ByteCode::Import { path, .. } = self.get_prev_instruction() {
             self.get_reg(path)
         } else {
             todo!("previous instruction has to be an import instr")
         };
-        let init_frame = CallFrame::new_with_module_path(entry_func.clone(), GcOpt::new(mu, module_path));
+        let init_frame =
+            CallFrame::new_with_module_path(entry_func.clone(), GcOpt::new(mu, module_path));
 
         while new_frame_start + (entry_func.get_max_clique() as usize) > self.registers.len() {
             self.registers.push(mu, Value::tagged_null());
@@ -113,11 +105,14 @@ impl<'gc> VM<'gc> {
         self.frame_start.set(new_frame_start);
         self.call_frames.push(mu, GcOpt::new(mu, init_frame));
 
-
         self.run(mu, symbols)
     }
 
-    fn dispatch_instruction(&self, mu: &'gc Mutator, symbols: &mut SymbolMap) -> Result<Option<ExitCode>, RuntimeError> {
+    fn dispatch_instruction(
+        &self,
+        mu: &'gc Mutator,
+        symbols: &mut SymbolMap,
+    ) -> Result<Option<ExitCode>, RuntimeError> {
         let instr = self.get_next_instruction();
         match instr {
             ByteCode::Noop => {}
@@ -208,9 +203,7 @@ impl<'gc> VM<'gc> {
                     Ok(value) => {
                         self.set_reg_with_value(value, dest, mu);
                     }
-                    Err(err) => {
-                        return Err(self.type_error(err))
-                    }
+                    Err(err) => return Err(self.type_error(err)),
                 }
             }
             ByteCode::Sub { dest, lhs, rhs } => {
@@ -221,9 +214,7 @@ impl<'gc> VM<'gc> {
                     Ok(value) => {
                         self.set_reg_with_value(value, dest, mu);
                     }
-                    Err(err) => {
-                        return Err(self.type_error(err))
-                    }
+                    Err(err) => return Err(self.type_error(err)),
                 }
             }
             ByteCode::Mult { dest, lhs, rhs } => {
@@ -234,9 +225,7 @@ impl<'gc> VM<'gc> {
                     Ok(value) => {
                         self.set_reg_with_value(value, dest, mu);
                     }
-                    Err(err) => {
-                        return Err(self.type_error(err))
-                    }
+                    Err(err) => return Err(self.type_error(err)),
                 }
             }
             ByteCode::Div { dest, lhs, rhs } => {
@@ -247,9 +236,7 @@ impl<'gc> VM<'gc> {
                     Ok(value) => {
                         self.set_reg_with_value(value, dest, mu);
                     }
-                    Err(err) => {
-                        return Err(self.type_error(err))
-                    }
+                    Err(err) => return Err(self.type_error(err)),
                 }
             }
             ByteCode::Modulo { dest, lhs, rhs } => {
@@ -260,9 +247,7 @@ impl<'gc> VM<'gc> {
                     Ok(value) => {
                         self.set_reg_with_value(value, dest, mu);
                     }
-                    Err(err) => {
-                        return Err(self.type_error(err))
-                    }
+                    Err(err) => return Err(self.type_error(err)),
                 }
             }
             ByteCode::Lt { dest, lhs, rhs } => {
@@ -273,9 +258,7 @@ impl<'gc> VM<'gc> {
                     Ok(value) => {
                         self.set_reg_with_value(value, dest, mu);
                     }
-                    Err(err) => {
-                        return Err(self.type_error(err))
-                    }
+                    Err(err) => return Err(self.type_error(err)),
                 }
             }
             ByteCode::Lte { dest, lhs, rhs } => {
@@ -286,9 +269,7 @@ impl<'gc> VM<'gc> {
                     Ok(value) => {
                         self.set_reg_with_value(value, dest, mu);
                     }
-                    Err(err) => {
-                        return Err(self.type_error(err))
-                    }
+                    Err(err) => return Err(self.type_error(err)),
                 }
             }
             ByteCode::Gt { dest, lhs, rhs } => {
@@ -299,9 +280,7 @@ impl<'gc> VM<'gc> {
                     Ok(value) => {
                         self.set_reg_with_value(value, dest, mu);
                     }
-                    Err(err) => {
-                        return Err(self.type_error(err))
-                    }
+                    Err(err) => return Err(self.type_error(err)),
                 }
             }
             ByteCode::Gte { dest, lhs, rhs } => {
@@ -312,9 +291,7 @@ impl<'gc> VM<'gc> {
                     Ok(value) => {
                         self.set_reg_with_value(value, dest, mu);
                     }
-                    Err(err) => {
-                        return Err(self.type_error(err))
-                    }
+                    Err(err) => return Err(self.type_error(err)),
                 }
             }
             ByteCode::Equality { dest, lhs, rhs } => {
@@ -325,9 +302,7 @@ impl<'gc> VM<'gc> {
                     Ok(value) => {
                         self.set_reg_with_value(value, dest, mu);
                     }
-                    Err(err) => {
-                        return Err(self.type_error(err))
-                    }
+                    Err(err) => return Err(self.type_error(err)),
                 }
             }
             ByteCode::Inequality { dest, lhs, rhs } => {
@@ -338,9 +313,7 @@ impl<'gc> VM<'gc> {
                     Ok(value) => {
                         self.set_reg_with_value(value, dest, mu);
                     }
-                    Err(err) => {
-                        return Err(self.type_error(err))
-                    }
+                    Err(err) => return Err(self.type_error(err)),
                 }
             }
             ByteCode::MemLoad { dest, store, key } => {
@@ -351,9 +324,7 @@ impl<'gc> VM<'gc> {
                     Ok(value) => {
                         self.set_reg_with_value(value, dest, mu);
                     }
-                    Err(err) => {
-                        return Err(self.type_error(err))
-                    }
+                    Err(err) => return Err(self.type_error(err)),
                 }
             }
             ByteCode::MemStore { store, key, src } => {
@@ -364,7 +335,7 @@ impl<'gc> VM<'gc> {
                 if let Some(()) = mem_store(store, key, src, mu) {
                     // store was successful
                 } else {
-                    return Err(self.type_error("".to_string()))
+                    return Err(self.type_error("".to_string()));
                 }
             }
             ByteCode::Return { src } => {
@@ -381,7 +352,9 @@ impl<'gc> VM<'gc> {
                 let mut buf = String::new();
                 let vm_str = VMString::alloc([].iter().map(|c| *c), mu);
 
-                stdin.read_line(&mut buf).expect("failed to read from stdin");
+                stdin
+                    .read_line(&mut buf)
+                    .expect("failed to read from stdin");
                 buf = buf.trim_end().to_string();
 
                 for c in buf.chars() {
@@ -399,10 +372,9 @@ impl<'gc> VM<'gc> {
 
             ByteCode::LoadGlobal { dest, sym } => {
                 let sym_val = self.get_reg(sym);
-                let tagged_val = 
-                match self.globals.get(sym_val) {
+                let tagged_val = match self.globals.get(sym_val) {
                     Some(tagged) => tagged,
-                    None => Value::tagged_null()
+                    None => Value::tagged_null(),
                 };
 
                 self.set_reg(tagged_val, dest, mu);
@@ -442,9 +414,14 @@ impl<'gc> VM<'gc> {
         Ok(None)
     }
 
-    fn collect_upvalues_and_create_closure(&self, func: Reg, src: Reg, mu: &'gc Mutator<'gc>) -> Result<(), RuntimeError> {
+    fn collect_upvalues_and_create_closure(
+        &self,
+        func: Reg,
+        src: Reg,
+        mu: &'gc Mutator<'gc>,
+    ) -> Result<(), RuntimeError> {
         let mut upval_count: usize = 1;
-        let mut recursive_upval_index = None; 
+        let mut recursive_upval_index = None;
         if func == src {
             recursive_upval_index = Some(upval_count - 1);
         }
@@ -462,7 +439,7 @@ impl<'gc> VM<'gc> {
                     let upvalues = self.collect_upvalues(upval_count, mu);
 
                     self.create_closure(func, upvalues, recursive_upval_index, mu)?;
-                    return Ok(())
+                    return Ok(());
                 }
             }
         }
@@ -480,7 +457,13 @@ impl<'gc> VM<'gc> {
         })
     }
 
-    fn create_closure(&self, dest: Reg, upvalues: Gc<'gc, [TaggedValue<'gc>]>, recursive_upval_idx: Option<usize>, mu: &'gc Mutator) -> Result<(), RuntimeError> {
+    fn create_closure(
+        &self,
+        dest: Reg,
+        upvalues: Gc<'gc, [TaggedValue<'gc>]>,
+        recursive_upval_idx: Option<usize>,
+        mu: &'gc Mutator,
+    ) -> Result<(), RuntimeError> {
         match self.reg_to_val(dest) {
             Value::Func(func) => {
                 let closure = Gc::new(mu, Closure::new(func, upvalues));
@@ -497,15 +480,20 @@ impl<'gc> VM<'gc> {
         }
     }
 
-    fn read_args_then_call(&self, mut arg_count: usize, mu: &'gc Mutator, syms: &mut SymbolMap) -> Result<(), RuntimeError> {
+    fn read_args_then_call(
+        &self,
+        mut arg_count: usize,
+        mu: &'gc Mutator,
+        syms: &mut SymbolMap,
+    ) -> Result<(), RuntimeError> {
         loop {
             match self.get_next_instruction() {
                 ByteCode::Call { src, dest } => {
                     self.call_function(dest, src, arg_count, mu, syms)?;
-                    return Ok(())
+                    return Ok(());
                 }
                 ByteCode::StoreArg { .. } => arg_count += 1,
-                _ => todo!("internal runtime error")
+                _ => todo!("internal runtime error"),
             }
         }
     }
@@ -521,9 +509,12 @@ impl<'gc> VM<'gc> {
         if let ByteCode::Call { dest, .. } = self.get_prev_instruction() {
             self.set_reg_with_value(return_val, dest, mu);
         } else if let ByteCode::Import { dest, .. } = self.get_prev_instruction() {
-            let export_value = self.module_map.get(popped_callframe.get_module_path()).unwrap();
+            let export_value = self
+                .module_map
+                .get(popped_callframe.get_module_path())
+                .unwrap();
             self.set_reg(export_value, dest, mu);
-        }else {
+        } else {
             todo!("bad return from function")
         }
     }
@@ -543,7 +534,13 @@ impl<'gc> VM<'gc> {
         self.frame_start.set(new_frame_start);
     }
 
-    fn call_partial(&self, dest: Reg, partial: Gc<'gc, Partial<'gc>>,supplied_args: usize, mu: &'gc Mutator) -> Result<(), RuntimeError> {
+    fn call_partial(
+        &self,
+        dest: Reg,
+        partial: Gc<'gc, Partial<'gc>>,
+        supplied_args: usize,
+        mu: &'gc Mutator,
+    ) -> Result<(), RuntimeError> {
         match partial.get_callable() {
             Callable::Func(func) => {
                 self.load_function_callframe(func, Some(partial.get_args()), supplied_args, mu)
@@ -563,7 +560,14 @@ impl<'gc> VM<'gc> {
         }
     }
 
-    fn call_function(&self, dest: Reg, src: Reg, supplied_args: usize, mu: &'gc Mutator, syms: &mut SymbolMap) -> Result<(), RuntimeError> {
+    fn call_function(
+        &self,
+        dest: Reg,
+        src: Reg,
+        supplied_args: usize,
+        mu: &'gc Mutator,
+        syms: &mut SymbolMap,
+    ) -> Result<(), RuntimeError> {
         match self.reg_to_val(src) {
             Value::Func(func) => self.load_function_callframe(func, None, supplied_args, mu),
             Value::Closure(closure) => {
@@ -584,7 +588,10 @@ impl<'gc> VM<'gc> {
                 let arg_iter = self.arg_iter(first_arg_ip, supplied_args);
 
                 if !SymbolMap::is_intrinsic(sym_id) {
-                    return Err(self.new_error(RuntimeErrorKind::TypeError, "Tried to call non intrinsic symbol".to_string()));
+                    return Err(self.new_error(
+                        RuntimeErrorKind::TypeError,
+                        "Tried to call non intrinsic symbol".to_string(),
+                    ));
                 }
 
                 let result = call_intrinsic(arg_iter, sym_id, syms, mu);
@@ -607,14 +614,23 @@ impl<'gc> VM<'gc> {
 
     fn expect_args(&self, expected_args: usize, supplied_args: usize) -> Result<(), RuntimeError> {
         if supplied_args != expected_args {
-            let msg = format!("Expected {} args, was given {}", expected_args, supplied_args);
+            let msg = format!(
+                "Expected {} args, was given {}",
+                expected_args, supplied_args
+            );
             Err(self.wrong_num_args(msg))
         } else {
             Ok(())
         }
     }
 
-    fn load_function_callframe(&self, func: Gc<'gc, LoadedFunc<'gc>>, partial_args: Option<Gc<'gc, [TaggedValue<'gc>]>>, stack_args: usize, mu: &'gc Mutator) -> Result<(), RuntimeError> {
+    fn load_function_callframe(
+        &self,
+        func: Gc<'gc, LoadedFunc<'gc>>,
+        partial_args: Option<Gc<'gc, [TaggedValue<'gc>]>>,
+        stack_args: usize,
+        mu: &'gc Mutator,
+    ) -> Result<(), RuntimeError> {
         let arg_count = func.arg_count() as usize;
         let partial_args_count = if let Some(ref args) = partial_args {
             args.len()
@@ -627,8 +643,8 @@ impl<'gc> VM<'gc> {
 
         self.expect_args(expected_args, stack_args)?;
 
-        let new_frame_start = self.frame_start.get()
-            + self.get_top_call_frame().get_reg_count() as usize;
+        let new_frame_start =
+            self.frame_start.get() + self.get_top_call_frame().get_reg_count() as usize;
 
         while new_frame_start + (func.get_max_clique() as usize) > self.registers.len() {
             self.registers.push(mu, Value::tagged_null());
@@ -670,13 +686,8 @@ impl<'gc> VM<'gc> {
         let cf = self.get_top_call_frame();
         let span = cf.get_current_span();
 
-        RuntimeError::new(
-            kind,
-            span,
-            Some(msg)
-        )
+        RuntimeError::new(kind, span, Some(msg))
     }
-
 
     fn get_next_instruction(&self) -> ByteCode {
         let call_frame = self.get_top_call_frame();
@@ -756,7 +767,7 @@ impl<'gc> VM<'gc> {
             frame_start: self.frame_start.get(),
             registers: &self.registers,
             call_frame: self.get_top_call_frame(),
-            ip: first_arg_ip
+            ip: first_arg_ip,
         }
     }
 }
@@ -775,7 +786,7 @@ impl<'a, 'gc> ArgIter<'a, 'gc> {
     }
 }
 
-impl<'a, 'gc> Iterator for ArgIter<'a, 'gc>  {
+impl<'a, 'gc> Iterator for ArgIter<'a, 'gc> {
     type Item = TaggedValue<'gc>;
 
     fn next(&mut self) -> Option<Self::Item> {

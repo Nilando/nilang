@@ -1,5 +1,5 @@
-use std::cell::Cell;
 use crate::symbol_map::SymbolMap;
+use std::cell::Cell;
 
 use super::op::equal;
 use std::fmt::Debug;
@@ -22,7 +22,7 @@ const INIT_CAPACITY: usize = 16;
 enum EntryStatus {
     Used,
     Free,
-    Dead
+    Dead,
 }
 
 #[derive(Trace)]
@@ -69,7 +69,12 @@ impl<'gc> GcHashMap<'gc> {
         Gc::new(mu, hash_map)
     }
 
-    pub fn insert(this: Gc<'gc, Self>, key: TaggedValue<'gc>, val: TaggedValue<'gc>, mu: &'gc Mutator) {
+    pub fn insert(
+        this: Gc<'gc, Self>,
+        key: TaggedValue<'gc>,
+        val: TaggedValue<'gc>,
+        mu: &'gc Mutator,
+    ) {
         this.entries.set(this.entries.get() + 1);
         if this.get_load() > MAX_LOAD {
             Self::grow(this.clone(), mu);
@@ -87,7 +92,6 @@ impl<'gc> GcHashMap<'gc> {
                     key_barrier.set(key);
                 });
 
-
                 return;
             } else {
                 Self::grow(this.clone(), mu);
@@ -102,11 +106,11 @@ impl<'gc> GcHashMap<'gc> {
         if entry.is_free() {
             return None;
         }
-        
+
         Some(entry.val.clone())
     }
 
-    pub fn delete(&self, key: TaggedValue<'gc>,) -> Option<TaggedValue<'gc>> {
+    pub fn delete(&self, key: TaggedValue<'gc>) -> Option<TaggedValue<'gc>> {
         let idx = self.get_key_index(&key)?;
         let entry = &self.buckets[idx];
 
@@ -169,15 +173,13 @@ impl<'gc> GcHashMap<'gc> {
             let entry = &self.buckets[probe_pos];
 
             match entry.status.get() {
-                EntryStatus::Free => {
-                    return Some(probe_pos)
-                }
+                EntryStatus::Free => return Some(probe_pos),
                 EntryStatus::Used => {
                     let v1 = Value::from(key);
                     let v2 = Value::from(&entry.key);
 
                     if let Ok(Value::Bool(true)) = equal(v1, v2) {
-                        return Some(probe_pos)
+                        return Some(probe_pos);
                     }
                 }
                 EntryStatus::Dead => {}

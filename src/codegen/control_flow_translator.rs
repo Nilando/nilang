@@ -1,9 +1,9 @@
 use crate::codegen::backpatch::{BackPatchLabel, BackpatchContext};
+use crate::codegen::func::Func;
 use crate::codegen::ssa_elimination::ssa_elimination;
 use crate::codegen::InterferenceGraph;
 use crate::ir::{Block, Func as IRFunc, LabelID, Tac, VReg};
 use crate::runtime::ByteCode;
-use crate::codegen::func::Func;
 
 pub fn handle_control_flow_instruction(
     instr: &Tac,

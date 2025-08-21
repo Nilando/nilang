@@ -1,8 +1,8 @@
+use crate::codegen::func::{Func, Local};
 use crate::codegen::InterferenceGraph;
 use crate::ir::{Tac, TacConst};
 use crate::parser::Op;
 use crate::runtime::ByteCode;
-use crate::codegen::func::{Func, Local};
 
 pub fn translate_tac(tac: &Tac, graph: &InterferenceGraph, func: &mut Func) -> Option<ByteCode> {
     match tac {
@@ -61,10 +61,10 @@ pub fn translate_tac(tac: &Tac, graph: &InterferenceGraph, func: &mut Func) -> O
         }),
         Tac::Import { dest, path } => Some(ByteCode::Import {
             dest: graph.get_reg(dest),
-            path: graph.get_reg(path)
+            path: graph.get_reg(path),
         }),
         Tac::Export { src } => Some(ByteCode::Export {
-            src: graph.get_reg(src)
+            src: graph.get_reg(src),
         }),
         Tac::Binop { dest, op, lhs, rhs } => Some(translate_binop(*dest, *op, *lhs, *rhs, graph)),
         Tac::LoadConst { dest, src } => Some(translate_load_const(*dest, src, graph, func)),
@@ -134,20 +134,18 @@ fn translate_load_const(
                 dest: dest_reg,
                 val: immediate,
             },
-            _ => {
-                match i32::try_from(*i) {
-                    Ok(local) => {
-                        let local = Local::Int(local);
-                        let id = get_or_create_local(local, func);
-                        ByteCode::LoadLocal { dest: dest_reg, id }
-                    }
-                    _ => {
-                        let local = Local::Float(*i as f64);
-                        let id = get_or_create_local(local, func);
-                        ByteCode::LoadLocal { dest: dest_reg, id }
-                    }
+            _ => match i32::try_from(*i) {
+                Ok(local) => {
+                    let local = Local::Int(local);
+                    let id = get_or_create_local(local, func);
+                    ByteCode::LoadLocal { dest: dest_reg, id }
                 }
-            }
+                _ => {
+                    let local = Local::Float(*i as f64);
+                    let id = get_or_create_local(local, func);
+                    ByteCode::LoadLocal { dest: dest_reg, id }
+                }
+            },
         },
         TacConst::Sym(i) => match u16::try_from(*i) {
             Ok(immediate) => ByteCode::LoadSym {

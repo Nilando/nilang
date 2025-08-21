@@ -22,7 +22,9 @@ impl<'gc> LoadedLocal<'gc> {
             LoadedLocal::Int(i) => Value::Int(*i),
             LoadedLocal::Float(f) => Value::Float(*f),
             LoadedLocal::Func(f) => Value::Func(f.clone()),
-            LoadedLocal::Text(gc_text) => Value::String(Gc::new(mu, VMString::alloc(gc_text.iter().map(|c| *c), mu)))
+            LoadedLocal::Text(gc_text) => {
+                Value::String(Gc::new(mu, VMString::alloc(gc_text.iter().map(|c| *c), mu)))
+            }
         }
     }
 }

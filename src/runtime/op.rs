@@ -1,28 +1,28 @@
+use crate::symbol_map::{
+    ABS_SYM, ARITY_SYM, CEIL_SYM, FLOOR_SYM, LEN_SYM, LOG_SYM, POP_SYM, POW_SYM, PUSH_SYM,
+};
 use sandpit::{Gc, Mutator};
-use crate::symbol_map::{ABS_SYM, ARITY_SYM, CEIL_SYM, FLOOR_SYM, LEN_SYM, LOG_SYM, POP_SYM, POW_SYM, PUSH_SYM};
 
-use super::partial::Partial;
-use super::value::Value;
 use super::hash_map::GcHashMap;
+use super::partial::Partial;
 use super::string::VMString;
+use super::value::Value;
 
 pub fn add<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, String> {
     match (lhs, rhs) {
         (Value::Float(lhs), Value::Float(rhs)) => Ok(Value::Float(lhs + rhs)),
-        (Value::Int(lhs), Value::Int(rhs)) => {
-            Ok(
-                match lhs.checked_add(rhs) {
-                    Some(val) => Value::Int(val),
-                    None => Value::Float(lhs as f64 + rhs as f64)
-                }
-            )
-        }
+        (Value::Int(lhs), Value::Int(rhs)) => Ok(match lhs.checked_add(rhs) {
+            Some(val) => Value::Int(val),
+            None => Value::Float(lhs as f64 + rhs as f64),
+        }),
         (Value::Float(f), Value::Int(i)) | (Value::Int(i), Value::Float(f)) => {
             Ok(Value::Float(f + i as f64))
         }
-        (lhs, rhs) => {
-            Err(format!("Attempted to add {} with {}", lhs.type_str(), rhs.type_str()))
-        },
+        (lhs, rhs) => Err(format!(
+            "Attempted to add {} with {}",
+            lhs.type_str(),
+            rhs.type_str()
+        )),
     }
 }
 
@@ -32,9 +32,11 @@ pub fn sub<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, String> 
         (Value::Int(lhs), Value::Int(rhs)) => Ok(Value::Int(lhs - rhs)),
         (Value::Float(lhs), Value::Int(rhs)) => Ok(Value::Float(lhs - rhs as f64)),
         (Value::Int(lhs), Value::Float(rhs)) => Ok(Value::Float(lhs as f64 - rhs)),
-        (lhs, rhs) => {
-            Err(format!("Attempted to subtract {} by {}", lhs.type_str(), rhs.type_str()))
-        },
+        (lhs, rhs) => Err(format!(
+            "Attempted to subtract {} by {}",
+            lhs.type_str(),
+            rhs.type_str()
+        )),
     }
 }
 
@@ -45,9 +47,11 @@ pub fn multiply<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, Str
         (Value::Float(f), Value::Int(i)) | (Value::Int(i), Value::Float(f)) => {
             Ok(Value::Float(f * i as f64))
         }
-        (lhs, rhs) => {
-            Err(format!("Attempted to multiply {} by {}", lhs.type_str(), rhs.type_str()))
-        },
+        (lhs, rhs) => Err(format!(
+            "Attempted to multiply {} by {}",
+            lhs.type_str(),
+            rhs.type_str()
+        )),
     }
 }
 
@@ -57,9 +61,11 @@ pub fn divide<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, Strin
         (Value::Int(lhs), Value::Int(rhs)) => Ok(Value::Int(lhs / rhs)),
         (Value::Float(lhs), Value::Int(rhs)) => Ok(Value::Float(lhs / rhs as f64)),
         (Value::Int(lhs), Value::Float(rhs)) => Ok(Value::Float(lhs as f64 / rhs)),
-        (lhs, rhs) => {
-            Err(format!("Attempted to divide {} by {}", lhs.type_str(), rhs.type_str()))
-        },
+        (lhs, rhs) => Err(format!(
+            "Attempted to divide {} by {}",
+            lhs.type_str(),
+            rhs.type_str()
+        )),
     }
 }
 
@@ -69,9 +75,11 @@ pub fn modulo<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, Strin
         (Value::Int(lhs), Value::Int(rhs)) => Ok(Value::Int(lhs % rhs)),
         (Value::Float(lhs), Value::Int(rhs)) => Ok(Value::Float(lhs % rhs as f64)),
         (Value::Int(lhs), Value::Float(rhs)) => Ok(Value::Float(lhs as f64 % rhs)),
-        (lhs, rhs) => {
-            Err(format!("Attempted to modulo {} by {}", lhs.type_str(), rhs.type_str()))
-        },
+        (lhs, rhs) => Err(format!(
+            "Attempted to modulo {} by {}",
+            lhs.type_str(),
+            rhs.type_str()
+        )),
     }
 }
 
@@ -81,9 +89,11 @@ pub fn less_than<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, St
         (Value::Int(lhs), Value::Int(rhs)) => Ok(Value::Bool(lhs < rhs)),
         (Value::Float(lhs), Value::Int(rhs)) => Ok(Value::Bool(lhs < rhs as f64)),
         (Value::Int(lhs), Value::Float(rhs)) => Ok(Value::Bool((lhs as f64) < rhs)),
-        (lhs, rhs) => {
-            Err(format!("Attempted to perform a comparison between {} and {}", lhs.type_str(), rhs.type_str()))
-        },
+        (lhs, rhs) => Err(format!(
+            "Attempted to perform a comparison between {} and {}",
+            lhs.type_str(),
+            rhs.type_str()
+        )),
     }
 }
 
@@ -93,9 +103,11 @@ pub fn less_than_or_equal<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value
         (Value::Int(lhs), Value::Int(rhs)) => Ok(Value::Bool(lhs <= rhs)),
         (Value::Float(lhs), Value::Int(rhs)) => Ok(Value::Bool(lhs <= rhs as f64)),
         (Value::Int(lhs), Value::Float(rhs)) => Ok(Value::Bool((lhs as f64) <= rhs)),
-        (lhs, rhs) => {
-            Err(format!("Attempted to perform a comparison between {} and {}", lhs.type_str(), rhs.type_str()))
-        },
+        (lhs, rhs) => Err(format!(
+            "Attempted to perform a comparison between {} and {}",
+            lhs.type_str(),
+            rhs.type_str()
+        )),
     }
 }
 
@@ -105,9 +117,11 @@ pub fn greater_than<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>,
         (Value::Int(lhs), Value::Int(rhs)) => Ok(Value::Bool(lhs > rhs)),
         (Value::Float(lhs), Value::Int(rhs)) => Ok(Value::Bool(lhs > rhs as f64)),
         (Value::Int(lhs), Value::Float(rhs)) => Ok(Value::Bool((lhs as f64) > rhs)),
-        (lhs, rhs) => {
-            Err(format!("Attempted to perform a comparison between {} and {}", lhs.type_str(), rhs.type_str()))
-        },
+        (lhs, rhs) => Err(format!(
+            "Attempted to perform a comparison between {} and {}",
+            lhs.type_str(),
+            rhs.type_str()
+        )),
     }
 }
 
@@ -117,9 +131,11 @@ pub fn greater_than_or_equal<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Va
         (Value::Int(lhs), Value::Int(rhs)) => Ok(Value::Bool(lhs >= rhs)),
         (Value::Float(lhs), Value::Int(rhs)) => Ok(Value::Bool(lhs >= rhs as f64)),
         (Value::Int(lhs), Value::Float(rhs)) => Ok(Value::Bool((lhs as f64) >= rhs)),
-        (lhs, rhs) => {
-            Err(format!("Attempted to perform a comparison between {} and {}", lhs.type_str(), rhs.type_str()))
-        },
+        (lhs, rhs) => Err(format!(
+            "Attempted to perform a comparison between {} and {}",
+            lhs.type_str(),
+            rhs.type_str()
+        )),
     }
 }
 
@@ -131,11 +147,13 @@ pub fn not_equal<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, St
     Ok(Value::Bool(!lhs.is_equal_to(&rhs)))
 }
 
-pub fn mem_load<'gc>(store: Value<'gc>, key: Value<'gc>, mu: &'gc Mutator) -> Result<Value<'gc>, String> {
+pub fn mem_load<'gc>(
+    store: Value<'gc>,
+    key: Value<'gc>,
+    mu: &'gc Mutator,
+) -> Result<Value<'gc>, String> {
     match (&store, key) {
-        (Value::List(list), Value::Int(idx)) => {
-            Ok(list.at(idx))
-        }
+        (Value::List(list), Value::Int(idx)) => Ok(list.at(idx)),
         (Value::String(s), Value::Int(idx)) => {
             if let Some(c) = s.at(usize::try_from(idx).unwrap()) {
                 let text: [char; 1] = [c];
@@ -171,17 +189,24 @@ pub fn mem_load<'gc>(store: Value<'gc>, key: Value<'gc>, mu: &'gc Mutator) -> Re
         (Value::Partial(f), Value::SymId(sym)) => {
             todo!()
         }
-        (lhs, rhs) => {
-            Err(format!("Attempted to access a {} via a {}", lhs.type_str(), rhs.type_str()))
-        },
+        (lhs, rhs) => Err(format!(
+            "Attempted to access a {} via a {}",
+            lhs.type_str(),
+            rhs.type_str()
+        )),
         // here you could check if the thing we are loading is a function,
-        // and if its first arg is Value<'gc>, load the thing we are calling this on 
+        // and if its first arg is Value<'gc>, load the thing we are calling this on
         // into Value<'gc> as a upvalue?
         // can also be a value::map, followed by any value
     }
 }
 
-pub fn mem_store<'gc>(store: Value<'gc>, key: Value<'gc>, src: Value<'gc>, mu: &'gc Mutator) -> Option<()> {
+pub fn mem_store<'gc>(
+    store: Value<'gc>,
+    key: Value<'gc>,
+    src: Value<'gc>,
+    mu: &'gc Mutator,
+) -> Option<()> {
     match (store, key) {
         (Value::List(list), Value::Int(idx)) => {
             let null = Value::into_tagged(Value::Null, mu);
@@ -189,7 +214,11 @@ pub fn mem_store<'gc>(store: Value<'gc>, key: Value<'gc>, src: Value<'gc>, mu: &
                 list.push(null.clone(), mu);
             }
 
-            list.set(usize::try_from(idx).unwrap(), Value::into_tagged(src, mu), mu);
+            list.set(
+                usize::try_from(idx).unwrap(),
+                Value::into_tagged(src, mu),
+                mu,
+            );
 
             Some(())
         }

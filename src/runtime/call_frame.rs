@@ -15,7 +15,7 @@ pub struct CallFrame<'gc> {
     func: Gc<'gc, LoadedFunc<'gc>>,
     upvalues: GcOpt<'gc, [TaggedValue<'gc>]>,
     code: Gc<'gc, [ByteCode]>,
-    module_path: GcOpt<'gc, TaggedValue<'gc>>
+    module_path: GcOpt<'gc, TaggedValue<'gc>>,
 }
 
 impl<'gc> CallFrame<'gc> {
@@ -23,7 +23,10 @@ impl<'gc> CallFrame<'gc> {
         Self::new_with_module_path(loaded_func, GcOpt::new_none())
     }
 
-    pub fn new_with_module_path(loaded_func: Gc<'gc, LoadedFunc<'gc>>, module_path: GcOpt<'gc, TaggedValue<'gc>>) -> Self {
+    pub fn new_with_module_path(
+        loaded_func: Gc<'gc, LoadedFunc<'gc>>,
+        module_path: GcOpt<'gc, TaggedValue<'gc>>,
+    ) -> Self {
         Self {
             ip: Cell::new(0),
             upvalues: GcOpt::new_none(),
@@ -48,7 +51,11 @@ impl<'gc> CallFrame<'gc> {
         self.ip.set(ip - 1);
     }
 
-    pub fn set_upvalues(gc_self: Gc<'gc, Self>, new: Gc<'gc, [TaggedValue<'gc>]>, mu: &'gc Mutator) {
+    pub fn set_upvalues(
+        gc_self: Gc<'gc, Self>,
+        new: Gc<'gc, [TaggedValue<'gc>]>,
+        mu: &'gc Mutator,
+    ) {
         gc_self.write_barrier(mu, |this| {
             let upvalues = field!(this, CallFrame<'_>, upvalues);
             upvalues.set(new)
@@ -69,7 +76,6 @@ impl<'gc> CallFrame<'gc> {
 
     pub fn offset_ip(&self, offset: i16) {
         let ip = self.ip.get();
-
 
         // here we subtract 1 b/c the instruction pointer is already
         // one past the current jump instruction
@@ -95,5 +101,4 @@ impl<'gc> CallFrame<'gc> {
     pub fn get_module_path(&self) -> TaggedValue<'gc> {
         self.module_path.unwrap().scoped_deref().clone()
     }
-
 }

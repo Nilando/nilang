@@ -41,7 +41,8 @@ pub struct Config {
 
     /// Arguments passed to the script after this flag
     #[clap(last = true)]
-    pub script_args: Vec<String>,}
+    pub script_args: Vec<String>,
+}
 
 impl Config {
     pub fn default() -> Self {

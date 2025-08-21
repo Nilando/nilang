@@ -17,7 +17,10 @@ use super::symbol_map::{SymID, SymbolMap};
 use std::cell::RefCell;
 use std::rc::Rc;
 
-pub fn parse_program(input: &str, syms: &mut SymbolMap) -> Result<Vec<Stmt>, Vec<Spanned<ParseError>>> {
+pub fn parse_program(
+    input: &str,
+    syms: &mut SymbolMap,
+) -> Result<Vec<Stmt>, Vec<Spanned<ParseError>>> {
     let parse_result = stmt()
         .expect("Expected a statement")
         .unless(ctrl(Ctrl::End))

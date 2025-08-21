@@ -4,40 +4,40 @@
 */
 #[test]
 fn str_intrinsic() {
-  super::test_golden_output("./src/runtime/tests/golden/str_intrinsic.golden")
+    super::test_golden_output("./src/runtime/tests/golden/str_intrinsic.golden")
 }
 
 #[test]
 fn switching_value() {
-  super::test_golden_output("./src/runtime/tests/golden/switching_value.golden")
+    super::test_golden_output("./src/runtime/tests/golden/switching_value.golden")
 }
 
 #[test]
 fn num_intrinsic() {
-  super::test_golden_output("./src/runtime/tests/golden/num_intrinsic.golden")
+    super::test_golden_output("./src/runtime/tests/golden/num_intrinsic.golden")
 }
 
 #[test]
 fn one_plus_one() {
-  super::test_golden_output("./src/runtime/tests/golden/one_plus_one.golden")
+    super::test_golden_output("./src/runtime/tests/golden/one_plus_one.golden")
 }
 
 #[test]
 fn globals_test() {
-  super::test_golden_output("./src/runtime/tests/golden/globals_test.golden")
+    super::test_golden_output("./src/runtime/tests/golden/globals_test.golden")
 }
 
 #[test]
 fn closure_printing() {
-  super::test_golden_output("./src/runtime/tests/golden/closure_printing.golden")
+    super::test_golden_output("./src/runtime/tests/golden/closure_printing.golden")
 }
 
 #[test]
 fn euclidean_gcd() {
-  super::test_golden_output("./src/runtime/tests/golden/euclidean_gcd.golden")
+    super::test_golden_output("./src/runtime/tests/golden/euclidean_gcd.golden")
 }
 
 #[test]
 fn symbol_comparison_test() {
-  super::test_golden_output("./src/runtime/tests/golden/symbol_comparison_test.golden")
+    super::test_golden_output("./src/runtime/tests/golden/symbol_comparison_test.golden")
 }

@@ -1,7 +1,7 @@
 VERSION 0.1.0
 
 FEATURE BACKLOG:
-- redo intrinsics
+- add push and pop operators
 - String Interpolation
 - for loops
 - save assigned vars in repl

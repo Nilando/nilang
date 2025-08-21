@@ -45,7 +45,6 @@ pub enum ByteCode {
     Export { src: Reg },
 }
 
-
 impl Display for ByteCode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -85,7 +84,7 @@ impl Display for ByteCode {
             ByteCode::StoreGlobal { sym, src } => write!(f, "STGB {src}, #{sym}"),
             ByteCode::Import { dest, path } => write!(f, "IMPO {dest}, {path}"),
             ByteCode::Export { src } => write!(f, "EXPO {src}"),
-            ByteCode::Noop => write!(f, "NOOP")
+            ByteCode::Noop => write!(f, "NOOP"),
         }
     }
 }

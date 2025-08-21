@@ -25,7 +25,11 @@ pub fn execute(config: Config) {
     }
 }
 
-pub fn compile_source(config: &Config, symbols: &mut SymbolMap, source: &String) -> Result<Vec<Func>, ()> {
+pub fn compile_source(
+    config: &Config,
+    symbols: &mut SymbolMap,
+    source: &String,
+) -> Result<Vec<Func>, ()> {
     let parse_result = parse_program(source.as_str(), symbols);
 
     if let Err(ref parse_errors) = parse_result {
@@ -80,7 +84,8 @@ pub fn compile_source(config: &Config, symbols: &mut SymbolMap, source: &String)
 fn run_script(mut config: Config) {
     let source = config.get_script().unwrap();
     let mut symbols = SymbolMap::new();
-    let program = compile_source(&config, &mut symbols, &source).expect("Failed to compile program");
+    let program =
+        compile_source(&config, &mut symbols, &source).expect("Failed to compile program");
 
     if config.dry_run {
         println!("DRY RUN: program compiled successfully");
@@ -120,7 +125,8 @@ fn run_repl(config: Config) {
                 write!(stdout, "\r\n").unwrap();
                 stdout.flush().unwrap();
 
-                let program = compile_source(&config, &mut symbols, &input).expect("Failed to compile program");
+                let program = compile_source(&config, &mut symbols, &input)
+                    .expect("Failed to compile program");
 
                 if config.dry_run {
                     println!("DRY RUN: program compiled successfully");

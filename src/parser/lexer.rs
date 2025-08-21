@@ -65,8 +65,7 @@ pub enum KeyWord {
     Print,
     Read,
     Export,
-    Import
-    // Eval
+    Import, // Eval
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -305,11 +304,13 @@ impl<'a> Lexer<'a> {
         Ok(Some(Token::Sym(id)))
     }
 
-    fn lex_ident_or_keyword(&mut self, syms: &mut SymbolMap) -> Result<Option<Token<'a>>, LexError> {
+    fn lex_ident_or_keyword(
+        &mut self,
+        syms: &mut SymbolMap,
+    ) -> Result<Option<Token<'a>>, LexError> {
         let word: &str = self.lex_word();
 
-        let ident =
-        match word {
+        let ident = match word {
             "fn" => Token::KeyWord(KeyWord::Fn),
             "if" => Token::KeyWord(KeyWord::If),
             "print" => Token::KeyWord(KeyWord::Print),
@@ -785,9 +786,7 @@ mod tests {
     fn lex_symbol() {
         let mut syms = SymbolMap::new();
         let input = "#potato";
-        let tokens = vec![
-            Token::Sym(syms.get_id("potato")),
-        ];
+        let tokens = vec![Token::Sym(syms.get_id("potato"))];
 
         assert_src_tokens(input, tokens, syms);
     }

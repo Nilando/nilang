@@ -1,7 +1,7 @@
+use crate::codegen::func::Func;
 use crate::codegen::InterferenceGraph;
 use crate::ir::Block;
-use crate::runtime::{ByteCode};
-use crate::codegen::func::{Func};
+use crate::runtime::ByteCode;
 
 pub fn ssa_elimination(
     func: &mut Func,

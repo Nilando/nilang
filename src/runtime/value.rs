@@ -38,9 +38,17 @@ impl Debug for Value<'_> {
             Value::Closure(closure) => {
                 let func = closure.get_func();
 
-                write!(f, "Closure(id: {}, args: {}, upvalues: {})", func.get_id(), func.arg_count(), closure.get_upvalues().len())
+                write!(
+                    f,
+                    "Closure(id: {}, args: {}, upvalues: {})",
+                    func.get_id(),
+                    func.arg_count(),
+                    closure.get_upvalues().len()
+                )
             }
-            Value::Func(func) => write!(f, "Func(id: {}, args: {})", func.get_id(), func.arg_count()),
+            Value::Func(func) => {
+                write!(f, "Func(id: {}, args: {})", func.get_id(), func.arg_count())
+            }
             Value::Partial(_) => write!(f, "Partial"),
         }
     }
@@ -57,7 +65,7 @@ pub enum Value<'gc> {
     String(Gc<'gc, VMString<'gc>>),
     Closure(Gc<'gc, Closure<'gc>>),
     Map(Gc<'gc, GcHashMap<'gc>>),
-    Partial(Gc<'gc, Partial<'gc>>)
+    Partial(Gc<'gc, Partial<'gc>>),
 }
 
 impl<'gc> Value<'gc> {
@@ -100,7 +108,12 @@ impl<'gc> Value<'gc> {
             Value::Closure(closure) => {
                 let func = closure.get_func();
 
-                format!("Closure(id: {}, args: {}, upvalues: {})", func.get_id(), func.arg_count(), closure.get_upvalues().len())
+                format!(
+                    "Closure(id: {}, args: {}, upvalues: {})",
+                    func.get_id(),
+                    func.arg_count(),
+                    closure.get_upvalues().len()
+                )
             }
             Value::Func(func) => format!("Func(id: {}, args: {})", func.get_id(), func.arg_count()),
             Value::Partial(_) => format!("Partial"),
@@ -142,7 +155,7 @@ impl<'gc> Value<'gc> {
             (Value::String(lhs), Value::String(rhs)) => {
                 if lhs.len() != rhs.len() {
                     return false;
-                } 
+                }
                 for i in 0..lhs.len() {
                     if lhs.at(i) != rhs.at(i) {
                         return false;

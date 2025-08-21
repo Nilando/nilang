@@ -187,7 +187,12 @@ impl InterferenceGraph {
     }
 
     // no propagation!
-    pub fn best_effort_coalescence(&mut self, func: &Func, copies: Vec<(VReg, VReg)>, max_clique: u8) {
+    pub fn best_effort_coalescence(
+        &mut self,
+        func: &Func,
+        copies: Vec<(VReg, VReg)>,
+        max_clique: u8,
+    ) {
         let args = func.get_args();
 
         for (src, dest) in copies.iter() {

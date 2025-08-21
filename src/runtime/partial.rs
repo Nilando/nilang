@@ -4,7 +4,6 @@ use super::closure::Closure;
 use super::func::LoadedFunc;
 use super::tagged_value::TaggedValue;
 
-
 #[derive(Trace, Clone)]
 pub enum Callable<'gc> {
     Func(Gc<'gc, LoadedFunc<'gc>>),
@@ -18,7 +17,11 @@ pub struct Partial<'gc> {
 }
 
 impl<'gc> Partial<'gc> {
-    pub fn from_func(func: Gc<'gc, LoadedFunc<'gc>>, mu: &'gc Mutator<'gc>, tagged_val: TaggedValue<'gc>) -> Self {
+    pub fn from_func(
+        func: Gc<'gc, LoadedFunc<'gc>>,
+        mu: &'gc Mutator<'gc>,
+        tagged_val: TaggedValue<'gc>,
+    ) -> Self {
         // TODO: ensure that func has enough args
 
         Self {
