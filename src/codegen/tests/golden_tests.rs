@@ -4,35 +4,35 @@
 */
 #[test]
 fn farenheit_to_celsius() {
-    super::test_golden_bytecode("./src/codegen/tests/golden/farenheit_to_celsius.golden")
+  super::test_golden_bytecode("./src/codegen/tests/golden/farenheit_to_celsius.golden")
 }
 
 #[test]
 fn something_wrong() {
-    super::test_golden_bytecode("./src/codegen/tests/golden/something_wrong.golden")
+  super::test_golden_bytecode("./src/codegen/tests/golden/something_wrong.golden")
 }
 
 #[test]
 fn simple_closure() {
-    super::test_golden_bytecode("./src/codegen/tests/golden/simple_closure.golden")
+  super::test_golden_bytecode("./src/codegen/tests/golden/simple_closure.golden")
 }
 
 #[test]
 fn powers_of_two() {
-    super::test_golden_bytecode("./src/codegen/tests/golden/powers_of_two.golden")
+  super::test_golden_bytecode("./src/codegen/tests/golden/powers_of_two.golden")
 }
 
 #[test]
 fn rotate_array() {
-    super::test_golden_bytecode("./src/codegen/tests/golden/rotate_array.golden")
+  super::test_golden_bytecode("./src/codegen/tests/golden/rotate_array.golden")
 }
 
 #[test]
 fn shortcircuit() {
-    super::test_golden_bytecode("./src/codegen/tests/golden/shortcircuit.golden")
+  super::test_golden_bytecode("./src/codegen/tests/golden/shortcircuit.golden")
 }
 
 #[test]
 fn linear_search() {
-    super::test_golden_bytecode("./src/codegen/tests/golden/linear_search.golden")
+  super::test_golden_bytecode("./src/codegen/tests/golden/linear_search.golden")
 }

@@ -87,7 +87,7 @@ impl<'gc> Value<'gc> {
                     s.push_str(item.to_string(syms, false).as_str());
 
                     if i != list.len() - 1 {
-                        s.push(',');
+                        s.push_str(", ");
                     };
                 }
 
