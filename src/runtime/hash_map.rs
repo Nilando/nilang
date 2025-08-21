@@ -176,7 +176,7 @@ impl<'gc> GcHashMap<'gc> {
                     let v1 = Value::from(key);
                     let v2 = Value::from(&entry.key);
 
-                    if let Some(Value::Bool(true)) = equal(v1, v2) {
+                    if let Ok(Value::Bool(true)) = equal(v1, v2) {
                         return Some(probe_pos)
                     }
                 }

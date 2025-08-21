@@ -282,50 +282,65 @@ impl<'gc> VM<'gc> {
                 let lhs = self.reg_to_val(lhs);
                 let rhs = self.reg_to_val(rhs);
 
-                if let Some(value) = less_than_or_equal(lhs, rhs) {
-                    self.set_reg_with_value(value, dest, mu);
-                } else {
-                    return Err(self.type_error("".to_string()))
+                match less_than_or_equal(lhs, rhs) {
+                    Ok(value) => {
+                        self.set_reg_with_value(value, dest, mu);
+                    }
+                    Err(err) => {
+                        return Err(self.type_error(err))
+                    }
                 }
             }
             ByteCode::Gt { dest, lhs, rhs } => {
                 let lhs = self.reg_to_val(lhs);
                 let rhs = self.reg_to_val(rhs);
 
-                if let Some(value) = greater_than(lhs, rhs) {
-                    self.set_reg_with_value(value, dest, mu);
-                } else {
-                    return Err(self.type_error("".to_string()))
+                match greater_than(lhs, rhs) {
+                    Ok(value) => {
+                        self.set_reg_with_value(value, dest, mu);
+                    }
+                    Err(err) => {
+                        return Err(self.type_error(err))
+                    }
                 }
             }
             ByteCode::Gte { dest, lhs, rhs } => {
                 let lhs = self.reg_to_val(lhs);
                 let rhs = self.reg_to_val(rhs);
 
-                if let Some(value) = greater_than_or_equal(lhs, rhs) {
-                    self.set_reg_with_value(value, dest, mu);
-                } else {
-                    return Err(self.type_error("".to_string()))
+                match greater_than_or_equal(lhs, rhs) {
+                    Ok(value) => {
+                        self.set_reg_with_value(value, dest, mu);
+                    }
+                    Err(err) => {
+                        return Err(self.type_error(err))
+                    }
                 }
             }
             ByteCode::Equality { dest, lhs, rhs } => {
                 let lhs = self.reg_to_val(lhs);
                 let rhs = self.reg_to_val(rhs);
 
-                if let Some(value) = equal(lhs, rhs) {
-                    self.set_reg_with_value(value, dest, mu);
-                } else {
-                    return Err(self.type_error("".to_string()))
+                match equal(lhs, rhs) {
+                    Ok(value) => {
+                        self.set_reg_with_value(value, dest, mu);
+                    }
+                    Err(err) => {
+                        return Err(self.type_error(err))
+                    }
                 }
             }
             ByteCode::Inequality { dest, lhs, rhs } => {
                 let lhs = self.reg_to_val(lhs);
                 let rhs = self.reg_to_val(rhs);
 
-                if let Some(value) = not_equal(lhs, rhs) {
-                    self.set_reg_with_value(value, dest, mu);
-                } else {
-                    return Err(self.type_error("".to_string()))
+                match not_equal(lhs, rhs) {
+                    Ok(value) => {
+                        self.set_reg_with_value(value, dest, mu);
+                    }
+                    Err(err) => {
+                        return Err(self.type_error(err))
+                    }
                 }
             }
             ByteCode::MemLoad { dest, store, key } => {
@@ -347,6 +362,7 @@ impl<'gc> VM<'gc> {
                 let src = self.reg_to_val(src);
 
                 if let Some(()) = mem_store(store, key, src, mu) {
+                    // store was successful
                 } else {
                     return Err(self.type_error("".to_string()))
                 }

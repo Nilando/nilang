@@ -87,82 +87,68 @@ pub fn less_than<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, St
     }
 }
 
-pub fn less_than_or_equal<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Option<Value<'gc>> {
+pub fn less_than_or_equal<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, String> {
     match (lhs, rhs) {
-        (Value::Float(lhs), Value::Float(rhs)) => Some(Value::Bool(lhs <= rhs)),
-        (Value::Int(lhs), Value::Int(rhs)) => Some(Value::Bool(lhs <= rhs)),
-        (Value::Float(lhs), Value::Int(rhs)) => Some(Value::Bool(lhs <= rhs as f64)),
-        (Value::Int(lhs), Value::Float(rhs)) => Some(Value::Bool((lhs as f64) <= rhs)),
-        _ => None,
+        (Value::Float(lhs), Value::Float(rhs)) => Ok(Value::Bool(lhs <= rhs)),
+        (Value::Int(lhs), Value::Int(rhs)) => Ok(Value::Bool(lhs <= rhs)),
+        (Value::Float(lhs), Value::Int(rhs)) => Ok(Value::Bool(lhs <= rhs as f64)),
+        (Value::Int(lhs), Value::Float(rhs)) => Ok(Value::Bool((lhs as f64) <= rhs)),
+        (lhs, rhs) => {
+            Err(format!("Attempted to perform a comparison between {} and {}", lhs.type_str(), rhs.type_str()))
+        },
     }
 }
 
-pub fn greater_than<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Option<Value<'gc>> {
+pub fn greater_than<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, String> {
     match (lhs, rhs) {
-        (Value::Float(lhs), Value::Float(rhs)) => Some(Value::Bool(lhs > rhs)),
-        (Value::Int(lhs), Value::Int(rhs)) => Some(Value::Bool(lhs > rhs)),
-        (Value::Float(lhs), Value::Int(rhs)) => Some(Value::Bool(lhs > rhs as f64)),
-        (Value::Int(lhs), Value::Float(rhs)) => Some(Value::Bool((lhs as f64) > rhs)),
-        _ => None,
+        (Value::Float(lhs), Value::Float(rhs)) => Ok(Value::Bool(lhs > rhs)),
+        (Value::Int(lhs), Value::Int(rhs)) => Ok(Value::Bool(lhs > rhs)),
+        (Value::Float(lhs), Value::Int(rhs)) => Ok(Value::Bool(lhs > rhs as f64)),
+        (Value::Int(lhs), Value::Float(rhs)) => Ok(Value::Bool((lhs as f64) > rhs)),
+        (lhs, rhs) => {
+            Err(format!("Attempted to perform a comparison between {} and {}", lhs.type_str(), rhs.type_str()))
+        },
     }
 }
 
-pub fn greater_than_or_equal<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Option<Value<'gc>> {
+pub fn greater_than_or_equal<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, String> {
     match (lhs, rhs) {
-        (Value::Float(lhs), Value::Float(rhs)) => Some(Value::Bool(lhs >= rhs)),
-        (Value::Int(lhs), Value::Int(rhs)) => Some(Value::Bool(lhs >= rhs)),
-        (Value::Float(lhs), Value::Int(rhs)) => Some(Value::Bool(lhs >= rhs as f64)),
-        (Value::Int(lhs), Value::Float(rhs)) => Some(Value::Bool((lhs as f64) >= rhs)),
-        _ => None,
+        (Value::Float(lhs), Value::Float(rhs)) => Ok(Value::Bool(lhs >= rhs)),
+        (Value::Int(lhs), Value::Int(rhs)) => Ok(Value::Bool(lhs >= rhs)),
+        (Value::Float(lhs), Value::Int(rhs)) => Ok(Value::Bool(lhs >= rhs as f64)),
+        (Value::Int(lhs), Value::Float(rhs)) => Ok(Value::Bool((lhs as f64) >= rhs)),
+        (lhs, rhs) => {
+            Err(format!("Attempted to perform a comparison between {} and {}", lhs.type_str(), rhs.type_str()))
+        },
     }
 }
 
-pub fn equal<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Option<Value<'gc>> {
+pub fn equal<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, String> {
     match (lhs, rhs) {
-        (Value::Null, Value::Null) => Some(Value::Bool(true)),
-        (Value::Float(lhs), Value::Float(rhs)) => Some(Value::Bool(lhs == rhs)),
-        (Value::Int(lhs), Value::Int(rhs)) => Some(Value::Bool(lhs == rhs)),
-        (Value::SymId(lhs), Value::SymId(rhs)) => Some(Value::Bool(lhs == rhs)),
-        (Value::Bool(lhs), Value::Bool(rhs)) => Some(Value::Bool(lhs == rhs)),
-        (Value::Float(f), Value::Int(i)) | (Value::Int(i), Value::Float(f)) => Some(Value::Bool(f == i as f64)),
+        (Value::Null, Value::Null) => Ok(Value::Bool(true)),
+        (Value::Float(lhs), Value::Float(rhs)) => Ok(Value::Bool(lhs == rhs)),
+        (Value::Int(lhs), Value::Int(rhs)) => Ok(Value::Bool(lhs == rhs)),
+        (Value::SymId(lhs), Value::SymId(rhs)) => Ok(Value::Bool(lhs == rhs)),
+        (Value::Bool(lhs), Value::Bool(rhs)) => Ok(Value::Bool(lhs == rhs)),
+        (Value::Float(f), Value::Int(i)) | (Value::Int(i), Value::Float(f)) => Ok(Value::Bool(f == i as f64)),
         (Value::String(lhs), Value::String(rhs)) => {
             if lhs.len() != rhs.len() {
-                return Some(Value::Bool(false));
+                return Ok(Value::Bool(false));
             } 
             for i in 0..lhs.len() {
                 if lhs.at(i) != rhs.at(i) {
-                    return Some(Value::Bool(false));
+                    return Ok(Value::Bool(false));
                 }
             }
 
-            Some(Value::Bool(true))
+            Ok(Value::Bool(true))
         }
-        _ => Some(Value::Bool(false)),
+        _ => Ok(Value::Bool(false)),
     }
 }
 
-pub fn not_equal<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Option<Value<'gc>> {
-    match (lhs, rhs) {
-        (Value::Null, Value::Null) => Some(Value::Bool(false)),
-        (Value::Float(lhs), Value::Float(rhs)) => Some(Value::Bool(lhs != rhs)),
-        (Value::Int(lhs), Value::Int(rhs)) => Some(Value::Bool(lhs != rhs)),
-        (Value::Float(f), Value::Int(i)) | (Value::Int(i), Value::Float(f)) => {
-            Some(Value::Bool(f != i as f64))
-        }
-        (Value::String(lhs), Value::String(rhs)) => {
-            if lhs.len() != rhs.len() {
-                return Some(Value::Bool(true));
-            } 
-            for i in 0..lhs.len() {
-                if lhs.at(i) != rhs.at(i) {
-                    return Some(Value::Bool(true));
-                }
-            }
-
-            Some(Value::Bool(false))
-        }
-        _ => Some(Value::Bool(true)),
-    }
+pub fn not_equal<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, String> {
+    todo!()
 }
 
 pub fn mem_load<'gc>(store: Value<'gc>, key: Value<'gc>, mu: &'gc Mutator) -> Result<Value<'gc>, String> {
