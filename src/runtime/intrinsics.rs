@@ -6,14 +6,12 @@ use crate::runtime::string::VMString;
 use crate::symbol_map::{SymID, SymbolMap, ABS_SYM, ARGS_SYM, BOOL_SYM, CEIL_SYM, CLONE_SYM, FLOOR_SYM, FN_SYM, LEN_SYM, LIST_SYM, LOG_SYM, MAP_SYM, NULL_SYM, NUM_SYM, POP_SYM, POW_SYM, PUSH_SYM, READ_FILE_SYM, SLEEP_SYM, STR_SYM, SYM_SYM, TYPE_SYM};
 
 use super::list::List;
-use super::tagged_value::TaggedValue;
 use super::value::Value;
 use super::vm::ArgIter;
 use super::RuntimeErrorKind;
 
 pub fn call_intrinsic<'a, 'gc>(
-    stack_args: ArgIter<'a, 'gc>,
-    partial_args: Option<Gc<'gc, [TaggedValue<'gc>]>>,
+    args: ArgIter<'a, 'gc>,
     sym_id: SymID,
     symbol_map: &mut SymbolMap,
     mu: &'gc Mutator<'gc>
@@ -22,139 +20,97 @@ pub fn call_intrinsic<'a, 'gc>(
     match sym_id {
         // ZERO ARG FUNCS
         ARGS_SYM => {
-            let partial_arg_count = if let Some(args) = partial_args {
-                args.len()
-            } else {
-                0
-            };
-            let stack_arg_count = stack_args.get_arg_count();
-
-            expect_arg_count(0, stack_arg_count, partial_arg_count)?;
-
-            args(mu)
+            get_program_args(mu)
         }
 
         // SINGLE ARG FUNCS
         NUM_SYM => {
-            let arg = extract_single_arg(stack_args, partial_args)?;
+            let arg = extract_single_arg(args)?;
             num(arg)
         }
         STR_SYM => {
-            let arg = extract_single_arg(stack_args, partial_args)?;
+            let arg = extract_single_arg(args)?;
             str(arg, mu, symbol_map)
         }
         SYM_SYM => {
-            let arg = extract_single_arg(stack_args, partial_args)?;
+            let arg = extract_single_arg(args)?;
             sym(arg, mu, symbol_map)
         }
         BOOL_SYM => {
-            let arg = extract_single_arg(stack_args, partial_args)?;
+            let arg = extract_single_arg(args)?;
             bbool(arg)
         }
         SLEEP_SYM => {
-            let arg = extract_single_arg(stack_args, partial_args)?;
+            let arg = extract_single_arg(args)?;
             sleep(arg)
         }
         TYPE_SYM => {
-            let arg = extract_single_arg(stack_args, partial_args)?;
+            let arg = extract_single_arg(args)?;
             ttype(arg)
         }
         READ_FILE_SYM => {
-            let arg = extract_single_arg(stack_args, partial_args)?;
+            let arg = extract_single_arg(args)?;
             read_file(arg, mu)
         }
         CLONE_SYM => {
-            let arg = extract_single_arg(stack_args, partial_args)?;
+            let arg = extract_single_arg(args)?;
             clone(arg, mu)
         }
         ABS_SYM => {
-            let arg = extract_single_arg(stack_args, partial_args)?;
+            let arg = extract_single_arg(args)?;
             abs(arg)
         }
         FLOOR_SYM => {
-            let arg = extract_single_arg(stack_args, partial_args)?;
+            let arg = extract_single_arg(args)?;
             floor(arg)
         }
         CEIL_SYM => {
-            let arg = extract_single_arg(stack_args, partial_args)?;
+            let arg = extract_single_arg(args)?;
             ceil(arg)
         }
+        POP_SYM => {
+            let arg = extract_single_arg(args)?;
+            pop(arg, mu)
+        }
         POW_SYM => {
-            let (arg1, arg2) = extract_two_args(stack_args, partial_args)?;
+            let (arg1, arg2) = extract_two_args(args)?;
             pow(arg1, arg2, mu)
         }
         LOG_SYM => {
-            let (arg1, arg2) = extract_two_args(stack_args, partial_args)?;
+            let (arg1, arg2) = extract_two_args(args)?;
             log(arg1, arg2, mu)
         }
         PUSH_SYM => {
-            let (arg1, arg2) = extract_two_args(stack_args, partial_args)?;
+            let (arg1, arg2) = extract_two_args(args)?;
             push(arg1, arg2, mu)
-        }
-        POP_SYM => {
-            let arg = extract_single_arg(stack_args, partial_args)?;
-            pop(arg, mu)
         }
         // POP
         _ => todo!()
     }
 }
 
-fn extract_two_args<'a, 'gc>(mut stack_args: ArgIter<'a, 'gc>, partial_args: Option<Gc<'gc, [TaggedValue<'gc>]>>) -> Result<(Value<'gc>, Value<'gc>), (RuntimeErrorKind, String)> {
-    let partial_arg_count = if let Some(ref args) = partial_args {
-        args.len()
-    } else {
-        0
-    };
-    let stack_arg_count = stack_args.get_arg_count();
+fn extract_two_args<'a, 'gc>(mut args: ArgIter<'a, 'gc>) -> Result<(Value<'gc>, Value<'gc>), (RuntimeErrorKind, String)> {
+    let arg_count = args.get_arg_count();
 
-    expect_arg_count(2, stack_arg_count, partial_arg_count)?;
+    expect_arg_count(2, arg_count)?;
 
-    if let Some(args) = partial_args {
-        match args.len() {
-            1 => {
-                let arg1 = Value::from(&args[0]);
-                let arg2 = Value::from(&stack_args.next().unwrap());
+    let arg1 = Value::from(&args.next().unwrap());
+    let arg2 = Value::from(&args.next().unwrap());
 
-                Ok((arg1, arg2))
-            }
-            2 => {
-                let arg1 = Value::from(&args[0]);
-                let arg2 = Value::from(&args[1]);
-
-                Ok((arg1, arg2))
-            }
-            _ => panic!("this shouldnt be reachable")
-        }
-    } else {
-        let arg1 = Value::from(&stack_args.next().unwrap());
-        let arg2 = Value::from(&stack_args.next().unwrap());
-
-        Ok((arg1, arg2))
-    }
+    Ok((arg1, arg2))
 }
 
-fn extract_single_arg<'a, 'gc>(mut stack_args: ArgIter<'a, 'gc>, partial_args: Option<Gc<'gc, [TaggedValue<'gc>]>>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
-    let partial_arg_count = if let Some(ref args) = partial_args {
-        args.len()
-    } else {
-        0
-    };
-    let stack_arg_count = stack_args.get_arg_count();
+fn extract_single_arg<'a, 'gc>(mut args: ArgIter<'a, 'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+    let arg_count = args.get_arg_count();
 
-    expect_arg_count(1, stack_arg_count, partial_arg_count)?;
+    expect_arg_count(1, arg_count)?;
 
-    if let Some(args) = partial_args {
-        return Ok(Value::from(&args[0]));
-    }
-
-    Ok(Value::from(&stack_args.next().unwrap()))
+    Ok(Value::from(&args.next().unwrap()))
 }
 
-fn expect_arg_count(total_args: usize, stack_args: usize, partial_args: usize) -> Result<(), (RuntimeErrorKind, String)> {
-    if total_args != (stack_args + partial_args) {
-        let expected_args = total_args - partial_args;
-        let msg = format!("Expected {} args, was given {}", expected_args, stack_args);
+fn expect_arg_count(expected_args: usize, given_args: usize) -> Result<(), (RuntimeErrorKind, String)> {
+    if expected_args != given_args {
+        let msg = format!("Expected {} args, was given {}", expected_args, given_args);
 
         Err((RuntimeErrorKind::WrongNumArgs, msg))
     } else {
@@ -372,7 +328,7 @@ fn str<'gc>(arg: Value<'gc>, mu: &'gc Mutator, syms: &mut SymbolMap) -> Result<V
     Ok(Value::String(Gc::new(mu, VMString::alloc(chars, mu))))
 }
 
-fn args<'gc>(mu: &'gc Mutator) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+fn get_program_args<'gc>(mu: &'gc Mutator) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
     let gc_list = Gc::new(mu, List::alloc(mu));
     let str_args: Vec<String> = std::env::args().collect();
 

@@ -1,7 +1,5 @@
 use sandpit::{Gc, Mutator, Trace};
 
-use crate::symbol_map::SymID;
-
 use super::closure::Closure;
 use super::func::LoadedFunc;
 use super::tagged_value::TaggedValue;
@@ -11,7 +9,6 @@ use super::tagged_value::TaggedValue;
 pub enum Callable<'gc> {
     Func(Gc<'gc, LoadedFunc<'gc>>),
     Closure(Gc<'gc, Closure<'gc>>),
-    Intrinsic(SymID),
 }
 
 #[derive(Trace)]
@@ -26,14 +23,6 @@ impl<'gc> Partial<'gc> {
 
         Self {
             callable: Callable::Func(func),
-            bound_args: mu.alloc_array_from_fn(1, |_| tagged_val.clone()),
-        }
-    }
-
-    pub fn alloc_intrinsic(sym: SymID, mu: &'gc Mutator<'gc>, tagged_val: TaggedValue<'gc>) -> Self {
-
-        Self {
-            callable: Callable::Intrinsic(sym),
             bound_args: mu.alloc_array_from_fn(1, |_| tagged_val.clone()),
         }
     }

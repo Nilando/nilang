@@ -543,23 +543,8 @@ impl<'gc> VM<'gc> {
         self.frame_start.set(new_frame_start);
     }
 
-    fn call_partial(&self, dest: Reg, partial: Gc<'gc, Partial<'gc>>,supplied_args: usize, mu: &'gc Mutator, syms: &mut SymbolMap) -> Result<(), RuntimeError> {
+    fn call_partial(&self, dest: Reg, partial: Gc<'gc, Partial<'gc>>,supplied_args: usize, mu: &'gc Mutator) -> Result<(), RuntimeError> {
         match partial.get_callable() {
-            Callable::Intrinsic(sym) => {
-                let call_instr_ip = self.get_ip() - 1;
-                let first_arg_ip = call_instr_ip - supplied_args;
-                let arg_iter = self.arg_iter(first_arg_ip, supplied_args);
-                let result = call_intrinsic(arg_iter, Some(partial.get_args()), sym, syms, mu);
-
-                match result {
-                    Ok(return_val) => {
-                        self.set_reg_with_value(return_val, dest, mu);
-
-                        Ok(())
-                    }
-                    Err((kind, msg)) => Err(self.new_error(kind, msg)),
-                }
-            }
             Callable::Func(func) => {
                 self.load_function_callframe(func, Some(partial.get_args()), supplied_args, mu)
             }
@@ -602,7 +587,7 @@ impl<'gc> VM<'gc> {
                     return Err(self.new_error(RuntimeErrorKind::TypeError, "Tried to call non intrinsic symbol".to_string()));
                 }
 
-                let result = call_intrinsic(arg_iter, None, sym_id, syms, mu);
+                let result = call_intrinsic(arg_iter, sym_id, syms, mu);
 
                 match result {
                     Ok(return_val) => {
@@ -615,7 +600,7 @@ impl<'gc> VM<'gc> {
                     }
                 }
             }
-            Value::Partial(partial) => self.call_partial(dest, partial, supplied_args, mu, syms),
+            Value::Partial(partial) => self.call_partial(dest, partial, supplied_args, mu),
             calle => Err(self.type_error(format!("Tried to call {} type", calle.type_str()))),
         }
     }
