@@ -35,7 +35,7 @@ pub fn call_intrinsic<'a, 'gc>(
         }
         SYM_SYM => {
             let arg = extract_single_arg(args)?;
-            sym(arg, mu, symbol_map)
+            sym(arg, symbol_map)
         }
         BOOL_SYM => {
             let arg = extract_single_arg(args)?;
@@ -79,11 +79,11 @@ pub fn call_intrinsic<'a, 'gc>(
         }
         POW_SYM => {
             let (arg1, arg2) = extract_two_args(args)?;
-            pow(arg1, arg2, mu)
+            pow(arg1, arg2)
         }
         LOG_SYM => {
             let (arg1, arg2) = extract_two_args(args)?;
-            log(arg1, arg2, mu)
+            log(arg1, arg2)
         }
         PUSH_SYM => {
             let (arg1, arg2) = extract_two_args(args)?;
@@ -194,7 +194,6 @@ fn pop<'gc>(store: Value<'gc>, mu: &'gc Mutator) -> Result<Value<'gc>, (RuntimeE
 fn log<'gc>(
     base: Value<'gc>,
     exponent: Value<'gc>,
-    mu: &'gc Mutator,
 ) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
     match (base, &exponent) {
         (Value::Int(a), Value::Int(b)) => Ok(Value::Float((a as f64).log(*b as f64))),
@@ -213,7 +212,6 @@ fn log<'gc>(
 fn pow<'gc>(
     base: Value<'gc>,
     exponent: Value<'gc>,
-    mu: &'gc Mutator,
 ) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
     match (base, &exponent) {
         (Value::Int(a), Value::Int(b)) => Ok(Value::Float((a as f64).powf(*b as f64))),
@@ -366,7 +364,6 @@ fn bbool<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)>
 
 fn sym<'gc>(
     arg: Value<'gc>,
-    mu: &'gc Mutator,
     syms: &mut SymbolMap,
 ) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
     match arg {

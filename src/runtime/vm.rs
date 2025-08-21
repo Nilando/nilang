@@ -536,7 +536,6 @@ impl<'gc> VM<'gc> {
 
     fn call_partial(
         &self,
-        dest: Reg,
         partial: Gc<'gc, Partial<'gc>>,
         supplied_args: usize,
         mu: &'gc Mutator,
@@ -607,7 +606,7 @@ impl<'gc> VM<'gc> {
                     }
                 }
             }
-            Value::Partial(partial) => self.call_partial(dest, partial, supplied_args, mu),
+            Value::Partial(partial) => self.call_partial(partial, supplied_args, mu),
             calle => Err(self.type_error(format!("Tried to call {} type", calle.type_str()))),
         }
     }

@@ -167,24 +167,6 @@ pub fn mem_load<'gc>(
                 Ok(Value::Null)
             }
         }
-        (Value::Int(_), Value::SymId(sym)) | (Value::Float(_), Value::SymId(sym)) => {
-            todo!("")
-        }
-        (Value::List(list), Value::SymId(sym)) => {
-            todo!("")
-        }
-        (Value::String(s), Value::SymId(sym)) => {
-            todo!("")
-        }
-        (Value::Func(f), Value::SymId(sym)) => {
-            todo!("")
-        }
-        (Value::Closure(f), Value::SymId(sym)) => {
-            todo!("")
-        }
-        (Value::Partial(f), Value::SymId(sym)) => {
-            todo!()
-        }
         (lhs, rhs) => Err(format!(
             "Attempted to access a {} via a {}",
             lhs.type_str(),
