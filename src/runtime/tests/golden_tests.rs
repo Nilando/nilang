@@ -23,6 +23,11 @@ fn multiplication() {
 }
 
 #[test]
+fn index_of_list() {
+  super::test_golden_output("./src/runtime/tests/golden/index_of_list.golden")
+}
+
+#[test]
 fn type_intrinsic_fn() {
   super::test_golden_output("./src/runtime/tests/golden/type_intrinsic_fn.golden")
 }
@@ -30,6 +35,11 @@ fn type_intrinsic_fn() {
 #[test]
 fn subtraction() {
   super::test_golden_output("./src/runtime/tests/golden/subtraction.golden")
+}
+
+#[test]
+fn two_sum() {
+  super::test_golden_output("./src/runtime/tests/golden/two_sum.golden")
 }
 
 #[test]
@@ -65,6 +75,11 @@ fn addition() {
 #[test]
 fn fibonacci() {
   super::test_golden_output("./src/runtime/tests/golden/fibonacci.golden")
+}
+
+#[test]
+fn closure_counter() {
+  super::test_golden_output("./src/runtime/tests/golden/closure_counter.golden")
 }
 
 #[test]

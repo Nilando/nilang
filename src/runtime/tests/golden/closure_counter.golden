@@ -12,6 +12,21 @@ fn new_counter() {
 
 my_counter = new_counter();
 
-print(my_counter()); // 0
-print(my_counter()); // 1
-print(my_counter()); // 2
+i = 0;
+while i < 10 {
+  print(my_counter());
+  i = i + 1;
+}
+
+%%%%
+
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9

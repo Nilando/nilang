@@ -1,0 +1,15 @@
+fn index_of(value, nums) {
+  i = 0;
+  while i < len(nums) {
+    if nums[i] == value {
+      return i;
+    }
+    i = i + 1;
+  }
+}
+
+print(index_of(1, [0, 0, 0, 1, 0]));
+
+%%%%
+
+3
