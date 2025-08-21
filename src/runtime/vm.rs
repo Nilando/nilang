@@ -372,7 +372,7 @@ impl<'gc> VM<'gc> {
 
             ByteCode::LoadGlobal { dest, sym } => {
                 let sym_val = self.get_reg(sym);
-                let tagged_val = match self.globals.get(sym_val) {
+                let tagged_val = match self.globals.get(&sym_val) {
                     Some(tagged) => tagged,
                     None => Value::tagged_null(),
                 };
@@ -390,7 +390,7 @@ impl<'gc> VM<'gc> {
 
                 // TODO: assert(module_path_val) is a string
 
-                match self.module_map.get(module_path_val) {
+                match self.module_map.get(&module_path_val) {
                     None => {
                         let val = self.reg_to_val(path);
                         let path = val.to_string(symbols, true);
@@ -511,7 +511,7 @@ impl<'gc> VM<'gc> {
         } else if let ByteCode::Import { dest, .. } = self.get_prev_instruction() {
             let export_value = self
                 .module_map
-                .get(popped_callframe.get_module_path())
+                .get(&popped_callframe.get_module_path())
                 .unwrap();
             self.set_reg(export_value, dest, mu);
         } else {

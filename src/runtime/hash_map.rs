@@ -75,9 +75,12 @@ impl<'gc> GcHashMap<'gc> {
         val: TaggedValue<'gc>,
         mu: &'gc Mutator,
     ) {
-        this.entries.set(this.entries.get() + 1);
-        if this.get_load() > MAX_LOAD {
-            Self::grow(this.clone(), mu);
+        if this.get_entry(&key).is_none() {
+            this.entries.set(this.entries.get() + 1);
+
+            if this.get_load() > MAX_LOAD {
+                Self::grow(this.clone(), mu);
+            }
         }
 
         loop {
@@ -99,7 +102,11 @@ impl<'gc> GcHashMap<'gc> {
         }
     }
 
-    pub fn get(&self, key: TaggedValue<'gc>) -> Option<TaggedValue<'gc>> {
+    pub fn get(&self, key: &TaggedValue<'gc>) -> Option<TaggedValue<'gc>> {
+        self.get_entry(key).map(|entry| entry.val.clone())
+    }
+
+    fn get_entry(&self, key: &TaggedValue<'gc>) -> Option<&Entry<'gc>> {
         let idx = self.get_key_index(&key)?;
         let entry = &self.buckets[idx];
 
@@ -107,7 +114,7 @@ impl<'gc> GcHashMap<'gc> {
             return None;
         }
 
-        Some(entry.val.clone())
+        Some(entry)
     }
 
     pub fn delete(&self, key: TaggedValue<'gc>) -> Option<TaggedValue<'gc>> {
@@ -150,12 +157,12 @@ impl<'gc> GcHashMap<'gc> {
         self.buckets.len()
     }
 
-    fn get_entries(&self) -> usize {
+    fn entries_count(&self) -> usize {
         self.entries.get()
     }
 
     fn get_load(&self) -> f64 {
-        self.get_entries() as f64 / self.get_capacity() as f64
+        self.entries_count() as f64 / self.get_capacity() as f64
     }
 
     fn modulo_mask(&self) -> usize {
@@ -198,14 +205,22 @@ impl<'gc> GcHashMap<'gc> {
 
         s.push('{');
 
+        let mut x = 0;
         for i in 0..self.buckets.len() {
             let entry = &self.buckets[i];
             let k = Value::from(&entry.key);
             let v = Value::from(&entry.val);
 
             if entry.is_used() {
+                x += 1;
                 let key_str = format!("{}: ", k.to_string(syms, false));
-                let val_str = format!("{}, ", v.to_string(syms, false));
+
+                let val_str = 
+                if x != self.entries_count() {
+                    format!("{}, ", v.to_string(syms, false))
+                } else {
+                    format!("{}", v.to_string(syms, false))
+                };
 
                 s.push_str(&key_str);
                 s.push_str(&val_str);
@@ -320,7 +335,7 @@ mod tests {
 
             GcHashMap::insert(map.clone(), key.clone(), val, mu);
 
-            let found = map.get(key).unwrap();
+            let found = map.get(&key).unwrap();
 
             matches!(Value::from(&found), Value::Bool(true));
         });
@@ -335,7 +350,7 @@ mod tests {
 
             GcHashMap::insert(map.clone(), key.clone(), val, mu);
 
-            let found = map.get(key).unwrap();
+            let found = map.get(&key).unwrap();
 
             matches!(Value::from(&found), Value::Bool(true));
         });
@@ -354,7 +369,7 @@ mod tests {
 
             for i in 0..100 {
                 let key = Value::into_tagged(Value::Int(i), mu);
-                let found = Value::from(&map.get(key).unwrap());
+                let found = Value::from(&map.get(&key).unwrap());
 
                 if let Ok(Value::Bool(true)) = equal(found, Value::Int(i)) {
                 } else {
@@ -373,7 +388,7 @@ mod tests {
 
             GcHashMap::insert(map.clone(), key.clone(), v1, mu);
 
-            let found = map.get(key.clone()).unwrap();
+            let found = map.get(&key).unwrap();
 
             matches!(Value::from(&found), Value::Bool(true));
 
@@ -381,7 +396,7 @@ mod tests {
 
             GcHashMap::insert(map.clone(), key.clone(), v2, mu);
 
-            let found = map.get(key).unwrap();
+            let found = map.get(&key).unwrap();
 
             matches!(Value::from(&found), Value::Bool(false));
         });

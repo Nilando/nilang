@@ -63,6 +63,11 @@ fn addition() {
 }
 
 #[test]
+fn fibonacci() {
+  super::test_golden_output("./src/runtime/tests/golden/fibonacci.golden")
+}
+
+#[test]
 fn closure_printing() {
   super::test_golden_output("./src/runtime/tests/golden/closure_printing.golden")
 }
@@ -75,6 +80,11 @@ fn euclidean_gcd() {
 #[test]
 fn symbol_comparison_test() {
   super::test_golden_output("./src/runtime/tests/golden/symbol_comparison_test.golden")
+}
+
+#[test]
+fn basic_map_functionality() {
+  super::test_golden_output("./src/runtime/tests/golden/basic_map_functionality.golden")
 }
 
 #[test]

@@ -161,7 +161,7 @@ pub fn mem_load<'gc>(
             }
         }
         (Value::Map(map), key) => {
-            if let Some(val) = map.get(Value::into_tagged(key, mu)) {
+            if let Some(val) = map.get(&Value::into_tagged(key, mu)) {
                 Ok(Value::from(&val))
             } else {
                 Ok(Value::Null)
