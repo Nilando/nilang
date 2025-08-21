@@ -1,10 +1,6 @@
-use crate::symbol_map::{
-    ABS_SYM, ARITY_SYM, CEIL_SYM, FLOOR_SYM, LEN_SYM, LOG_SYM, POP_SYM, POW_SYM, PUSH_SYM,
-};
 use sandpit::{Gc, Mutator};
 
 use super::hash_map::GcHashMap;
-use super::partial::Partial;
 use super::string::VMString;
 use super::value::Value;
 
