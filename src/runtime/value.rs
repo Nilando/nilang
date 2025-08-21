@@ -131,6 +131,30 @@ impl<'gc> Value<'gc> {
         !matches!(self, Value::Null | Value::Bool(false))
     }
 
+    pub fn is_equal_to(&self, other: &Value<'gc>) -> bool {
+        match (self, other) {
+            (Value::Null, Value::Null) => true,
+            (Value::Float(lhs), Value::Float(rhs)) => lhs == rhs,
+            (Value::Int(lhs), Value::Int(rhs)) => lhs == rhs,
+            (Value::SymId(lhs), Value::SymId(rhs)) => lhs == rhs,
+            (Value::Bool(lhs), Value::Bool(rhs)) => lhs == rhs,
+            (Value::Float(f), Value::Int(i)) | (Value::Int(i), Value::Float(f)) => *f == *i as f64,
+            (Value::String(lhs), Value::String(rhs)) => {
+                if lhs.len() != rhs.len() {
+                    return false;
+                } 
+                for i in 0..lhs.len() {
+                    if lhs.at(i) != rhs.at(i) {
+                        return false;
+                    }
+                }
+
+                true
+            }
+            _ => false,
+        }
+    }
+
     pub fn is_string(&self) -> bool {
         matches!(self, Value::String(_))
     }

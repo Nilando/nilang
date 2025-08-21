@@ -354,7 +354,7 @@ mod tests {
                 let key = Value::into_tagged(Value::Int(i), mu);
                 let found = Value::from(&map.get(key).unwrap());
 
-                if let Some(Value::Bool(true)) = equal(found, Value::Int(i)) {
+                if let Ok(Value::Bool(true)) = equal(found, Value::Int(i)) {
                 } else {
                     assert!(false)
                 }

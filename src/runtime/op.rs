@@ -124,31 +124,11 @@ pub fn greater_than_or_equal<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Va
 }
 
 pub fn equal<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, String> {
-    match (lhs, rhs) {
-        (Value::Null, Value::Null) => Ok(Value::Bool(true)),
-        (Value::Float(lhs), Value::Float(rhs)) => Ok(Value::Bool(lhs == rhs)),
-        (Value::Int(lhs), Value::Int(rhs)) => Ok(Value::Bool(lhs == rhs)),
-        (Value::SymId(lhs), Value::SymId(rhs)) => Ok(Value::Bool(lhs == rhs)),
-        (Value::Bool(lhs), Value::Bool(rhs)) => Ok(Value::Bool(lhs == rhs)),
-        (Value::Float(f), Value::Int(i)) | (Value::Int(i), Value::Float(f)) => Ok(Value::Bool(f == i as f64)),
-        (Value::String(lhs), Value::String(rhs)) => {
-            if lhs.len() != rhs.len() {
-                return Ok(Value::Bool(false));
-            } 
-            for i in 0..lhs.len() {
-                if lhs.at(i) != rhs.at(i) {
-                    return Ok(Value::Bool(false));
-                }
-            }
-
-            Ok(Value::Bool(true))
-        }
-        _ => Ok(Value::Bool(false)),
-    }
+    Ok(Value::Bool(lhs.is_equal_to(&rhs)))
 }
 
 pub fn not_equal<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, String> {
-    todo!()
+    Ok(Value::Bool(!lhs.is_equal_to(&rhs)))
 }
 
 pub fn mem_load<'gc>(store: Value<'gc>, key: Value<'gc>, mu: &'gc Mutator) -> Result<Value<'gc>, String> {
