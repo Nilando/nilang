@@ -3,14 +3,15 @@ mod control_flow_translator;
 mod interference_graph;
 mod ssa_elimination;
 mod translator;
+mod func;
 
 #[cfg(test)]
 mod tests;
 
-use crate::runtime::Func;
 use backpatch::BackpatchContext;
 use control_flow_translator::{handle_block_fall_through, handle_control_flow_instruction};
 pub use interference_graph::{find_copy_edges, InterferenceGraph};
+pub use func::{Func, Local};
 use translator::translate_tac;
 
 use crate::ir::Func as IRFunc;

@@ -1,9 +1,9 @@
 mod config;
 
-use crate::codegen::generate_func;
+use crate::codegen::{generate_func, Func};
 use crate::ir::{func_to_string, lower_ast, optimize_func};
 use crate::parser::{parse_program, ParseError, Spanned};
-use crate::runtime::{func_to_string as bytecode_to_string, Runtime, RuntimeError, Func};
+use crate::runtime::{Runtime, RuntimeError};
 use crate::symbol_map::SymbolMap;
 
 pub use config::Config;
@@ -68,7 +68,7 @@ pub fn compile_source(config: &Config, symbols: &mut SymbolMap, source: &String)
         let mut bc_str = String::new();
 
         for func in program.iter() {
-            bc_str.push_str(&bytecode_to_string(func));
+            bc_str.push_str(&func.to_string());
         }
 
         output_string(bc_str, path);

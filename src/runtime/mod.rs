@@ -19,13 +19,13 @@ use crate::driver::compile_source;
 use crate::parser::Span;
 use crate::symbol_map::SymbolMap;
 use crate::Config;
+use crate::codegen::{Func, Local};
 
 use self::func::{LoadedFunc, LoadedLocal};
 use self::vm::ExitCode;
 use sandpit::*;
 use std::collections::HashMap;
 
-pub use self::func::{func_to_string, Func, Local};
 pub use bytecode::ByteCode;
 pub use vm::VM;
 
