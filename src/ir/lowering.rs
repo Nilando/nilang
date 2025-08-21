@@ -394,6 +394,15 @@ impl LoweringCtx {
             self.emit(tac);
 
             dest
+        } else if SymbolMap::is_intrinsic(sym_id) {
+            let dest = self.sym_to_reg(&sym_id);
+
+            self.emit(Tac::LoadConst {
+                dest,
+                src: TacConst::Sym(sym_id),
+            });
+
+            dest
         } else {
             // this is an uninitialized variable
             let dest = self.sym_to_reg(&sym_id);
