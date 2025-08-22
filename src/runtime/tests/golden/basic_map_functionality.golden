@@ -8,6 +8,7 @@ a.c = 3;
 print(a.a);
 print(a.b);
 print(a.c);
+print(a.d);
 
 %%%%
 
@@ -16,3 +17,4 @@ print(a.c);
 1
 2
 3
+null

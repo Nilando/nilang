@@ -58,6 +58,11 @@ fn one_plus_one() {
 }
 
 #[test]
+fn division() {
+  super::test_golden_output("./src/runtime/tests/golden/division.golden")
+}
+
+#[test]
 fn globals_test() {
   super::test_golden_output("./src/runtime/tests/golden/globals_test.golden")
 }
@@ -93,6 +98,11 @@ fn euclidean_gcd() {
 }
 
 #[test]
+fn math_intrinsics() {
+  super::test_golden_output("./src/runtime/tests/golden/math_intrinsics.golden")
+}
+
+#[test]
 fn symbol_comparison_test() {
   super::test_golden_output("./src/runtime/tests/golden/symbol_comparison_test.golden")
 }
@@ -100,6 +110,11 @@ fn symbol_comparison_test() {
 #[test]
 fn basic_map_functionality() {
   super::test_golden_output("./src/runtime/tests/golden/basic_map_functionality.golden")
+}
+
+#[test]
+fn read_chars_from_string() {
+  super::test_golden_output("./src/runtime/tests/golden/read_chars_from_string.golden")
 }
 
 #[test]

@@ -12,6 +12,7 @@ use super::partial::Partial;
 use super::string::VMString;
 use super::tagged_value::{pack_tagged_value, TaggedValue, ValueTag};
 
+/*
 impl Debug for Value<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -53,6 +54,7 @@ impl Debug for Value<'_> {
         }
     }
 }
+*/
 
 pub enum Value<'gc> {
     Null,

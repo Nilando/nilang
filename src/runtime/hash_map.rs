@@ -289,6 +289,7 @@ fn hash_value(v: &Value<'_>) -> usize {
     result.0 as usize ^ result.1 as usize
 }
 
+/*
 impl Debug for GcHashMap<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{{")?;
@@ -313,6 +314,7 @@ impl Debug for GcHashMap<'_> {
         write!(f, "}}")
     }
 }
+*/
 
 #[cfg(test)]
 mod tests {
