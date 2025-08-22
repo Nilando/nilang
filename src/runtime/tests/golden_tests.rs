@@ -33,6 +33,11 @@ fn type_intrinsic_fn() {
 }
 
 #[test]
+fn arity_intrinsic() {
+  super::test_golden_output("./src/runtime/tests/golden/arity_intrinsic.golden")
+}
+
+#[test]
 fn subtraction() {
   super::test_golden_output("./src/runtime/tests/golden/subtraction.golden")
 }

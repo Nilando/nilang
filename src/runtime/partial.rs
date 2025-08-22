@@ -37,4 +37,15 @@ impl<'gc> Partial<'gc> {
     pub fn get_args(&self) -> Gc<'gc, [TaggedValue<'gc>]> {
         self.bound_args.clone()
     }
+
+    pub fn arity(&self) -> usize {
+        match &self.callable {
+            Callable::Func(f) => {
+                f.arg_count() as usize - self.bound_args.len()
+            }
+            Callable::Closure(c) => {
+                c.get_func().arg_count() as usize - self.bound_args.len()
+            }
+        }
+    }
 }

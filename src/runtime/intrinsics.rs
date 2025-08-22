@@ -4,9 +4,7 @@ use sandpit::{Gc, Mutator};
 
 use crate::runtime::string::VMString;
 use crate::symbol_map::{
-    SymID, SymbolMap, ABS_SYM, ARGS_SYM, BOOL_SYM, CEIL_SYM, CLONE_SYM, FLOOR_SYM, FN_SYM, LEN_SYM,
-    LIST_SYM, LOG_SYM, MAP_SYM, NULL_SYM, NUM_SYM, POP_SYM, POW_SYM, PUSH_SYM, READ_FILE_SYM,
-    SLEEP_SYM, STR_SYM, SYM_SYM, TYPE_SYM,
+    SymID, SymbolMap, ABS_SYM, ARGS_SYM, ARITY_SYM, BOOL_SYM, CEIL_SYM, CLONE_SYM, FLOOR_SYM, FN_SYM, LEN_SYM, LIST_SYM, LOG_SYM, MAP_SYM, NULL_SYM, NUM_SYM, POP_SYM, POW_SYM, PUSH_SYM, READ_FILE_SYM, SLEEP_SYM, STR_SYM, SYM_SYM, TYPE_SYM
 };
 
 use super::list::List;
@@ -76,6 +74,10 @@ pub fn call_intrinsic<'a, 'gc>(
         LEN_SYM => {
             let arg = extract_single_arg(args)?;
             len(arg)
+        }
+        ARITY_SYM => {
+            let arg = extract_single_arg(args)?;
+            arity(arg)
         }
         POW_SYM => {
             let (arg1, arg2) = extract_two_args(args)?;
@@ -450,6 +452,24 @@ fn num<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
             }
 
             Ok(Value::Null)
+        }
+        _ => Err((
+            RuntimeErrorKind::TypeError,
+            format!("Unexpected arg of type {}", arg.type_str()),
+        )),
+    }
+}
+
+fn arity<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+    match arg {
+        Value::Func(f) => { 
+            Ok(Value::Int(f.arg_count() as i32))
+        }
+        Value::Closure(f) => { 
+            Ok(Value::Int(f.get_func().arg_count() as i32))
+        }
+        Value::Partial(f) => { 
+            Ok(Value::Int(f.arity() as i32))
         }
         _ => Err((
             RuntimeErrorKind::TypeError,

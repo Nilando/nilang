@@ -1,0 +1,17 @@
+
+print(arity(fn() {}));
+print(arity(fn(a) {}));
+print(arity(fn(a, b) {}));
+print(arity(fn(a, b, c) {}));
+
+// make sure it works on a closure too
+x = 123;
+print(arity(fn(a, b, c, d) { print(x); }));
+
+%%%%
+
+0
+1
+2
+3
+4
