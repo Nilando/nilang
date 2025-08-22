@@ -62,16 +62,6 @@ fn inner_quicksort(A, lo, hi) {
   }
 }
 
-fn clone(list) {
-  new = [];
-  i = 0;
-  while i < len(list) {
-    push(new, list[i]);
-    i = i + 1;
-  }
-  return new;
-}
-
 fn sort(unsorted) {
   sorted = clone(unsorted);
   inner_quicksort(sorted, 0, len(sorted) - 1);
