@@ -212,4 +212,5 @@ pub enum RuntimeErrorKind {
     InvalidByteCode,
     InternalError,
     Unimplemented,
+    InvalidBind
 }

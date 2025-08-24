@@ -32,7 +32,7 @@ impl<'gc> LoadedLocal<'gc> {
 #[derive(Trace)]
 pub struct LoadedFunc<'gc> {
     id: u32,
-    arg_count: u8,
+    arity: u8,
     max_clique: u8,
     locals: Gc<'gc, [LoadedLocal<'gc>]>,
     code: Gc<'gc, [ByteCode]>,
@@ -42,7 +42,7 @@ pub struct LoadedFunc<'gc> {
 impl<'gc> LoadedFunc<'gc> {
     pub fn new(
         id: u32,
-        arg_count: u8,
+        arity: u8,
         max_clique: u8,
         locals: Gc<'gc, [LoadedLocal<'gc>]>,
         code: Gc<'gc, [ByteCode]>,
@@ -50,7 +50,7 @@ impl<'gc> LoadedFunc<'gc> {
     ) -> Self {
         Self {
             id,
-            arg_count,
+            arity,
             max_clique,
             locals,
             code,
@@ -66,8 +66,8 @@ impl<'gc> LoadedFunc<'gc> {
         self.max_clique
     }
 
-    pub fn arg_count(&self) -> u8 {
-        self.arg_count
+    pub fn arity(&self) -> u8 {
+        self.arity
     }
 
     pub fn update_locals(

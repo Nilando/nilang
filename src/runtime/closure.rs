@@ -14,6 +14,10 @@ impl<'gc> Closure<'gc> {
         Self { func, upvalues }
     }
 
+    pub fn arity(&self) -> u8 {
+        self.func.arity()
+    }
+
     pub fn get_func(&self) -> Gc<'gc, LoadedFunc<'gc>> {
         self.func.clone()
     }

@@ -98,6 +98,11 @@ fn closure_printing() {
 }
 
 #[test]
+fn bind_intrinsic_fn() {
+  super::test_golden_output("./src/runtime/tests/golden/bind_intrinsic_fn.golden")
+}
+
+#[test]
 fn euclidean_gcd() {
   super::test_golden_output("./src/runtime/tests/golden/euclidean_gcd.golden")
 }

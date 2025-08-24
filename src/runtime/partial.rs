@@ -22,10 +22,19 @@ impl<'gc> Partial<'gc> {
         mu: &'gc Mutator<'gc>,
         tagged_val: TaggedValue<'gc>,
     ) -> Self {
-        // TODO: ensure that func has enough args
-
         Self {
             callable: Callable::Func(func),
+            bound_args: mu.alloc_array_from_fn(1, |_| tagged_val.clone()),
+        }
+    }
+
+    pub fn from_closure(
+        closure: Gc<'gc, Closure<'gc>>,
+        mu: &'gc Mutator<'gc>,
+        tagged_val: TaggedValue<'gc>,
+    ) -> Self {
+        Self {
+            callable: Callable::Closure(closure),
             bound_args: mu.alloc_array_from_fn(1, |_| tagged_val.clone()),
         }
     }
@@ -38,13 +47,32 @@ impl<'gc> Partial<'gc> {
         self.bound_args.clone()
     }
 
-    pub fn arity(&self) -> usize {
+    pub fn bind(&self, 
+        mu: &'gc Mutator<'gc>,
+        tagged_val: TaggedValue<'gc>,
+    ) -> Self {
+        let new_bound_args_count = self.bound_args.len() + 1;
+        let bound_args = mu.alloc_array_from_fn(new_bound_args_count, |idx| {
+            if idx == self.bound_args.len() {
+                tagged_val.clone()
+            } else {
+                self.bound_args[idx].clone()
+            }
+        });
+
+        Self {
+            callable: self.callable.clone(),
+            bound_args
+        }
+    }
+
+    pub fn arity(&self) -> u8 {
         match &self.callable {
             Callable::Func(f) => {
-                f.arg_count() as usize - self.bound_args.len()
+                f.arity() - (self.bound_args.len() as u8)
             }
             Callable::Closure(c) => {
-                c.get_func().arg_count() as usize - self.bound_args.len()
+                c.arity() - (self.bound_args.len() as u8)
             }
         }
     }

@@ -162,6 +162,8 @@ pub fn mem_load<'gc>(
         }
         (Value::Map(map), key) => {
             if let Some(val) = map.get(&Value::into_tagged(key, mu)) {
+                // TODO: if val is a function with auto binding
+                // create a partial with the map bound 
                 Ok(Value::from(&val))
             } else {
                 Ok(Value::Null)

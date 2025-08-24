@@ -630,7 +630,7 @@ impl<'gc> VM<'gc> {
         stack_args: usize,
         mu: &'gc Mutator,
     ) -> Result<(), RuntimeError> {
-        let arg_count = func.arg_count() as usize;
+        let arg_count = func.arity() as usize;
         let partial_args_count = if let Some(ref args) = partial_args {
             args.len()
         } else {

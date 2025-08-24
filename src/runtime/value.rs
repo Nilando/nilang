@@ -113,11 +113,11 @@ impl<'gc> Value<'gc> {
                 format!(
                     "Closure(id: {}, args: {}, upvalues: {})",
                     func.get_id(),
-                    func.arg_count(),
+                    func.arity(),
                     closure.get_upvalues().len()
                 )
             }
-            Value::Func(func) => format!("Func(id: {}, args: {})", func.get_id(), func.arg_count()),
+            Value::Func(func) => format!("Func(id: {}, args: {})", func.get_id(), func.arity()),
             Value::Partial(_) => format!("Partial"),
         }
     }
