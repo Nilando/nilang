@@ -23,6 +23,11 @@ fn multiplication() {
 }
 
 #[test]
+fn clone_intrinsic_fn() {
+  super::test_golden_output("./src/runtime/tests/golden/clone_intrinsic_fn.golden")
+}
+
+#[test]
 fn index_of_list() {
   super::test_golden_output("./src/runtime/tests/golden/index_of_list.golden")
 }

@@ -332,10 +332,11 @@ impl<'gc> VM<'gc> {
                 let key = self.reg_to_val(key);
                 let src = self.reg_to_val(src);
 
-                if let Some(()) = mem_store(store, key, src, mu) {
-                    // store was successful
-                } else {
-                    return Err(self.type_error("".to_string()));
+                match mem_store(store, key, src, mu) {
+                    Ok(()) => {
+                        // store was successful, nothing to do
+                    }
+                    Err(err) => return Err(self.type_error(err)),
                 }
             }
             ByteCode::Return { src } => {

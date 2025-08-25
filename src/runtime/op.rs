@@ -170,7 +170,7 @@ pub fn mem_load<'gc>(
             }
         }
         (lhs, rhs) => Err(format!(
-            "Attempted to access a {} via a {}",
+            "Invalid memory access of {} via a {}",
             lhs.type_str(),
             rhs.type_str()
         )),
@@ -186,7 +186,7 @@ pub fn mem_store<'gc>(
     key: Value<'gc>,
     src: Value<'gc>,
     mu: &'gc Mutator,
-) -> Option<()> {
+) -> Result<(), String> {
     match (store, key) {
         (Value::List(list), Value::Int(idx)) => {
             let null = Value::into_tagged(Value::Null, mu);
@@ -200,14 +200,20 @@ pub fn mem_store<'gc>(
                 mu,
             );
 
-            Some(())
+            Ok(())
         }
         (Value::Map(map), key) => {
             GcHashMap::insert(map, key.into_tagged(mu), src.into_tagged(mu), mu);
 
-            Some(())
+            Ok(())
         }
-        // can also be a value::map, followed by any value
-        _ => todo!(),
+        (Value::String(vm_str), Value::Int(idx)) => {
+            todo!("xxxxx")
+        }
+        (lhs, rhs) => Err(format!(
+            "Invalid memory access of {} via a {}",
+            lhs.type_str(),
+            rhs.type_str()
+        )),
     }
 }
