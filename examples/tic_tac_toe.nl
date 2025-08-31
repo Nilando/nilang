@@ -4,13 +4,13 @@ fn print_row(row, board) {
   c = board[row][2] || " ";
 
   row = str(row);
-  row.push(" ║ ");
-  row.push(a);
-  row.push(" ║ ");
-  row.push(b);
-  row.push(" ║ ");
-  row.push(c);
-  row.push(" ║");
+  push(row, " ║ ");
+  push(row, a);
+  push(row, " ║ ");
+  push(row, b);
+  push(row, " ║ ");
+  push(row, c);
+  push(row, " ║ ");
 
   print(row);
 }
@@ -33,8 +33,11 @@ fn print_move_help() {
 
 fn read_move() {
   while true {
-    move = read.trim().split(" ");
-    if move.len() != 2 {
+    // TODO: add split and trim to std lib
+    raw_move = read;
+    move = [raw_move[0], raw_move[2]];
+
+    if len(move) != 2 {
       print_move_help();
       continue;
     }

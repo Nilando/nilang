@@ -20,8 +20,7 @@ pub trait DFA: Sized {
         &mut self,
         _inputs: BTreeMap<BlockId, Self::Data>,
         _outputs: BTreeMap<BlockId, Self::Data>,
-    ) {
-    }
+    );
     fn merge(&mut self, updating: &mut Self::Data, merge: &Self::Data, count: usize);
     fn transfer(&mut self, block: &Block, start: &Self::Data, end: &mut Self::Data) -> bool;
 }

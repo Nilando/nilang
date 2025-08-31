@@ -1,12 +1,12 @@
 VERSION 0.1.0
 
 FEATURE BACKLOG:
-- redo intrinsics
+- auto binding of functions with "self" arg
+- add push and pop operators
 - String Interpolation
-- for loops
 - save assigned vars in repl
 - backtraces
-- rework error messages (they are scuffed)
+- rework error messages
 - fix major collection bug (sandpit)
 
 OPTIMIZATION BACKLOG
@@ -20,21 +20,21 @@ OPTIMIZATION BACKLOG
 - Peephole pass
 - AST pass
 - JIT?
+- LSP?
 
 GOALS
 - complete AOC 2025 with this language
 - learn about compilers and interpreters
 - have fun
 
-IMPORTANT LESSONS
-- Nanboxing is probably better than tagged pointers
-- conservative GC is probably better than exact GC
-
 DECEMBER -> COMPLETE AOC
 NOVEMBER
 OCTOBER
-SEPTEMBER (new job)
+SEPTEMBER
+
 AUGUST
+- went on vacation :)
+
 JULY
 - made an initial draft of intrinsic functions to add
 - added partial functions

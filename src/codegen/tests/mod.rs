@@ -2,7 +2,6 @@ mod golden_tests;
 use crate::codegen::generate_func;
 use crate::ir::{lower_ast, optimize_func};
 use crate::parser::parse_program;
-use crate::runtime::func_to_string as bytecode_to_string;
 use crate::symbol_map::SymbolMap;
 use pretty_assertions::assert_eq;
 use std::fs::File;
@@ -48,7 +47,7 @@ fn test_golden_bytecode(filename: &str) {
     for ir_func in ir.into_iter() {
         let func = generate_func(ir_func);
 
-        found_bytecode.push_str(&bytecode_to_string(&func));
+        found_bytecode.push_str(&func.to_string());
     }
 
     found_bytecode.pop();

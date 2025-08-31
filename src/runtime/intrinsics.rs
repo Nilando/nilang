@@ -2,159 +2,137 @@ use std::time::Duration;
 
 use sandpit::{Gc, Mutator};
 
+use crate::runtime::partial::Partial;
 use crate::runtime::string::VMString;
-use crate::symbol_map::{SymID, SymbolMap, ABS_SYM, ARGS_SYM, BOOL_SYM, CEIL_SYM, CLONE_SYM, FLOOR_SYM, FN_SYM, LEN_SYM, LIST_SYM, LOG_SYM, MAP_SYM, NULL_SYM, NUM_SYM, POP_SYM, POW_SYM, PUSH_SYM, READ_FILE_SYM, SLEEP_SYM, STR_SYM, SYM_SYM, TYPE_SYM};
+use crate::symbol_map::{
+    SymID, SymbolMap, ABS_SYM, ARGS_SYM, ARITY_SYM, BIND_SYM, BOOL_SYM, CEIL_SYM, CLONE_SYM, DELETE_SYM, FLOOR_SYM, FN_SYM, LEN_SYM, LIST_SYM, LOG_SYM, MAP_SYM, NULL_SYM, NUM_SYM, POP_SYM, POW_SYM, PUSH_SYM, READ_FILE_SYM, SLEEP_SYM, STR_SYM, SYM_SYM, TYPE_SYM
+};
 
 use super::list::List;
-use super::tagged_value::TaggedValue;
 use super::value::Value;
 use super::vm::ArgIter;
 use super::RuntimeErrorKind;
 
 pub fn call_intrinsic<'a, 'gc>(
-    stack_args: ArgIter<'a, 'gc>,
-    partial_args: Option<Gc<'gc, [TaggedValue<'gc>]>>,
+    args: ArgIter<'a, 'gc>,
     sym_id: SymID,
     symbol_map: &mut SymbolMap,
-    mu: &'gc Mutator<'gc>
+    mu: &'gc Mutator<'gc>,
 ) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
-
     match sym_id {
         // ZERO ARG FUNCS
-        ARGS_SYM => {
-            let partial_arg_count = if let Some(args) = partial_args {
-                args.len()
-            } else {
-                0
-            };
-            let stack_arg_count = stack_args.get_arg_count();
-
-            expect_arg_count(0, stack_arg_count, partial_arg_count)?;
-
-            args(mu)
-        }
+        ARGS_SYM => get_program_args(mu),
 
         // SINGLE ARG FUNCS
         NUM_SYM => {
-            let arg = extract_single_arg(stack_args, partial_args)?;
+            let arg = extract_single_arg(args)?;
             num(arg)
         }
         STR_SYM => {
-            let arg = extract_single_arg(stack_args, partial_args)?;
+            let arg = extract_single_arg(args)?;
             str(arg, mu, symbol_map)
         }
         SYM_SYM => {
-            let arg = extract_single_arg(stack_args, partial_args)?;
-            sym(arg, mu, symbol_map)
+            let arg = extract_single_arg(args)?;
+            sym(arg, symbol_map)
         }
         BOOL_SYM => {
-            let arg = extract_single_arg(stack_args, partial_args)?;
+            let arg = extract_single_arg(args)?;
             bbool(arg)
         }
         SLEEP_SYM => {
-            let arg = extract_single_arg(stack_args, partial_args)?;
+            let arg = extract_single_arg(args)?;
             sleep(arg)
         }
         TYPE_SYM => {
-            let arg = extract_single_arg(stack_args, partial_args)?;
+            let arg = extract_single_arg(args)?;
             ttype(arg)
         }
         READ_FILE_SYM => {
-            let arg = extract_single_arg(stack_args, partial_args)?;
+            let arg = extract_single_arg(args)?;
             read_file(arg, mu)
         }
         CLONE_SYM => {
-            let arg = extract_single_arg(stack_args, partial_args)?;
+            let arg = extract_single_arg(args)?;
             clone(arg, mu)
         }
         ABS_SYM => {
-            let arg = extract_single_arg(stack_args, partial_args)?;
+            let arg = extract_single_arg(args)?;
             abs(arg)
         }
         FLOOR_SYM => {
-            let arg = extract_single_arg(stack_args, partial_args)?;
+            let arg = extract_single_arg(args)?;
             floor(arg)
         }
         CEIL_SYM => {
-            let arg = extract_single_arg(stack_args, partial_args)?;
+            let arg = extract_single_arg(args)?;
             ceil(arg)
         }
-        POW_SYM => {
-            let (arg1, arg2) = extract_two_args(stack_args, partial_args)?;
-            pow(arg1, arg2, mu)
-        }
-        LOG_SYM => {
-            let (arg1, arg2) = extract_two_args(stack_args, partial_args)?;
-            log(arg1, arg2, mu)
-        }
-        PUSH_SYM => {
-            let (arg1, arg2) = extract_two_args(stack_args, partial_args)?;
-            push(arg1, arg2, mu)
-        }
         POP_SYM => {
-            let arg = extract_single_arg(stack_args, partial_args)?;
+            let arg = extract_single_arg(args)?;
             pop(arg, mu)
         }
-        // POP
-        _ => todo!()
-    }
-}
-
-fn extract_two_args<'a, 'gc>(mut stack_args: ArgIter<'a, 'gc>, partial_args: Option<Gc<'gc, [TaggedValue<'gc>]>>) -> Result<(Value<'gc>, Value<'gc>), (RuntimeErrorKind, String)> {
-    let partial_arg_count = if let Some(ref args) = partial_args {
-        args.len()
-    } else {
-        0
-    };
-    let stack_arg_count = stack_args.get_arg_count();
-
-    expect_arg_count(2, stack_arg_count, partial_arg_count)?;
-
-    if let Some(args) = partial_args {
-        match args.len() {
-            1 => {
-                let arg1 = Value::from(&args[0]);
-                let arg2 = Value::from(&stack_args.next().unwrap());
-
-                Ok((arg1, arg2))
-            }
-            2 => {
-                let arg1 = Value::from(&args[0]);
-                let arg2 = Value::from(&args[1]);
-
-                Ok((arg1, arg2))
-            }
-            _ => panic!("this shouldnt be reachable")
+        LEN_SYM => {
+            let arg = extract_single_arg(args)?;
+            len(arg)
         }
-    } else {
-        let arg1 = Value::from(&stack_args.next().unwrap());
-        let arg2 = Value::from(&stack_args.next().unwrap());
-
-        Ok((arg1, arg2))
+        ARITY_SYM => {
+            let arg = extract_single_arg(args)?;
+            arity(arg)
+        }
+        BIND_SYM => {
+            let (arg1, arg2) = extract_two_args(args)?;
+            bind(arg1, arg2, mu)
+        }
+        POW_SYM => {
+            let (arg1, arg2) = extract_two_args(args)?;
+            pow(arg1, arg2)
+        }
+        LOG_SYM => {
+            let (arg1, arg2) = extract_two_args(args)?;
+            log(arg1, arg2)
+        }
+        PUSH_SYM => {
+            let (arg1, arg2) = extract_two_args(args)?;
+            push(arg1, arg2, mu)
+        }
+        DELETE_SYM => {
+            let (arg1, arg2) = extract_two_args(args)?;
+            delete(arg1, arg2, mu)
+        }
+        _ => todo!(),
     }
 }
 
-fn extract_single_arg<'a, 'gc>(mut stack_args: ArgIter<'a, 'gc>, partial_args: Option<Gc<'gc, [TaggedValue<'gc>]>>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
-    let partial_arg_count = if let Some(ref args) = partial_args {
-        args.len()
-    } else {
-        0
-    };
-    let stack_arg_count = stack_args.get_arg_count();
+fn extract_two_args<'a, 'gc>(
+    mut args: ArgIter<'a, 'gc>,
+) -> Result<(Value<'gc>, Value<'gc>), (RuntimeErrorKind, String)> {
+    let arg_count = args.get_arg_count();
 
-    expect_arg_count(1, stack_arg_count, partial_arg_count)?;
+    expect_arg_count(2, arg_count)?;
 
-    if let Some(args) = partial_args {
-        return Ok(Value::from(&args[0]));
-    }
+    let arg1 = Value::from(&args.next().unwrap());
+    let arg2 = Value::from(&args.next().unwrap());
 
-    Ok(Value::from(&stack_args.next().unwrap()))
+    Ok((arg1, arg2))
 }
 
-fn expect_arg_count(total_args: usize, stack_args: usize, partial_args: usize) -> Result<(), (RuntimeErrorKind, String)> {
-    if total_args != (stack_args + partial_args) {
-        let expected_args = total_args - partial_args;
-        let msg = format!("Expected {} args, was given {}", expected_args, stack_args);
+fn extract_single_arg<'a, 'gc>(
+    mut args: ArgIter<'a, 'gc>,
+) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+    let arg_count = args.get_arg_count();
+
+    expect_arg_count(1, arg_count)?;
+
+    Ok(Value::from(&args.next().unwrap()))
+}
+
+fn expect_arg_count(
+    expected_args: usize,
+    given_args: usize,
+) -> Result<(), (RuntimeErrorKind, String)> {
+    if expected_args != given_args {
+        let msg = format!("Expected {} args, was given {}", expected_args, given_args);
 
         Err((RuntimeErrorKind::WrongNumArgs, msg))
     } else {
@@ -162,7 +140,46 @@ fn expect_arg_count(total_args: usize, stack_args: usize, partial_args: usize) -
     }
 }
 
-fn push<'gc>(store: Value<'gc>, item: Value<'gc>, mu: &'gc Mutator) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+fn len<'gc>(val: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+    match val {
+        Value::String(s) => Ok(Value::Int(s.len() as i32)),
+        Value::List(list) => Ok(Value::Int(list.len() as i32)),
+        item => {
+            return Err((
+                RuntimeErrorKind::TypeError,
+                format!("Unexpected arg of type {}", item.type_str()),
+            ))
+        }
+    }
+}
+
+fn delete<'gc>(
+    store: Value<'gc>,
+    key: Value<'gc>,
+    mu: &'gc Mutator,
+) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+    match store {
+        Value::Map(map) => {
+            if let Some(k) = map.delete(Value::into_tagged(key, mu)) {
+                Ok(Value::from(&k))
+            } else {
+                Ok(Value::Null)
+            }
+        }
+        _ => {
+            return Err((
+                RuntimeErrorKind::TypeError,
+                format!("Unexpected arg of type {}", store.type_str()),
+            ))
+        }
+    }
+}
+
+fn push<'gc>(
+    store: Value<'gc>,
+    item: Value<'gc>,
+    mu: &'gc Mutator,
+) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
     match (store, item) {
         (Value::String(a), Value::String(b)) => {
             for i in 0..b.len() {
@@ -176,64 +193,69 @@ fn push<'gc>(store: Value<'gc>, item: Value<'gc>, mu: &'gc Mutator) -> Result<Va
 
             Ok(Value::Null)
         }
-        (_, item) => return Err((RuntimeErrorKind::TypeError, format!("Unexpected arg of type {}", item.type_str())))
+        (_, item) => {
+            return Err((
+                RuntimeErrorKind::TypeError,
+                format!("Unexpected arg of type {}", item.type_str()),
+            ))
+        }
     }
 }
 
 fn pop<'gc>(store: Value<'gc>, mu: &'gc Mutator) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
     match store {
-        Value::String(s) => {
-            match s.pop_char() {
-                None => Ok(Value::Null),
-                Some(c) => {
-                    let new_string = VMString::alloc_empty(mu);
-                    new_string.push_char(c, mu);
+        Value::String(s) => match s.pop_char() {
+            None => Ok(Value::Null),
+            Some(c) => {
+                let new_string = VMString::alloc_empty(mu);
+                new_string.push_char(c, mu);
 
-                    Ok(Value::String(Gc::new(mu, new_string)))
-                }
+                Ok(Value::String(Gc::new(mu, new_string)))
             }
-
+        },
+        Value::List(list) => Ok(Value::from(&list.pop())),
+        item => {
+            return Err((
+                RuntimeErrorKind::TypeError,
+                format!("Unexpected arg of type {}", item.type_str()),
+            ))
         }
-        Value::List(list) => {
-            Ok(Value::from(&list.pop()))
-        }
-        item => return Err((RuntimeErrorKind::TypeError, format!("Unexpected arg of type {}", item.type_str())))
     }
 }
 
-fn log<'gc>(base: Value<'gc>, exponent: Value<'gc>, mu: &'gc Mutator) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+fn log<'gc>(
+    base: Value<'gc>,
+    exponent: Value<'gc>,
+) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
     match (base, &exponent) {
-        (Value::Int(a), Value::Int(b)) => {
-            Ok(Value::Float((a as f64).log(*b as f64)))
+        (Value::Int(a), Value::Int(b)) => Ok(Value::Float((a as f64).log(*b as f64))),
+        (Value::Int(a), Value::Float(b)) => Ok(Value::Float((a as f64).log(*b))),
+        (Value::Float(a), Value::Int(b)) => Ok(Value::Float(a.log(*b as f64))),
+        (Value::Float(a), Value::Float(b)) => Ok(Value::Float(a.log(*b))),
+        _ => {
+            return Err((
+                RuntimeErrorKind::TypeError,
+                format!("Unexpected arg of type {}", exponent.type_str()),
+            ))
         }
-        (Value::Int(a), Value::Float(b)) => {
-            Ok(Value::Float((a as f64).log(*b)))
-        }
-        (Value::Float(a), Value::Int(b)) => {
-            Ok(Value::Float(a.log(*b as f64)))
-        }
-        (Value::Float(a), Value::Float(b)) => {
-            Ok(Value::Float(a.log(*b)))
-        }
-        _ => return Err((RuntimeErrorKind::TypeError, format!("Unexpected arg of type {}", exponent.type_str())))
     }
 }
 
-fn pow<'gc>(base: Value<'gc>, exponent: Value<'gc>, mu: &'gc Mutator) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+fn pow<'gc>(
+    base: Value<'gc>,
+    exponent: Value<'gc>,
+) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
     match (base, &exponent) {
-        (Value::Int(a), Value::Int(b)) => {
-            Ok(Value::Float((a as f64).powf(*b as f64)))
+        (Value::Int(a), Value::Int(b)) => Ok(Value::Float((a as f64).powf(*b as f64))),
+        (Value::Int(a), Value::Float(b)) => Ok(Value::Float((a as f64).powf(*b))),
+        (Value::Float(a), Value::Int(b)) => Ok(Value::Float(a.powf(*b as f64))),
+        (Value::Float(a), Value::Float(b)) => Ok(Value::Float(a.powf(*b))),
+        _ => {
+            return Err((
+                RuntimeErrorKind::TypeError,
+                format!("Unexpected arg of type {}", exponent.type_str()),
+            ))
         }
-        (Value::Int(a), Value::Float(b)) => {
-            Ok(Value::Float((a as f64).powf(*b)))
-        }
-        (Value::Float(a), Value::Int(b)) => {
-            Ok(Value::Float(a.powf(*b as f64)))
-        }
-        (Value::Float(a), Value::Float(b)) => {
-            Ok(Value::Float(a.powf(*b)))
-        }
-        _ => return Err((RuntimeErrorKind::TypeError, format!("Unexpected arg of type {}", exponent.type_str())))
     }
 }
 
@@ -241,7 +263,12 @@ fn abs<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
     match arg {
         Value::Int(i) => Ok(Value::Int(i.abs())),
         Value::Float(f) => Ok(Value::Float(f.abs())),
-        _ => return Err((RuntimeErrorKind::TypeError, format!("Unexpected arg of type {}", arg.type_str())))
+        _ => {
+            return Err((
+                RuntimeErrorKind::TypeError,
+                format!("Unexpected arg of type {}", arg.type_str()),
+            ))
+        }
     }
 }
 
@@ -249,7 +276,12 @@ fn floor<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)>
     match arg {
         Value::Int(i) => Ok(Value::Int(i)),
         Value::Float(f) => Ok(Value::Float(f.floor())),
-        _ => return Err((RuntimeErrorKind::TypeError, format!("Unexpected arg of type {}", arg.type_str())))
+        _ => {
+            return Err((
+                RuntimeErrorKind::TypeError,
+                format!("Unexpected arg of type {}", arg.type_str()),
+            ))
+        }
     }
 }
 
@@ -257,24 +289,41 @@ fn ceil<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> 
     match arg {
         Value::Int(i) => Ok(Value::Int(i)),
         Value::Float(f) => Ok(Value::Float(f.ceil())),
-        _ => return Err((RuntimeErrorKind::TypeError, format!("Unexpected arg of type {}", arg.type_str())))
+        _ => {
+            return Err((
+                RuntimeErrorKind::TypeError,
+                format!("Unexpected arg of type {}", arg.type_str()),
+            ))
+        }
     }
 }
 
-fn read_file<'gc>(arg: Value<'gc>, mu: &'gc Mutator) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+fn read_file<'gc>(
+    arg: Value<'gc>,
+    mu: &'gc Mutator,
+) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
     // TODO: this could also be done via "ExitCode"
-    
+
     if let Value::String(vm_str) = arg {
         let file_name = vm_str.as_string();
         let file_str = std::fs::read_to_string(file_name).expect("open file");
 
-        Ok(Value::String(Gc::new(mu, VMString::alloc(file_str.chars(), mu))))
+        Ok(Value::String(Gc::new(
+            mu,
+            VMString::alloc(file_str.chars(), mu),
+        )))
     } else {
-        Err((RuntimeErrorKind::TypeError, format!("Unexpected arg of type {}", arg.type_str())))
+        Err((
+            RuntimeErrorKind::TypeError,
+            format!("Unexpected arg of type {}", arg.type_str()),
+        ))
     }
 }
 
-fn clone<'gc>(arg: Value<'gc>, mu: &'gc Mutator<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+fn clone<'gc>(
+    arg: Value<'gc>,
+    mu: &'gc Mutator<'gc>,
+) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
     match arg {
         Value::String(old) => {
             let new = Gc::new(mu, VMString::alloc_empty(mu));
@@ -299,7 +348,7 @@ fn clone<'gc>(arg: Value<'gc>, mu: &'gc Mutator<'gc>) -> Result<Value<'gc>, (Run
 
             Ok(Value::List(new_list))
         }
-        _ => Ok(arg)
+        _ => Ok(arg),
     }
 }
 
@@ -312,9 +361,7 @@ fn ttype<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)>
         Value::String(_) => Ok(Value::SymId(STR_SYM)),
         Value::List(_) => Ok(Value::SymId(LIST_SYM)),
         Value::Map(_) => Ok(Value::SymId(MAP_SYM)),
-        Value::Func(_) 
-        | Value::Closure(_) 
-        | Value::Partial(_ )=> Ok(Value::SymId(FN_SYM)),
+        Value::Func(_) | Value::Closure(_) | Value::Partial(_) => Ok(Value::SymId(FN_SYM)),
     }
 }
 
@@ -325,54 +372,79 @@ fn sleep<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)>
             std::thread::sleep(Duration::from_secs(u64::try_from(i).unwrap()));
 
             Ok(Value::Null)
-        },
+        }
         Value::Float(f) => {
             std::thread::sleep(Duration::from_secs(f as u64));
 
             Ok(Value::Null)
-        },
-        _ => return Err((RuntimeErrorKind::TypeError, format!("Unexpected arg of type {}", arg.type_str())))
+        }
+        _ => {
+            return Err((
+                RuntimeErrorKind::TypeError,
+                format!("Unexpected arg of type {}", arg.type_str()),
+            ))
+        }
     }
 }
 
 fn bbool<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
     match arg {
         Value::Null | Value::Bool(false) => Ok(Value::Bool(false)),
-        _ => Ok(Value::Bool(true))
+        _ => Ok(Value::Bool(true)),
     }
 }
 
-fn sym<'gc>(arg: Value<'gc>, mu: &'gc Mutator, syms: &mut SymbolMap) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+fn sym<'gc>(
+    arg: Value<'gc>,
+    syms: &mut SymbolMap,
+) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
     match arg {
         Value::String(s) => Ok(Value::SymId(syms.get_id(&s.as_string()))),
         Value::SymId(_) => Ok(arg),
-        _ => return Err((RuntimeErrorKind::TypeError, format!("Unexpected arg of type {}", arg.type_str())))
+        _ => {
+            return Err((
+                RuntimeErrorKind::TypeError,
+                format!("Unexpected arg of type {}", arg.type_str()),
+            ))
+        }
     }
 }
 
-fn str<'gc>(arg: Value<'gc>, mu: &'gc Mutator, syms: &mut SymbolMap) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
-    let chars = 
-    match arg {
+fn str<'gc>(
+    arg: Value<'gc>,
+    mu: &'gc Mutator,
+    syms: &mut SymbolMap,
+) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+    let chars = match arg {
         Value::String(_) => return Ok(arg),
         Value::Null => "".chars(),
         Value::Bool(false) => "false".chars(),
         Value::Bool(true) => "true".chars(),
         Value::Int(i) => {
-            return Ok(Value::String(Gc::new(mu, VMString::alloc(i.to_string().chars(), mu))));
+            return Ok(Value::String(Gc::new(
+                mu,
+                VMString::alloc(i.to_string().chars(), mu),
+            )));
         }
         Value::Float(f) => {
-            return Ok(Value::String(Gc::new(mu, VMString::alloc(f.to_string().chars(), mu))));
+            return Ok(Value::String(Gc::new(
+                mu,
+                VMString::alloc(f.to_string().chars(), mu),
+            )));
         }
-        Value::SymId(id) => {
-            syms.get_str(id).chars()
+        Value::SymId(id) => syms.get_str(id).chars(),
+        _ => {
+            return Err((
+                RuntimeErrorKind::TypeError,
+                format!("Unexpected arg of type {}", arg.type_str()),
+            ))
         }
-        _ => return Err((RuntimeErrorKind::TypeError, format!("Unexpected arg of type {}", arg.type_str())))
     };
 
     Ok(Value::String(Gc::new(mu, VMString::alloc(chars, mu))))
 }
 
-fn args<'gc>(mu: &'gc Mutator) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+fn get_program_args<'gc>(mu: &'gc Mutator) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
     let gc_list = Gc::new(mu, List::alloc(mu));
     let str_args: Vec<String> = std::env::args().collect();
 
@@ -394,7 +466,7 @@ fn args<'gc>(mu: &'gc Mutator) -> Result<Value<'gc>, (RuntimeErrorKind, String)>
 
 fn num<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
     match arg {
-        Value::Int(_) | Value::Float(_)=> Ok(arg),
+        Value::Int(_) | Value::Float(_) => Ok(arg),
         Value::Null => Ok(Value::Int(0)),
         Value::Bool(false) => Ok(Value::Int(0)),
         Value::Bool(true) => Ok(Value::Int(1)),
@@ -411,6 +483,72 @@ fn num<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
 
             Ok(Value::Null)
         }
-        _ => Err((RuntimeErrorKind::TypeError, format!("Unexpected arg of type {}", arg.type_str())))
+        _ => Err((
+            RuntimeErrorKind::TypeError,
+            format!("Unexpected arg of type {}", arg.type_str()),
+        )),
+    }
+}
+
+fn arity<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+    match arg {
+        Value::Func(f) => { 
+            Ok(Value::Int(f.arity() as i32))
+        }
+        Value::Closure(f) => { 
+            Ok(Value::Int(f.arity() as i32))
+        }
+        Value::Partial(f) => { 
+            Ok(Value::Int(f.arity() as i32))
+        }
+        _ => Err((
+            RuntimeErrorKind::TypeError,
+            format!("Unexpected arg of type {}", arg.type_str()),
+        )),
+    }
+}
+
+fn bind<'gc>(func: Value<'gc>, arg: Value<'gc>, mu: &'gc Mutator<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+    match func {
+        Value::Func(f) => { 
+            if f.arity() == 0 {
+                return Err((
+                    RuntimeErrorKind::InvalidBind,
+                    format!("Cannot bind to a 0 arg Func"),
+                ));
+            }
+
+            let partial = Gc::new(mu, Partial::from_func(f, mu, Value::into_tagged(arg, mu)));
+
+            Ok(Value::Partial(partial))
+        }
+        Value::Closure(f) => { 
+            if f.arity() == 0 {
+                return Err((
+                    RuntimeErrorKind::InvalidBind,
+                    format!("Cannot bind to a 0 arg Func"),
+                ));
+            }
+
+            let partial = Gc::new(mu, Partial::from_closure(f, mu, Value::into_tagged(arg, mu)));
+
+            Ok(Value::Partial(partial))
+        }
+        Value::Partial(f) => { 
+            if f.arity() == 0 {
+                return Err((
+                    RuntimeErrorKind::InvalidBind,
+                    format!("Cannot bind to a 0 arg Func"),
+                ));
+            }
+
+            let partial = f.bind(mu, Value::into_tagged(arg, mu));
+
+            Ok(Value::Partial(Gc::new(mu, partial)))
+        }
+        _ => Err((
+            RuntimeErrorKind::TypeError,
+            format!("Unexpected arg of type {}", func.type_str()),
+        )),
     }
 }

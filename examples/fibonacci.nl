@@ -3,15 +3,15 @@ fn fibonacci_sequence(n) {
   prev = 0;
   cur = 1;
 
-  while result.length < n {
-    if result.length == 0 {
-      result.push(0);
+  while len(result) < n {
+    if len(result) == 0 {
+      push(result, 0);
 
       continue;
     }
 
     next = prev + cur;
-    result.push(next);
+    push(result, next);
     prev = cur;
     cur = next;
   }
@@ -20,4 +20,4 @@ fn fibonacci_sequence(n) {
 }
 
 // print the first 100 fibonacci numbers
-print(fibonacci_sequence(100));
+print(fibonacci_sequence(50));

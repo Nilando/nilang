@@ -1,22 +1,12 @@
-PROGRESS: 
-top level:      11/11
-num methods:    6/6
-string methods: 0/5
-list methods:   0/16
-map methods:    0/6
-fn methods:     0/2
----------------------
-TOTAL:          17/46
-
 # TYPES:
 null, bool, sym, num, string, list, map, fn
 
-## Top Level Functions:
+# Intrinsic Functions:
 
-### zero args
+## zero args
 args() -> list
 
-### one arg
+## one arg
 num(null/bool/num/string) -> num/null
 str(null/bool/sym/num) -> string
 bool(any) -> bool
@@ -25,65 +15,23 @@ type(any) -> sym
 clone(any) -> any
 read_file(string) -> string
 sleep(num) -> null
+len(list/string) -> num
+push(list/string, any)
+abs(num) -> num
+floor(num) -> num
+ceil(num) -> num
+pow(num, num) -> num
+log(num, num) -> num
+arity(fn) -> num
+bind(fn, any) -> fn
 
-### two args
-range(num, num) -> list
-repeat(num, any) -> list
+delete(map, any) -> any
 
-## null Methods:
-none
-
-## bool methods:
-none
-
-## sym Methods:
-none
-
-## num methods:
-abs(self) -> num
-floor(self) -> num
-ceil(self) -> num
-pow(self, num) -> num
-log(self, num) -> num
-times(self, fn(num)) -> list
-
-## string methods:
-len(self) -> num
-split(self, string) -> list
-push(self, string) -> null
-trim(self) -> string
-// the following do *not* mutate in place
-slice(self, start, end) -> string
-contains(self, string) -> bool
-
-## list methods:
-len(self) -> num
-push(self, any) -> null
-find(self, any) -> num
-contains(self, any) -> bool
-join(self, str) -> string
-each(self, fn(1)) -> null
-// the following do *not* mutate in place
-compact(self, any) -> list
-concat(self, list) -> list
-filter(self, fn(1)) -> list
-map(self, fn(1)) -> list
-unique(self) -> list
-reverse(self) -> list
-flatten(self) -> list
-slice(self, start, end) -> list
-sort_by(self, fn(1)) -> list
-sort(self) -> list
-
-## map methods:
-keys(self) -> list
-values(self) -> list
-entries(self) -> list
-has(self, any) -> bool
-delete(self, any) -> any
-// the following do *not* mutate in place
-compact(self) -> map
-
-##fn methods: 
-num_args(self) -> num
-bind(self, list) -> fn
+## unimplemented
+entries(map) -> list
+keys(map) -> list
+values(map) -> list
+attach_list_methods(list)
+attach_map_methods(map)
+attach_str_methods(str)
+attach_times_methods(str)

@@ -10,7 +10,7 @@ pub struct VMString<'gc> {
 impl<'gc> VMString<'gc> {
     pub fn alloc_empty(mu: &'gc Mutator) -> Self {
         Self {
-            vec: GcVec::new(mu)
+            vec: GcVec::new(mu),
         }
     }
 
@@ -21,9 +21,7 @@ impl<'gc> VMString<'gc> {
             vec.push(mu, Cell::new(char));
         }
 
-        Self {
-            vec
-        }
+        Self { vec }
     }
 
     pub fn push_char(&self, c: char, mu: &'gc Mutator) {

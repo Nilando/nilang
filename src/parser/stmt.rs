@@ -54,19 +54,12 @@ pub fn stmt<'a>() -> Parser<'a, Stmt> {
 fn import_stmt(_: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
     keyword(KeyWord::Import)
         .then(symbol())
-        .append(
-            ctrl(Ctrl::Colon)
-            .then(string().spanned())
-        )
-        .map(|(ident, path)| {
-            Stmt::Import { ident, path }
-        })
+        .append(ctrl(Ctrl::Colon).then(string().spanned()))
+        .map(|(ident, path)| Stmt::Import { ident, path })
 }
 
 fn export_stmt(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
-    keyword(KeyWord::Export)
-        .then(expr(sp))
-        .map(Stmt::Export)
+    keyword(KeyWord::Export).then(expr(sp)).map(Stmt::Export)
 }
 
 fn func_decl(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {

@@ -396,7 +396,8 @@ mod tests {
     #[test]
     fn sym_access_on_num() {
         let mut syms = SymbolMap::new();
-        if let Some(Expr::Access { store, key }) = parse_expr_with_syms("333.foo", &mut syms).value {
+        if let Some(Expr::Access { store, key }) = parse_expr_with_syms("333.foo", &mut syms).value
+        {
             assert!(matches!(store.item, Expr::Value(Value::Int(333))));
             assert!(key == syms.get_id("foo"));
         }

@@ -1,20 +1,21 @@
 mod bytecode;
 mod call_frame;
+mod closure;
 mod func;
+mod hash_map;
+mod intrinsics;
 mod list;
+mod op;
+mod partial;
+mod string;
 mod tagged_value;
 mod value;
 mod vm;
-mod string;
-mod hash_map;
-mod closure;
-mod op;
-mod partial;
-mod intrinsics;
 
 #[cfg(test)]
 mod tests;
 
+use crate::codegen::{Func, Local};
 use crate::driver::compile_source;
 use crate::parser::Span;
 use crate::symbol_map::SymbolMap;
@@ -25,7 +26,6 @@ use self::vm::ExitCode;
 use sandpit::*;
 use std::collections::HashMap;
 
-pub use self::func::{func_to_string, Func, Local};
 pub use bytecode::ByteCode;
 pub use vm::VM;
 
@@ -33,7 +33,7 @@ pub struct Runtime {
     arena: Arena<Root![VM<'_>]>,
     symbols: SymbolMap,
     saved_output: Option<String>,
-    config: Config
+    config: Config,
 }
 
 impl Runtime {
@@ -49,7 +49,7 @@ impl Runtime {
             arena,
             symbols,
             saved_output: None,
-            config
+            config,
         }
     }
 
@@ -64,7 +64,7 @@ impl Runtime {
     pub fn save_output(&mut self) {
         if let None = self.saved_output {
             self.saved_output = Some("".to_string());
-        } 
+        }
     }
 
     pub fn run(&mut self) -> Result<(), RuntimeError> {
@@ -77,7 +77,7 @@ impl Runtime {
                         ExitCode::Yield => {}
                         ExitCode::Exit => return Ok(()),
                         ExitCode::Print(str) => {
-                            // TODO: instead of having to copy the string out 
+                            // TODO: instead of having to copy the string out
                             // of GC mem, create a way to view the string and print without copying
                             if let Some(output) = &mut self.saved_output {
                                 output.push_str(&format!("{}\n", str.as_str()));
@@ -86,25 +86,27 @@ impl Runtime {
                             }
                         }
                         ExitCode::LoadModule(path) => {
-                            let module = std::fs::read_to_string(path).expect("Failed to read file");
-                            let program = compile_source(&self.config, &mut self.symbols, &module).expect("Failed to load module");
+                            let module =
+                                std::fs::read_to_string(path).expect("Failed to read file");
+                            let program = compile_source(&self.config, &mut self.symbols, &module)
+                                .expect("Failed to load module");
 
                             self.arena.mutate(|mu, vm| {
                                 let loaded_program = load_program(program, mu);
                                 let module_func = loaded_program.last().unwrap().clone();
 
-                                vm_result = vm.import_module_hook(mu, &mut self.symbols, module_func);
+                                vm_result =
+                                    vm.import_module_hook(mu, &mut self.symbols, module_func);
                             });
 
                             continue;
-                        }
-                        // TODO:
-                        // ExitCode::Read => {
-                            // vm.input_string(buf)
-                            // read a string
-                            // then mutate the arena and place the 
-                            // read
-                        //}
+                        } // TODO:
+                          // ExitCode::Read => {
+                          // vm.input_string(buf)
+                          // read a string
+                          // then mutate the arena and place the
+                          // read
+                          //}
                     }
                 }
                 Err(err) => {
@@ -128,7 +130,14 @@ fn load_program<'gc>(program: Vec<Func>, mu: &'gc Mutator) -> Vec<Gc<'gc, Loaded
             mu.alloc_array_from_fn(0, |_| LoadedLocal::Int(0));
         let code = mu.alloc_array_from_slice(func.get_instrs().as_slice());
         let spans = func.spans().into_gc(mu);
-        let loaded_func = LoadedFunc::new(func.id(), func.arg_count(), func.max_clique(), locals, code, Some(spans));
+        let loaded_func = LoadedFunc::new(
+            func.id(),
+            func.arg_count(),
+            func.max_clique(),
+            locals,
+            code,
+            Some(spans),
+        );
         let loaded_func_ptr = Gc::new(mu, loaded_func);
 
         loaded_funcs.insert(func.id(), loaded_func_ptr.clone());
@@ -160,9 +169,7 @@ fn load_program<'gc>(program: Vec<Func>, mu: &'gc Mutator) -> Vec<Gc<'gc, Loaded
                         // TODO: this isn't efficient
                         let mut chars = s.chars();
                         let len = chars.clone().count();
-                        let gc_text = mu.alloc_array_from_fn(len, |_| {
-                            chars.next().unwrap()
-                        });
+                        let gc_text = mu.alloc_array_from_fn(len, |_| chars.next().unwrap());
 
                         string_map.insert(s, gc_text.clone());
 
@@ -184,8 +191,7 @@ fn load_program<'gc>(program: Vec<Func>, mu: &'gc Mutator) -> Vec<Gc<'gc, Loaded
 pub struct RuntimeError {
     pub kind: RuntimeErrorKind,
     pub span: Option<Span>,
-    pub message: Option<String>
-    // backtrace: Option<Backtrace>,
+    pub message: Option<String>, // backtrace: Option<Backtrace>,
 }
 
 impl RuntimeError {
@@ -193,7 +199,7 @@ impl RuntimeError {
         Self {
             kind,
             span,
-            message
+            message,
         }
     }
 }
@@ -205,5 +211,6 @@ pub enum RuntimeErrorKind {
     UndefinedMethod,
     InvalidByteCode,
     InternalError,
-    Unimplemented
+    Unimplemented,
+    InvalidBind
 }

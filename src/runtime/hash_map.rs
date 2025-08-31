@@ -1,5 +1,5 @@
-use std::cell::Cell;
 use crate::symbol_map::SymbolMap;
+use std::cell::Cell;
 
 use super::op::equal;
 use std::fmt::Debug;
@@ -7,7 +7,7 @@ use std::fmt::Debug;
 use murmurhash3::murmurhash3_x64_128;
 use sandpit::{field, Gc, Mutator, Trace, TraceLeaf};
 
-use super::tagged_value::TaggedValue;
+use super::tagged_value::{set_null, TaggedValue};
 use super::value::Value;
 
 // features of thie HashMap
@@ -22,7 +22,7 @@ const INIT_CAPACITY: usize = 16;
 enum EntryStatus {
     Used,
     Free,
-    Dead
+    Dead,
 }
 
 #[derive(Trace)]
@@ -69,10 +69,18 @@ impl<'gc> GcHashMap<'gc> {
         Gc::new(mu, hash_map)
     }
 
-    pub fn insert(this: Gc<'gc, Self>, key: TaggedValue<'gc>, val: TaggedValue<'gc>, mu: &'gc Mutator) {
-        this.entries.set(this.entries.get() + 1);
-        if this.get_load() > MAX_LOAD {
-            Self::grow(this.clone(), mu);
+    pub fn insert(
+        this: Gc<'gc, Self>,
+        key: TaggedValue<'gc>,
+        val: TaggedValue<'gc>,
+        mu: &'gc Mutator,
+    ) {
+        if this.get_entry(&key).is_none() {
+            this.entries.set(this.entries.get() + 1);
+
+            if this.get_load() > MAX_LOAD {
+                Self::grow(this.clone(), mu);
+            }
         }
 
         loop {
@@ -87,7 +95,6 @@ impl<'gc> GcHashMap<'gc> {
                     key_barrier.set(key);
                 });
 
-
                 return;
             } else {
                 Self::grow(this.clone(), mu);
@@ -95,29 +102,36 @@ impl<'gc> GcHashMap<'gc> {
         }
     }
 
-    pub fn get(&self, key: TaggedValue<'gc>) -> Option<TaggedValue<'gc>> {
-        let idx = self.get_key_index(&key)?;
-        let entry = &self.buckets[idx];
-
-        if entry.is_free() {
-            return None;
-        }
-        
-        Some(entry.val.clone())
+    pub fn get(&self, key: &TaggedValue<'gc>) -> Option<TaggedValue<'gc>> {
+        self.get_entry(key).map(|entry| entry.val.clone())
     }
 
-    pub fn delete(&self, key: TaggedValue<'gc>,) -> Option<TaggedValue<'gc>> {
+    fn get_entry(&self, key: &TaggedValue<'gc>) -> Option<&Entry<'gc>> {
         let idx = self.get_key_index(&key)?;
         let entry = &self.buckets[idx];
 
         if entry.is_free() {
             return None;
         }
+
+        Some(entry)
+    }
+
+    pub fn delete(&self, key: TaggedValue<'gc>) -> Option<TaggedValue<'gc>> {
+        let idx = self.get_key_index(&key)?;
+        let entry = &self.buckets[idx];
+
+        if entry.is_free() {
+            return None;
+        }
+
+        self.entries.set(self.entries.get() - 1);
 
         let result = Some(entry.val.clone());
 
-        // entry.key.set_null();
-        // entry.val.set_null();
+        set_null(&entry.key);
+        set_null(&entry.val);
+
         entry.status.set(EntryStatus::Dead);
 
         result
@@ -146,12 +160,12 @@ impl<'gc> GcHashMap<'gc> {
         self.buckets.len()
     }
 
-    fn get_entries(&self) -> usize {
+    fn entries_count(&self) -> usize {
         self.entries.get()
     }
 
     fn get_load(&self) -> f64 {
-        self.get_entries() as f64 / self.get_capacity() as f64
+        self.entries_count() as f64 / self.get_capacity() as f64
     }
 
     fn modulo_mask(&self) -> usize {
@@ -169,15 +183,13 @@ impl<'gc> GcHashMap<'gc> {
             let entry = &self.buckets[probe_pos];
 
             match entry.status.get() {
-                EntryStatus::Free => {
-                    return Some(probe_pos)
-                }
+                EntryStatus::Free => return Some(probe_pos),
                 EntryStatus::Used => {
                     let v1 = Value::from(key);
                     let v2 = Value::from(&entry.key);
 
-                    if let Some(Value::Bool(true)) = equal(v1, v2) {
-                        return Some(probe_pos)
+                    if let Ok(Value::Bool(true)) = equal(v1, v2) {
+                        return Some(probe_pos);
                     }
                 }
                 EntryStatus::Dead => {}
@@ -196,14 +208,22 @@ impl<'gc> GcHashMap<'gc> {
 
         s.push('{');
 
+        let mut x = 0;
         for i in 0..self.buckets.len() {
             let entry = &self.buckets[i];
             let k = Value::from(&entry.key);
             let v = Value::from(&entry.val);
 
             if entry.is_used() {
+                x += 1;
                 let key_str = format!("{}: ", k.to_string(syms, false));
-                let val_str = format!("{}, ", v.to_string(syms, false));
+
+                let val_str = 
+                if x != self.entries_count() {
+                    format!("{}, ", v.to_string(syms, false))
+                } else {
+                    format!("{}", v.to_string(syms, false))
+                };
 
                 s.push_str(&key_str);
                 s.push_str(&val_str);
@@ -272,6 +292,7 @@ fn hash_value(v: &Value<'_>) -> usize {
     result.0 as usize ^ result.1 as usize
 }
 
+/*
 impl Debug for GcHashMap<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{{")?;
@@ -296,6 +317,7 @@ impl Debug for GcHashMap<'_> {
         write!(f, "}}")
     }
 }
+*/
 
 #[cfg(test)]
 mod tests {
@@ -318,7 +340,7 @@ mod tests {
 
             GcHashMap::insert(map.clone(), key.clone(), val, mu);
 
-            let found = map.get(key).unwrap();
+            let found = map.get(&key).unwrap();
 
             matches!(Value::from(&found), Value::Bool(true));
         });
@@ -333,7 +355,7 @@ mod tests {
 
             GcHashMap::insert(map.clone(), key.clone(), val, mu);
 
-            let found = map.get(key).unwrap();
+            let found = map.get(&key).unwrap();
 
             matches!(Value::from(&found), Value::Bool(true));
         });
@@ -352,9 +374,9 @@ mod tests {
 
             for i in 0..100 {
                 let key = Value::into_tagged(Value::Int(i), mu);
-                let found = Value::from(&map.get(key).unwrap());
+                let found = Value::from(&map.get(&key).unwrap());
 
-                if let Some(Value::Bool(true)) = equal(found, Value::Int(i)) {
+                if let Ok(Value::Bool(true)) = equal(found, Value::Int(i)) {
                 } else {
                     assert!(false)
                 }
@@ -371,7 +393,7 @@ mod tests {
 
             GcHashMap::insert(map.clone(), key.clone(), v1, mu);
 
-            let found = map.get(key.clone()).unwrap();
+            let found = map.get(&key).unwrap();
 
             matches!(Value::from(&found), Value::Bool(true));
 
@@ -379,7 +401,7 @@ mod tests {
 
             GcHashMap::insert(map.clone(), key.clone(), v2, mu);
 
-            let found = map.get(key).unwrap();
+            let found = map.get(&key).unwrap();
 
             matches!(Value::from(&found), Value::Bool(false));
         });

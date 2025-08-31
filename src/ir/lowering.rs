@@ -297,11 +297,7 @@ impl LoweringCtx {
         func
     }
 
-    fn new_func(
-        &mut self,
-        inputs: Spanned<Vec<SymID>>,
-        stmts: Vec<Stmt>,
-    ) -> (FuncID, Vec<SymID>) {
+    fn new_func(&mut self, inputs: Spanned<Vec<SymID>>, stmts: Vec<Stmt>) -> (FuncID, Vec<SymID>) {
         let func_id = self.new_func_id();
         let generator = FuncLoweringCtx::new(func_id, inputs.item, self.pretty_ir);
 
@@ -392,6 +388,15 @@ impl LoweringCtx {
             };
 
             self.emit(tac);
+
+            dest
+        } else if SymbolMap::is_intrinsic(sym_id) {
+            let dest = self.sym_to_reg(&sym_id);
+
+            self.emit(Tac::LoadConst {
+                dest,
+                src: TacConst::Sym(sym_id),
+            });
 
             dest
         } else {

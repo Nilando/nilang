@@ -1,9 +1,9 @@
 mod config;
 
-use crate::codegen::generate_func;
+use crate::codegen::{generate_func, Func};
 use crate::ir::{func_to_string, lower_ast, optimize_func};
 use crate::parser::{parse_program, ParseError, Spanned};
-use crate::runtime::{func_to_string as bytecode_to_string, Runtime, RuntimeError, Func};
+use crate::runtime::{Runtime, RuntimeError};
 use crate::symbol_map::SymbolMap;
 
 pub use config::Config;
@@ -25,7 +25,11 @@ pub fn execute(config: Config) {
     }
 }
 
-pub fn compile_source(config: &Config, symbols: &mut SymbolMap, source: &String) -> Result<Vec<Func>, ()> {
+pub fn compile_source(
+    config: &Config,
+    symbols: &mut SymbolMap,
+    source: &String,
+) -> Result<Vec<Func>, ()> {
     let parse_result = parse_program(source.as_str(), symbols);
 
     if let Err(ref parse_errors) = parse_result {
@@ -68,7 +72,7 @@ pub fn compile_source(config: &Config, symbols: &mut SymbolMap, source: &String)
         let mut bc_str = String::new();
 
         for func in program.iter() {
-            bc_str.push_str(&bytecode_to_string(func));
+            bc_str.push_str(&func.to_string());
         }
 
         output_string(bc_str, path);
@@ -80,7 +84,8 @@ pub fn compile_source(config: &Config, symbols: &mut SymbolMap, source: &String)
 fn run_script(mut config: Config) {
     let source = config.get_script().unwrap();
     let mut symbols = SymbolMap::new();
-    let program = compile_source(&config, &mut symbols, &source).expect("Failed to compile program");
+    let program =
+        compile_source(&config, &mut symbols, &source).expect("Failed to compile program");
 
     if config.dry_run {
         println!("DRY RUN: program compiled successfully");
@@ -120,7 +125,8 @@ fn run_repl(config: Config) {
                 write!(stdout, "\r\n").unwrap();
                 stdout.flush().unwrap();
 
-                let program = compile_source(&config, &mut symbols, &input).expect("Failed to compile program");
+                let program = compile_source(&config, &mut symbols, &input)
+                    .expect("Failed to compile program");
 
                 if config.dry_run {
                     println!("DRY RUN: program compiled successfully");

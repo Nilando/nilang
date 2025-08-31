@@ -6,7 +6,7 @@ use crate::symbol_map::SymbolMap;
 use crate::Config;
 use std::fs::File;
 use std::io::read_to_string;
-
+use pretty_assertions::assert_eq;
 use super::Runtime;
 
 fn test_golden_output(filename: &str) {

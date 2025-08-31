@@ -96,10 +96,10 @@ pub enum Tac {
         label: LabelID,
     },
     Noop,
-    Export { 
-        src: VReg
+    Export {
+        src: VReg,
     },
-    Import { 
+    Import {
         dest: VReg,
         path: VReg,
     },
@@ -186,7 +186,11 @@ impl Tac {
     pub fn has_side_effects(&self) -> bool {
         matches!(
             self,
-            Tac::Read { .. } | Tac::Print { .. } | Tac::Call { .. } | Tac::Import { .. } | Tac::Export { .. }
+            Tac::Read { .. }
+                | Tac::Print { .. }
+                | Tac::Call { .. }
+                | Tac::Import { .. }
+                | Tac::Export { .. }
         )
     }
 }
