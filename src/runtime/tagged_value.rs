@@ -76,6 +76,12 @@ impl<'gc> From<&TaggedValue<'gc>> for Value<'gc> {
     }
 }
 
+pub fn set_null(tagged_val: &TaggedValue) {
+    let raw: u64 = (PackedTag::Null as u64) << 3;
+
+    tagged_val.set_raw(raw as usize, ValueTag::Packed);
+}
+
 enum PackedTag {
     SymId,
     Int,

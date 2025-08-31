@@ -73,7 +73,8 @@ generate_intrinsic_syms! {
     PUSH_SYM,
     POP_SYM,
     ARITY_SYM,
-    BIND_SYM
+    BIND_SYM,
+    DELETE_SYM
 }
 
 impl SymbolMap {

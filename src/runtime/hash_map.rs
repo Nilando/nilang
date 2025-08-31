@@ -7,7 +7,7 @@ use std::fmt::Debug;
 use murmurhash3::murmurhash3_x64_128;
 use sandpit::{field, Gc, Mutator, Trace, TraceLeaf};
 
-use super::tagged_value::TaggedValue;
+use super::tagged_value::{set_null, TaggedValue};
 use super::value::Value;
 
 // features of thie HashMap
@@ -125,10 +125,13 @@ impl<'gc> GcHashMap<'gc> {
             return None;
         }
 
+        self.entries.set(self.entries.get() - 1);
+
         let result = Some(entry.val.clone());
 
-        // entry.key.set_null();
-        // entry.val.set_null();
+        set_null(&entry.key);
+        set_null(&entry.val);
+
         entry.status.set(EntryStatus::Dead);
 
         result

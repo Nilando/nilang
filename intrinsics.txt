@@ -1,22 +1,12 @@
-PROGRESS: 
-top level:      11/11
-num methods:    6/6
-string methods: 0/5
-list methods:   0/16
-map methods:    0/6
-fn methods:     0/2
----------------------
-TOTAL:          17/46
-
 # TYPES:
 null, bool, sym, num, string, list, map, fn
 
-## Top Level Functions:
+# Intrinsic Functions:
 
-### zero args
+## zero args
 args() -> list
 
-### one arg
+## one arg
 num(null/bool/num/string) -> num/null
 str(null/bool/sym/num) -> string
 bool(any) -> bool
@@ -32,9 +22,16 @@ floor(num) -> num
 ceil(num) -> num
 pow(num, num) -> num
 log(num, num) -> num
-
-# unimplemented
 arity(fn) -> num
 bind(fn, any) -> fn
+
 delete(map, any) -> any
+
+## unimplemented
 entries(map) -> list
+keys(map) -> list
+values(map) -> list
+attach_list_methods(list)
+attach_map_methods(map)
+attach_str_methods(str)
+attach_times_methods(str)

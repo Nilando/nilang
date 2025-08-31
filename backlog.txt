@@ -1,9 +1,9 @@
 VERSION 0.1.0
 
 FEATURE BACKLOG:
+- auto binding of functions with "self" arg
 - add push and pop operators
 - String Interpolation
-- for loops
 - save assigned vars in repl
 - backtraces
 - rework error messages
@@ -20,6 +20,7 @@ OPTIMIZATION BACKLOG
 - Peephole pass
 - AST pass
 - JIT?
+- LSP?
 
 GOALS
 - complete AOC 2025 with this language

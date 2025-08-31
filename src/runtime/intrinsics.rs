@@ -5,7 +5,7 @@ use sandpit::{Gc, Mutator};
 use crate::runtime::partial::Partial;
 use crate::runtime::string::VMString;
 use crate::symbol_map::{
-    SymID, SymbolMap, ABS_SYM, ARGS_SYM, ARITY_SYM, BIND_SYM, BOOL_SYM, CEIL_SYM, CLONE_SYM, FLOOR_SYM, FN_SYM, LEN_SYM, LIST_SYM, LOG_SYM, MAP_SYM, NULL_SYM, NUM_SYM, POP_SYM, POW_SYM, PUSH_SYM, READ_FILE_SYM, SLEEP_SYM, STR_SYM, SYM_SYM, TYPE_SYM
+    SymID, SymbolMap, ABS_SYM, ARGS_SYM, ARITY_SYM, BIND_SYM, BOOL_SYM, CEIL_SYM, CLONE_SYM, DELETE_SYM, FLOOR_SYM, FN_SYM, LEN_SYM, LIST_SYM, LOG_SYM, MAP_SYM, NULL_SYM, NUM_SYM, POP_SYM, POW_SYM, PUSH_SYM, READ_FILE_SYM, SLEEP_SYM, STR_SYM, SYM_SYM, TYPE_SYM
 };
 
 use super::list::List;
@@ -96,6 +96,10 @@ pub fn call_intrinsic<'a, 'gc>(
             let (arg1, arg2) = extract_two_args(args)?;
             push(arg1, arg2, mu)
         }
+        DELETE_SYM => {
+            let (arg1, arg2) = extract_two_args(args)?;
+            delete(arg1, arg2, mu)
+        }
         _ => todo!(),
     }
 }
@@ -144,6 +148,28 @@ fn len<'gc>(val: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
             return Err((
                 RuntimeErrorKind::TypeError,
                 format!("Unexpected arg of type {}", item.type_str()),
+            ))
+        }
+    }
+}
+
+fn delete<'gc>(
+    store: Value<'gc>,
+    key: Value<'gc>,
+    mu: &'gc Mutator,
+) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+    match store {
+        Value::Map(map) => {
+            if let Some(k) = map.delete(Value::into_tagged(key, mu)) {
+                Ok(Value::from(&k))
+            } else {
+                Ok(Value::Null)
+            }
+        }
+        _ => {
+            return Err((
+                RuntimeErrorKind::TypeError,
+                format!("Unexpected arg of type {}", store.type_str()),
             ))
         }
     }
