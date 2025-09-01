@@ -100,13 +100,21 @@ impl Runtime {
                             });
 
                             continue;
-                        } // TODO:
-                          // ExitCode::Read => {
-                          // vm.input_string(buf)
-                          // read a string
-                          // then mutate the arena and place the
-                          // read
-                          //}
+                        }
+                        ExitCode::Read => {
+                            let stdin = std::io::stdin();
+                            let mut buf = String::new();
+                            stdin
+                                .read_line(&mut buf)
+                                .expect("failed to read from stdin");
+                            buf = buf.trim_end().to_string();
+
+                            self.arena.mutate(|mu, vm| {
+                                vm_result = vm.read_input_hook(buf, &mut self.symbols, mu);
+                            });
+
+                            continue;
+                        }
                     }
                 }
                 Err(err) => {

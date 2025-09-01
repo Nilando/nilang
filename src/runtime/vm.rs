@@ -28,7 +28,7 @@ pub const DISPATCH_LOOP_LENGTH: usize = 100;
 pub enum ExitCode {
     LoadModule(String),
     Print(String),
-    // Read,
+    Read,
     Yield,
     Exit,
 }
@@ -106,6 +106,26 @@ impl<'gc> VM<'gc> {
         self.call_frames.push(mu, GcOpt::new(mu, init_frame));
 
         self.run(mu, symbols)
+    }
+
+    pub fn read_input_hook(
+        &self,
+        input_string: String,
+        syms: &mut SymbolMap,
+        mu: &'gc Mutator,
+    ) -> Result<ExitCode, RuntimeError> {
+        if let ByteCode::Read { dest } = self.get_prev_instruction() {
+            let vm_str = VMString::alloc([].iter().map(|c| *c), mu);
+            for c in input_string.chars() {
+                vm_str.push_char(c, mu);
+            }
+
+            self.set_reg_with_value(Value::String(Gc::new(mu, vm_str)), dest, mu);
+        } else {
+            todo!("previous instruction has to be a read instr")
+        };
+
+        self.run(mu, syms)
     }
 
     fn dispatch_instruction(
@@ -348,21 +368,8 @@ impl<'gc> VM<'gc> {
                     return Ok(Some(ExitCode::Exit));
                 }
             }
-            ByteCode::Read { dest } => {
-                let stdin = std::io::stdin();
-                let mut buf = String::new();
-                let vm_str = VMString::alloc([].iter().map(|c| *c), mu);
-
-                stdin
-                    .read_line(&mut buf)
-                    .expect("failed to read from stdin");
-                buf = buf.trim_end().to_string();
-
-                for c in buf.chars() {
-                    vm_str.push_char(c, mu);
-                }
-
-                self.set_reg_with_value(Value::String(Gc::new(mu, vm_str)), dest, mu);
+            ByteCode::Read { .. } => {
+                return Ok(Some(ExitCode::Read));
             }
             ByteCode::LoadUpvalue { dest, id } => {
                 let cf = self.get_top_call_frame();
