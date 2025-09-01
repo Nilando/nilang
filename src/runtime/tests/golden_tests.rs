@@ -103,6 +103,11 @@ fn closure_printing() {
 }
 
 #[test]
+fn import() {
+  super::test_golden_output("./src/runtime/tests/golden/import.golden")
+}
+
+#[test]
 fn bind_intrinsic_fn() {
   super::test_golden_output("./src/runtime/tests/golden/bind_intrinsic_fn.golden")
 }
