@@ -1,7 +1,18 @@
+fn contains(s, digit) {
+  i = 0;
+  while i < len(s) {
+    if s[i] == digit {
+      return true;
+    }
+    i = i + 1;
+  }
+  return false;
+}
+
 fn fizzbuzz(n) {
   s = str(n);
-  fizz = ((n % 5) == 0) || s.contains("5");
-  buzz = ((n % 7) == 0) || s.contains("7");
+  fizz = ((n % 5) == 0) || contains(s, "5");
+  buzz = ((n % 7) == 0) || contains(s, "7");
 
   if fizz && buzz {
     return "fizzbuzz";
