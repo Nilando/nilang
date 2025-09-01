@@ -126,7 +126,7 @@ fn game_loop() {
     if move != "x" {
       move = "x";
     } else {
-      move = "y";
+      move = "o";
     }
   }
 }
