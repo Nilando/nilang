@@ -25,6 +25,10 @@ print(a);
 delete(a, false);
 print(a);
 
+a = {};
+delete(a, null);
+print(a);
+
 %%%%
 
 {#b: 1, #c: 2, #a: 0}
@@ -38,4 +42,5 @@ print(a);
 {false: false, null: null, true: true}
 {false: false, true: true}
 {false: false}
+{}
 {}
