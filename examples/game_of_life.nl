@@ -111,9 +111,9 @@ fn print_grid(grid) {
     col = 0;
     while col < len(grid) {
       if grid[row][col] {
-        push(s, "█");
+        push(s, "██");
       } else {
-        push(s, " ");
+        push(s, "  ");
       }
       col = col + 1;
     }
@@ -129,6 +129,6 @@ fn run(grid) {
   }
 }
 
-grid = new_grid(20);
+grid = new_grid(38);
 
 run(grid);
