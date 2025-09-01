@@ -24,10 +24,6 @@ impl LivenessDFA {
         self.live_out.get_mut(&block_id).unwrap()
     }
 
-    pub fn get_live_out(&self, block_id: BlockId) -> &BTreeSet<VReg> {
-        self.live_out.get(&block_id).unwrap()
-    }
-
     pub fn new() -> Self {
         Self {
             live_in: BTreeMap::new(),
