@@ -2,7 +2,6 @@ use crate::symbol_map::SymbolMap;
 use std::cell::Cell;
 
 use super::op::equal;
-use std::fmt::Debug;
 
 use murmurhash3::murmurhash3_x64_128;
 use sandpit::{field, Gc, Mutator, Trace, TraceLeaf};

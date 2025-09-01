@@ -207,7 +207,7 @@ pub fn mem_store<'gc>(
 
             Ok(())
         }
-        (Value::String(vm_str), Value::Int(idx)) => {
+        (Value::String(_), Value::Int(_)) => {
             todo!("xxxxx")
         }
         (lhs, rhs) => Err(format!(

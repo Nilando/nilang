@@ -1,5 +1,3 @@
-use std::fmt::Debug;
-
 use sandpit::{Gc, Mutator};
 
 use crate::symbol_map::SymbolMap;
@@ -168,10 +166,6 @@ impl<'gc> Value<'gc> {
             }
             _ => false,
         }
-    }
-
-    pub fn is_string(&self) -> bool {
-        matches!(self, Value::String(_))
     }
 
     pub fn type_str(&self) -> &str {
