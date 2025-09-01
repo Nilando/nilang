@@ -17,7 +17,7 @@ fn test_golden_output(filename: &str) {
     let input = split_contents.pop().unwrap().trim();
     let opt_flags = split_contents.pop();
     let (mut opt, mut _dce, mut _gvn, mut _mssa, mut no_pretty) =
-        (false, false, false, false, false);
+        (true, false, false, false, false);
     if let Some(flags) = opt_flags {
         for line in flags.lines() {
             let flag = line.trim();
@@ -28,7 +28,7 @@ fn test_golden_output(filename: &str) {
             let flag = flag_setting.next().unwrap();
 
             match flag {
-                "OPT" => opt = true,
+                "NO_OPT" => opt = false,
                 "NO_PRETTY" => no_pretty = true,
                 _ => panic!("unrecognized optimization flag"),
             }
