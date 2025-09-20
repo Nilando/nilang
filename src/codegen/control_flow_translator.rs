@@ -39,6 +39,18 @@ pub fn handle_control_flow_instruction(
     }
 }
 
+pub fn handle_block_fall_through(
+    current_block: &Block,
+    ir_func: &IRFunc,
+    graph: &InterferenceGraph,
+    func: &mut Func,
+) {
+    if let Some(id) = current_block.falls_through() {
+        let next_block = ir_func.get_block(id);
+        ssa_elimination(func, next_block, current_block, graph);
+    }
+}
+
 fn handle_conditional_jump(
     instr: &Tac,
     src: VReg,
@@ -99,16 +111,4 @@ fn handle_unconditional_jump(
 
     ssa_elimination(func, next_block, current_block, graph);
     ctx.push_jump_instr(func, original_label);
-}
-
-pub fn handle_block_fall_through(
-    current_block: &Block,
-    ir_func: &IRFunc,
-    graph: &InterferenceGraph,
-    func: &mut Func,
-) {
-    if let Some(id) = current_block.falls_through() {
-        let next_block = ir_func.get_block(id);
-        ssa_elimination(func, next_block, current_block, graph);
-    }
 }
