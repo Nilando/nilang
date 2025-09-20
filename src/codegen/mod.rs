@@ -11,7 +11,7 @@ mod tests;
 use backpatch::BackpatchContext;
 use control_flow_translator::{handle_block_fall_through, handle_control_flow_instruction};
 pub use func::{Func, Local};
-pub use interference_graph::{find_copy_edges, InterferenceGraph};
+use interference_graph::{find_copy_edges, InterferenceGraph};
 use translator::translate_tac;
 
 use crate::ir::Func as IRFunc;
