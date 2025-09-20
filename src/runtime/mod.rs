@@ -40,7 +40,6 @@ impl Runtime {
     pub fn init(program: Vec<Func>, symbols: SymbolMap, config: Config) -> Self {
         let arena = Arena::new(|mu| {
             let loaded_program = load_program(program, mu);
-            // let builtins = load_builtins(mu);
 
             VM::init(loaded_program.last().unwrap().clone(), mu)
         });
@@ -74,7 +73,10 @@ impl Runtime {
             match vm_result {
                 Ok(ref command) => {
                     match command {
-                        ExitCode::Yield => {}
+                        ExitCode::Yield => {
+                            // TEST: sleep for like 2 ms here to give the GC 
+                            // some time to catch up?
+                        }
                         ExitCode::Exit => return Ok(()),
                         ExitCode::Print(str) => {
                             // TODO: instead of having to copy the string out
@@ -195,11 +197,20 @@ fn load_program<'gc>(program: Vec<Func>, mu: &'gc Mutator) -> Vec<Gc<'gc, Loaded
     result
 }
 
+// (Path, Span)
+/*
+ * struct BackTrace {
+ *  top_level_function:
+ *
+ * }
+ */
+
 #[derive(Debug)]
 pub struct RuntimeError {
     pub kind: RuntimeErrorKind,
     pub span: Option<Span>,
-    pub message: Option<String>, // backtrace: Option<Backtrace>,
+    pub message: Option<String>, 
+    // backtrace: Option<Backtrace>,
 }
 
 impl RuntimeError {
