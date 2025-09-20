@@ -22,11 +22,11 @@ fn insert_phi_nodes(func: &mut Func) {
     let mut work_list = func.get_block_ids();
     while let Some(block_id) = work_list.pop() {
         let dominator_block = func.get_block(block_id);
-        let defined_vars = dominator_block.defined_vars();
+        let defined_vregs = dominator_block.defined_vregs();
         let dominance_frontier = compute_dominance_frontier(func, func.get_block(block_id));
 
         for phi_block_id in dominance_frontier.iter() {
-            for var in defined_vars.iter() {
+            for var in defined_vregs.iter() {
                 let phi_block = func.get_block_mut(*phi_block_id);
                 // we've already inserted a node for this var
                 if phi_block

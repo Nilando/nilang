@@ -137,7 +137,7 @@ impl Block {
         }
     }
 
-    pub fn get_return_var_id(&self) -> Option<VReg> {
+    pub fn get_return_vreg(&self) -> Option<VReg> {
         if let Some(Tac::Return { src }) = self.instrs.last() {
             Some(*src)
         } else {
@@ -145,7 +145,7 @@ impl Block {
         }
     }
 
-    pub fn defined_vars(&self) -> BTreeSet<VReg> {
+    pub fn defined_vregs(&self) -> BTreeSet<VReg> {
         let mut defined = BTreeSet::new();
 
         for instr in self.instrs.iter() {

@@ -60,7 +60,7 @@ impl DFA for LivenessDFA {
             }
         }
 
-        if let Some(var_id) = block.get_return_var_id() {
+        if let Some(var_id) = block.get_return_vreg() {
             live_out.insert(var_id);
         }
 
