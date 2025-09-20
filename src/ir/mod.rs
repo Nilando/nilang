@@ -3,7 +3,6 @@ mod block;
 mod func;
 mod func_builder;
 mod func_printer;
-mod func_vizualizer;
 mod lowering;
 mod optimizer;
 mod ssa;
