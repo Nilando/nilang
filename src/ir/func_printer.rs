@@ -287,7 +287,7 @@ impl FuncPrinter<'_> {
                 format!("t{reg}")
             }
         } else {
-            self.vreg_str(reg)
+            format!("%{}", reg)
         };
 
         self.result.push_str(&format!("[{}]", s));
@@ -323,14 +323,10 @@ impl FuncPrinter<'_> {
                 format!("t{reg}")
             }
         } else {
-            self.vreg_str(reg)
+            format!("%{}", reg)
         };
 
         self.result.push_str(&s)
-    }
-
-    fn vreg_str(&mut self, var: &VReg) -> String {
-        format!("%{}", var)
     }
 
     fn push_first_line(&mut self) {
