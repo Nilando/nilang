@@ -16,7 +16,7 @@ use super::partial::{Callable, Partial};
 use super::string::VMString;
 use super::tagged_value::TaggedValue;
 use super::value::Value;
-use super::{RuntimeError, RuntimeErrorKind};
+use super::error::{RuntimeError, RuntimeErrorKind};
 
 pub use super::bytecode::ByteCode;
 
@@ -693,7 +693,7 @@ impl<'gc> VM<'gc> {
         let cf = self.get_top_call_frame();
         let span = cf.get_current_span();
 
-        RuntimeError::new(kind, span, Some(msg))
+        RuntimeError::new(kind, span, Some(msg), None)
     }
 
     fn get_next_instruction(&self) -> ByteCode {

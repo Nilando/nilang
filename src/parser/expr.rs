@@ -251,17 +251,17 @@ fn inner_args(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, Vec<Spanned<Expr>>> {
 mod tests {
     use super::super::expr::expr;
     use super::super::stmt::stmt;
-    use super::super::ParseResult;
     use super::*;
+    use crate::parser::ParseError;
     use crate::symbol_map::SymbolMap;
 
-    fn parse_expr_with_syms(input: &str, syms: &mut SymbolMap) -> ParseResult<Expr> {
+    fn parse_expr_with_syms(input: &str, syms: &mut SymbolMap) -> Result<Option<Expr>, ParseError> {
         let stmt = stmt();
 
         expr(stmt).map(|e| e.item).parse_str(input, syms)
     }
 
-    fn parse_expr(input: &str) -> ParseResult<Expr> {
+    fn parse_expr(input: &str) -> Result<Option<Expr>, ParseError> {
         let mut syms = SymbolMap::new();
 
         parse_expr_with_syms(input, &mut syms)
@@ -269,8 +269,8 @@ mod tests {
 
     #[test]
     fn print_string() {
-        match parse_expr("print (\"potato\")").value {
-            Some(Expr::Print(v)) => {
+        match parse_expr("print (\"potato\")") {
+            Ok(Some(Expr::Print(v))) => {
                 assert!(v.item == Expr::Value(Value::String("potato".to_string())));
             }
             _ => assert!(false),
@@ -279,24 +279,24 @@ mod tests {
 
     #[test]
     fn number_expr() {
-        match parse_expr("09876").value {
-            Some(Expr::Value(Value::Int(i))) => assert!(i == 09876),
+        match parse_expr("09876") {
+            Ok(Some(Expr::Value(Value::Int(i)))) => assert!(i == 09876),
             _ => assert!(false),
         }
     }
 
     #[test]
     fn read_expr() {
-        match parse_expr("read").value {
-            Some(Expr::Read) => {}
+        match parse_expr("read") {
+            Ok(Some(Expr::Read)) => {}
             _ => assert!(false),
         }
     }
 
     #[test]
     fn binop_expr() {
-        match parse_expr("1 + 2 - 3").value {
-            Some(Expr::Binop { lhs, op, rhs }) => {
+        match parse_expr("1 + 2 - 3") {
+            Ok(Some(Expr::Binop { lhs, op, rhs })) => {
                 assert!(lhs.item == Expr::Value(Value::Int(1)));
                 assert!(op == Op::Plus);
                 match rhs.item {
@@ -314,7 +314,7 @@ mod tests {
 
     #[test]
     fn indexed_expr() {
-        if let Some(Expr::Index { store, key }) = parse_expr("my_array[0][1][2]").value {
+        if let Ok(Some(Expr::Index { store, key })) = parse_expr("my_array[0][1][2]") {
             assert!(key.item == Expr::Value(Value::Int(2)));
 
             if let Expr::Index { store, key } = store.item {
@@ -336,7 +336,7 @@ mod tests {
     #[test]
     fn access_expr() {
         let mut syms = SymbolMap::new();
-        if let Some(Expr::Access { store, key }) = parse_expr_with_syms("a.b.c", &mut syms).value {
+        if let Ok(Some(Expr::Access { store, key })) = parse_expr_with_syms("a.b.c", &mut syms) {
             assert!(key == syms.get_id("c"));
 
             if let Expr::Access { store, key } = store.item {
@@ -352,8 +352,8 @@ mod tests {
     #[test]
     fn nested_call_expr() {
         let mut syms = SymbolMap::new();
-        if let Some(Expr::Call { calle, args }) =
-            parse_expr_with_syms("a(0)(1)(2)", &mut syms).value
+        if let Ok(Some(Expr::Call { calle, args })) =
+            parse_expr_with_syms("a(0)(1)(2)", &mut syms)
         {
             assert!(args[0].item == Expr::Value(Value::Int(2)));
 
@@ -373,18 +373,18 @@ mod tests {
 
     #[test]
     fn expr_none() {
-        assert_eq!(parse_expr("").value, None);
+        assert_eq!(parse_expr(""), Ok(None));
     }
 
     #[test]
     fn bad_binop_returns_lhs() {
-        assert_eq!(parse_expr("1 + ").value, Some(Expr::Value(Value::Int(1))));
+        assert!(parse_expr("1 + ").is_err());
     }
 
     #[test]
     fn division_expr() {
-        match parse_expr("1 / 1").value {
-            Some(Expr::Binop { lhs, op, rhs }) => {
+        match parse_expr("1 / 1") {
+            Ok(Some(Expr::Binop { lhs, op, rhs })) => {
                 assert!(lhs.item == Expr::Value(Value::Int(1)));
                 assert!(op == Op::Divide);
                 assert!(rhs.item == Expr::Value(Value::Int(1)));
@@ -396,7 +396,7 @@ mod tests {
     #[test]
     fn sym_access_on_num() {
         let mut syms = SymbolMap::new();
-        if let Some(Expr::Access { store, key }) = parse_expr_with_syms("333.foo", &mut syms).value
+        if let Ok(Some(Expr::Access { store, key })) = parse_expr_with_syms("333.foo", &mut syms)
         {
             assert!(matches!(store.item, Expr::Value(Value::Int(333))));
             assert!(key == syms.get_id("foo"));

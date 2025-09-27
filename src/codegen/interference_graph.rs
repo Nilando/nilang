@@ -56,6 +56,8 @@ impl InterferenceGraph {
                 if let Some(new_var) = instr.dest_reg() {
                     // if this var wasn't live when we remove it, we unfortunately
                     // still need a register to store the dead value
+                    // TESTME: I'm not 100% sure but I'm pretty there is a bug
+                    // here. I think the conditional needs to be removed
                     if !live_vars.remove(new_var) {
                         graph.add_node(*new_var);
 

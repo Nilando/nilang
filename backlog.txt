@@ -1,10 +1,11 @@
 VERSION 0.1.0
 
 FEATURE BACKLOG:
+- error tests
 - backtraces
 - auto binding of functions with "self" arg
 - add push and pop operators
-- standard library and "monkey patch" intrinsics
+- "monkey patch" intrinsic
 - String Interpolation
 - save assigned vars in repl
 - fix major collection bug (sandpit)

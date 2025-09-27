@@ -20,31 +20,19 @@ use std::rc::Rc;
 pub fn parse_program(
     input: &str,
     syms: &mut SymbolMap,
-) -> Result<Vec<Stmt>, Vec<Spanned<ParseError>>> {
-    let parse_result = stmt()
+) -> Result<Option<Vec<Stmt>>, ParseError> {
+    stmt()
         .expect("Expected a statement")
         .unless(ctrl(Ctrl::End))
         .recover(Ctrl::SemiColon)
         .zero_or_more()
-        .parse_str(input, syms);
-
-    if !parse_result.errors.is_empty() {
-        Err(parse_result.errors)
-    } else {
-        Ok(parse_result.value.unwrap())
-    }
-}
-
-pub struct ParseResult<T> {
-    pub value: Option<T>,
-    pub errors: Vec<Spanned<ParseError>>,
-    //pub warnings: Vec<Spanned<()>>,
+        .parse_str(input, syms)
 }
 
 struct ParseContext<'a> {
     lexer: Lexer<'a>,
     syms: &'a mut SymbolMap,
-    errors: Vec<Spanned<ParseError>>,
+    errors: Vec<Spanned<ParseErrorItem>>,
     //warnings: Vec<Spanned<()>>,
     is_in_loop: bool,
 }
@@ -53,7 +41,7 @@ impl<'a> ParseContext<'a> {
     fn peek(&mut self) -> Option<Spanned<Token<'a>>> {
         match self.lexer.peek(self.syms) {
             Err(lex_error) => {
-                let parse_error = lex_error.map(ParseError::LexError);
+                let parse_error = lex_error.map(ParseErrorItem::LexError);
                 self.adv();
                 self.add_err(parse_error);
                 None
@@ -70,7 +58,7 @@ impl<'a> ParseContext<'a> {
         self.lexer.peek_nth(1, self.syms).ok()
     }
 
-    fn add_err(&mut self, err: Spanned<ParseError>) {
+    fn add_err(&mut self, err: Spanned<ParseErrorItem>) {
         self.errors.push(err);
     }
 
@@ -84,7 +72,13 @@ impl<'a> ParseContext<'a> {
 }
 
 #[derive(PartialEq, Debug)]
-pub enum ParseError {
+pub struct ParseError {
+    path: Option<String>,
+    items: Vec<Spanned<ParseErrorItem>>
+}
+
+#[derive(PartialEq, Debug)]
+pub enum ParseErrorItem {
     LexError(LexError),
     Expected { msg: String, found: String },
     DuplicateArgs,
@@ -102,7 +96,7 @@ impl<'a, T: 'a> Parser<'a, T> {
         }
     }
 
-    pub fn parse_str(self, input: &'a str, syms: &'a mut SymbolMap) -> ParseResult<T> {
+    pub fn parse_str(self, input: &'a str, syms: &'a mut SymbolMap) -> Result<Option<T>, ParseError> {
         let lexer = Lexer::new(input);
 
         let mut ctx = ParseContext {
@@ -115,10 +109,13 @@ impl<'a, T: 'a> Parser<'a, T> {
 
         let value = self.parse(&mut ctx);
 
-        ParseResult {
-            value,
-            errors: ctx.errors,
-            //warnings: ctx.warnings,
+        if ctx.errors.is_empty() {
+            Ok(value)
+        } else {
+            Err(ParseError {
+                items: ctx.errors,
+                path: None
+            })
         }
     }
 
@@ -160,7 +157,7 @@ impl<'a, T: 'a> Parser<'a, T> {
                 Some(result)
             } else {
                 let span = ctx.peek().map(|s| s.span).unwrap_or((0, 0));
-                let error = ParseError::Expected {
+                let error = ParseErrorItem::Expected {
                     msg: error_msg.to_string(),
                     found: ctx.lexer.get_input()[span.0..span.1].to_string(),
                 };
@@ -245,7 +242,7 @@ impl<'a, T: 'a> Parser<'a, T> {
             let span = value.span;
 
             if !ctx.is_in_loop {
-                let error = ParseError::Expected {
+                let error = ParseErrorItem::Expected {
                     msg: "Item not contained inside a loop".to_string(),
                     found: ctx.lexer.get_input()[span.0..span.1].to_string(),
                 };
@@ -393,7 +390,7 @@ fn inner_inputs<'a>() -> Parser<'a, Vec<SymID>> {
             if comma.parse(ctx).is_some() {
                 if let Some(next) = symbol.parse(ctx) {
                     if items.contains(&next.item) {
-                        let error = ParseError::DuplicateArgs;
+                        let error = ParseErrorItem::DuplicateArgs;
 
                         ctx.add_err(Spanned::new(error, next.span));
                     }

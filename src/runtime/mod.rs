@@ -11,13 +11,13 @@ mod string;
 mod tagged_value;
 mod value;
 mod vm;
+mod error;
 
 #[cfg(test)]
 mod tests;
 
 use crate::codegen::{Func, Local};
 use crate::driver::compile_source;
-use crate::parser::Span;
 use crate::symbol_map::SymbolMap;
 use crate::Config;
 
@@ -25,6 +25,8 @@ use self::func::{LoadedFunc, LoadedLocal};
 use self::vm::ExitCode;
 use sandpit::*;
 use std::collections::HashMap;
+
+pub use self::error::RuntimeError;
 
 pub use bytecode::ByteCode;
 pub use vm::VM;
@@ -195,41 +197,4 @@ fn load_program<'gc>(program: Vec<Func>, mu: &'gc Mutator) -> Vec<Gc<'gc, Loaded
     }
 
     result
-}
-
-// (Path, Span)
-/*
- * struct BackTrace {
- *  top_level_function:
- *
- * }
- */
-
-#[derive(Debug)]
-pub struct RuntimeError {
-    pub kind: RuntimeErrorKind,
-    pub span: Option<Span>,
-    pub message: Option<String>, 
-    // backtrace: Option<Backtrace>,
-}
-
-impl RuntimeError {
-    pub fn new(kind: RuntimeErrorKind, span: Option<Span>, message: Option<String>) -> Self {
-        Self {
-            kind,
-            span,
-            message,
-        }
-    }
-}
-
-#[derive(Debug)]
-pub enum RuntimeErrorKind {
-    TypeError,
-    WrongNumArgs,
-    UndefinedMethod,
-    InvalidByteCode,
-    InternalError,
-    Unimplemented,
-    InvalidBind
 }

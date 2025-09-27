@@ -11,7 +11,7 @@ use crate::symbol_map::{
 use super::list::List;
 use super::value::Value;
 use super::vm::ArgIter;
-use super::RuntimeErrorKind;
+use super::error::RuntimeErrorKind;
 
 pub fn call_intrinsic<'a, 'gc>(
     args: ArgIter<'a, 'gc>,

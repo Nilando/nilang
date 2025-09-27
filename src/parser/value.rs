@@ -134,17 +134,17 @@ pub fn string<'a>() -> Parser<'a, String> {
 mod tests {
     use super::super::expr::expr;
     use super::super::stmt::stmt;
-    use super::super::ParseResult;
     use super::*;
+    use crate::parser::ParseError;
     use crate::symbol_map::SymbolMap;
 
-    fn parse_value(input: &str) -> ParseResult<Value> {
+    fn parse_value(input: &str) -> Result<Option<Value>, ParseError> {
         let mut syms = SymbolMap::new();
 
         parse_value_with_syms(input, &mut syms)
     }
 
-    fn parse_value_with_syms(input: &str, syms: &mut SymbolMap) -> ParseResult<Value> {
+    fn parse_value_with_syms(input: &str, syms: &mut SymbolMap) -> Result<Option<Value>, ParseError> {
         let stmt = stmt();
 
         value(expr(stmt.clone()), stmt).parse_str(input, syms)
@@ -153,72 +153,69 @@ mod tests {
     #[test]
     fn parse_ident() {
         let mut syms = SymbolMap::new();
-        let v = parse_value_with_syms("testing", &mut syms).value;
+        let v = parse_value_with_syms("testing", &mut syms);
 
-        assert_eq!(v, Some(Value::Ident(syms.get_id("testing"))));
+        assert_eq!(v, Ok(Some(Value::Ident(syms.get_id("testing")))));
     }
 
     #[test]
     fn parse_symbol() {
         let mut syms = SymbolMap::new();
-        let v = parse_value_with_syms("#testing", &mut syms).value;
+        let v = parse_value_with_syms("#testing", &mut syms);
 
-        assert_eq!(v, Some(Value::Symbol(syms.get_id("testing"))));
+        assert_eq!(v, Ok(Some(Value::Symbol(syms.get_id("testing")))));
     }
 
     #[test]
     fn parse_int() {
-        let v = parse_value("123").value;
+        let v = parse_value("123");
 
-        assert_eq!(v, Some(Value::Int(123)));
+        assert_eq!(v, Ok(Some(Value::Int(123))));
     }
 
     #[test]
     fn parse_float() {
-        let v = parse_value("420.69").value;
+        let v = parse_value("420.69");
 
-        assert_eq!(v, Some(Value::Float(420.69)));
+        assert_eq!(v, Ok(Some(Value::Float(420.69))));
     }
 
     #[test]
     fn parse_string() {
-        let v = parse_value("\"bababooy\"").value;
+        let v = parse_value("\"bababooy\"");
 
-        assert_eq!(v, Some(Value::String("bababooy".to_string())));
+        assert_eq!(v, Ok(Some(Value::String("bababooy".to_string()))));
     }
 
     #[test]
     fn parse_global() {
         let mut syms = SymbolMap::new();
-        let v = parse_value_with_syms("@test", &mut syms).value;
+        let v = parse_value_with_syms("@test", &mut syms);
 
-        assert_eq!(v, Some(Value::Global(syms.get_id("test"))));
+        assert_eq!(v, Ok(Some(Value::Global(syms.get_id("test")))));
     }
 
     #[test]
     fn parse_empty_list() {
-        let v = parse_value("[]").value.unwrap();
+        let v = parse_value("[]");
 
-        assert_eq!(v, Value::List(vec![]));
+        assert_eq!(v, Ok(Some(Value::List(vec![]))));
     }
 
     #[test]
     fn parse_list_with_single_value() {
-        let Some(Value::List(list)) = parse_value("[333]").value else {
-            panic!()
-        };
+        if let Ok(Some(Value::List(list))) = parse_value("[333]") {
+            assert!(list.len() == 1);
 
-        assert!(list.len() == 1);
-
-        let Expr::Value(Value::Int(333)) = list[0].item else {
-            panic!()
-        };
+            let l = &list[0];
+            assert!(matches!(Expr::Value(Value::Int(333)), l));
+        }
     }
 
     #[test]
     fn parse_empty_fn() {
-        match parse_value("fn(){}").value {
-            Some(Value::InlineFunc { inputs, stmts }) => {
+        match parse_value("fn(){}") {
+            Ok(Some(Value::InlineFunc { inputs, stmts })) => {
                 assert!(inputs.item.is_empty());
                 assert!(stmts.is_empty());
             }
@@ -228,8 +225,8 @@ mod tests {
 
     #[test]
     fn parse_example_fn() {
-        match parse_value("fn(x, y) { return x + y; }").value {
-            Some(Value::InlineFunc { inputs, stmts }) => {
+        match parse_value("fn(x, y) { return x + y; }") {
+            Ok(Some(Value::InlineFunc { inputs, stmts })) => {
                 assert!(inputs.item.len() == 2);
                 assert!(stmts.len() == 1);
             }
@@ -240,8 +237,8 @@ mod tests {
     #[test]
     fn parse_map() {
         let mut syms = SymbolMap::new();
-        match parse_value_with_syms("{a: 1, b: 2}", &mut syms).value {
-            Some(Value::Map(entries)) => {
+        match parse_value_with_syms("{a: 1, b: 2}", &mut syms) {
+            Ok(Some(Value::Map(entries))) => {
                 assert!(entries.len() == 2);
                 assert!(entries[0].0 == MapKey::Sym(syms.get_id("a")));
                 assert!(entries[0].1.item == Expr::Value(Value::Int(1)));
@@ -255,8 +252,8 @@ mod tests {
     #[test]
     fn expr_map_key() {
         let mut syms = SymbolMap::new();
-        let parse_value = parse_value_with_syms("{ \"test\": 2 }", &mut syms).value;
-        let Some(Value::Map(entries)) = parse_value else {
+        let parse_value = parse_value_with_syms("{ \"test\": 2 }", &mut syms);
+        let Ok(Some(Value::Map(entries))) = parse_value else {
             panic!()
         };
 
@@ -272,7 +269,7 @@ mod tests {
 
     #[test]
     fn parse_empty_map() {
-        let parse_value = parse_value("{}").value;
+        let parse_value = parse_value("{}").unwrap();
         let Some(Value::Map(entries)) = parse_value else {
             panic!()
         };
@@ -282,36 +279,36 @@ mod tests {
 
     #[test]
     fn parse_null() {
-        assert_eq!(parse_value("null").value.unwrap(), Value::Null)
+        assert_eq!(parse_value("null").unwrap().unwrap(), Value::Null)
     }
 
     #[test]
     fn parse_true() {
-        assert_eq!(parse_value("true").value.unwrap(), Value::Bool(true))
+        assert_eq!(parse_value("true").unwrap().unwrap(), Value::Bool(true))
     }
 
     #[test]
     fn parse_false() {
-        assert_eq!(parse_value("false").value.unwrap(), Value::Bool(false))
+        assert_eq!(parse_value("false").unwrap().unwrap(), Value::Bool(false))
     }
 
     #[test]
     fn parse_none() {
-        assert_eq!(parse_value(";").value, None)
+        assert_eq!(parse_value(";").unwrap(), None)
     }
 
     #[test]
     fn parse_eof() {
-        assert_eq!(parse_value("").value, None)
+        assert_eq!(parse_value("").unwrap(), None)
     }
 
     #[test]
     fn parse_bad_symbol() {
-        assert_eq!(parse_value("%").value, None)
+        assert_eq!(parse_value("%").unwrap(), None)
     }
 
     #[test]
     fn parse_comment() {
-        assert_eq!(parse_value("// this is a comment!").value, None)
+        assert_eq!(parse_value("// this is a comment!").unwrap(), None)
     }
 }

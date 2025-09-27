@@ -1,4 +1,5 @@
 mod config;
+mod repl;
 
 use crate::codegen::{generate_func, Func};
 use crate::ir::{func_to_string, lower_ast, optimize_func};
@@ -6,22 +7,30 @@ use crate::parser::{parse_program, ParseError, Spanned};
 use crate::runtime::{Runtime, RuntimeError};
 use crate::symbol_map::SymbolMap;
 
+use self::repl::run_repl;
+
 pub use config::Config;
 
 use std::fs::File;
-use std::io::{stdin, stdout, Write};
+use std::io::Write;
 
 use termion::color;
-use termion::cursor::DetectCursorPos;
-use termion::event::{Event, Key};
-use termion::input::TermRead;
-use termion::raw::IntoRawMode;
+
+enum NilangError {
+    RuntimeError(RuntimeError),
+    ParseError(ParseError)
+}
 
 pub fn execute(config: Config) {
     if config.repl_mode() {
         run_repl(config);
     } else {
-        run_script(config);
+        match run_script(config) {
+            Ok(()) => {},
+            Err(err) => {
+                //err.display(),
+            }
+        }
     }
 }
 
@@ -29,15 +38,8 @@ pub fn compile_source(
     config: &Config,
     symbols: &mut SymbolMap,
     source: &String,
-) -> Result<Vec<Func>, ()> {
-    let parse_result = parse_program(source.as_str(), symbols);
-
-    if let Err(ref parse_errors) = parse_result {
-        display_parse_errors(&source, parse_errors, config.file.clone());
-        return Err(());
-    }
-
-    let ast = parse_result.unwrap();
+) -> Result<Vec<Func>, ParseError> {
+    let ast = parse_program(source.as_str(), symbols)?.unwrap();
 
     if let Some(path) = config.ast_output_path.as_ref() {
         let ast_string = format!("{:#?}", ast);
@@ -81,179 +83,25 @@ pub fn compile_source(
     Ok(program)
 }
 
-fn run_script(mut config: Config) {
+fn run_script(mut config: Config) -> Result<(), NilangError> {
     let source = config.get_script().unwrap();
     let mut symbols = SymbolMap::new();
-    let program =
-        compile_source(&config, &mut symbols, &source).expect("Failed to compile program");
+    let program = 
+        match compile_source(&config, &mut symbols, &source) {
+            Ok(program) => program,
+            Err(parse_errors) => return Err(NilangError::ParseError(parse_errors)),
+        };
 
     if config.dry_run {
         println!("DRY RUN: program compiled successfully");
-        return;
+        return Ok(());
     }
 
     let mut runtime = Runtime::init(program, symbols, config);
+
     match runtime.run() {
-        Ok(()) => {}
-        Err(err) => {
-            display_runtime_error(&source, err);
-        }
-    }
-}
-
-fn run_repl(config: Config) {
-    println!("ENTERING REPL");
-    let stdin = stdin();
-    let mut stdout = stdout().into_raw_mode().unwrap();
-    let mut input = String::new();
-    let mut symbols = SymbolMap::new();
-    let mut inputs: Vec<String> = vec![];
-    let mut history_index = None;
-    let mut input_pos = 0;
-
-    write!(stdout, "> ").unwrap();
-    stdout.flush().unwrap();
-
-    for evt in stdin.events() {
-        let evt = evt.unwrap();
-        match evt {
-            Event::Key(Key::Char('\n')) if input.trim().is_empty() => {
-                write!(stdout, "\r\n> ").unwrap();
-                input_pos = 0;
-            }
-            Event::Key(Key::Char('\n')) => {
-                write!(stdout, "\r\n").unwrap();
-                stdout.flush().unwrap();
-
-                let program = compile_source(&config, &mut symbols, &input)
-                    .expect("Failed to compile program");
-
-                if config.dry_run {
-                    println!("DRY RUN: program compiled successfully");
-                    return;
-                }
-
-                let mut runtime = Runtime::init(program, symbols, config.clone());
-                match runtime.run() {
-                    Ok(()) => {}
-                    Err(err) => {
-                        display_runtime_error(&input, err);
-                    }
-                }
-
-                symbols = runtime.into_symbols();
-
-                let _ = stdout.activate_raw_mode();
-
-                inputs.push(input.clone());
-                history_index = Some(inputs.len());
-                input.clear();
-                write!(stdout, "\r\n> ").unwrap();
-                input_pos = 0;
-            }
-            Event::Key(Key::Up) => {
-                if let Some(idx) = history_index {
-                    if idx > 0 {
-                        history_index = Some(idx - 1);
-                        input = inputs[idx - 1].clone();
-                    }
-                } else if !inputs.is_empty() {
-                    history_index = Some(inputs.len() - 1);
-                    input = inputs.last().unwrap().clone();
-                }
-                write!(stdout, "\r{}\r> {}", " ".repeat(80), input).unwrap();
-                input_pos = input.len();
-            }
-            Event::Key(Key::Down) => {
-                if let Some(idx) = history_index {
-                    if idx < inputs.len() - 1 {
-                        history_index = Some(idx + 1);
-                        input = inputs[idx + 1].clone();
-                    } else {
-                        history_index = None;
-                        input.clear();
-                    }
-                }
-                write!(stdout, "\r{}\r> {}", " ".repeat(80), input).unwrap();
-                input_pos = input.len();
-            }
-            Event::Key(Key::Left) => {
-                let left = termion::cursor::Left(1);
-                let (x, _) = stdout.cursor_pos().expect("failed to get cursor position");
-
-                if x <= 3 {
-                    continue;
-                }
-
-                write!(stdout, "{}", left).unwrap();
-                input_pos -= 1;
-            }
-            Event::Key(Key::Right) => {
-                let right = termion::cursor::Right(1);
-                write!(stdout, "{}", right).unwrap();
-                input_pos += 1;
-                if input_pos >= input.len() {
-                    input.push(' ');
-                }
-            }
-            Event::Key(Key::Char(c)) => {
-                if let Some((i, _)) = input.char_indices().nth(input_pos) {
-                    input.insert(i, c);
-                } else {
-                    input.push(c);
-                }
-
-                input_pos += 1;
-
-                write!(
-                    stdout,
-                    "\r{}\r> {} {}",
-                    " ".repeat(80),
-                    input,
-                    termion::cursor::Left(((input.len() + 1) - input_pos) as u16)
-                )
-                .unwrap();
-            }
-            Event::Key(Key::Backspace) => {
-                if !input.is_empty() {
-                    input_pos -= 1;
-                    if let Some((i, _)) = input.char_indices().nth(input_pos) {
-                        input.remove(i);
-                    } else {
-                        input.pop();
-                    }
-                    write!(
-                        stdout,
-                        "\r{}\r> {} {}",
-                        " ".repeat(80),
-                        input,
-                        termion::cursor::Left(((input.len() + 1) - input_pos) as u16)
-                    )
-                    .unwrap();
-                }
-            }
-            Event::Key(Key::Ctrl('c')) | Event::Key(Key::Ctrl('d')) => {
-                writeln!(stdout, "\nExiting REPL").unwrap();
-                break;
-            }
-            Event::Key(Key::Ctrl('e')) => {
-                input_pos = input.len();
-                write!(stdout, "\r{}\r> {}", " ".repeat(80), input).unwrap();
-            }
-            Event::Key(Key::Ctrl('a')) => {
-                input_pos = 0;
-                write!(
-                    stdout,
-                    "\r{}\r> {} {}",
-                    " ".repeat(80),
-                    input,
-                    termion::cursor::Left(((input.len() + 1) - input_pos) as u16)
-                )
-                .unwrap();
-            }
-            _ => {}
-        }
-        stdout.flush().unwrap();
+        Ok(()) => Ok(()),
+        Err(err) => Err(NilangError::RuntimeError(err)),
     }
 }
 
