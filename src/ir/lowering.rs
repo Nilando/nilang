@@ -23,9 +23,9 @@ struct FuncLoweringCtx {
 }
 
 impl FuncLoweringCtx {
-    fn new(id: FuncID, inputs: Vec<SymID>, pretty_ir: bool) -> Self {
+    fn new(id: FuncID, inputs: Vec<SymID>, pretty_ir: bool, is_top_level: bool) -> Self {
         Self {
-            builder: FuncBuilder::new(id, &inputs, pretty_ir),
+            builder: FuncBuilder::new(id, &inputs, pretty_ir, is_top_level),
             label_counter: 0,
             defined_variables: BTreeSet::from_iter(inputs),
             loop_ctxs: vec![],
@@ -42,7 +42,7 @@ struct LoweringCtx {
 
 impl LoweringCtx {
     pub fn new(pretty_ir: bool) -> Self {
-        let main_func = FuncLoweringCtx::new(MAIN_FUNC_ID, vec![], pretty_ir);
+        let main_func = FuncLoweringCtx::new(MAIN_FUNC_ID, vec![], pretty_ir, true);
 
         Self {
             func_counter: 0,
@@ -299,7 +299,7 @@ impl LoweringCtx {
 
     fn new_func(&mut self, inputs: Spanned<Vec<SymID>>, stmts: Vec<Stmt>) -> (FuncID, Vec<SymID>) {
         let func_id = self.new_func_id();
-        let generator = FuncLoweringCtx::new(func_id, inputs.item, self.pretty_ir);
+        let generator = FuncLoweringCtx::new(func_id, inputs.item, self.pretty_ir, false);
 
         self.funcs.push(generator);
 

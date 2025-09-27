@@ -16,7 +16,7 @@ use super::partial::{Callable, Partial};
 use super::string::VMString;
 use super::tagged_value::TaggedValue;
 use super::value::Value;
-use super::error::{RuntimeError, RuntimeErrorKind};
+use super::error::{Backtrace, BacktraceCall, RuntimeError, RuntimeErrorKind};
 
 pub use super::bytecode::ByteCode;
 
@@ -82,7 +82,7 @@ impl<'gc> VM<'gc> {
     }
 
     // can only be called right after an import module instruction was run
-    pub fn import_module_hook(
+    pub fn run_function(
         &self,
         mu: &'gc Mutator,
         symbols: &mut SymbolMap,
@@ -90,13 +90,8 @@ impl<'gc> VM<'gc> {
     ) -> Result<ExitCode, RuntimeError> {
         let new_frame_start =
             self.frame_start.get() + self.get_top_call_frame().get_reg_count() as usize;
-        let module_path = if let ByteCode::Import { path, .. } = self.get_prev_instruction() {
-            self.get_reg(path)
-        } else {
-            todo!("previous instruction has to be an import instr")
-        };
         let init_frame =
-            CallFrame::new_with_module_path(entry_func.clone(), GcOpt::new(mu, module_path));
+            CallFrame::new(entry_func.clone());
 
         while new_frame_start + (entry_func.get_max_clique() as usize) > self.registers.len() {
             self.registers.push(mu, Value::tagged_null());
@@ -415,7 +410,8 @@ impl<'gc> VM<'gc> {
                 let module_path = callframe.get_module_path();
                 let export_val = self.get_reg(src);
 
-                GcHashMap::insert(self.module_map.clone(), module_path, export_val, mu);
+                //GcHashMap::insert(self.module_map.clone(), module_path, export_val, mu);
+                todo!()
             }
         }
 
@@ -517,11 +513,14 @@ impl<'gc> VM<'gc> {
         if let ByteCode::Call { dest, .. } = self.get_prev_instruction() {
             self.set_reg_with_value(return_val, dest, mu);
         } else if let ByteCode::Import { dest, .. } = self.get_prev_instruction() {
+            todo!();
+            /*
             let export_value = self
                 .module_map
                 .get(&popped_callframe.get_module_path())
                 .unwrap();
-            self.set_reg(export_value, dest, mu);
+            */
+            // self.set_reg(export_value, dest, mu);
         } else {
             todo!("bad return from function")
         }
@@ -692,8 +691,30 @@ impl<'gc> VM<'gc> {
     fn new_error(&self, kind: RuntimeErrorKind, msg: String) -> RuntimeError {
         let cf = self.get_top_call_frame();
         let span = cf.get_current_span();
+        let bt = self.get_backtrace();
 
-        RuntimeError::new(kind, span, Some(msg), None)
+        RuntimeError::new(kind, span, Some(msg), Some(bt))
+    }
+
+    fn get_backtrace(
+        &self,
+    ) -> Backtrace {
+        let mut bt = Backtrace {
+            calls: vec![]
+        };
+
+        for i in 0..self.call_frames.len() {
+            let call_frame = self.call_frames.get_idx(i).unwrap().unwrap();
+            let module_path = &call_frame.get_module_path();
+            let bt_call = BacktraceCall {
+                path: Some(module_path.as_string()),
+                span: call_frame.get_current_span().unwrap()
+            };
+
+            bt.calls.push(bt_call);
+        }
+
+        bt
     }
 
     fn get_next_instruction(&self) -> ByteCode {

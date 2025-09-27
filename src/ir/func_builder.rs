@@ -21,10 +21,11 @@ pub struct FuncBuilder {
     vreg_counter: u32,
     sym_to_vreg: HashMap<SymID, VReg>,
     pretty_ir: bool,
+    is_top_level: bool,
 }
 
 impl FuncBuilder {
-    pub fn new(id: FuncID, input_syms: &Vec<SymID>, pretty_ir: bool) -> Self {
+    pub fn new(id: FuncID, input_syms: &Vec<SymID>, pretty_ir: bool, is_top_level: bool) -> Self {
         let mut this = Self {
             id,
             inputs: vec![],
@@ -37,6 +38,7 @@ impl FuncBuilder {
             vreg_counter: 0,
             sym_to_vreg: HashMap::new(),
             pretty_ir,
+            is_top_level
         };
 
         for s in input_syms.iter() {
@@ -68,7 +70,7 @@ impl FuncBuilder {
         self.insert_current();
         self.link_blocks();
 
-        let mut func = Func::new(self.id, self.inputs, self.blocks, self.vreg_counter);
+        let mut func = Func::new(self.id, self.inputs, self.blocks, self.vreg_counter, self.is_top_level);
 
         remove_dead_blocks(&mut func);
 
@@ -258,7 +260,7 @@ pub mod tests {
     use super::*;
 
     pub fn instrs_to_func(instrs: Vec<Tac>) -> Func {
-        let mut builder = FuncBuilder::new(0, &vec![], false);
+        let mut builder = FuncBuilder::new(0, &vec![], false, false);
 
         for instr in instrs.into_iter() {
             builder.push_instr(instr, None);

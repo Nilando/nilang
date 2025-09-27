@@ -1,5 +1,6 @@
 use crate::symbol_map::SymbolMap;
 use std::cell::Cell;
+use std::hash::Hash;
 
 use super::op::equal;
 

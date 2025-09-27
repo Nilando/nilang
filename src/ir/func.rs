@@ -11,16 +11,18 @@ pub struct Func {
     blocks: Vec<Block>,
     vreg_counter: u32,
     vreg_map: Option<VRegMap>,
+    is_top_level: bool
 }
 
 impl Func {
-    pub fn new(id: FuncID, args: Vec<VReg>, blocks: Vec<Block>, vreg_counter: u32) -> Self {
+    pub fn new(id: FuncID, args: Vec<VReg>, blocks: Vec<Block>, vreg_counter: u32, is_top_level: bool) -> Self {
         Self {
             id,
             args,
             blocks,
             vreg_counter,
             vreg_map: None,
+            is_top_level
         }
     }
 
@@ -95,5 +97,9 @@ impl Func {
         self.blocks
             .iter_mut()
             .find(|block| block.get_id() == block_id)
+    }
+
+    pub fn is_top_level(&self) -> bool {
+        self.is_top_level
     }
 }

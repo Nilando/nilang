@@ -1,4 +1,4 @@
-use crate::driver::display_runtime_error;
+use super::error::InterpreterError;
 use crate::driver::compile_source;
 use crate::runtime::Runtime;
 use crate::symbol_map::SymbolMap;
@@ -48,7 +48,7 @@ pub fn run_repl(config: Config) {
                 match runtime.run() {
                     Ok(()) => {}
                     Err(err) => {
-                        display_runtime_error(&input, err);
+                        InterpreterError::display_runtime_error(&input, err);
                     }
                 }
 

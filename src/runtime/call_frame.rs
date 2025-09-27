@@ -6,6 +6,7 @@ use crate::parser::Span;
 
 use super::bytecode::ByteCode;
 use super::func::{LoadedFunc, LoadedLocal};
+use super::string::VMString;
 use super::tagged_value::TaggedValue;
 
 #[derive(Trace)]
@@ -15,25 +16,16 @@ pub struct CallFrame<'gc> {
     func: Gc<'gc, LoadedFunc<'gc>>,
     upvalues: GcOpt<'gc, [TaggedValue<'gc>]>,
     code: Gc<'gc, [ByteCode]>,
-    module_path: GcOpt<'gc, TaggedValue<'gc>>,
 }
 
 impl<'gc> CallFrame<'gc> {
     pub fn new(loaded_func: Gc<'gc, LoadedFunc<'gc>>) -> Self {
-        Self::new_with_module_path(loaded_func, GcOpt::new_none())
-    }
-
-    pub fn new_with_module_path(
-        loaded_func: Gc<'gc, LoadedFunc<'gc>>,
-        module_path: GcOpt<'gc, TaggedValue<'gc>>,
-    ) -> Self {
         Self {
             ip: Cell::new(0),
             upvalues: GcOpt::new_none(),
             func: loaded_func.clone(),
             code: loaded_func.get_code(),
             reg_count: loaded_func.get_max_clique(),
-            module_path,
         }
     }
 
@@ -98,7 +90,7 @@ impl<'gc> CallFrame<'gc> {
         self.func.get_spans().get(self.ip.get()).copied()
     }
 
-    pub fn get_module_path(&self) -> TaggedValue<'gc> {
-        self.module_path.unwrap().scoped_deref().clone()
+    pub fn get_module_path(&self) -> Gc<'gc, VMString<'gc>> {
+        todo!()
     }
 }

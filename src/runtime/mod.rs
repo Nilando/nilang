@@ -22,6 +22,7 @@ use crate::symbol_map::SymbolMap;
 use crate::Config;
 
 use self::func::{LoadedFunc, LoadedLocal};
+use self::string::VMString;
 use self::vm::ExitCode;
 use sandpit::*;
 use std::collections::HashMap;
@@ -100,7 +101,7 @@ impl Runtime {
                                 let module_func = loaded_program.last().unwrap().clone();
 
                                 vm_result =
-                                    vm.import_module_hook(mu, &mut self.symbols, module_func);
+                                    vm.run_function(mu, &mut self.symbols, module_func);
                             });
 
                             continue;
@@ -149,6 +150,9 @@ fn load_program<'gc>(program: Vec<Func>, mu: &'gc Mutator) -> Vec<Gc<'gc, Loaded
             locals,
             code,
             Some(spans),
+            // TODO: actually get the path of the function
+            Gc::new(mu, VMString::alloc_empty(mu)),
+            func.is_top_level(),
         );
         let loaded_func_ptr = Gc::new(mu, loaded_func);
 

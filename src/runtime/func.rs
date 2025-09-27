@@ -37,6 +37,8 @@ pub struct LoadedFunc<'gc> {
     locals: Gc<'gc, [LoadedLocal<'gc>]>,
     code: Gc<'gc, [ByteCode]>,
     spans: Option<GcPackedSpans<'gc>>,
+    file_path: Gc<'gc, VMString<'gc>>,
+    top_level: bool,
 }
 
 impl<'gc> LoadedFunc<'gc> {
@@ -47,6 +49,8 @@ impl<'gc> LoadedFunc<'gc> {
         locals: Gc<'gc, [LoadedLocal<'gc>]>,
         code: Gc<'gc, [ByteCode]>,
         spans: Option<GcPackedSpans<'gc>>,
+        file_path: Gc<'gc, VMString<'gc>>,
+        top_level: bool
     ) -> Self {
         Self {
             id,
@@ -55,6 +59,8 @@ impl<'gc> LoadedFunc<'gc> {
             locals,
             code,
             spans,
+            file_path,
+            top_level
         }
     }
 
