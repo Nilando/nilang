@@ -42,7 +42,8 @@ pub struct Runtime {
 impl Runtime {
     pub fn init(program: Vec<Func>, symbols: SymbolMap, config: Config) -> Self {
         let arena = Arena::new(|mu| {
-            let loaded_program = load_program(program, mu);
+            let path = config.get_source_path();
+            let loaded_program = load_program(program, &path, mu);
 
             VM::init(loaded_program.last().unwrap().clone(), mu)
         });
@@ -95,9 +96,10 @@ impl Runtime {
                                 std::fs::read_to_string(path).expect("Failed to read file");
                             let program = compile_source(&self.config, &mut self.symbols, &module)
                                 .expect("Failed to load module");
+                            let path = path.clone();
 
                             self.arena.mutate(|mu, vm| {
-                                let loaded_program = load_program(program, mu);
+                                let loaded_program = load_program(program, &path, mu);
                                 let module_func = loaded_program.last().unwrap().clone();
 
                                 vm_result =
@@ -134,11 +136,15 @@ impl Runtime {
     }
 }
 
-fn load_program<'gc>(program: Vec<Func>, mu: &'gc Mutator) -> Vec<Gc<'gc, LoadedFunc<'gc>>> {
+fn load_program<'gc>(program: Vec<Func>, path: &String, mu: &'gc Mutator) -> Vec<Gc<'gc, LoadedFunc<'gc>>> {
     let mut loaded_funcs = HashMap::<u32, Gc<'gc, LoadedFunc<'gc>>>::new();
     let mut result = vec![];
 
-    for func in program.iter() {
+    let path = Gc::new(mu, VMString::alloc(path.chars(), mu));
+
+    for i in 0..program.len() {
+        let func = &program[i];
+        let is_top_level = i + 1 == program.len();
         let locals: Gc<'gc, [LoadedLocal<'gc>]> =
             mu.alloc_array_from_fn(0, |_| LoadedLocal::Int(0));
         let code = mu.alloc_array_from_slice(func.get_instrs().as_slice());
@@ -150,9 +156,8 @@ fn load_program<'gc>(program: Vec<Func>, mu: &'gc Mutator) -> Vec<Gc<'gc, Loaded
             locals,
             code,
             Some(spans),
-            // TODO: actually get the path of the function
-            Gc::new(mu, VMString::alloc_empty(mu)),
-            func.is_top_level(),
+            path.clone(),
+            is_top_level,
         );
         let loaded_func_ptr = Gc::new(mu, loaded_func);
 

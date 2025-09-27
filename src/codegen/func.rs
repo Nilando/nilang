@@ -18,11 +18,10 @@ pub struct Func {
     locals: Vec<Local>,
     instrs: Vec<ByteCode>,
     spans: PackedSpans,
-    is_top_level: bool,
 }
 
 impl Func {
-    pub fn new(id: u32, arg_count: u8, max_clique: u8, is_top_level: bool) -> Self {
+    pub fn new(id: u32, arg_count: u8, max_clique: u8) -> Self {
         Self {
             id,
             arg_count,
@@ -30,7 +29,6 @@ impl Func {
             locals: vec![],
             instrs: vec![],
             spans: PackedSpans::new(),
-            is_top_level
         }
     }
 
@@ -107,9 +105,5 @@ impl Func {
         result.push_str("=== END ===\n");
 
         result
-    }
-
-    pub fn is_top_level(&self) -> bool {
-        self.is_top_level
     }
 }

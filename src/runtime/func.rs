@@ -98,4 +98,8 @@ impl<'gc> LoadedFunc<'gc> {
     pub fn get_spans(&self) -> GcPackedSpans {
         self.spans.clone().unwrap()
     }
+
+    pub fn get_file_path(&self) -> Gc<'gc, VMString<'gc>> {
+        self.file_path.clone()
+    }
 }

@@ -91,6 +91,6 @@ impl<'gc> CallFrame<'gc> {
     }
 
     pub fn get_module_path(&self) -> Gc<'gc, VMString<'gc>> {
-        todo!()
+        self.func.get_file_path()
     }
 }

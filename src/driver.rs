@@ -23,7 +23,7 @@ pub fn execute(config: Config) {
         match run_script(config) {
             Ok(()) => {},
             Err(err) => {
-                print!("{:?}", err);
+                print!("{:#?}", err);
             }
         }
     }
@@ -57,7 +57,6 @@ pub fn compile_source(
     source: &String,
 ) -> Result<Vec<Func>, ParseError> {
     let ast = parse_program(source.as_str(), symbols)?.unwrap();
-
     if let Some(path) = config.ast_output_path.as_ref() {
         let ast_string = format!("{:#?}", ast);
         output_string(ast_string, path);

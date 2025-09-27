@@ -38,7 +38,6 @@ fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph, max_clique: u8
         ir_func.get_id(),
         u8::try_from(ir_func.get_args().len()).unwrap(),
         max_clique,
-        ir_func.is_top_level()
     );
     let mut backpatch_ctx = BackpatchContext::new();
 

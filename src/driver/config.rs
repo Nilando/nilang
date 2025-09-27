@@ -60,6 +60,13 @@ impl Config {
         }
     }
 
+    pub fn get_source_path(&self) -> String {
+        match &self.file {
+            Some(path) => path.clone(),
+            None => String::from("__INLINE__")
+        }
+    }
+
     pub fn get_script(&mut self) -> Option<String> {
         if self.inline.is_some() {
             return self.inline.take();
