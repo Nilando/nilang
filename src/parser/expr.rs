@@ -2,7 +2,7 @@ use super::lexer::{Ctrl, KeyWord, Op, Token};
 use super::spanned::Spanned;
 use super::stmt::Stmt;
 use super::value::{value, Value};
-use super::{ctrl, keyword, nothing, recursive, symbol, Parser};
+use super::{ctrl, keyword, nothing, recursive, symbol, Parser, Span};
 
 use crate::symbol_map::SymID;
 
@@ -96,8 +96,8 @@ enum ExprSuffix {
 
 impl Expr {
     fn append_suffix(expr: Spanned<Expr>, suffix: Spanned<ExprSuffix>) -> Spanned<Expr> {
-        let start = expr.span.0;
-        let end = suffix.span.1;
+        let start = expr.span.start;
+        let end = suffix.span.end;
 
         let new_expr = match suffix.item {
             ExprSuffix::Call { args } => Expr::Call {
@@ -114,7 +114,7 @@ impl Expr {
             },
         };
 
-        Spanned::new(new_expr, (start, end))
+        Spanned::new(new_expr, Span::new(start, end))
     }
 }
 

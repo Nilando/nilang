@@ -16,6 +16,7 @@ pub struct RuntimeError {
 //  a = b + c(x, y);
 // File "path.nl", line 123
 //  a = b + c(x, y);
+//            ^^^^
 // Error: this is the error message
 
 #[derive(Debug)]
@@ -51,11 +52,11 @@ impl RuntimeError {
             let span_snippet = retrieve_span_snippet(path, bt.span).unwrap();
             let line = span_snippet.line;
             let end = span_snippet.end;
-            let source = format!("  {}", span_snippet.source_line.trim());
-            let location_line = format!("({bt_depth})File \"{path}\", line: {line}:{end}\n");
+            let location_line = format!("  {bt_depth}: File \"{path}\", line: {line}:{end}\n");
+            let source = format!("    {}\n", span_snippet.source_line.trim());
+
             result.push_str(&location_line);
             result.push_str(&source);
-            result.push('\n');
             bt_depth -= 1;
         }
 

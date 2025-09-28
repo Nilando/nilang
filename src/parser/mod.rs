@@ -3,12 +3,14 @@ mod lexer;
 mod spanned;
 mod stmt;
 mod value;
+mod error;
 
 pub use expr::{Expr, LhsExpr};
-pub use lexer::{Ctrl, KeyWord, LexError, Lexer, Op, Token};
+pub use lexer::{Ctrl, KeyWord, Lexer, Op, Token};
 pub use spanned::{GcPackedSpans, PackedSpans, Span, Spanned, SpanSnippet, retrieve_span_snippet};
 pub use stmt::Stmt;
 pub use value::{MapKey, Value};
+pub use error::{ParseError, ParseErrorItem};
 
 use stmt::stmt;
 
@@ -20,6 +22,7 @@ use std::rc::Rc;
 pub fn parse_program(
     input: &str,
     syms: &mut SymbolMap,
+    path: Option<String>
 ) -> Result<Vec<Stmt>, ParseError> {
     stmt()
         .expect("Expected a statement")
@@ -30,6 +33,10 @@ pub fn parse_program(
         // This unwrap is a little weird, but can be done b/c "zero_or_more"
         // always returns Some(vec) but vec maybe be empty
         .map(|result| result.unwrap())
+        .map_err(|mut err| {
+            err.set_path(path); 
+            err
+        })
 }
 
 struct ParseContext<'a> {
@@ -74,18 +81,6 @@ impl<'a> ParseContext<'a> {
     }
 }
 
-#[derive(PartialEq, Debug)]
-pub struct ParseError {
-    items: Vec<Spanned<ParseErrorItem>>
-}
-
-#[derive(PartialEq, Debug)]
-pub enum ParseErrorItem {
-    LexError(LexError),
-    Expected { msg: String, found: String },
-    DuplicateArgs,
-}
-
 #[derive(Clone)]
 struct Parser<'a, T> {
     func: Rc<dyn Fn(&mut ParseContext<'a>) -> Option<T> + 'a>,
@@ -114,9 +109,7 @@ impl<'a, T: 'a> Parser<'a, T> {
         if ctx.errors.is_empty() {
             Ok(value)
         } else {
-            Err(ParseError {
-                items: ctx.errors,
-            })
+            Err(ParseError::new(ctx.errors, None))
         }
     }
 
@@ -157,10 +150,10 @@ impl<'a, T: 'a> Parser<'a, T> {
             if let Some(result) = self.parse(ctx) {
                 Some(result)
             } else {
-                let span = ctx.peek().map(|s| s.span).unwrap_or((0, 0));
+                let span = ctx.peek().map(|s| s.span).unwrap();
                 let error = ParseErrorItem::Expected {
                     msg: error_msg.to_string(),
-                    found: ctx.lexer.get_input()[span.0..span.1].to_string(),
+                    found: ctx.lexer.get_input()[span.start..span.end].to_string(),
                 };
 
                 ctx.add_err(Spanned::new(error, span));
@@ -245,7 +238,7 @@ impl<'a, T: 'a> Parser<'a, T> {
             if !ctx.is_in_loop {
                 let error = ParseErrorItem::Expected {
                     msg: "Item not contained inside a loop".to_string(),
-                    found: ctx.lexer.get_input()[span.0..span.1].to_string(),
+                    found: ctx.lexer.get_input()[span.start..span.end].to_string(),
                 };
 
                 ctx.add_err(Spanned::new(error, span));
@@ -440,10 +433,10 @@ where
 
 fn span<'a, T: 'a>(func: Parser<'a, T>) -> Parser<'a, Spanned<T>> {
     Parser::new(move |ctx| {
-        let start = ctx.peek().map(|s| s.span.0).unwrap_or(0);
+        let start = ctx.peek().map(|s| s.span.start).unwrap();
         let result: Option<T> = func.parse(ctx);
         let end = ctx.pos();
 
-        result.map(|value| Spanned::new(value, (start, end)))
+        result.map(|value| Spanned::new(value, Span::new(start, end)))
     })
 }

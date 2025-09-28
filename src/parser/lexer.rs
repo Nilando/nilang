@@ -1,4 +1,5 @@
 use super::spanned::Spanned;
+use super::Span;
 use crate::symbol_map::{SymID, SymbolMap};
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -48,6 +49,17 @@ pub enum LexError {
     UnclosedString,
     UnclosedComment,
     InvalidNumber,
+}
+
+impl LexError {
+    pub fn render(&self) -> String {
+        match self {
+            LexError::InvalidNumber => String::from("Invalid number"),
+            LexError::UnclosedComment => String::from("Unclosed multi line comment"),
+            LexError::UnclosedString => String::from("Unclosed string"),
+            LexError::Unknown => String::from("Unexpected character")
+        }
+    }
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -109,7 +121,8 @@ impl<'a> Lexer<'a> {
         syms: &mut SymbolMap,
     ) -> Result<Spanned<Token<'a>>, Spanned<LexError>> {
         if self.eof {
-            return Ok(Spanned::new(self.end_token(), (self.pos, self.pos)));
+            // TODO: don't return a 0 len span
+            return Ok(Spanned::new(self.end_token(), Span::new(self.pos, self.pos)));
         }
 
         if let Some(token) = self.peek.take() {
@@ -121,7 +134,8 @@ impl<'a> Lexer<'a> {
 
     pub fn peek(&mut self, syms: &mut SymbolMap) -> Result<Spanned<Token<'a>>, Spanned<LexError>> {
         if self.eof {
-            return Ok(Spanned::new(self.end_token(), (self.pos, self.pos)));
+            // TODO: don't return a 0 len span
+            return Ok(Spanned::new(self.end_token(), Span::new(self.pos, self.pos)));
         }
 
         if let Some(token) = self.peek {
@@ -186,7 +200,7 @@ impl<'a> Lexer<'a> {
         let start = self.pos;
         let result = self.lex_token_inner(syms);
         let end = self.pos;
-        let span = (start, end);
+        let span = Span::new(start, end);
 
         match result {
             Ok(token) => Ok(Spanned::new(token, span)),
@@ -257,7 +271,7 @@ impl<'a> Lexer<'a> {
                     }
 
                     if self.eof {
-                        return Err(Spanned::new(LexError::UnclosedComment, (start, self.pos)));
+                        return Err(Spanned::new(LexError::UnclosedComment, Span::new(start, self.pos)));
                     }
                 }
             }

@@ -155,7 +155,7 @@ fn basic_stmt(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
 
             let error = super::ParseErrorItem::Expected {
                 msg: "Expected left hand side expression".to_string(),
-                found: ctx.lexer.get_input()[span.0..span.1].to_string(),
+                found: ctx.lexer.get_input()[span.start..span.end].to_string(),
             };
 
             ctx.add_err(Spanned::new(error, span));
@@ -191,7 +191,7 @@ fn continue_stmt<'a>() -> Parser<'a, Stmt> {
 mod tests {
     use super::super::value::Value;
     use super::*;
-    use crate::parser::Op;
+    use crate::parser::{Op, Span};
     use crate::symbol_map::SymbolMap;
     use pretty_assertions::assert_eq;
 
@@ -292,15 +292,15 @@ mod tests {
         let expected = Stmt::While {
             cond: Spanned::new(
                 Expr::Binop {
-                    lhs: Box::new(Spanned::new(Expr::Value(Value::Int(2)), (6, 7))),
+                    lhs: Box::new(Spanned::new(Expr::Value(Value::Int(2)), Span::new(6, 7))),
                     op: Op::Equal,
-                    rhs: Box::new(Spanned::new(Expr::Value(Value::Int(3)), (11, 14))),
+                    rhs: Box::new(Spanned::new(Expr::Value(Value::Int(3)), Span::new(11, 14))),
                 },
-                (6, 14),
+                Span::new(6, 14),
             ),
             stmts: vec![Stmt::Assign {
-                dest: Spanned::new(LhsExpr::Local(syms.get_id("two")), (15, 20)),
-                src: Spanned::new(Expr::Value(Value::Int(3)), (21, 23)),
+                dest: Spanned::new(LhsExpr::Local(syms.get_id("two")), Span::new(15, 20)),
+                src: Spanned::new(Expr::Value(Value::Int(3)), Span::new(21, 23)),
             }],
         };
 
@@ -315,7 +315,7 @@ mod tests {
             &mut syms,
         );
         let expected = Stmt::While {
-            cond: Spanned::new(Expr::Value(Value::Bool(true)), (6, 12)),
+            cond: Spanned::new(Expr::Value(Value::Bool(true)), Span::new(6, 12)),
             stmts: vec![Stmt::Continue, Stmt::Break, Stmt::Continue, Stmt::Break],
         };
 

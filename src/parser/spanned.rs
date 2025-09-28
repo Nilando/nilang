@@ -14,13 +14,19 @@ pub struct GcPackedSpans<'gc> {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Spanned<T> {
     pub item: T,
-    pub span: (usize, usize),
+    pub span: Span,
 }
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone, TraceLeaf)]
 pub struct Span {
     pub start: usize,
     pub end: usize,
+}
+
+impl Span {
+    pub fn new(start: usize, end: usize) -> Self {
+        Self { start, end }
+    }
 }
 
 pub struct SpanSnippet {
@@ -98,15 +104,12 @@ impl<'gc> GcPackedSpans<'gc> {
 }
 
 impl<T> Spanned<T> {
-    pub fn new(item: T, span: (usize, usize)) -> Self {
+    pub fn new(item: T, span: Span) -> Self {
         Self { item, span }
     }
 
     pub fn get_span(&self) -> Span {
-        Span {
-            start: self.span.0,
-            end: self.span.1,
-        }
+        self.span
     }
 
     pub fn map<F, B>(self, f: F) -> Spanned<B>
