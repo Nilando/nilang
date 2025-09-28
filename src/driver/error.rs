@@ -15,3 +15,10 @@ impl InterpreterError {
         }
     }
 }
+
+
+impl From<ParseError> for InterpreterError {
+    fn from(value: ParseError) -> Self {
+        Self::ParseError(value)
+    }
+}

@@ -34,11 +34,7 @@ pub fn execute(config: Config) {
 fn run_script(mut config: Config) -> Result<(), InterpreterError> {
     let source = config.get_script().unwrap();
     let mut symbols = SymbolMap::new();
-    let program = 
-        match compile_source(&config, &mut symbols, &source) {
-            Ok(program) => program,
-            Err(err) => return Err(InterpreterError::ParseError(err)),
-        };
+    let program = compile_source(&config, &mut symbols, &source)?;
 
     if config.dry_run {
         println!("DRY RUN: program compiled successfully");
