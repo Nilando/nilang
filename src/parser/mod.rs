@@ -7,7 +7,7 @@ mod error;
 
 pub use expr::{Expr, LhsExpr};
 pub use lexer::{Ctrl, KeyWord, Lexer, Op, Token};
-pub use spanned::{GcPackedSpans, PackedSpans, Span, Spanned, SpanSnippet, retrieve_span_snippet};
+pub use spanned::{GcPackedSpans, PackedSpans, Span, Spanned, retrieve_span_snippet};
 pub use stmt::Stmt;
 pub use value::{MapKey, Value};
 pub use error::{ParseError, ParseErrorItem};
@@ -25,13 +25,12 @@ pub fn parse_program(
     path: Option<String>
 ) -> Result<Vec<Stmt>, ParseError> {
     stmt()
-        .expect("Expected a statement")
         .unless(ctrl(Ctrl::End))
         .recover(Ctrl::SemiColon)
         .zero_or_more()
         .parse_str(input, syms)
         // This unwrap is a little weird, but can be done b/c "zero_or_more"
-        // always returns Some(vec) but vec maybe be empty
+        // always returns Some(vec) but vec might be empty
         .map(|result| result.unwrap())
         .map_err(|mut err| {
             err.set_path(path); 
@@ -206,7 +205,11 @@ impl<'a, T: 'a> Parser<'a, T> {
                     }
 
                     match ctrl(ctrl_recover).parse(ctx) {
-                        Some(_) => break,
+                        Some(_) => {
+                            if let Some(value) = self.parse(ctx) {
+                                return Some(value)
+                            }
+                        }
                         None => ctx.adv(),
                     }
                 }
