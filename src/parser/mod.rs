@@ -6,7 +6,7 @@ mod value;
 
 pub use expr::{Expr, LhsExpr};
 pub use lexer::{Ctrl, KeyWord, LexError, Lexer, Op, Token};
-pub use spanned::{GcPackedSpans, PackedSpans, Span, Spanned};
+pub use spanned::{GcPackedSpans, PackedSpans, Span, Spanned, SpanSnippet, retrieve_span_snippet};
 pub use stmt::Stmt;
 pub use value::{MapKey, Value};
 
@@ -20,13 +20,16 @@ use std::rc::Rc;
 pub fn parse_program(
     input: &str,
     syms: &mut SymbolMap,
-) -> Result<Option<Vec<Stmt>>, ParseError> {
+) -> Result<Vec<Stmt>, ParseError> {
     stmt()
         .expect("Expected a statement")
         .unless(ctrl(Ctrl::End))
         .recover(Ctrl::SemiColon)
         .zero_or_more()
         .parse_str(input, syms)
+        // This unwrap is a little weird, but can be done b/c "zero_or_more"
+        // always returns Some(vec) but vec maybe be empty
+        .map(|result| result.unwrap())
 }
 
 struct ParseContext<'a> {
@@ -73,7 +76,6 @@ impl<'a> ParseContext<'a> {
 
 #[derive(PartialEq, Debug)]
 pub struct ParseError {
-    path: Option<String>,
     items: Vec<Spanned<ParseErrorItem>>
 }
 
@@ -114,7 +116,6 @@ impl<'a, T: 'a> Parser<'a, T> {
         } else {
             Err(ParseError {
                 items: ctx.errors,
-                path: None
             })
         }
     }

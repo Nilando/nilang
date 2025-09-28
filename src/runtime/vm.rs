@@ -81,26 +81,15 @@ impl<'gc> VM<'gc> {
         }
     }
 
-    // can only be called right after an import module instruction was run
-    pub fn run_function(
+    // while it seems it would be nice to have a function that could just arbitrarily push a
+    // function onto the the stack, the truth is that that is not possible the pushing of a
+    // function callframe is tied in with the bytecode. There
+    pub fn load_module_hook(
         &self,
         mu: &'gc Mutator,
-        symbols: &mut SymbolMap,
-        entry_func: Gc<'gc, LoadedFunc<'gc>>,
-    ) -> Result<ExitCode, RuntimeError> {
-        let new_frame_start =
-            self.frame_start.get() + self.get_top_call_frame().get_reg_count() as usize;
-        let init_frame =
-            CallFrame::new(entry_func.clone());
-
-        while new_frame_start + (entry_func.get_max_clique() as usize) > self.registers.len() {
-            self.registers.push(mu, Value::tagged_null());
-        }
-
-        self.frame_start.set(new_frame_start);
-        self.call_frames.push(mu, GcOpt::new(mu, init_frame));
-
-        self.run(mu, symbols)
+        func: Gc<'gc, LoadedFunc<'gc>>,
+    ) {
+        self.load_function_callframe(func, None, 0, mu).expect("loading 0 arg functions should not fail");
     }
 
     pub fn read_input_hook(
@@ -689,11 +678,9 @@ impl<'gc> VM<'gc> {
     }
 
     fn new_error(&self, kind: RuntimeErrorKind, msg: String) -> RuntimeError {
-        let cf = self.get_top_call_frame();
-        let span = cf.get_current_span();
         let bt = self.get_backtrace();
 
-        RuntimeError::new(kind, span, Some(msg), Some(bt))
+        RuntimeError::new(kind, Some(msg), bt)
     }
 
     fn get_backtrace(

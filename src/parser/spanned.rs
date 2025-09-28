@@ -1,4 +1,5 @@
 use sandpit::{Gc, Mutator, Trace, TraceLeaf};
+use std::{io, fs};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct PackedSpans {
@@ -22,6 +23,51 @@ pub struct Span {
     pub end: usize,
 }
 
+pub struct SpanSnippet {
+    pub line: usize,
+    pub line_count: usize,
+    pub start: usize,
+    pub end: usize,
+    pub source_line: String
+}
+
+pub fn retrieve_span_snippet(path: &String, span: Span) -> io::Result<SpanSnippet> {
+    let source = fs::read_to_string(path)?;
+    let mut offset = 0;
+    let mut line_number = 1;
+
+    for line in source.lines() {
+        let line_len = line.len() + 1; // +1 for '\n'
+        let line_start = offset;
+        let line_end = offset + line_len;
+
+        if span.start >= line_start && span.start < line_end {
+            // span starts on this line
+            let col_start = span.start - line_start;
+            let col_end = (span.end.min(line_end)) - line_start;
+            let line_count = source[span.start..span.end]
+                .chars()
+                .filter(|&c| c == '\n')
+                .count() + 1;
+
+            return Ok(SpanSnippet {
+                line: line_number,
+                line_count,
+                start: col_start,
+                end: col_end,
+                source_line: line.to_string(),
+            });
+        }
+
+        offset = line_end;
+        line_number += 1;
+    }
+
+    Err(io::Error::new(
+        io::ErrorKind::InvalidInput,
+        "span out of bounds",
+    ))
+}
 /*
 impl Span {
     pub fn new(start: usize, end: usize) -> Self {

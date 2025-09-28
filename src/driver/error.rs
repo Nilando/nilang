@@ -6,11 +6,25 @@ use crate::runtime::RuntimeError;
 #[derive(Debug)]
 pub enum InterpreterError {
     RuntimeError(RuntimeError),
-    ParseError(ParseError)
+    ParseError {
+        err: ParseError,
+        path: String
+    }
 }
 
 impl InterpreterError {
-    pub fn display_runtime_error(input: &str, err: RuntimeError) {
+    pub fn render(&self) -> String {
+        match self {
+            InterpreterError::RuntimeError(err) => err.render(),
+            InterpreterError::ParseError { err, path } => {
+                todo!()
+            }
+        }
+    }
+
+    pub fn render_runtime_error(err: RuntimeError) -> String {
+        todo!()
+        /*
         let mut line_start = 0;
         let mut line_num = 1;
         let lines: Vec<&str> = input.lines().collect();
@@ -65,6 +79,7 @@ impl InterpreterError {
             line_start = line_end + 1;
             line_num += 1;
         }
+        */
     }
 
     fn display_parse_errors(input: &str, errors: &[Spanned<ParseError>], file_name: Option<String>) {

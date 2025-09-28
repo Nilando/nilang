@@ -75,60 +75,54 @@ impl Runtime {
 
         loop {
             match vm_result {
-                Ok(ref command) => {
-                    match command {
-                        ExitCode::Yield => {
-                            // TEST: sleep for like 2 ms here to give the GC 
-                            // some time to catch up?
-                        }
-                        ExitCode::Exit => return Ok(()),
-                        ExitCode::Print(str) => {
-                            // TODO: instead of having to copy the string out
-                            // of GC mem, create a way to view the string and print without copying
-                            if let Some(output) = &mut self.saved_output {
-                                output.push_str(&format!("{}\n", str.as_str()));
-                            } else {
-                                println!("{str}");
-                            }
-                        }
-                        ExitCode::LoadModule(path) => {
-                            let module =
-                                std::fs::read_to_string(path).expect("Failed to read file");
-                            let program = compile_source(&self.config, &mut self.symbols, &module)
-                                .expect("Failed to load module");
-                            let path = path.clone();
-
-                            self.arena.mutate(|mu, vm| {
-                                let loaded_program = load_program(program, &path, mu);
-                                let module_func = loaded_program.last().unwrap().clone();
-
-                                vm_result =
-                                    vm.run_function(mu, &mut self.symbols, module_func);
-                            });
-
-                            continue;
-                        }
-                        ExitCode::Read => {
-                            let stdin = std::io::stdin();
-                            let mut buf = String::new();
-                            stdin
-                                .read_line(&mut buf)
-                                .expect("failed to read from stdin");
-                            buf = buf.trim_end().to_string();
-
-                            self.arena.mutate(|mu, vm| {
-                                vm_result = vm.read_input_hook(buf, &mut self.symbols, mu);
-                            });
-
-                            continue;
-                        }
+                Ok(ExitCode::Yield) => {}
+                Ok(ExitCode::Exit) => return Ok(()),
+                Ok(ExitCode::Print(str)) => {
+                    // TODO: instead of having to copy the string out
+                    // of GC mem, create a way to view the string and print without copying
+                    if let Some(output) = &mut self.saved_output {
+                        output.push_str(&format!("{}\n", str.as_str()));
+                    } else {
+                        println!("{str}");
                     }
+                }
+                Ok(ExitCode::LoadModule(path)) => {
+                    let module =
+                        std::fs::read_to_string(&path).expect("Failed to read file");
+                    let program = compile_source(&self.config, &mut self.symbols, &module)
+                        .expect("Failed to load module");
+                    // TODO: return the parse errors 
+                    // Option 1: have load module return an exit code
+                    //  where the driver then compiles the source, and can be responsible
+                    //  for handling parser errors
+                    // Option 2: change the 
+                    self.arena.mutate(|mu, vm| {
+                        let loaded_program = load_program(program, &path, mu);
+                        let module_func = loaded_program.last().unwrap().clone();
+
+                        vm.load_module_hook(mu, module_func);
+                    });
+                }
+                Ok(ExitCode::Read) => {
+                    let stdin = std::io::stdin();
+                    let mut buf = String::new();
+                    stdin
+                        .read_line(&mut buf)
+                        .expect("failed to read from stdin");
+                    buf = buf.trim_end().to_string();
+
+                    self.arena.mutate(|mu, vm| {
+                        vm_result = vm.read_input_hook(buf, &mut self.symbols, mu);
+                    });
+
+                    continue;
                 }
                 Err(err) => {
                     return Err(err);
                 }
             }
 
+            vm_result = Ok(ExitCode::Yield);
             self.arena.mutate(|mu, vm| {
                 vm_result = vm.run(mu, &mut self.symbols);
             });

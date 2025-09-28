@@ -1,11 +1,12 @@
-use crate::parser::Span;
+use termion::color;
+
+use crate::parser::{retrieve_span_snippet, Span};
 
 #[derive(Debug)]
 pub struct RuntimeError {
     pub kind: RuntimeErrorKind,
-    pub span: Option<Span>,
     pub message: Option<String>, 
-    pub backtrace: Option<Backtrace>,
+    pub backtrace: Backtrace,
 }
 
 // Traceback: lowest call most recent
@@ -30,15 +31,42 @@ pub struct BacktraceCall {
 
 
 impl RuntimeError {
-    pub fn new(kind: RuntimeErrorKind, span: Option<Span>, message: Option<String>, backtrace: Option<Backtrace>) -> Self {
+    pub fn new(kind: RuntimeErrorKind, message: Option<String>, backtrace: Backtrace) -> Self {
         Self {
             kind,
-            span,
             message,
             backtrace
         }
     }
 
+    pub fn render(&self) -> String {
+        let mut result = String::new();
+        result.push_str("RUNTIME ERROR\n");
+        result.push_str("Traceback: most recent call lowest\n");
+
+        let mut bt_depth = self.backtrace.calls.len() as isize - 1;
+        for bt in self.backtrace.calls.iter() {
+            let default_path = String::from("inline");
+            let path = bt.path.as_ref().unwrap_or(&default_path);
+            let span_snippet = retrieve_span_snippet(path, bt.span).unwrap();
+            let line = span_snippet.line;
+            let end = span_snippet.end;
+            let source = format!("  {}", span_snippet.source_line.trim());
+            let location_line = format!("({bt_depth})File \"{path}\", line: {line}:{end}\n");
+            result.push_str(&location_line);
+            result.push_str(&source);
+            result.push('\n');
+            bt_depth -= 1;
+        }
+
+        if let Some(message) = &self.message {
+            result.push_str(&format!("{:?}: {}\n", self.kind, message))
+        } else {
+            result.push_str(&format!("{:?}: (no error message)\n", self.kind))
+        }
+
+        result
+    }
 }
 
 #[derive(Debug)]

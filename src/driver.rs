@@ -23,7 +23,9 @@ pub fn execute(config: Config) {
         match run_script(config) {
             Ok(()) => {},
             Err(err) => {
-                print!("{:#?}", err);
+                let err_msg = err.render();
+
+                println!("{}", err_msg);
             }
         }
     }
@@ -35,7 +37,10 @@ fn run_script(mut config: Config) -> Result<(), InterpreterError> {
     let program = 
         match compile_source(&config, &mut symbols, &source) {
             Ok(program) => program,
-            Err(parse_errors) => return Err(InterpreterError::ParseError(parse_errors)),
+            Err(parse_errors) => return Err(InterpreterError::ParseError {
+                err: parse_errors,
+                path: config.get_source_path()
+            }),
         };
 
     if config.dry_run {
@@ -56,7 +61,7 @@ pub fn compile_source(
     symbols: &mut SymbolMap,
     source: &String,
 ) -> Result<Vec<Func>, ParseError> {
-    let ast = parse_program(source.as_str(), symbols)?.unwrap();
+    let ast = parse_program(source.as_str(), symbols)?;
     if let Some(path) = config.ast_output_path.as_ref() {
         let ast_string = format!("{:#?}", ast);
         output_string(ast_string, path);
