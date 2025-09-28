@@ -44,7 +44,8 @@ pub fn run_repl(config: Config) {
                 }
 
                 let mut runtime = Runtime::init(program, symbols, config.clone());
-                match runtime.run() {
+                let mut output = std::io::stdout();
+                match runtime.run(&mut output) {
                     Ok(()) => {}
                     Err(err) => {
                         println!("{}", err.render());

@@ -2,7 +2,7 @@ VERSION 0.1.0
 
 IN PROGRESS:
 - error tests
-- backtraces
+- modules are broken due to refactoring, need fix in how gc hash map works
 
 FEATURE BACKLOG:
 - auto binding of functions with "self" arg
@@ -20,6 +20,7 @@ OPTIMIZATION BACKLOG:
 - GC updates:
   - GcSync derive (reduce allocating callframes)
   - view option (helps with printing)
+    - this 2 updates should be a huge refactor
 - string internment
 - Memory SSA
 - Jump threading pass
@@ -37,6 +38,8 @@ DECEMBER -> COMPLETE AOC
 NOVEMBER
 OCTOBER
 SEPTEMBER
+- added backtraces
+- re-worked how errors are displayed
 
 AUGUST
 - changed how intrinsic functions work

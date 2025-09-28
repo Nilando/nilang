@@ -52,13 +52,11 @@ fn test_golden_output(filename: &str) {
     }
 
     let mut runtime = Runtime::init(program, syms, Config::default());
-    runtime.save_output();
-
-    match runtime.run() {
+    let mut output = vec![];
+    match runtime.run(&mut output) {
         Ok(()) => {
-            let output = runtime.take_saved_output().unwrap();
-
-            assert_eq!(expected_output, output.trim());
+            let out_string = String::from_utf8(output).expect("valid output");
+            assert_eq!(expected_output, out_string.trim());
         }
         Err(runtime_error) => {
             panic!("{:?}", runtime_error.message)

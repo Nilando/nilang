@@ -26,6 +26,7 @@ use self::string::VMString;
 use self::vm::ExitCode;
 use sandpit::*;
 use std::collections::HashMap;
+use std::io::Write;
 
 pub use self::error::RuntimeError;
 
@@ -35,7 +36,6 @@ pub use vm::VM;
 pub struct Runtime {
     arena: Arena<Root![VM<'_>]>,
     symbols: SymbolMap,
-    saved_output: Option<String>,
     config: Config,
 }
 
@@ -51,7 +51,6 @@ impl Runtime {
         Runtime {
             arena,
             symbols,
-            saved_output: None,
             config,
         }
     }
@@ -60,31 +59,17 @@ impl Runtime {
         self.symbols
     }
 
-    pub fn take_saved_output(&mut self) -> Option<String> {
-        self.saved_output.take()
-    }
-
-    pub fn save_output(&mut self) {
-        if let None = self.saved_output {
-            self.saved_output = Some("".to_string());
-        }
-    }
-
-    pub fn run(&mut self) -> Result<(), RuntimeError> {
+    pub fn run(&mut self, f: &mut impl Write) -> Result<(), RuntimeError> {
         let mut vm_result = Ok(ExitCode::Yield);
 
         loop {
             match vm_result {
                 Ok(ExitCode::Yield) => {}
                 Ok(ExitCode::Exit) => return Ok(()),
-                Ok(ExitCode::Print(str)) => {
-                    // TODO: instead of having to copy the string out
-                    // of GC mem, create a way to view the string and print without copying
-                    if let Some(output) = &mut self.saved_output {
-                        output.push_str(&format!("{}\n", str.as_str()));
-                    } else {
-                        println!("{str}");
-                    }
+                Ok(ExitCode::Print) => {
+                    self.arena.view(|vm| {
+                        vm.write_output(f, &mut self.symbols).expect("writing failed");
+                    });
                 }
                 Ok(ExitCode::LoadModule(path)) => {
                     let module =

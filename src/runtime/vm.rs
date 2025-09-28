@@ -22,12 +22,14 @@ pub use super::bytecode::ByteCode;
 
 use sandpit::{Gc, GcOpt, GcVec, Mutator, Trace};
 use std::cell::Cell;
+//use std::fmt::Write;
+use std::io::Write;
 
 pub const DISPATCH_LOOP_LENGTH: usize = 100;
 
 pub enum ExitCode {
     LoadModule(String),
-    Print(String),
+    Print,
     Read,
     Yield,
     Exit,
@@ -40,6 +42,7 @@ pub struct VM<'gc> {
     frame_start: Cell<usize>,
     globals: Gc<'gc, GcHashMap<'gc>>,
     module_map: Gc<'gc, GcHashMap<'gc>>, // string -> export value
+    output_item: Gc<'gc, TaggedValue<'gc>>
 }
 
 impl<'gc> VM<'gc> {
@@ -55,6 +58,7 @@ impl<'gc> VM<'gc> {
         let call_frame_ptr = GcOpt::new(mu, init_frame);
         let module_map = GcHashMap::alloc(mu);
         let globals = GcHashMap::alloc(mu);
+        let output_item = Gc::new(mu, Value::tagged_null());
 
         call_frames.push(mu, call_frame_ptr);
 
@@ -64,7 +68,12 @@ impl<'gc> VM<'gc> {
             frame_start,
             globals,
             module_map,
+            output_item
         }
+    }
+
+    pub fn write_output(&self, f: &mut impl Write, syms: &mut SymbolMap) -> std::io::Result<()> {
+        write!(f, "{}\n", Value::from(&*self.output_item).to_string(syms, true))
     }
 
     pub fn run(&self, mu: &'gc Mutator, symbols: &mut SymbolMap) -> Result<ExitCode, RuntimeError> {
@@ -157,9 +166,12 @@ impl<'gc> VM<'gc> {
             }
             ByteCode::Print { src } => {
                 let val = self.reg_to_val(src);
-                let output = val.to_string(symbols, true);
 
-                return Ok(Some(ExitCode::Print(output)));
+                self.output_item.write_barrier(mu, |barrier| {
+                    barrier.set(val.into_tagged(mu));
+                });
+
+                return Ok(Some(ExitCode::Print));
             }
             ByteCode::Swap { r1, r2 } => {
                 let r1_val = self.reg_to_val(r1);

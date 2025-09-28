@@ -43,7 +43,8 @@ fn run_script(mut config: Config) -> Result<(), InterpreterError> {
 
     let mut runtime = Runtime::init(program, symbols, config);
 
-    match runtime.run() {
+    let mut output = std::io::stdout();
+    match runtime.run(&mut output) {
         Ok(()) => Ok(()),
         Err(err) => Err(InterpreterError::RuntimeError(err)),
     }
