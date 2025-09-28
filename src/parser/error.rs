@@ -29,23 +29,19 @@ impl ParseError {
 
     pub fn render(&self) -> String {
         let mut result = String::new();
-        result.push_str("PARSER ERROR\n");
+        let default_path = String::from("inline");
+        let path = self.path.as_ref().unwrap_or(&default_path);
 
         for spanned_err in self.items.iter() {
-            let default_path = String::from("inline");
-            let path = self.path.as_ref().unwrap_or(&default_path);
             let span_snippet = retrieve_span_snippet(path, spanned_err.span).unwrap();
             let line = span_snippet.line;
-            let end = span_snippet.end;
-            let location_line = format!("  File \"{path}\", line: {line}:{end}\n");
-            let source = format!("    {}\n", span_snippet.source_line.trim());
+            let source = format!(" {} | {}\n", line, span_snippet.source_line.trim());
 
             result.push_str(&format!("{}\n", spanned_err.item.render()));
-            result.push_str(&location_line);
             result.push_str(&source);
         }
 
-        result.push_str(&format!("Failed to parse due to the previous {} errors", self.items.len()));
+        result.push_str(&format!("parser error: Failed to parse \"{}\" due to the previous {} errors.", path, self.items.len()));
         result
     }
 
