@@ -1,5 +1,3 @@
-use termion::color;
-
 use crate::parser::{retrieve_span_snippet, Span};
 
 #[derive(Debug)]
@@ -8,16 +6,6 @@ pub struct RuntimeError {
     pub message: Option<String>, 
     pub backtrace: Backtrace,
 }
-
-// Traceback: lowest call most recent
-// File "path.nl", line 123
-//  a = b + c(x, y);
-// File "path.nl", line 123
-//  a = b + c(x, y);
-// File "path.nl", line 123
-//  a = b + c(x, y);
-//            ^^^^
-// Error: this is the error message
 
 #[derive(Debug)]
 pub struct Backtrace {

@@ -11,8 +11,11 @@ pub type TaggedValue<'gc> = Tagged<'gc, ValueTag>;
 #[derive(Debug, Tag, PartialEq)]
 pub enum ValueTag {
     Packed,
-    #[ptr(f64)] // :( I see now why Nan boxing is a pretty good idea.
+    #[ptr(f64)]
     Float,
+    // TODO:
+    //#[ptr(i64)]
+    //Int,
     #[ptr(List<'gc>)]
     List,
     #[ptr(LoadedFunc<'gc>)]

@@ -406,8 +406,8 @@ impl<'gc> VM<'gc> {
             }
             ByteCode::Export { src } => {
                 let callframe = self.get_top_call_frame();
-                let module_path = callframe.get_module_path();
-                let export_val = self.get_reg(src);
+                let _module_path = callframe.get_module_path();
+                let _export_val = self.get_reg(src);
 
                 //GcHashMap::insert(self.module_map.clone(), module_path, export_val, mu);
                 todo!()
@@ -499,7 +499,7 @@ impl<'gc> VM<'gc> {
     }
 
     fn handle_return(&self, return_val: Value<'gc>, mu: &'gc Mutator) {
-        let popped_callframe = self.get_top_call_frame();
+        let _popped_callframe = self.get_top_call_frame();
         self.pop_callframe();
 
         if self.call_frames.is_empty() {
@@ -508,7 +508,7 @@ impl<'gc> VM<'gc> {
 
         if let ByteCode::Call { dest, .. } = self.get_prev_instruction() {
             self.set_reg_with_value(return_val, dest, mu);
-        } else if let ByteCode::Import { dest, .. } = self.get_prev_instruction() {
+        } else if let ByteCode::Import { .. } = self.get_prev_instruction() {
             todo!();
             /*
             let export_value = self
