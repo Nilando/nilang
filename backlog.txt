@@ -1,10 +1,10 @@
 VERSION 0.1.0
 
 IN PROGRESS:
-- error tests
 - modules are broken due to refactoring, need fix in how gc hash map works
 
 FEATURE BACKLOG:
+- separate float and int types
 - auto binding of functions with "self" arg
 - add push and pop operators
 - "monkey patch" intrinsic
@@ -39,6 +39,7 @@ OCTOBER
 SEPTEMBER
 - added backtraces
 - re-worked how errors are displayed
+- added tests for error messages
 
 AUGUST
 - changed how intrinsic functions work
