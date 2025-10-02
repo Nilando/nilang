@@ -5,42 +5,8 @@ use crate::symbol_map::SymbolMap;
 use super::func::LoadedFunc;
 use super::hash_map::GcHashMap;
 use super::list::List;
-use super::partial::Partial;
 use super::string::VMString;
 use super::tagged_value::{pack_tagged_value, TaggedValue, ValueTag};
-
-/*
-impl Debug for Value<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Value::Null => write!(f, "null"),
-            Value::Int(i) => write!(f, "{i}"),
-            Value::Float(v) => write!(f, "{v}"),
-            Value::SymId(s) => write!(f, "#{s}"),
-            Value::Bool(v) => write!(f, "{v}"),
-            Value::List(list) => {
-                write!(f, "[")?;
-                for i in 0..list.len() {
-                    if i != list.len() - 1 {
-                        write!(f, "{:?}, ", list.at(i as i32))?;
-                    } else {
-                        write!(f, "{:?}", list.at(i as i32))?;
-                    }
-                }
-                write!(f, "]")
-            }
-            Value::Map(map) => write!(f, "{:?}", map.scoped_deref()),
-            Value::String(vm_str) => {
-                write!(f, "{}", vm_str.as_string())
-            }
-            Value::Func(func) => {
-                write!(f, "Func(id: {}, args: {})", func.get_id(), func.arg_count())
-            }
-            Value::Partial(_) => write!(f, "Partial"),
-        }
-    }
-}
-*/
 
 pub enum Value<'gc> {
     Null,
@@ -53,7 +19,6 @@ pub enum Value<'gc> {
     Map(Gc<'gc, GcHashMap<'gc>>),
 
     Func(Gc<'gc, LoadedFunc<'gc>>),
-    Partial(Gc<'gc, Partial<'gc>>),
 }
 
 impl<'gc> Value<'gc> {
@@ -94,7 +59,6 @@ impl<'gc> Value<'gc> {
                 }
             }
             Value::Func(func) => format!("Func(id: {}, args: {})", func.get_id(), func.arity()),
-            Value::Partial(_) => format!("Partial"),
         }
     }
     pub fn into_tagged(self, mu: &'gc Mutator) -> TaggedValue<'gc> {
@@ -108,7 +72,6 @@ impl<'gc> Value<'gc> {
             Value::Float(f) => ValueTag::from_float(Gc::new(mu, f)),
             Value::String(s) => ValueTag::from_string(s),
             Value::Map(c) => ValueTag::from_map(c),
-            Value::Partial(c) => ValueTag::from_partial(c),
             _ => panic!("failed to tagg value"),
         }
     }
@@ -152,7 +115,6 @@ impl<'gc> Value<'gc> {
             Value::List(_) => "List",
             Value::String(_) => "String",
             Value::Func(_) => "Func",
-            Value::Partial(_) => "Func",
             Value::Map(_) => "Map",
             Value::SymId(_) => "Symbol",
             Value::Null => "Null",

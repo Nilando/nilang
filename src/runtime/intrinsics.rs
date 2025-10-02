@@ -2,7 +2,6 @@ use std::time::Duration;
 
 use sandpit::{Gc, Mutator};
 
-use crate::runtime::partial::Partial;
 use crate::runtime::string::VMString;
 use crate::symbol_map::{
     SymID, SymbolMap, ABS_SYM, ARGS_SYM, ARITY_SYM, BIND_SYM, BOOL_SYM, CEIL_SYM, CLONE_SYM, DELETE_SYM, FLOOR_SYM, FN_SYM, LEN_SYM, LIST_SYM, LOG_SYM, MAP_SYM, NULL_SYM, NUM_SYM, POP_SYM, POW_SYM, PUSH_SYM, READ_FILE_SYM, SLEEP_SYM, STR_SYM, SYM_SYM, TYPE_SYM
@@ -361,7 +360,7 @@ fn ttype<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)>
         Value::String(_) => Ok(Value::SymId(STR_SYM)),
         Value::List(_) => Ok(Value::SymId(LIST_SYM)),
         Value::Map(_) => Ok(Value::SymId(MAP_SYM)),
-        Value::Func(_) | Value::Partial(_) => Ok(Value::SymId(FN_SYM)),
+        Value::Func(_) => Ok(Value::SymId(FN_SYM)),
     }
 }
 
@@ -495,9 +494,6 @@ fn arity<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)>
         Value::Func(f) => { 
             Ok(Value::Int(f.arity() as i32))
         }
-        Value::Partial(f) => { 
-            Ok(Value::Int(f.arity() as i32))
-        }
         _ => Err((
             RuntimeErrorKind::TypeError,
             format!("Unexpected arg of type {}", arg.type_str()),
@@ -515,21 +511,9 @@ fn bind<'gc>(func: Value<'gc>, arg: Value<'gc>, mu: &'gc Mutator<'gc>) -> Result
                 ));
             }
 
-            let partial = Gc::new(mu, Partial::from_func(f, mu, Value::into_tagged(arg, mu)));
-
-            Ok(Value::Partial(partial))
-        }
-        Value::Partial(f) => { 
-            if f.arity() == 0 {
-                return Err((
-                    RuntimeErrorKind::InvalidBind,
-                    format!("Cannot bind to a 0 arg Func"),
-                ));
-            }
-
             let partial = f.bind(mu, Value::into_tagged(arg, mu));
 
-            Ok(Value::Partial(Gc::new(mu, partial)))
+            Ok(Value::Func(partial))
         }
         _ => Err((
             RuntimeErrorKind::TypeError,

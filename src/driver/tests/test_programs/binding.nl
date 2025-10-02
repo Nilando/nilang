@@ -1,0 +1,18 @@
+fn add(a, b) {
+  return a + b;
+}
+
+add_two = bind(add, 2);
+get_three = bind(add_two, 1);
+
+x = 1;
+fn closure_add(y) {
+  return x + y;
+}
+
+bound_closure = bind(closure_add, 3);
+
+print(add(0, 1));
+print(add_two(0));
+print(get_three());
+print(bound_closure());

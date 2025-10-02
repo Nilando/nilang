@@ -11,7 +11,6 @@ use super::func::LoadedFunc;
 use super::hash_map::GcHashMap;
 use super::intrinsics::call_intrinsic;
 use super::list::List;
-use super::partial::{Callable, Partial};
 use super::string::VMString;
 use super::tagged_value::TaggedValue;
 use super::value::Value;
@@ -97,7 +96,7 @@ impl<'gc> VM<'gc> {
         mu: &'gc Mutator,
         func: Gc<'gc, LoadedFunc<'gc>>,
     ) {
-        self.load_function_callframe(func, None, 0, mu).expect("loading 0 arg functions should not fail");
+        self.load_function_callframe(func, 0, mu).expect("loading 0 arg functions should not fail");
     }
 
     pub fn read_input_hook(
@@ -538,25 +537,6 @@ impl<'gc> VM<'gc> {
         self.frame_start.set(new_frame_start);
     }
 
-    fn call_partial(
-        &self,
-        partial: Gc<'gc, Partial<'gc>>,
-        supplied_args: usize,
-        mu: &'gc Mutator,
-    ) -> Result<(), RuntimeError> {
-        match partial.get_callable() {
-            Callable::Func(func) => {
-                self.load_function_callframe(func.clone(), Some(partial.get_args()), supplied_args, mu)?;
-                let cf = self.get_top_call_frame();
-
-                if let Some(upvalues) = func.get_upvalues().as_option() {
-                    CallFrame::set_upvalues(cf, upvalues, mu);
-                }
-                Ok(())
-            }
-        }
-    }
-
     fn call_function(
         &self,
         dest: Reg,
@@ -567,7 +547,7 @@ impl<'gc> VM<'gc> {
     ) -> Result<(), RuntimeError> {
         match self.reg_to_val(src) {
             Value::Func(func) => {
-                self.load_function_callframe(func.clone(), None, supplied_args, mu)?;
+                self.load_function_callframe(func.clone(), supplied_args, mu)?;
                 let cf = self.get_top_call_frame();
 
                 if let Some(upvalues) = func.get_upvalues().as_option() {
@@ -600,7 +580,6 @@ impl<'gc> VM<'gc> {
                     }
                 }
             }
-            Value::Partial(partial) => self.call_partial(partial, supplied_args, mu),
             calle => Err(self.type_error(format!("Tried to call {} type", calle.type_str()))),
         }
     }
@@ -620,17 +599,15 @@ impl<'gc> VM<'gc> {
     fn load_function_callframe(
         &self,
         func: Gc<'gc, LoadedFunc<'gc>>,
-        partial_args: Option<Gc<'gc, [TaggedValue<'gc>]>>,
         stack_args: usize,
         mu: &'gc Mutator,
     ) -> Result<(), RuntimeError> {
-        let arg_count = func.arity() as usize;
-        let partial_args_count = if let Some(ref args) = partial_args {
+        let partial_args_count = if let Some(ref args) = func.get_bound_args() {
             args.len()
         } else {
             0
         };
-        let expected_args = arg_count - partial_args_count;
+        let expected_args = func.arity() as usize;
         let call_instr_ip = self.get_ip() - 1;
         let first_arg_ip = call_instr_ip - expected_args;
 
@@ -643,7 +620,7 @@ impl<'gc> VM<'gc> {
             self.registers.push(mu, Value::tagged_null());
         }
 
-        if let Some(args) = partial_args {
+        if let Some(args) = func.get_bound_args() {
             for (arg_num, tagged_val) in args.iter().enumerate() {
                 let val = Value::from(tagged_val);
                 let idx = new_frame_start + arg_num;

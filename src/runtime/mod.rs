@@ -5,7 +5,6 @@ mod hash_map;
 mod intrinsics;
 mod list;
 mod op;
-mod partial;
 mod string;
 mod tagged_value;
 mod value;

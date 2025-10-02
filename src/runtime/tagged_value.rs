@@ -3,7 +3,6 @@ use sandpit::{Tag, Tagged};
 use super::func::LoadedFunc;
 use super::hash_map::GcHashMap;
 use super::list::List;
-use super::partial::Partial;
 use super::string::VMString;
 use super::value::Value;
 
@@ -20,8 +19,6 @@ pub enum ValueTag {
     Func,
     #[ptr(VMString<'gc>)]
     String,
-    #[ptr(Partial<'gc>)]
-    Partial,
     #[ptr(GcHashMap<'gc>)]
     Map,
 }
@@ -53,11 +50,6 @@ impl<'gc> From<&TaggedValue<'gc>> for Value<'gc> {
                 let s = ValueTag::get_map(value.clone()).unwrap();
 
                 Value::Map(s)
-            }
-            ValueTag::Partial => {
-                let s = ValueTag::get_partial(value.clone()).unwrap();
-
-                Value::Partial(s)
             }
             ValueTag::Packed => {
                 let raw = value.get_stripped_raw() as u64;

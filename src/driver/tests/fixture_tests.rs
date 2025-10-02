@@ -20,6 +20,11 @@ fn rotate_array() {
 }
 
 #[test]
+fn binding() {
+  super::fixture_test("binding")
+}
+
+#[test]
 fn switch_print() {
   super::fixture_test("switch_print")
 }

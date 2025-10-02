@@ -1,0 +1,41 @@
+=== FN 1 START ===
+ADD  0, 0, 1
+RTN  0
+=== END ===
+=== FN 2 START ===
+LDUV 1, 0
+ADD  0, 1, 0
+RTN  0
+=== END ===
+=== FN 0 START ===
+LOC  5, 0
+INT  0, 2
+SYM  6, #22
+ARG  5
+ARG  0
+CALL 4, 6
+INT  0, 1
+ARG  4
+ARG  0
+CALL 2, 6
+LOC  3, 1
+STUV 3, 0
+INT  1, 3
+ARG  3
+ARG  1
+CALL 1, 6
+INT  3, 0
+ARG  3
+ARG  0
+CALL 0, 5
+OUT  0
+ARG  3
+CALL 0, 4
+OUT  0
+CALL 0, 2
+OUT  0
+CALL 0, 1
+OUT  0
+LDN  0
+RTN  0
+=== END ===

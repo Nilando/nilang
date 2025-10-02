@@ -276,10 +276,6 @@ fn hash_value(v: &Value<'_>) -> usize {
             buffer.push(9);
             todo!()
         }
-        Value::Partial(_) => {
-            buffer.push(10);
-            todo!()
-        }
     }
 
     let result = murmurhash3_x64_128(&buffer, 0);

@@ -118,7 +118,44 @@ impl<'gc> LoadedFunc<'gc> {
     }
 
     pub fn arity(&self) -> u8 {
-        self.arity
+        self.arity - self.bound_args()
+    }
+
+    pub fn bound_args(&self) -> u8 {
+        if let Some(bound_args) = self.bound_args.as_option() {
+            bound_args.len() as u8
+        } else {
+            0
+        }
+    }
+
+    pub fn bind(&self, 
+        mu: &'gc Mutator<'gc>,
+        tagged_val: TaggedValue<'gc>,
+    ) -> Gc<'gc, Self> {
+        let new_bound_args_count = self.bound_args() + 1;
+        let bound_args = mu.alloc_array_from_fn(new_bound_args_count as usize, |idx| {
+            if idx == self.bound_args() as usize {
+                tagged_val.clone()
+            } else {
+                self.bound_args.unwrap()[idx].clone()
+            }
+        });
+
+        let partial = Self {
+            id: self.id,
+            arity: self.arity,
+            max_clique: self.max_clique,
+            locals: self.locals.clone(),
+            code: self.code.clone(),
+            spans: self.spans.clone(),
+            file_path: self.file_path.clone(),
+            top_level: self.top_level.clone(),
+            upvalues: self.upvalues.clone(),
+            bound_args: GcOpt::from(bound_args),
+        };
+
+        Gc::new(mu, partial)
     }
 
     pub fn update_locals(
@@ -138,6 +175,10 @@ impl<'gc> LoadedFunc<'gc> {
 
     pub fn get_upvalues(&self) -> GcOpt<'gc, [TaggedValue<'gc>]> {
         self.upvalues.clone()
+    }
+
+    pub fn get_bound_args(&self) -> Option<Gc<'gc, [TaggedValue<'gc>]>> {
+        self.bound_args.as_option()
     }
 
     pub fn get_code(&self) -> Gc<'gc, [ByteCode]> {
