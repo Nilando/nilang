@@ -1,0 +1,5 @@
+RUNTIME ERROR
+Traceback: most recent call lowest
+  0: File "./src/driver/tests/test_programs/calling_non_func.nl", line: 1:32
+    "don't try this at home kids"();
+TypeError: Tried to call String type

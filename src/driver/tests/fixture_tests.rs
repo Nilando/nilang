@@ -30,6 +30,11 @@ fn switch_print() {
 }
 
 #[test]
+fn calling_non_func() {
+  super::fixture_test("calling_non_func")
+}
+
+#[test]
 fn access_list_via_float() {
   super::fixture_test("access_list_via_float")
 }
