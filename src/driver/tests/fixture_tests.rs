@@ -50,6 +50,11 @@ fn hello_world() {
 }
 
 #[test]
+fn big_backtrace() {
+  super::fixture_test("big_backtrace")
+}
+
+#[test]
 fn linear_search() {
   super::fixture_test("linear_search")
 }
