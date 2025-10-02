@@ -1,0 +1,8 @@
+MAIN () {
+block0:
+  h_0 = true
+  PRINT h_0
+  t24 = null
+  RETURN t24
+
+}

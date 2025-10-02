@@ -19,8 +19,7 @@ OPTIMIZATION BACKLOG:
 - add benchmarking
 - GC updates:
   - GcSync derive (reduce allocating callframes)
-  - view option (helps with printing)
-    - this 2 updates should be a huge refactor
+    - this update should be a big speed up
 - string internment
 - Memory SSA
 - Jump threading pass

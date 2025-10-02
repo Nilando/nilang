@@ -1,13 +1,11 @@
 use sandpit::{Gc, Mutator, Trace};
 
-use super::closure::Closure;
 use super::func::LoadedFunc;
 use super::tagged_value::TaggedValue;
 
 #[derive(Trace, Clone)]
 pub enum Callable<'gc> {
     Func(Gc<'gc, LoadedFunc<'gc>>),
-    Closure(Gc<'gc, Closure<'gc>>),
 }
 
 #[derive(Trace)]
@@ -24,17 +22,6 @@ impl<'gc> Partial<'gc> {
     ) -> Self {
         Self {
             callable: Callable::Func(func),
-            bound_args: mu.alloc_array_from_fn(1, |_| tagged_val.clone()),
-        }
-    }
-
-    pub fn from_closure(
-        closure: Gc<'gc, Closure<'gc>>,
-        mu: &'gc Mutator<'gc>,
-        tagged_val: TaggedValue<'gc>,
-    ) -> Self {
-        Self {
-            callable: Callable::Closure(closure),
             bound_args: mu.alloc_array_from_fn(1, |_| tagged_val.clone()),
         }
     }
@@ -70,9 +57,6 @@ impl<'gc> Partial<'gc> {
         match &self.callable {
             Callable::Func(f) => {
                 f.arity() - (self.bound_args.len() as u8)
-            }
-            Callable::Closure(c) => {
-                c.arity() - (self.bound_args.len() as u8)
             }
         }
     }

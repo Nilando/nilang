@@ -1,0 +1,10 @@
+=== FN 0 START ===
+BOOL 0, false
+JNT  3, 0
+LOC  0, 0
+JMP  2
+LOC  0, 1
+OUT  0
+LDN  0
+RTN  0
+=== END ===

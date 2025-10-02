@@ -272,10 +272,6 @@ fn hash_value(v: &Value<'_>) -> usize {
                 buffer.push(b);
             }
         }
-        Value::Closure(_) => {
-            buffer.push(8);
-            todo!()
-        }
         Value::Map(_) => {
             buffer.push(9);
             todo!()

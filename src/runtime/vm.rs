@@ -7,7 +7,6 @@ use super::op::{
 
 use super::bytecode::Reg;
 use super::call_frame::CallFrame;
-use super::closure::Closure;
 use super::func::LoadedFunc;
 use super::hash_map::GcHashMap;
 use super::intrinsics::call_intrinsic;
@@ -471,17 +470,14 @@ impl<'gc> VM<'gc> {
     ) -> Result<(), RuntimeError> {
         match self.reg_to_val(dest) {
             Value::Func(func) => {
-                let closure = Gc::new(mu, Closure::new(func, upvalues));
-                if let Some(idx) = recursive_upval_idx {
-                    Closure::backpatch_recursive_upvalue(closure.clone(), idx, mu);
-                }
-                let value = Value::Closure(closure);
+                let closure = func.create_closure(GcOpt::from(upvalues), recursive_upval_idx, mu);
+                let value = Value::Func(closure);
 
                 self.set_reg_with_value(value, dest, mu);
 
                 Ok(())
             }
-            _ => todo!(),
+            _ => panic!("bad bytecode"),
         }
     }
 
@@ -550,18 +546,12 @@ impl<'gc> VM<'gc> {
     ) -> Result<(), RuntimeError> {
         match partial.get_callable() {
             Callable::Func(func) => {
-                self.load_function_callframe(func, Some(partial.get_args()), supplied_args, mu)
-            }
-            Callable::Closure(closure) => {
-                let func = closure.get_func();
-
-                self.load_function_callframe(func, Some(partial.get_args()), supplied_args, mu)?;
-
+                self.load_function_callframe(func.clone(), Some(partial.get_args()), supplied_args, mu)?;
                 let cf = self.get_top_call_frame();
-                let upvalues = closure.get_upvalues();
 
-                CallFrame::set_upvalues(cf, upvalues, mu);
-
+                if let Some(upvalues) = func.get_upvalues().as_option() {
+                    CallFrame::set_upvalues(cf, upvalues, mu);
+                }
                 Ok(())
             }
         }
@@ -576,17 +566,13 @@ impl<'gc> VM<'gc> {
         syms: &mut SymbolMap,
     ) -> Result<(), RuntimeError> {
         match self.reg_to_val(src) {
-            Value::Func(func) => self.load_function_callframe(func, None, supplied_args, mu),
-            Value::Closure(closure) => {
-                let func = closure.get_func();
-
-                self.load_function_callframe(func, None, supplied_args, mu)?;
-
+            Value::Func(func) => {
+                self.load_function_callframe(func.clone(), None, supplied_args, mu)?;
                 let cf = self.get_top_call_frame();
-                let upvalues = closure.get_upvalues();
 
-                CallFrame::set_upvalues(cf, upvalues, mu);
-
+                if let Some(upvalues) = func.get_upvalues().as_option() {
+                    CallFrame::set_upvalues(cf, upvalues, mu);
+                }
                 Ok(())
             }
             Value::SymId(sym_id) => {

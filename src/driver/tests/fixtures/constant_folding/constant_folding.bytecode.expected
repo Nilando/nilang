@@ -1,0 +1,6 @@
+=== FN 0 START ===
+BOOL 0, true
+OUT  0
+LDN  0
+RTN  0
+=== END ===

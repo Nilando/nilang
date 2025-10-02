@@ -1,6 +1,5 @@
 mod bytecode;
 mod call_frame;
-mod closure;
 mod func;
 mod hash_map;
 mod intrinsics;
@@ -134,6 +133,8 @@ fn load_program<'gc>(program: Vec<Func>, path: &String, mu: &'gc Mutator) -> Vec
             func.max_clique(),
             locals,
             code,
+            GcOpt::new_none(),
+            GcOpt::new_none(),
             Some(spans),
             path.clone(),
             is_top_level,

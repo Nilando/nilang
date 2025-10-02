@@ -1,6 +1,5 @@
 use sandpit::{Tag, Tagged};
 
-use super::closure::Closure;
 use super::func::LoadedFunc;
 use super::hash_map::GcHashMap;
 use super::list::List;
@@ -21,8 +20,6 @@ pub enum ValueTag {
     Func,
     #[ptr(VMString<'gc>)]
     String,
-    #[ptr(Closure<'gc>)]
-    Closure,
     #[ptr(Partial<'gc>)]
     Partial,
     #[ptr(GcHashMap<'gc>)]
@@ -41,11 +38,6 @@ impl<'gc> From<&TaggedValue<'gc>> for Value<'gc> {
                 let v = ValueTag::get_func(value.clone()).unwrap();
 
                 Value::Func(v)
-            }
-            ValueTag::Closure => {
-                let v = ValueTag::get_closure(value.clone()).unwrap();
-
-                Value::Closure(v)
             }
             ValueTag::List => {
                 let v = ValueTag::get_list(value.clone()).unwrap();

@@ -1,0 +1,35 @@
+=== FN 1 START ===
+INT  3, 0
+LT   4, 3, 1
+JNT  8, 4
+MEML 4, 0[3]
+EQ   4, 4, 2
+JNT  2, 4
+RTN  3
+INT  4, 1
+ADD  3, 3, 4
+JMP  -8
+LDN  0
+RTN  0
+=== END ===
+=== FN 0 START ===
+LOC  3, 0
+LIST 2
+INT  4, 0
+MEMS 2[4], 4
+INT  0, 1
+MEMS 2[0], 4
+INT  1, 420
+INT  0, 2
+MEMS 2[0], 1
+INT  0, 3
+MEMS 2[0], 4
+INT  0, 4
+ARG  2
+ARG  0
+ARG  1
+CALL 0, 3
+OUT  0
+LDN  0
+RTN  0
+=== END ===

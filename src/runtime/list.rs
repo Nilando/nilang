@@ -3,6 +3,11 @@ use sandpit::{GcVec, Mutator, Trace};
 use super::tagged_value::TaggedValue;
 use super::value::Value;
 
+// FIXME: there really needs to be a fix up around what value is used to access a list
+// fn at -> i32
+// fn len -> u64
+// fn set -> usize
+
 #[derive(Trace)]
 pub struct List<'gc> {
     vec: GcVec<'gc, TaggedValue<'gc>>,
@@ -16,7 +21,18 @@ impl<'gc> List<'gc> {
     }
 
     pub fn at(&self, idx: i32) -> Value<'gc> {
-        Value::from(&self.vec.get_idx(usize::try_from(idx).unwrap()).unwrap())
+        assert!(idx.abs() <= self.len() as i32);
+
+        let normalized_idx = 
+        if idx < 0 {
+            (self.len() as i32 + idx) as usize
+        } else {
+            idx as usize
+        };
+
+        let tagged_value = self.vec.get_idx(normalized_idx).unwrap();
+
+        Value::from(&tagged_value)
     }
 
     pub fn len(&self) -> u64 {

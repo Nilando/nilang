@@ -1,0 +1,38 @@
+MAIN () {
+block0:
+  lucky_number_0 = 42
+  guess_0 = 10
+  t4 = "guess the lucky number: "
+  PRINT t4
+  t6 = false
+  jnt t6 block2
+  next block1
+
+block1:
+  t7 = "You got it!"
+  PRINT t7
+  jump block6
+
+block2:
+  t9 = guess_0 > lucky_number_0
+  jnt t9 block4
+  next block3
+
+block3:
+  t10 = "too high!"
+  PRINT t10
+  jump block5
+
+block4:
+  t12 = "too low :("
+  PRINT t12
+  next block5
+
+block5:
+  next block6
+
+block6:
+  t14 = null
+  RETURN t14
+
+}

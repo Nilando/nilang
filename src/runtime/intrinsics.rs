@@ -361,7 +361,7 @@ fn ttype<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)>
         Value::String(_) => Ok(Value::SymId(STR_SYM)),
         Value::List(_) => Ok(Value::SymId(LIST_SYM)),
         Value::Map(_) => Ok(Value::SymId(MAP_SYM)),
-        Value::Func(_) | Value::Closure(_) | Value::Partial(_) => Ok(Value::SymId(FN_SYM)),
+        Value::Func(_) | Value::Partial(_) => Ok(Value::SymId(FN_SYM)),
     }
 }
 
@@ -495,9 +495,6 @@ fn arity<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)>
         Value::Func(f) => { 
             Ok(Value::Int(f.arity() as i32))
         }
-        Value::Closure(f) => { 
-            Ok(Value::Int(f.arity() as i32))
-        }
         Value::Partial(f) => { 
             Ok(Value::Int(f.arity() as i32))
         }
@@ -519,18 +516,6 @@ fn bind<'gc>(func: Value<'gc>, arg: Value<'gc>, mu: &'gc Mutator<'gc>) -> Result
             }
 
             let partial = Gc::new(mu, Partial::from_func(f, mu, Value::into_tagged(arg, mu)));
-
-            Ok(Value::Partial(partial))
-        }
-        Value::Closure(f) => { 
-            if f.arity() == 0 {
-                return Err((
-                    RuntimeErrorKind::InvalidBind,
-                    format!("Cannot bind to a 0 arg Func"),
-                ));
-            }
-
-            let partial = Gc::new(mu, Partial::from_closure(f, mu, Value::into_tagged(arg, mu)));
 
             Ok(Value::Partial(partial))
         }

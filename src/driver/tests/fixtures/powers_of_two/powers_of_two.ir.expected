@@ -1,0 +1,57 @@
+fn1 (n_0, x_0) {
+block0:
+  t2 = 0
+  t3 = x_0 == t2
+  jnt t3 block2
+  next block1
+
+block1:
+  t4 = 1
+  RETURN t4
+
+block2:
+  t6 = 1
+  x_1 = x_0 - t6
+  next block3(x_1, n_0)
+
+block3(x_2, result_1):
+  t9 = x_2 > t2
+  jnt t9 block5
+  next block4
+
+block4:
+  result_2 = result_1 * n_0
+  x_3 = x_2 - t6
+  jump block3(x_3, result_2)
+
+block5:
+  RETURN result_1
+
+}
+MAIN () {
+block0:
+  raise_0 = fn1
+  p_0 = 0
+  next block1(p_0)
+
+block1(p_1):
+  t3 = 100
+  t4 = p_1 < t3
+  jnt t4 block3
+  next block2
+
+block2:
+  t5 = 2
+  STORE_ARG t5
+  STORE_ARG p_1
+  t6 = CALL raise_0
+  PRINT t6
+  t8 = 1
+  p_2 = p_1 + t8
+  jump block1(p_2)
+
+block3:
+  t10 = null
+  RETURN t10
+
+}

@@ -1,0 +1,5 @@
+RUNTIME ERROR
+Traceback: most recent call lowest
+  0: File "./src/driver/tests/test_programs/access_list_via_float.nl", line: 3:13
+    print(a[1.5]);
+TypeError: Invalid memory access of List via a Float

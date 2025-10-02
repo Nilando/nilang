@@ -1,0 +1,98 @@
+[
+    Assign {
+        dest: Spanned {
+            item: Local(
+                24,
+            ),
+            span: Span {
+                start: 0,
+                end: 3,
+            },
+        },
+        src: Spanned {
+            item: Value(
+                List(
+                    [
+                        Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 5,
+                                end: 7,
+                            },
+                        },
+                        Spanned {
+                            item: Value(
+                                Int(
+                                    2,
+                                ),
+                            ),
+                            span: Span {
+                                start: 8,
+                                end: 10,
+                            },
+                        },
+                        Spanned {
+                            item: Value(
+                                Int(
+                                    3,
+                                ),
+                            ),
+                            span: Span {
+                                start: 11,
+                                end: 13,
+                            },
+                        },
+                    ],
+                ),
+            ),
+            span: Span {
+                start: 4,
+                end: 14,
+            },
+        },
+    },
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Index {
+                        store: Spanned {
+                            item: Value(
+                                Ident(
+                                    24,
+                                ),
+                            ),
+                            span: Span {
+                                start: 22,
+                                end: 23,
+                            },
+                        },
+                        key: Spanned {
+                            item: Value(
+                                Float(
+                                    1.5,
+                                ),
+                            ),
+                            span: Span {
+                                start: 24,
+                                end: 28,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 22,
+                        end: 29,
+                    },
+                },
+            ),
+            span: Span {
+                start: 16,
+                end: 30,
+            },
+        },
+    ),
+]

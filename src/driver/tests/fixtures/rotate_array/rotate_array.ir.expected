@@ -1,0 +1,56 @@
+fn1 (array_0) {
+block0:
+  t1 = 0
+  t2 = 1
+  t3 = -1
+  prev_0 = array_0[t3]
+  next block1(prev_0, t1)
+
+block1(prev_1, i_1):
+  len_0 = #len
+  STORE_ARG array_0
+  t9 = CALL len_0
+  t10 = i_1 < t9
+  jnt t10 block3
+  next block2
+
+block2:
+  temp_0 = array_0[i_1]
+  array_0[i_1] = prev_1
+  i_2 = i_1 + t2
+  jump block1(temp_0, i_2)
+
+block3:
+  t15 = null
+  RETURN t15
+
+}
+MAIN () {
+block0:
+  rotate_array_0 = fn1
+  t1 = NEW_LIST
+  t2 = 1
+  t3 = 0
+  t1[t3] = t2
+  t4 = 2
+  t1[t2] = t4
+  t6 = 3
+  t1[t4] = t6
+  t8 = 4
+  t1[t6] = t8
+  STORE_ARG t1
+  t11 = CALL rotate_array_0
+  PRINT t1
+  STORE_ARG t1
+  t13 = CALL rotate_array_0
+  PRINT t1
+  STORE_ARG t1
+  t15 = CALL rotate_array_0
+  PRINT t1
+  STORE_ARG t1
+  t17 = CALL rotate_array_0
+  PRINT t1
+  t19 = null
+  RETURN t19
+
+}

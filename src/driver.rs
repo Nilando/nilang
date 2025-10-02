@@ -2,6 +2,9 @@ mod config;
 mod repl;
 mod error;
 
+#[cfg(test)]
+mod tests;
+
 use crate::codegen::{generate_func, Func};
 use crate::ir::{func_to_string, lower_ast, optimize_func};
 use crate::parser::{parse_program, ParseError};
@@ -31,7 +34,7 @@ pub fn execute(config: Config) {
     }
 }
 
-fn run_script(mut config: Config) -> Result<(), InterpreterError> {
+pub fn run_script(mut config: Config) -> Result<(), InterpreterError> {
     let source = config.get_script().unwrap();
     let mut symbols = SymbolMap::new();
     let program = compile_source(&config, &mut symbols, &source)?;
@@ -41,9 +44,9 @@ fn run_script(mut config: Config) -> Result<(), InterpreterError> {
         return Ok(());
     }
 
-    let mut runtime = Runtime::init(program, symbols, config);
+    let mut output = config.get_output();
 
-    let mut output = std::io::stdout();
+    let mut runtime = Runtime::init(program, symbols, config);
     match runtime.run(&mut output) {
         Ok(()) => Ok(()),
         Err(err) => Err(InterpreterError::RuntimeError(err)),
@@ -57,8 +60,7 @@ pub fn compile_source(
 ) -> Result<Vec<Func>, ParseError> {
     let ast = parse_program(source.as_str(), symbols, Some(config.get_source_path()))?;
     if let Some(path) = config.ast_output_path.as_ref() {
-        let ast_string = format!("{:#?}", ast);
-        output_string(ast_string, path);
+        output_string(format!("{:#?}", ast), path);
     }
 
     let mut ir = lower_ast(ast, config.pretty_ir);

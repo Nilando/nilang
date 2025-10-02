@@ -6,11 +6,11 @@ use super::value::Value;
 
 pub fn add<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, String> {
     match (lhs, rhs) {
-        (Value::Float(lhs), Value::Float(rhs)) => Ok(Value::Float(lhs + rhs)),
         (Value::Int(lhs), Value::Int(rhs)) => Ok(match lhs.checked_add(rhs) {
             Some(val) => Value::Int(val),
             None => Value::Float(lhs as f64 + rhs as f64),
         }),
+        (Value::Float(lhs), Value::Float(rhs)) => Ok(Value::Float(lhs + rhs)),
         (Value::Float(f), Value::Int(i)) | (Value::Int(i), Value::Float(f)) => {
             Ok(Value::Float(f + i as f64))
         }
@@ -24,8 +24,11 @@ pub fn add<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, String> 
 
 pub fn sub<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, String> {
     match (lhs, rhs) {
+        (Value::Int(lhs), Value::Int(rhs)) => Ok(match lhs.checked_sub(rhs) {
+            Some(val) => Value::Int(val),
+            None => Value::Float(lhs as f64 - rhs as f64),
+        }),
         (Value::Float(lhs), Value::Float(rhs)) => Ok(Value::Float(lhs - rhs)),
-        (Value::Int(lhs), Value::Int(rhs)) => Ok(Value::Int(lhs - rhs)),
         (Value::Float(lhs), Value::Int(rhs)) => Ok(Value::Float(lhs - rhs as f64)),
         (Value::Int(lhs), Value::Float(rhs)) => Ok(Value::Float(lhs as f64 - rhs)),
         (lhs, rhs) => Err(format!(
@@ -38,8 +41,11 @@ pub fn sub<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, String> 
 
 pub fn multiply<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, String> {
     match (lhs, rhs) {
+        (Value::Int(lhs), Value::Int(rhs)) => Ok(match lhs.checked_mul(rhs) {
+            Some(val) => Value::Int(val),
+            None => Value::Float(lhs as f64 * rhs as f64),
+        }),
         (Value::Float(lhs), Value::Float(rhs)) => Ok(Value::Float(lhs * rhs)),
-        (Value::Int(lhs), Value::Int(rhs)) => Ok(Value::Int(lhs * rhs)),
         (Value::Float(f), Value::Int(i)) | (Value::Int(i), Value::Float(f)) => {
             Ok(Value::Float(f * i as f64))
         }
@@ -53,8 +59,11 @@ pub fn multiply<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, Str
 
 pub fn divide<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, String> {
     match (lhs, rhs) {
+        (Value::Int(lhs), Value::Int(rhs)) => Ok(match lhs.checked_div(rhs) {
+            Some(val) => Value::Int(val),
+            None => Value::Float(lhs as f64 / rhs as f64),
+        }),
         (Value::Float(lhs), Value::Float(rhs)) => Ok(Value::Float(lhs / rhs)),
-        (Value::Int(lhs), Value::Int(rhs)) => Ok(Value::Int(lhs / rhs)),
         (Value::Float(lhs), Value::Int(rhs)) => Ok(Value::Float(lhs / rhs as f64)),
         (Value::Int(lhs), Value::Float(rhs)) => Ok(Value::Float(lhs as f64 / rhs)),
         (lhs, rhs) => Err(format!(

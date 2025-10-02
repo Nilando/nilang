@@ -1,3 +1,4 @@
+use std::io::Write;
 use clap::{ArgGroup, Parser};
 
 #[derive(Parser, Debug, Clone)]
@@ -42,6 +43,10 @@ pub struct Config {
     /// Arguments passed to the script after this flag
     #[clap(last = true)]
     pub script_args: Vec<String>,
+
+    // only meant to be used by tests in order to provide a way to redirect 
+    // output for testing purposes
+    pub __output_override: Option<String>
 }
 
 impl Config {
@@ -57,6 +62,7 @@ impl Config {
             dry_run: false,
             file: None,
             script_args: vec![],
+            __output_override: None,
         }
     }
 
@@ -64,6 +70,14 @@ impl Config {
         match &self.file {
             Some(path) => path.clone(),
             None => String::from("__INLINE__")
+        }
+    }
+
+    pub fn get_output(&self) -> Box<dyn Write> {
+        if let Some(ref path) = self.__output_override {
+            Box::new(std::fs::File::create(path).expect("Failed to open file."))
+        } else {
+            Box::new(std::io::stdout())
         }
     }
 

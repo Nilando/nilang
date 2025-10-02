@@ -2,7 +2,6 @@ use sandpit::{Gc, Mutator};
 
 use crate::symbol_map::SymbolMap;
 
-use super::closure::Closure;
 use super::func::LoadedFunc;
 use super::hash_map::GcHashMap;
 use super::list::List;
@@ -34,17 +33,6 @@ impl Debug for Value<'_> {
             Value::String(vm_str) => {
                 write!(f, "{}", vm_str.as_string())
             }
-            Value::Closure(closure) => {
-                let func = closure.get_func();
-
-                write!(
-                    f,
-                    "Closure(id: {}, args: {}, upvalues: {})",
-                    func.get_id(),
-                    func.arg_count(),
-                    closure.get_upvalues().len()
-                )
-            }
             Value::Func(func) => {
                 write!(f, "Func(id: {}, args: {})", func.get_id(), func.arg_count())
             }
@@ -61,10 +49,10 @@ pub enum Value<'gc> {
     Int(i32),
     Float(f64),
     List(Gc<'gc, List<'gc>>),
-    Func(Gc<'gc, LoadedFunc<'gc>>),
     String(Gc<'gc, VMString<'gc>>),
-    Closure(Gc<'gc, Closure<'gc>>),
     Map(Gc<'gc, GcHashMap<'gc>>),
+
+    Func(Gc<'gc, LoadedFunc<'gc>>),
     Partial(Gc<'gc, Partial<'gc>>),
 }
 
@@ -105,16 +93,6 @@ impl<'gc> Value<'gc> {
                     format!("\"{s}\"")
                 }
             }
-            Value::Closure(closure) => {
-                let func = closure.get_func();
-
-                format!(
-                    "Closure(id: {}, args: {}, upvalues: {})",
-                    func.get_id(),
-                    func.arity(),
-                    closure.get_upvalues().len()
-                )
-            }
             Value::Func(func) => format!("Func(id: {}, args: {})", func.get_id(), func.arity()),
             Value::Partial(_) => format!("Partial"),
         }
@@ -129,7 +107,6 @@ impl<'gc> Value<'gc> {
             Value::Func(func) => ValueTag::from_func(func),
             Value::Float(f) => ValueTag::from_float(Gc::new(mu, f)),
             Value::String(s) => ValueTag::from_string(s),
-            Value::Closure(c) => ValueTag::from_closure(c),
             Value::Map(c) => ValueTag::from_map(c),
             Value::Partial(c) => ValueTag::from_partial(c),
             _ => panic!("failed to tagg value"),
@@ -174,7 +151,6 @@ impl<'gc> Value<'gc> {
             Value::Int(_) => "Num",
             Value::List(_) => "List",
             Value::String(_) => "String",
-            Value::Closure(_) => "Func",
             Value::Func(_) => "Func",
             Value::Partial(_) => "Func",
             Value::Map(_) => "Map",

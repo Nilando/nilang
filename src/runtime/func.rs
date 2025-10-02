@@ -1,8 +1,9 @@
-use sandpit::{field, Gc, Mutator, Trace};
+use sandpit::{field, Gc, GcOpt, Mutator, Trace};
 
 use crate::parser::GcPackedSpans;
 use crate::runtime::string::VMString;
 
+use super::tagged_value::{TaggedValue, ValueTag};
 use super::value::Value;
 use super::vm::ByteCode;
 
@@ -11,6 +12,7 @@ pub enum LoadedLocal<'gc> {
     Func(Gc<'gc, LoadedFunc<'gc>>),
     SymId(u32),
     Int(i32),
+    // BigInt(i64)
     Float(f64),
     Text(Gc<'gc, [char]>),
 }
@@ -29,25 +31,66 @@ impl<'gc> LoadedLocal<'gc> {
     }
 }
 
-#[derive(Trace)]
+// Plan Combine Closure and Partial into LoadedFunc
+// this makes space for a tagged pointer to point to an i64
+
+#[derive(Trace, Clone)]
 pub struct LoadedFunc<'gc> {
-    id: u32,
     arity: u8,
     max_clique: u8,
     locals: Gc<'gc, [LoadedLocal<'gc>]>,
     code: Gc<'gc, [ByteCode]>,
+    upvalues: GcOpt<'gc, [TaggedValue<'gc>]>,
+    bound_args: GcOpt<'gc, [TaggedValue<'gc>]>,
+    
+    // can be moved into meta data ptr
     spans: Option<GcPackedSpans<'gc>>,
     file_path: Gc<'gc, VMString<'gc>>,
+    id: u32,
     top_level: bool,
 }
 
 impl<'gc> LoadedFunc<'gc> {
+    pub fn create_closure(
+        &self,
+        upvalues: GcOpt<'gc, [TaggedValue<'gc>]>,
+        recursive_upval_idx: Option<usize>,
+        mu: &'gc Mutator<'gc>
+    ) -> Gc<'gc, Self> {
+        let closure = Self {
+            id: self.id,
+            arity: self.arity,
+            max_clique: self.max_clique,
+            locals: self.locals.clone(),
+            code: self.code.clone(),
+            spans: self.spans.clone(),
+            file_path: self.file_path.clone(),
+            top_level: self.top_level.clone(),
+            bound_args: GcOpt::new_none(),
+            upvalues,
+        };
+
+        let closure_ptr = Gc::new(mu, closure);
+
+        if let Some(idx) = recursive_upval_idx {
+            closure_ptr.upvalues.unwrap().write_barrier(mu, |barrier| {
+                barrier
+                    .at(idx)
+                    .set(ValueTag::from_func(closure_ptr.clone()));
+            });
+        }
+
+        closure_ptr
+    }
+
     pub fn new(
         id: u32,
         arity: u8,
         max_clique: u8,
         locals: Gc<'gc, [LoadedLocal<'gc>]>,
         code: Gc<'gc, [ByteCode]>,
+        upvalues: GcOpt<'gc, [TaggedValue<'gc>]>,
+        bound_args: GcOpt<'gc, [TaggedValue<'gc>]>,
         spans: Option<GcPackedSpans<'gc>>,
         file_path: Gc<'gc, VMString<'gc>>,
         top_level: bool
@@ -60,7 +103,9 @@ impl<'gc> LoadedFunc<'gc> {
             code,
             spans,
             file_path,
-            top_level
+            top_level,
+            upvalues,
+            bound_args
         }
     }
 
@@ -89,6 +134,10 @@ impl<'gc> LoadedFunc<'gc> {
 
     pub fn get_locals(&self) -> Gc<'gc, [LoadedLocal<'gc>]> {
         self.locals.clone()
+    }
+
+    pub fn get_upvalues(&self) -> GcOpt<'gc, [TaggedValue<'gc>]> {
+        self.upvalues.clone()
     }
 
     pub fn get_code(&self) -> Gc<'gc, [ByteCode]> {
