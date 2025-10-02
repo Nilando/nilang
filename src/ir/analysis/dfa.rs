@@ -59,7 +59,8 @@ impl<T: DFA> DFAExecutor<T> {
             if T::BACKWARDS {
                 self.propagate_backward(dfa, block)
             } else {
-                self.propagate_forward(dfa, block)
+                panic!("there aren't any forward propagations supported yet")
+                //self.propagate_forward(dfa, block)
             }
         }
     }
@@ -84,6 +85,7 @@ impl<T: DFA> DFAExecutor<T> {
         }
     }
 
+    /*
     fn propagate_forward(&mut self, dfa: &mut T, block: &Block) {
         let id = block.get_id();
         let input = self.inputs.get_mut(&id).unwrap();
@@ -103,4 +105,5 @@ impl<T: DFA> DFAExecutor<T> {
             }
         }
     }
+    */
 }

@@ -35,6 +35,11 @@ fn calling_non_func() {
 }
 
 #[test]
+fn globals() {
+  super::fixture_test("globals")
+}
+
+#[test]
 fn access_list_via_float() {
   super::fixture_test("access_list_via_float")
 }
@@ -72,6 +77,11 @@ fn constant_folding() {
 #[test]
 fn lucky_number() {
   super::fixture_test("lucky_number")
+}
+
+#[test]
+fn parsing_error() {
+  super::fixture_test("parsing_error")
 }
 
 #[test]

@@ -1,0 +1,65 @@
+=== FN 1 START ===
+SYM  2, #24
+LDGB 1, #2
+OUT  1
+LDGB 3, #2
+INT  1, 1
+ADD  1, 3, 1
+STGB 1, #2
+LDGB 2, #2
+INT  1, 10
+GTE  1, 2, 1
+JNT  2, 1
+RTN  0
+SYM  0, #26
+LDGB 0, #0
+CALL 0, 0
+LDN  0
+RTN  0
+=== END ===
+=== FN 2 START ===
+SYM  1, #24
+LDGB 0, #1
+OUT  0
+LDGB 2, #1
+INT  0, 1
+ADD  0, 2, 0
+STGB 0, #1
+SYM  0, #27
+LDGB 0, #0
+CALL 0, 0
+LDN  0
+RTN  0
+=== END ===
+=== FN 3 START ===
+SYM  1, #24
+LDGB 0, #1
+OUT  0
+LDGB 2, #1
+INT  0, 1
+ADD  0, 2, 0
+STGB 0, #1
+SYM  0, #25
+LDGB 0, #0
+CALL 0, 0
+LDN  0
+RTN  0
+=== END ===
+=== FN 0 START ===
+INT  1, 0
+SYM  0, #24
+STGB 1, #0
+LOC  0, 0
+SYM  2, #25
+STGB 0, #2
+LOC  1, 1
+SYM  0, #26
+STGB 1, #0
+LOC  1, 2
+SYM  0, #27
+STGB 1, #0
+LDGB 0, #2
+CALL 0, 0
+LDN  0
+RTN  0
+=== END ===

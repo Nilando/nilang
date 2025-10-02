@@ -1,0 +1,3 @@
+parser error: expected ';' at end of stmt, found c
+ 3 | c = 3;
+parser error: Failed to parse "./src/driver/tests/test_programs/parsing_error.nl" due to the previous 1 errors.
