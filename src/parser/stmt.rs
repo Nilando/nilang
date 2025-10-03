@@ -2,7 +2,7 @@ use super::expr::{expr, Expr, LhsExpr};
 use super::lexer::{Ctrl, KeyWord, Token};
 use super::spanned::Spanned;
 use super::value::string;
-use super::{block, ctrl, inputs, keyword, nothing, recursive, symbol, ParseError, Parser};
+use super::{block, ctrl, inputs, keyword, nothing, recursive, symbol, Parser};
 
 use crate::symbol_map::SymID;
 
@@ -190,6 +190,7 @@ fn continue_stmt<'a>() -> Parser<'a, Stmt> {
 #[cfg(test)]
 mod tests {
     use super::super::value::Value;
+    use crate::parser::ParseError;
     use super::*;
     use crate::parser::{Op, Span};
     use crate::symbol_map::SymbolMap;
@@ -326,9 +327,10 @@ mod tests {
     fn duplicate_args_error() {
         let mut syms = SymbolMap::new();
         let input = "fn test(a, a) {}";
-        let mut result = stmt().parse_str(input, &mut syms);
+        let mut _result = stmt().parse_str(input, &mut syms);
 
-        // assert_eq!(result.unwrap_err().pop().unwrap().item, ParseError::DuplicateArgs);
+        todo!()
+        // TODO: assert_eq!(result.unwrap_err().pop().unwrap().item, ParseError::DuplicateArgs);
     }
 
     #[test]

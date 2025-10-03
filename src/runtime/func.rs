@@ -11,7 +11,7 @@ use super::vm::ByteCode;
 pub enum LoadedLocal<'gc> {
     Func(Gc<'gc, LoadedFunc<'gc>>),
     SymId(u32),
-    Int(i32),
+    Int(i64),
     // BigInt(i64)
     Float(f64),
     Text(Gc<'gc, [char]>),
@@ -24,9 +24,7 @@ impl<'gc> LoadedLocal<'gc> {
             LoadedLocal::Int(i) => Value::Int(*i),
             LoadedLocal::Float(f) => Value::Float(*f),
             LoadedLocal::Func(f) => Value::Func(f.clone()),
-            LoadedLocal::Text(gc_text) => {
-                Value::String(Gc::new(mu, VMString::alloc(gc_text.iter().map(|c| *c), mu)))
-            }
+            LoadedLocal::Text(gc_text) => Value::String(Gc::new(mu, VMString::alloc(gc_text.iter().map(|c| *c), mu))),
         }
     }
 }
@@ -74,9 +72,10 @@ impl<'gc> LoadedFunc<'gc> {
 
         if let Some(idx) = recursive_upval_idx {
             closure_ptr.upvalues.unwrap().write_barrier(mu, |barrier| {
-                barrier
-                    .at(idx)
-                    .set(ValueTag::from_func(closure_ptr.clone()));
+                let recursive_upval = barrier.at(idx);
+                let recursive_upval = field!(&recursive_upval, TaggedValue, ptr);
+
+                recursive_upval.set(ValueTag::from_func(closure_ptr.clone()));
             });
         }
 
@@ -169,12 +168,12 @@ impl<'gc> LoadedFunc<'gc> {
         });
     }
 
-    pub fn get_locals(&self) -> Gc<'gc, [LoadedLocal<'gc>]> {
-        self.locals.clone()
+    pub fn get_local(&self, i: usize, mu: &'gc Mutator) -> Value<'gc> {
+        self.locals[i].as_value(mu)
     }
 
-    pub fn get_upvalues(&self) -> GcOpt<'gc, [TaggedValue<'gc>]> {
-        self.upvalues.clone()
+    pub fn get_upvalue(&self, i: usize) -> TaggedValue<'gc> {
+        self.upvalues.unwrap()[i].clone()
     }
 
     pub fn get_bound_args(&self) -> Option<Gc<'gc, [TaggedValue<'gc>]>> {

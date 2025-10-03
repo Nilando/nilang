@@ -7,13 +7,13 @@ use crate::symbol_map::{
     SymID, SymbolMap, ABS_SYM, ARGS_SYM, ARITY_SYM, BIND_SYM, BOOL_SYM, CEIL_SYM, CLONE_SYM, DELETE_SYM, FLOOR_SYM, FN_SYM, LEN_SYM, LIST_SYM, LOG_SYM, MAP_SYM, NULL_SYM, NUM_SYM, POP_SYM, POW_SYM, PUSH_SYM, READ_FILE_SYM, SLEEP_SYM, STR_SYM, SYM_SYM, TYPE_SYM
 };
 
+use super::instruction_stream::InstructionStream;
 use super::list::List;
 use super::value::Value;
-use super::vm::ArgIter;
 use super::error::RuntimeErrorKind;
 
-pub fn call_intrinsic<'a, 'gc>(
-    args: ArgIter<'a, 'gc>,
+pub fn call_intrinsic<'gc>(
+    args: &mut InstructionStream<'gc>,
     sym_id: SymID,
     symbol_map: &mut SymbolMap,
     mu: &'gc Mutator<'gc>,
@@ -103,27 +103,27 @@ pub fn call_intrinsic<'a, 'gc>(
     }
 }
 
-fn extract_two_args<'a, 'gc>(
-    mut args: ArgIter<'a, 'gc>,
+fn extract_two_args<'gc>(
+    args: &mut InstructionStream<'gc>,
 ) -> Result<(Value<'gc>, Value<'gc>), (RuntimeErrorKind, String)> {
-    let arg_count = args.get_arg_count();
+    let arg_count = args.get_code_len();
 
     expect_arg_count(2, arg_count)?;
 
-    let arg1 = Value::from(&args.next().unwrap());
-    let arg2 = Value::from(&args.next().unwrap());
+    let arg1 = Value::from(&args.get_next_arg().unwrap());
+    let arg2 = Value::from(&args.get_next_arg().unwrap());
 
     Ok((arg1, arg2))
 }
 
 fn extract_single_arg<'a, 'gc>(
-    mut args: ArgIter<'a, 'gc>,
+    args: &mut InstructionStream<'gc>,
 ) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
-    let arg_count = args.get_arg_count();
+    let arg_count = args.get_code_len();
 
     expect_arg_count(1, arg_count)?;
 
-    Ok(Value::from(&args.next().unwrap()))
+    Ok(Value::from(&args.get_next_arg().unwrap()))
 }
 
 fn expect_arg_count(
@@ -141,8 +141,10 @@ fn expect_arg_count(
 
 fn len<'gc>(val: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
     match val {
-        Value::String(s) => Ok(Value::Int(s.len() as i32)),
-        Value::List(list) => Ok(Value::Int(list.len() as i32)),
+        // TODO: remove 'as' casts
+        // should be fine for now as no list should ever get close to i64::MAX length
+        Value::String(s) => Ok(Value::Int(s.len() as i64)),
+        Value::List(list) => Ok(Value::Int(list.len() as i64)),
         item => {
             return Err((
                 RuntimeErrorKind::TypeError,
@@ -159,7 +161,7 @@ fn delete<'gc>(
 ) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
     match store {
         Value::Map(map) => {
-            if let Some(k) = map.delete(Value::into_tagged(key, mu)) {
+            if let Some(k) = map.delete(key.as_tagged(mu)) {
                 Ok(Value::from(&k))
             } else {
                 Ok(Value::Null)
@@ -188,7 +190,7 @@ fn push<'gc>(
             Ok(Value::Null)
         }
         (Value::List(list), any) => {
-            list.push(Value::into_tagged(any, mu), mu);
+            list.push(any.as_tagged(mu), mu);
 
             Ok(Value::Null)
         }
@@ -340,9 +342,9 @@ fn clone<'gc>(
             let new_list = Gc::new(mu, List::alloc(mu));
 
             for x in 0..old.len() {
-                let item = old.at(i32::try_from(x).unwrap());
+                let item = old.at(x);
 
-                new_list.push(Value::into_tagged(item, mu), mu);
+                new_list.push(item.as_tagged(mu), mu);
             }
 
             Ok(Value::List(new_list))
@@ -452,7 +454,7 @@ fn get_program_args<'gc>(mu: &'gc Mutator) -> Result<Value<'gc>, (RuntimeErrorKi
         if flag {
             let vm_str = Value::String(Gc::new(mu, VMString::alloc(arg.chars(), mu)));
 
-            gc_list.push(Value::into_tagged(vm_str, mu), mu);
+            gc_list.push(vm_str.as_tagged(mu), mu);
         } else {
             if arg == "--" {
                 flag = true;
@@ -472,7 +474,7 @@ fn num<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
         Value::String(vm_str) => {
             let s = vm_str.as_string();
 
-            if let Ok(int) = s.parse::<i32>() {
+            if let Ok(int) = s.parse::<i64>() {
                 return Ok(Value::Int(int));
             }
 
@@ -492,7 +494,7 @@ fn num<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
 fn arity<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
     match arg {
         Value::Func(f) => { 
-            Ok(Value::Int(f.arity() as i32))
+            Ok(Value::Int(f.arity() as i64))
         }
         _ => Err((
             RuntimeErrorKind::TypeError,
@@ -511,7 +513,7 @@ fn bind<'gc>(func: Value<'gc>, arg: Value<'gc>, mu: &'gc Mutator<'gc>) -> Result
                 ));
             }
 
-            let partial = f.bind(mu, Value::into_tagged(arg, mu));
+            let partial = f.bind(mu, arg.as_tagged(mu));
 
             Ok(Value::Func(partial))
         }

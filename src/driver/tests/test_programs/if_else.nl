@@ -2,8 +2,7 @@ a = 1;
 b = 2;
 
 if a == b {
-  x = 1;
-  msg = "uh oh";
+  msg = "ohhhh fuuuccckkkkk";
 } else {
   msg = "things seem to be working?";
 }

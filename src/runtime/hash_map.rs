@@ -6,7 +6,7 @@ use super::op::equal;
 use murmurhash3::murmurhash3_x64_128;
 use sandpit::{field, Gc, Mutator, Trace, TraceLeaf};
 
-use super::tagged_value::{set_null, TaggedValue};
+use super::tagged_value::TaggedValue;
 use super::value::Value;
 
 // features of thie HashMap
@@ -35,8 +35,8 @@ impl<'gc> Entry<'gc> {
     pub fn new() -> Self {
         Self {
             status: Cell::new(EntryStatus::Free),
-            key: Value::tagged_null(),
-            val: Value::tagged_null(),
+            key: TaggedValue::new_null(),
+            val: TaggedValue::new_null(),
         }
     }
 
@@ -89,9 +89,12 @@ impl<'gc> GcHashMap<'gc> {
                     let val_barrier = field!(&entry, Entry, val);
                     let key_barrier = field!(&entry, Entry, key);
 
+                    let val_barrier = field!(&val_barrier, TaggedValue, ptr);
+                    let key_barrier = field!(&key_barrier, TaggedValue, ptr);
+
                     entry.inner().status.set(EntryStatus::Used);
-                    val_barrier.set(val);
-                    key_barrier.set(key);
+                    val_barrier.set(val.__get_ptr());
+                    key_barrier.set(key.__get_ptr());
                 });
 
                 return;
@@ -128,8 +131,8 @@ impl<'gc> GcHashMap<'gc> {
 
         let result = Some(entry.val.clone());
 
-        set_null(&entry.key);
-        set_null(&entry.val);
+        entry.key.set_null();
+        entry.val.set_null();
 
         entry.status.set(EntryStatus::Dead);
 
@@ -326,8 +329,8 @@ mod tests {
     fn insert_and_get_key() {
         let _: Arena<Root![()]> = Arena::new(|mu| {
             let map = GcHashMap::alloc(mu);
-            let key = Value::into_tagged(Value::Int(1), mu);
-            let val = Value::into_tagged(Value::Bool(true), mu);
+            let key = Value::Int(1).as_tagged(mu);
+            let val = Value::Bool(true).as_tagged(mu);
 
             GcHashMap::insert(map.clone(), key.clone(), val, mu);
 
@@ -341,8 +344,8 @@ mod tests {
     fn insert_and_get_key_sym() {
         let _: Arena<Root![()]> = Arena::new(|mu| {
             let map = GcHashMap::alloc(mu);
-            let key = Value::into_tagged(Value::SymId(1), mu);
-            let val = Value::into_tagged(Value::Bool(true), mu);
+            let key = Value::SymId(1).as_tagged(mu);
+            let val = Value::Bool(true).as_tagged(mu);
 
             GcHashMap::insert(map.clone(), key.clone(), val, mu);
 
@@ -357,14 +360,14 @@ mod tests {
         let _: Arena<Root![()]> = Arena::new(|mu| {
             let map = GcHashMap::alloc(mu);
             for i in 0..100 {
-                let key = Value::into_tagged(Value::Int(i), mu);
-                let val = Value::into_tagged(Value::Int(i), mu);
+                let key = Value::Int(i).as_tagged(mu);
+                let val = Value::Int(i).as_tagged(mu);
 
                 GcHashMap::insert(map.clone(), key.clone(), val, mu);
             }
 
             for i in 0..100 {
-                let key = Value::into_tagged(Value::Int(i), mu);
+                let key = Value::Int(i).as_tagged(mu);
                 let found = Value::from(&map.get(&key).unwrap());
 
                 if let Ok(Value::Bool(true)) = equal(found, Value::Int(i)) {
@@ -379,8 +382,8 @@ mod tests {
     fn overwrite_key() {
         let _: Arena<Root![()]> = Arena::new(|mu| {
             let map = GcHashMap::alloc(mu);
-            let key = Value::into_tagged(Value::Int(1), mu);
-            let v1 = Value::into_tagged(Value::Bool(true), mu);
+            let key = Value::Int(1).as_tagged(mu);
+            let v1 = Value::Bool(true).as_tagged(mu);
 
             GcHashMap::insert(map.clone(), key.clone(), v1, mu);
 
@@ -388,7 +391,7 @@ mod tests {
 
             matches!(Value::from(&found), Value::Bool(true));
 
-            let v2 = Value::into_tagged(Value::Bool(false), mu);
+            let v2 = TaggedValue::new_bool(false);
 
             GcHashMap::insert(map.clone(), key.clone(), v2, mu);
 

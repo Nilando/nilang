@@ -2,6 +2,7 @@ use sandpit::{Gc, Mutator};
 
 use super::hash_map::GcHashMap;
 use super::string::VMString;
+use super::tagged_value::TaggedValue;
 use super::value::Value;
 
 pub fn add<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, String> {
@@ -158,7 +159,7 @@ pub fn mem_load<'gc>(
     mu: &'gc Mutator,
 ) -> Result<Value<'gc>, String> {
     match (&store, key) {
-        (Value::List(list), Value::Int(idx)) => Ok(list.at(idx)),
+        (Value::List(list), Value::Int(idx)) => Ok(list.at(idx as usize)),
         (Value::String(s), Value::Int(idx)) => {
             if let Some(c) = s.at(usize::try_from(idx).unwrap()) {
                 let text: [char; 1] = [c];
@@ -170,7 +171,7 @@ pub fn mem_load<'gc>(
             }
         }
         (Value::Map(map), key) => {
-            if let Some(val) = map.get(&Value::into_tagged(key, mu)) {
+            if let Some(val) = map.get(&key.as_tagged(mu)) {
                 // TODO: if val is a function with auto binding
                 // create a partial with the map bound 
                 Ok(Value::from(&val))
@@ -198,21 +199,22 @@ pub fn mem_store<'gc>(
 ) -> Result<(), String> {
     match (store, key) {
         (Value::List(list), Value::Int(idx)) => {
-            let null = Value::into_tagged(Value::Null, mu);
-            while list.len() <= u64::try_from(idx).unwrap() {
+            let null = TaggedValue::new_null();
+            // TODO: missing logic here for if idx is negative
+            while list.len() <= usize::try_from(idx).unwrap() {
                 list.push(null.clone(), mu);
             }
 
             list.set(
                 usize::try_from(idx).unwrap(),
-                Value::into_tagged(src, mu),
+                src.as_tagged(mu),
                 mu,
             );
 
             Ok(())
         }
         (Value::Map(map), key) => {
-            GcHashMap::insert(map, key.into_tagged(mu), src.into_tagged(mu), mu);
+            GcHashMap::insert(map, key.as_tagged(mu), src.as_tagged(mu), mu);
 
             Ok(())
         }

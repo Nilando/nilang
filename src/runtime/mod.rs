@@ -10,6 +10,8 @@ mod tagged_value;
 mod value;
 mod vm;
 mod error;
+mod stack;
+mod instruction_stream;
 
 #[cfg(test)]
 mod tests;
@@ -42,8 +44,12 @@ impl Runtime {
         let arena = Arena::new(|mu| {
             let path = config.get_source_path();
             let loaded_program = load_program(program, &path, mu);
+            let main = loaded_program.last().unwrap().clone();
+            let vm = VM::new(mu);
 
-            VM::init(loaded_program.last().unwrap().clone(), mu)
+            vm.load_module(mu, main);
+
+            vm
         });
 
         Runtime {
@@ -83,7 +89,7 @@ impl Runtime {
                         let loaded_program = load_program(program, &path, mu);
                         let module_func = loaded_program.last().unwrap().clone();
 
-                        vm.load_module_hook(mu, module_func);
+                        vm.load_module(mu, module_func);
                     });
                 }
                 Ok(ExitCode::Read) => {
@@ -95,10 +101,8 @@ impl Runtime {
                     buf = buf.trim_end().to_string();
 
                     self.arena.mutate(|mu, vm| {
-                        vm_result = vm.read_input_hook(buf, &mut self.symbols, mu);
+                        vm.read_input_hook(buf, mu);
                     });
-
-                    continue;
                 }
                 Err(err) => {
                     return Err(err);

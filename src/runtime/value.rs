@@ -6,18 +6,17 @@ use super::func::LoadedFunc;
 use super::hash_map::GcHashMap;
 use super::list::List;
 use super::string::VMString;
-use super::tagged_value::{pack_tagged_value, TaggedValue, ValueTag};
+use super::tagged_value::TaggedValue;
 
 pub enum Value<'gc> {
     Null,
     Bool(bool),
     SymId(u32),
-    Int(i32),
+    Int(i64),
     Float(f64),
     List(Gc<'gc, List<'gc>>),
     String(Gc<'gc, VMString<'gc>>),
     Map(Gc<'gc, GcHashMap<'gc>>),
-
     Func(Gc<'gc, LoadedFunc<'gc>>),
 }
 
@@ -29,13 +28,14 @@ impl<'gc> Value<'gc> {
             Value::Float(v) => format!("{v}"),
             Value::SymId(id) => format!("#{}", syms.get_str(id).to_string()),
             Value::Bool(b) => format!("{b}"),
+            Value::Map(map) => map.to_string(syms),
             Value::List(list) => {
                 let mut s = String::new();
 
                 s.push('[');
 
                 for i in 0..list.len() {
-                    let item = list.at(i as i32);
+                    let item = list.at(i);
 
                     s.push_str(item.to_string(syms, false).as_str());
 
@@ -48,7 +48,6 @@ impl<'gc> Value<'gc> {
 
                 s
             }
-            Value::Map(map) => map.to_string(syms),
             Value::String(vm_str) => {
                 let s = vm_str.as_string();
 
@@ -61,23 +60,9 @@ impl<'gc> Value<'gc> {
             Value::Func(func) => format!("Func(id: {}, args: {})", func.get_id(), func.arity()),
         }
     }
-    pub fn into_tagged(self, mu: &'gc Mutator) -> TaggedValue<'gc> {
-        if let Some(tagged) = pack_tagged_value(&self) {
-            return tagged;
-        }
 
-        match self {
-            Value::List(gc_list) => ValueTag::from_list(gc_list),
-            Value::Func(func) => ValueTag::from_func(func),
-            Value::Float(f) => ValueTag::from_float(Gc::new(mu, f)),
-            Value::String(s) => ValueTag::from_string(s),
-            Value::Map(c) => ValueTag::from_map(c),
-            _ => panic!("failed to tagg value"),
-        }
-    }
-
-    pub fn tagged_null() -> TaggedValue<'gc> {
-        pack_tagged_value(&Value::Null).unwrap()
+    pub fn as_tagged(self, mu: &'gc Mutator) -> TaggedValue<'gc> {
+        TaggedValue::from_value(self, mu)
     }
 
     pub fn is_truthy(&self) -> bool {
@@ -110,8 +95,8 @@ impl<'gc> Value<'gc> {
 
     pub fn type_str(&self) -> &str {
         match self {
-            Value::Float(_) => "Num",
-            Value::Int(_) => "Num",
+            Value::Float(_) => "Float",
+            Value::Int(_) => "Int",
             Value::List(_) => "List",
             Value::String(_) => "String",
             Value::Func(_) => "Func",

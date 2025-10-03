@@ -96,7 +96,7 @@ fn translate_binop(
         Op::Divide => ByteCode::Div { dest, lhs, rhs },
         Op::Lte => ByteCode::Lte { dest, lhs, rhs },
         Op::Gte => ByteCode::Gte { dest, lhs, rhs },
-        _ => todo!(),
+        _ => panic!(),
     }
 }
 
@@ -134,7 +134,7 @@ fn translate_load_const(
                 dest: dest_reg,
                 val: immediate,
             },
-            _ => match i32::try_from(*i) {
+            _ => match i64::try_from(*i) {
                 Ok(local) => {
                     let local = Local::Int(local);
                     let id = get_or_create_local(local, func);

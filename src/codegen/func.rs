@@ -5,7 +5,7 @@ use crate::runtime::ByteCode;
 pub enum Local {
     FuncId(u32),
     Sym(u32),
-    Int(i32),
+    Int(i64),
     Float(f64),
     String(String),
 }

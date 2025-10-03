@@ -207,8 +207,8 @@ mod tests {
         if let Ok(Some(Value::List(list))) = parse_value("[333]") {
             assert!(list.len() == 1);
 
-            let l = &list[0];
-            assert!(matches!(Expr::Value(Value::Int(333)), l));
+            let _l = &list[0];
+            assert!(matches!(Expr::Value(Value::Int(333)), _l));
         }
     }
 
