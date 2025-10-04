@@ -1,26 +1,22 @@
 VERSION 0.1.0
 
 IN PROGRESS:
-- modules are just functions
-  - no module map
-  - import simply parses a file and calls it as a function
 
 FEATURE BACKLOG:
 - auto binding of functions with "self" arg
 - add push and pop operators
-- "monkey patch" intrinsic
-  - this could unlock a simple path for implementing a std lib
 - String Interpolation
 - save assigned vars in repl
 - fix major collection bug (sandpit)
+- "monkey patch" intrinsic
 - add FFI
 - LSP?
 
 OPTIMIZATION BACKLOG:
-- add benchmarking
 - GC updates:
   - GcSync derive (reduce allocating callframes)
     - this update should be a big speed up
+- add benchmarking
 - string internment
 - Memory SSA
 - Jump threading pass
