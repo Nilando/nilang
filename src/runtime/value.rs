@@ -2,7 +2,7 @@ use sandpit::{Gc, Mutator};
 
 use crate::symbol_map::SymbolMap;
 
-use super::func::LoadedFunc;
+use super::func::Func;
 use super::hash_map::GcHashMap;
 use super::list::List;
 use super::string::VMString;
@@ -17,7 +17,7 @@ pub enum Value<'gc> {
     List(Gc<'gc, List<'gc>>),
     String(Gc<'gc, VMString<'gc>>),
     Map(Gc<'gc, GcHashMap<'gc>>),
-    Func(Gc<'gc, LoadedFunc<'gc>>),
+    Func(Gc<'gc, Func<'gc>>),
 }
 
 impl<'gc> Value<'gc> {

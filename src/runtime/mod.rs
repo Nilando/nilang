@@ -16,12 +16,12 @@ mod instruction_stream;
 #[cfg(test)]
 mod tests;
 
-use crate::codegen::{Func, Local};
+use crate::codegen::{Func as ByteCodeFunc, Local};
 use crate::driver::compile_source;
 use crate::symbol_map::SymbolMap;
 use crate::Config;
 
-use self::func::{LoadedFunc, LoadedLocal};
+use self::func::{Func, LoadedLocal};
 use self::string::VMString;
 use self::vm::ExitCode;
 use sandpit::*;
@@ -40,7 +40,7 @@ pub struct Runtime {
 }
 
 impl Runtime {
-    pub fn init(program: Vec<Func>, symbols: SymbolMap, config: Config) -> Self {
+    pub fn init(program: Vec<ByteCodeFunc>, symbols: SymbolMap, config: Config) -> Self {
         let arena = Arena::new(|mu| {
             let path = config.get_source_path();
             let loaded_program = load_program(program, &path, mu);
@@ -117,8 +117,8 @@ impl Runtime {
     }
 }
 
-fn load_program<'gc>(program: Vec<Func>, path: &String, mu: &'gc Mutator) -> Vec<Gc<'gc, LoadedFunc<'gc>>> {
-    let mut loaded_funcs = HashMap::<u32, Gc<'gc, LoadedFunc<'gc>>>::new();
+fn load_program<'gc>(program: Vec<ByteCodeFunc>, path: &String, mu: &'gc Mutator) -> Vec<Gc<'gc, Func<'gc>>> {
+    let mut loaded_funcs = HashMap::<u32, Gc<'gc, Func<'gc>>>::new();
     let mut result = vec![];
 
     let path = Gc::new(mu, VMString::alloc(path.chars(), mu));
@@ -130,7 +130,7 @@ fn load_program<'gc>(program: Vec<Func>, path: &String, mu: &'gc Mutator) -> Vec
             mu.alloc_array_from_fn(0, |_| LoadedLocal::Int(0));
         let code = mu.alloc_array_from_slice(func.get_instrs().as_slice());
         let spans = func.spans().into_gc(mu);
-        let loaded_func = LoadedFunc::new(
+        let loaded_func = Func::new(
             func.id(),
             func.arg_count(),
             func.max_clique(),
@@ -185,7 +185,7 @@ fn load_program<'gc>(program: Vec<Func>, path: &String, mu: &'gc Mutator) -> Vec
 
         let fn_ptr = loaded_funcs.get(&func.id()).unwrap().clone();
 
-        LoadedFunc::update_locals(fn_ptr, new_locals, mu)
+        Func::update_locals(fn_ptr, new_locals, mu)
     }
 
     result

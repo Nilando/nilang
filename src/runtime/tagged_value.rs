@@ -1,6 +1,6 @@
 use sandpit::{Gc, Mutator, Tag, Tagged, Trace};
 
-use super::func::LoadedFunc;
+use super::func::Func;
 use super::hash_map::GcHashMap;
 use super::list::List;
 use super::string::VMString;
@@ -20,7 +20,7 @@ pub enum ValueTag {
     Int,
     #[ptr(List<'gc>)]
     List,
-    #[ptr(LoadedFunc<'gc>)]
+    #[ptr(Func<'gc>)]
     Func,
     #[ptr(VMString<'gc>)]
     String,

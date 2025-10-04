@@ -9,7 +9,7 @@ use super::vm::ByteCode;
 
 #[derive(Trace)]
 pub enum LoadedLocal<'gc> {
-    Func(Gc<'gc, LoadedFunc<'gc>>),
+    Func(Gc<'gc, Func<'gc>>),
     SymId(u32),
     Int(i64),
     // BigInt(i64)
@@ -29,11 +29,11 @@ impl<'gc> LoadedLocal<'gc> {
     }
 }
 
-// Plan Combine Closure and Partial into LoadedFunc
+// Plan Combine Closure and Partial into Func
 // this makes space for a tagged pointer to point to an i64
 
 #[derive(Trace, Clone)]
-pub struct LoadedFunc<'gc> {
+pub struct Func<'gc> {
     arity: u8,
     max_clique: u8,
     locals: Gc<'gc, [LoadedLocal<'gc>]>,
@@ -48,7 +48,7 @@ pub struct LoadedFunc<'gc> {
     top_level: bool,
 }
 
-impl<'gc> LoadedFunc<'gc> {
+impl<'gc> Func<'gc> {
     pub fn create_closure(
         &self,
         upvalues: GcOpt<'gc, [TaggedValue<'gc>]>,
@@ -163,7 +163,7 @@ impl<'gc> LoadedFunc<'gc> {
         mu: &'gc Mutator,
     ) {
         this.write_barrier(mu, |barrier| {
-            let old_locals = field!(barrier, LoadedFunc, locals);
+            let old_locals = field!(barrier, Func, locals);
             old_locals.set(new_locals);
         });
     }
