@@ -38,14 +38,11 @@ pub struct VM<'gc> {
     // TODO: consider making a thread type
     stack: Stack<'gc>,
     output_item: Gc<'gc, TaggedValue<'gc>>,
-
     globals: Gc<'gc, GcHashMap<'gc>>,
-    module_map: Gc<'gc, GcHashMap<'gc>>, // string -> export value
 }
 
 impl<'gc> VM<'gc> {
     pub fn new(mu: &'gc Mutator) -> Self {
-        let module_map = GcHashMap::alloc(mu);
         let globals = GcHashMap::alloc(mu);
         let output_item = Gc::new(mu, TaggedValue::new_null());
         let stack = Stack::new(mu);
@@ -53,7 +50,6 @@ impl<'gc> VM<'gc> {
         Self {
             stack,
             globals,
-            module_map,
             output_item
         }
     }
@@ -301,29 +297,11 @@ impl<'gc> VM<'gc> {
                 GcHashMap::insert(self.globals.clone(), sym_val, src_val, mu);
             }
             ByteCode::Import { dest, path } => {
-                let module_path_val = self.get_reg(path);
+                // assert value is a string
+                let val = Value::from(&self.get_reg(path));
+                let path = val.to_string(symbols, true);
 
-                // TODO: assert(module_path_val) is a string
-
-                match self.module_map.get(&module_path_val) {
-                    None => {
-                        let val = Value::from(&self.get_reg(path));
-                        let path = val.to_string(symbols, true);
-
-                        return Ok(Some(ExitCode::LoadModule(path)));
-                    }
-                    Some(export_value) => {
-                        self.set_reg(export_value, dest, mu);
-                    }
-                }
-            }
-            ByteCode::Export { src } => {
-                let callframe = self.stack.last_cf().unwrap();
-                let _module_path = callframe.get_func().get_file_path();
-                let _export_val = self.get_reg(src);
-
-                //GcHashMap::insert(self.module_map.clone(), module_path, export_val, mu);
-                todo!()
+                return Ok(Some(ExitCode::LoadModule(path)));
             }
         }
 
@@ -429,15 +407,8 @@ impl<'gc> VM<'gc> {
 
         if let ByteCode::Call { dest, .. } = instr_stream.prev() {
             self.set_reg(return_val, dest, mu);
-        } else if let ByteCode::Import { .. } = instr_stream.prev() {
-            todo!();
-            /*
-            let export_value = self
-                .module_map
-                .get(&popped_callframe.get_module_path())
-                .unwrap();
-            */
-            // self.set_reg(export_value, dest, mu);
+        } else if let ByteCode::Import { dest, .. } = instr_stream.prev() {
+            self.set_reg(return_val, dest, mu);
         } else {
             todo!("bad return from function")
         }

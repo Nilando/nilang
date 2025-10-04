@@ -73,7 +73,6 @@ impl LoweringCtx {
                 stmts,
             } => self.lower_func_decl(ident, inputs, stmts),
             Stmt::Assign { dest, src } => self.lower_assign(dest, src),
-            Stmt::Export(expr) => self.lower_export(expr),
             Stmt::Import { ident, path } => self.lower_import(ident, path),
         };
     }
@@ -85,12 +84,6 @@ impl LoweringCtx {
         let path = self.load_const(TacConst::String(module_path.item));
 
         self.emit(Tac::Import { dest, path });
-    }
-
-    fn lower_export(&mut self, export_expr: Spanned<Expr>) {
-        let src = self.lower_expr(export_expr);
-
-        self.emit(Tac::Export { src });
     }
 
     fn lower_return(&mut self, return_expr: Option<Spanned<Expr>>) {

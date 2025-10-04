@@ -32,7 +32,6 @@ pub enum Stmt {
         else_stmts: Vec<Stmt>,
     },
     Return(Option<Spanned<Expr>>),
-    Export(Spanned<Expr>),
     Import {
         ident: SymID,
         path: Spanned<String>,
@@ -56,10 +55,6 @@ fn import_stmt(_: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
         .then(symbol())
         .append(ctrl(Ctrl::Colon).then(string().spanned()))
         .map(|(ident, path)| Stmt::Import { ident, path })
-}
-
-fn export_stmt(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
-    keyword(KeyWord::Export).then(expr(sp)).map(Stmt::Export)
 }
 
 fn func_decl(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
@@ -134,7 +129,6 @@ fn closed_stmt(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
         .or(return_stmt(sp.clone()))
         .or(break_stmt())
         .or(continue_stmt())
-        .or(export_stmt(sp))
         .closed_by(ctrl(Ctrl::SemiColon).expect("expected ';' at end of stmt"))
 }
 

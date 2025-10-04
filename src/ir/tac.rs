@@ -96,9 +96,6 @@ pub enum Tac {
         label: LabelID,
     },
     Noop,
-    Export {
-        src: VReg,
-    },
     Import {
         dest: VReg,
         path: VReg,
@@ -117,7 +114,6 @@ impl Tac {
             | Tac::StoreArg { src, .. }
             | Tac::Call { src, .. }
             | Tac::Return { src, .. }
-            | Tac::Export { src }
             | Tac::Jnt { src, .. }
             | Tac::Jit { src, .. } => [Some(src), None, None],
             Tac::Import { path, .. } => [Some(path), None, None],
@@ -138,7 +134,6 @@ impl Tac {
             | Tac::StoreArg { src, .. }
             | Tac::Call { src, .. }
             | Tac::Return { src, .. }
-            | Tac::Export { src }
             | Tac::Jnt { src, .. }
             | Tac::Jit { src, .. } => [Some(src), None, None],
             Tac::Import { path, .. } => [Some(path), None, None],
@@ -190,7 +185,6 @@ impl Tac {
                 | Tac::Print { .. }
                 | Tac::Call { .. }
                 | Tac::Import { .. }
-                | Tac::Export { .. }
         )
     }
 }

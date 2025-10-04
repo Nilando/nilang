@@ -1,7 +1,9 @@
 VERSION 0.1.0
 
 IN PROGRESS:
-- modules are broken due to refactoring, need fix in how gc hash map works
+- modules are just functions
+  - no module map
+  - import simply parses a file and calls it as a function
 
 FEATURE BACKLOG:
 - separate float and int types

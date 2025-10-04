@@ -42,7 +42,6 @@ pub enum ByteCode {
     Jnt { src: Reg, offset: i16 },
     Jit { src: Reg, offset: i16 },
     Import { dest: Reg, path: Reg },
-    Export { src: Reg },
 }
 
 impl Display for ByteCode {
@@ -83,7 +82,6 @@ impl Display for ByteCode {
             ByteCode::LoadGlobal { dest, sym } => write!(f, "LDGB {dest}, #{sym}"),
             ByteCode::StoreGlobal { sym, src } => write!(f, "STGB {src}, #{sym}"),
             ByteCode::Import { dest, path } => write!(f, "IMPO {dest}, {path}"),
-            ByteCode::Export { src } => write!(f, "EXPO {src}"),
             ByteCode::Noop => write!(f, "NOOP"),
         }
     }
