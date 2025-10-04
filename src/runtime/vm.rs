@@ -7,7 +7,7 @@ use super::op::{
 };
 use super::bytecode::Reg;
 use super::call_frame::CallFrame;
-use super::func::LoadedFunc;
+use super::func::Func;
 use super::hash_map::GcHashMap;
 use super::intrinsics::call_intrinsic;
 use super::list::List;
@@ -93,7 +93,7 @@ impl<'gc> VM<'gc> {
     pub fn load_module(
         &self,
         mu: &'gc Mutator,
-        func: Gc<'gc, LoadedFunc<'gc>>,
+        func: Gc<'gc, Func<'gc>>,
     ) {
         let cf = CallFrame::new(func);
 
