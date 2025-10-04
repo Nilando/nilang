@@ -159,7 +159,13 @@ pub fn mem_load<'gc>(
     mu: &'gc Mutator,
 ) -> Result<Value<'gc>, String> {
     match (&store, key) {
-        (Value::List(list), Value::Int(idx)) => Ok(list.at(idx as usize)),
+        (Value::List(list), Value::Int(idx)) => {
+            if idx >= 0  {
+                Ok(list.at(idx as usize))
+            } else {
+                Ok(list.at(list.len() - (idx.abs() as usize)))
+            }
+        }
         (Value::String(s), Value::Int(idx)) => {
             if let Some(c) = s.at(usize::try_from(idx).unwrap()) {
                 let text: [char; 1] = [c];

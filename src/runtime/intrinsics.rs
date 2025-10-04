@@ -9,11 +9,15 @@ use crate::symbol_map::{
 
 use super::instruction_stream::InstructionStream;
 use super::list::List;
+use super::stack::Stack;
 use super::value::Value;
 use super::error::RuntimeErrorKind;
+use super::ByteCode;
 
 pub fn call_intrinsic<'gc>(
+    stack: &Stack<'gc>,
     args: &mut InstructionStream<'gc>,
+    supplied_args: usize,
     sym_id: SymID,
     symbol_map: &mut SymbolMap,
     mu: &'gc Mutator<'gc>,
@@ -24,79 +28,98 @@ pub fn call_intrinsic<'gc>(
 
         // SINGLE ARG FUNCS
         NUM_SYM => {
-            let arg = extract_single_arg(args)?;
+            expect_arg_count(1, supplied_args)?;
+            let arg = extract_arg(args, stack);
             num(arg)
         }
         STR_SYM => {
-            let arg = extract_single_arg(args)?;
+            expect_arg_count(1, supplied_args)?;
+            let arg = extract_arg(args, stack);
             str(arg, mu, symbol_map)
         }
         SYM_SYM => {
-            let arg = extract_single_arg(args)?;
+            expect_arg_count(1, supplied_args)?;
+            let arg = extract_arg(args, stack);
             sym(arg, symbol_map)
         }
         BOOL_SYM => {
-            let arg = extract_single_arg(args)?;
+            expect_arg_count(1, supplied_args)?;
+            let arg = extract_arg(args, stack);
             bbool(arg)
         }
         SLEEP_SYM => {
-            let arg = extract_single_arg(args)?;
+            expect_arg_count(1, supplied_args)?;
+            let arg = extract_arg(args, stack);
             sleep(arg)
         }
         TYPE_SYM => {
-            let arg = extract_single_arg(args)?;
+            expect_arg_count(1, supplied_args)?;
+            let arg = extract_arg(args, stack);
             ttype(arg)
         }
         READ_FILE_SYM => {
-            let arg = extract_single_arg(args)?;
+            expect_arg_count(1, supplied_args)?;
+            let arg = extract_arg(args, stack);
             read_file(arg, mu)
         }
         CLONE_SYM => {
-            let arg = extract_single_arg(args)?;
+            expect_arg_count(1, supplied_args)?;
+            let arg = extract_arg(args, stack);
             clone(arg, mu)
         }
         ABS_SYM => {
-            let arg = extract_single_arg(args)?;
+            expect_arg_count(1, supplied_args)?;
+            let arg = extract_arg(args, stack);
             abs(arg)
         }
         FLOOR_SYM => {
-            let arg = extract_single_arg(args)?;
+            expect_arg_count(1, supplied_args)?;
+            let arg = extract_arg(args, stack);
             floor(arg)
         }
         CEIL_SYM => {
-            let arg = extract_single_arg(args)?;
+            expect_arg_count(1, supplied_args)?;
+            let arg = extract_arg(args, stack);
             ceil(arg)
         }
         POP_SYM => {
-            let arg = extract_single_arg(args)?;
+            expect_arg_count(1, supplied_args)?;
+            let arg = extract_arg(args, stack);
             pop(arg, mu)
         }
         LEN_SYM => {
-            let arg = extract_single_arg(args)?;
+            expect_arg_count(1, supplied_args)?;
+            let arg = extract_arg(args, stack);
             len(arg)
         }
         ARITY_SYM => {
-            let arg = extract_single_arg(args)?;
+            expect_arg_count(1, supplied_args)?;
+            let arg = extract_arg(args, stack);
             arity(arg)
         }
         BIND_SYM => {
-            let (arg1, arg2) = extract_two_args(args)?;
+            expect_arg_count(2, supplied_args)?;
+            let (arg1, arg2) = extract_two_args(args, stack);
             bind(arg1, arg2, mu)
         }
         POW_SYM => {
-            let (arg1, arg2) = extract_two_args(args)?;
+            expect_arg_count(2, supplied_args)?;
+            let (arg1, arg2) = extract_two_args(args, stack);
             pow(arg1, arg2)
         }
         LOG_SYM => {
-            let (arg1, arg2) = extract_two_args(args)?;
+            expect_arg_count(2, supplied_args)?;
+            let (arg1, arg2) = extract_two_args(args, stack);
             log(arg1, arg2)
         }
         PUSH_SYM => {
-            let (arg1, arg2) = extract_two_args(args)?;
+            expect_arg_count(2, supplied_args)?;
+            let (arg1, arg2) = extract_two_args(args, stack);
             push(arg1, arg2, mu)
         }
         DELETE_SYM => {
-            let (arg1, arg2) = extract_two_args(args)?;
+            expect_arg_count(2, supplied_args)?;
+            let (arg1, arg2) = extract_two_args(args, stack);
             delete(arg1, arg2, mu)
         }
         _ => todo!(),
@@ -104,26 +127,24 @@ pub fn call_intrinsic<'gc>(
 }
 
 fn extract_two_args<'gc>(
-    args: &mut InstructionStream<'gc>,
-) -> Result<(Value<'gc>, Value<'gc>), (RuntimeErrorKind, String)> {
-    let arg_count = args.get_code_len();
+    instr_stream: &mut InstructionStream<'gc>,
+    stack: &Stack<'gc>
+) -> (Value<'gc>, Value<'gc>) {
+    let arg1 = extract_arg(instr_stream, stack);
+    let arg2 = extract_arg(instr_stream, stack);
 
-    expect_arg_count(2, arg_count)?;
-
-    let arg1 = Value::from(&args.get_next_arg().unwrap());
-    let arg2 = Value::from(&args.get_next_arg().unwrap());
-
-    Ok((arg1, arg2))
+    (arg1, arg2)
 }
 
-fn extract_single_arg<'a, 'gc>(
-    args: &mut InstructionStream<'gc>,
-) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
-    let arg_count = args.get_code_len();
-
-    expect_arg_count(1, arg_count)?;
-
-    Ok(Value::from(&args.get_next_arg().unwrap()))
+fn extract_arg<'a, 'gc>(
+    instr_stream: &mut InstructionStream<'gc>,
+    stack: &Stack<'gc>
+) -> Value<'gc> {
+    if let ByteCode::StoreArg { src } = instr_stream.advance() {
+        Value::from(&stack.get_reg(src))
+    } else {
+        panic!("failed to extract arg")
+    }
 }
 
 fn expect_arg_count(

@@ -84,6 +84,9 @@ impl<'gc> VM<'gc> {
 
             for _ in 0..DISPATCH_LOOP_LENGTH {
                 if let Some(command) = self.dispatch_instruction(mu, symbols, &mut instr_stream)? {
+                    if std::env::var("VM_DEBUG").is_ok() {
+                        println!("VM RECEIVED CMD: {:?}", command);
+                    }
 
                     if let Some(cf) = self.stack.last_cf() {
                         cf.set_ip(instr_stream.get_ip());
@@ -132,6 +135,12 @@ impl<'gc> VM<'gc> {
         instr_stream: &mut InstructionStream<'gc>,
     ) -> Result<Option<ExitCode>, RuntimeError> {
         let instr = instr_stream.advance();
+        self.stack.last_cf().unwrap().set_ip(instr_stream.get_ip());
+
+        if std::env::var("VM_DEBUG").is_ok() {
+            println!("{}: {:?}", instr_stream.get_ip() - 1,instr);
+        }
+
         match instr {
             ByteCode::Noop => {}
             ByteCode::NewList { dest } => {
@@ -196,14 +205,20 @@ impl<'gc> VM<'gc> {
                 self.collect_upvalues_and_create_closure(func, src, mu, instr_stream)?;
             }
             ByteCode::StoreArg { .. } => {
+                self.count_args_then_call(mu, symbols, instr_stream)?;
             }
             ByteCode::Call { dest, src } => {
+                println!("IP: {}", instr_stream.get_ip());
                 self.call_function(dest, src, 0, mu, symbols, instr_stream)?;
             }
             ByteCode::Jump { offset } => {
+                //println!("JUMPING: {offset}");
+                //println!("IP: {}", instr_stream.get_ip());
                 instr_stream.jump(offset - 1);
             }
             ByteCode::Jnt { src, offset } => {
+                //println!("JNT: {offset}");
+                //println!("IP: {}", instr_stream.get_ip());
                 let val = self.get_reg(src);
 
                 if !val.is_truthy() {
@@ -211,6 +226,8 @@ impl<'gc> VM<'gc> {
                 }
             }
             ByteCode::Jit { src, offset } => {
+                //println!("JIT: {offset}");
+                //println!("IP: {}", instr_stream.get_ip());
                 let val = self.get_reg(src);
 
                 if val.is_truthy() {
@@ -255,8 +272,6 @@ impl<'gc> VM<'gc> {
                 let val = self.get_reg(src);
 
                 self.handle_return(val, instr_stream, mu);
-
-                *instr_stream = self.create_instruction_stream()?;
 
                 if self.stack.is_empty() {
                     return Ok(Some(ExitCode::Exit));
@@ -376,7 +391,7 @@ impl<'gc> VM<'gc> {
             if let ByteCode::StoreUpvalue { src, .. } = instr_stream.get_instr_at(ip + idx) {
                 self.get_reg(src)
             } else {
-                todo!("return an internal runtime error")
+                panic!("should be unreachable")
             }
         })
     }
@@ -408,9 +423,11 @@ impl<'gc> VM<'gc> {
             return;
         }
 
-        if let ByteCode::Call { dest, .. } = instr_stream.rewind() {
+        *instr_stream = self.create_instruction_stream().unwrap();
+
+        if let ByteCode::Call { dest, .. } = instr_stream.prev() {
             self.set_reg(return_val, dest, mu);
-        } else if let ByteCode::Import { .. } = instr_stream.rewind() {
+        } else if let ByteCode::Import { .. } = instr_stream.prev() {
             todo!();
             /*
             let export_value = self
@@ -424,6 +441,34 @@ impl<'gc> VM<'gc> {
         }
     }
 
+    fn count_args_then_call(
+        &self,
+        mu: &'gc Mutator<'gc>,
+        syms: &mut SymbolMap,
+        instr_stream: &mut InstructionStream<'gc>
+    ) -> Result<(), RuntimeError> {
+        let mut count = 1; // we call this function b/c we've just seen *1* store arg instr
+
+        loop {
+            match instr_stream.advance() {
+                ByteCode::StoreArg { .. } => {
+                    count += 1;
+                }
+                ByteCode::Call { dest, src } => {
+                    self.call_function(dest, src, count, mu, syms, instr_stream)?;
+                    return Ok (());
+                }
+                _ => {
+                    return Err(RuntimeError::new(
+                        RuntimeErrorKind::InvalidByteCode,
+                        Some("A StoreArg op must only be followed by another StoreArg or a Call".to_string()),
+                        None,
+                    ))
+                }
+            }
+        }
+    }
+
     fn call_function(
         &self,
         dest: Reg,
@@ -433,8 +478,6 @@ impl<'gc> VM<'gc> {
         syms: &mut SymbolMap,
         instr_stream: &mut InstructionStream<'gc>,
     ) -> Result<(), RuntimeError> {
-        // check the arity of the function
-        // go back that many instructions
         match Value::from(&self.get_reg(src)) {
             Value::Func(func) => {
                 let expected_args = func.arity() as usize;
@@ -449,7 +492,6 @@ impl<'gc> VM<'gc> {
 
                 // TODO: store the current ip
                 self.stack.last_cf().unwrap().set_ip(instr_stream.get_ip());
-
                 self.stack.push_cf(CallFrame::new(func), mu);
 
                 if let Some(args) = bound_args {
@@ -462,13 +504,12 @@ impl<'gc> VM<'gc> {
                 instr_stream.jump(-1 * (supplied_args + 1) as i16);
 
                 for arg_num in 0..supplied_args {
-                    let bc = instr_stream.advance();
-                    if let ByteCode::StoreArg { src } = bc {
-                        let tagged_val = self.get_reg(src);
+                    if let ByteCode::StoreArg { src } = instr_stream.advance() {
+                        let tagged_val = self.stack.get_prev_cf_reg(src); 
 
                         self.set_reg(tagged_val, (arg_num + num_bound_args) as u8, mu);
                     } else {
-                        panic!("internal runtime error")
+                        panic!("InternalError: unexpected")
                     }
                 }
 
@@ -477,8 +518,8 @@ impl<'gc> VM<'gc> {
                 Ok(())
             }
             Value::SymId(sym_id) => {
-                let mut is = instr_stream.clone();
-                is.jump(-1 * (supplied_args + 1) as i16);
+                //println!("supplied args: {supplied_args}");
+                instr_stream.jump(-1 * (supplied_args + 1) as i16);
 
                 if !SymbolMap::is_intrinsic(sym_id) {
                     return Err(self.new_error(
@@ -487,7 +528,9 @@ impl<'gc> VM<'gc> {
                     ));
                 }
 
-                let result = call_intrinsic(&mut is, sym_id, syms, mu);
+                let result = call_intrinsic(&self.stack, instr_stream, supplied_args, sym_id, syms, mu);
+
+                instr_stream.advance();
 
                 match result {
                     Ok(return_val) => {

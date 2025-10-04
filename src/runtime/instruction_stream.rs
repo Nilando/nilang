@@ -33,6 +33,10 @@ impl<'gc> InstructionStream<'gc> {
         self.code[self.ip - 1]
     }
 
+    pub fn peek(&self) -> ByteCode {
+        self.code[self.ip]
+    }
+
     pub fn jump(&mut self, offset: i16) {
         if offset > 0 {
             self.ip = self.ip + offset as usize;
@@ -47,13 +51,5 @@ impl<'gc> InstructionStream<'gc> {
 
     pub fn get_instr_at(&self, i: usize) -> ByteCode {
         self.code[i]
-    }
-
-    pub fn get_code_len(&self) -> usize {
-        self.code.len()
-    }
-
-    pub fn get_next_arg(&self) -> Option<TaggedValue<'gc>> {
-        todo!()
     }
 }

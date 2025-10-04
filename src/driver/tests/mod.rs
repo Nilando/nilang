@@ -50,8 +50,8 @@ fn fixture_test(test_name: &str) {
     }
 
     let expected_actual_pairs = vec![
-        (  output_path_actual,   output_path_expected),
         (     err_path_actual,      err_path_expected),
+        (  output_path_actual,   output_path_expected),
         (     ast_path_actual,      ast_path_expected),
         (      ir_path_actual,       ir_path_expected),
         (bytecode_path_actual, bytecode_path_expected),

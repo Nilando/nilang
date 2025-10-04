@@ -83,40 +83,18 @@
                     ),
                     span: Span {
                         start: 29,
-                        end: 32,
-                    },
-                },
-                src: Spanned {
-                    item: Value(
-                        Int(
-                            1,
-                        ),
-                    ),
-                    span: Span {
-                        start: 33,
-                        end: 35,
-                    },
-                },
-            },
-            Assign {
-                dest: Spanned {
-                    item: Local(
-                        27,
-                    ),
-                    span: Span {
-                        start: 38,
-                        end: 43,
+                        end: 34,
                     },
                 },
                 src: Spanned {
                     item: Value(
                         String(
-                            "uh oh",
+                            "ohhhh fuuuccckkkkk",
                         ),
                     ),
                     span: Span {
-                        start: 44,
-                        end: 52,
+                        start: 35,
+                        end: 56,
                     },
                 },
             },
@@ -125,11 +103,11 @@
             Assign {
                 dest: Spanned {
                     item: Local(
-                        27,
+                        26,
                     ),
                     span: Span {
-                        start: 64,
-                        end: 69,
+                        start: 68,
+                        end: 73,
                     },
                 },
                 src: Spanned {
@@ -139,8 +117,8 @@
                         ),
                     ),
                     span: Span {
-                        start: 70,
-                        end: 99,
+                        start: 74,
+                        end: 103,
                     },
                 },
             },
@@ -152,18 +130,18 @@
                 Spanned {
                     item: Value(
                         Ident(
-                            27,
+                            26,
                         ),
                     ),
                     span: Span {
-                        start: 109,
-                        end: 113,
+                        start: 113,
+                        end: 117,
                     },
                 },
             ),
             span: Span {
-                start: 103,
-                end: 114,
+                start: 107,
+                end: 118,
             },
         },
     ),

@@ -44,4 +44,4 @@ Traceback: most recent call lowest
     recursive_function(i + 1);
   0: File "./src/driver/tests/test_programs/big_backtrace.nl", line: 3:48
     print("oh no look out for that number!" + 1);
-TypeError: Attempted to add String with Num
+TypeError: Attempted to add String with Int

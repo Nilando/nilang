@@ -79,6 +79,14 @@ impl<'gc> Stack<'gc> {
         TaggedValue::__new(self.registers.get_idx(i).unwrap())
     }
 
+    pub fn get_prev_cf_reg(&self, reg: u8) -> TaggedValue<'gc> {
+        let prev_cf = self.call_frames.get_idx(self.call_frames.len() - 2).unwrap().unwrap();
+        let prev_cf_reg_count = prev_cf.get_func().get_max_clique();
+        let i = reg as usize + (self.frame_start.get() - prev_cf_reg_count as usize);
+
+        TaggedValue::__new(self.registers.get_idx(i).unwrap())
+    }
+
     pub fn set_reg(&self, reg: u8, val: TaggedValue<'gc>, mu: &'gc Mutator<'gc>) {
         let i = self.add_reg_offset(reg);
 
@@ -88,7 +96,6 @@ impl<'gc> Stack<'gc> {
     fn add_reg_offset(&self, reg: u8) -> usize {
         reg as usize + self.frame_start.get()
     }
-
 
     pub fn get_backtrace(
         &self,
@@ -102,7 +109,7 @@ impl<'gc> Stack<'gc> {
             let module_path = &call_frame.get_func().get_file_path();
             let bt_call = BacktraceCall {
                 path: Some(module_path.as_string()),
-                span: call_frame.get_func().get_spans().get(0).unwrap().clone()
+                span: call_frame.get_func().get_spans().get(call_frame.get_ip()).unwrap().clone()
             };
 
             bt.calls.push(bt_call);

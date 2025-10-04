@@ -5,7 +5,7 @@ block0:
   next block1
 
 block1:
-  msg_2 = "uh oh"
+  msg_2 = "ohhhh fuuuccckkkkk"
   jump block3(msg_2)
 
 block2:
@@ -14,7 +14,7 @@ block2:
 
 block3(msg_1):
   PRINT msg_1
-  t11 = null
-  RETURN t11
+  t9 = null
+  RETURN t9
 
 }

@@ -16,9 +16,8 @@ pub enum ValueTag {
     Packed,
     #[ptr(f64)]
     Float,
-    // TODO:
-    //#[ptr(i64)]
-    //Int,
+    #[ptr(i64)]
+    Int,
     #[ptr(List<'gc>)]
     List,
     #[ptr(LoadedFunc<'gc>)]
@@ -43,6 +42,11 @@ impl<'gc> From<&TaggedValue<'gc>> for Value<'gc> {
                 let v = ValueTag::get_func(ptr).unwrap();
 
                 Value::Func(v)
+            }
+            ValueTag::Int => {
+                let v = ValueTag::get_int(ptr).unwrap();
+
+                Value::Int(*v)
             }
             ValueTag::List => {
                 let v = ValueTag::get_list(ptr).unwrap();
@@ -111,6 +115,7 @@ impl<'gc> TaggedValue<'gc> {
             Value::Float(f) => ValueTag::from_float(Gc::new(mu, f)),
             Value::String(s) => ValueTag::from_string(s),
             Value::Map(c) => ValueTag::from_map(c),
+            Value::Int(i) => ValueTag::from_int(Gc::new(mu, i)),
             _ => panic!("failed to convert value into tagged value"),
         };
 
@@ -129,11 +134,11 @@ impl<'gc> TaggedValue<'gc> {
                 let raw = self.ptr.get_stripped_raw() as u64;
 
                 match TaggedValue::unpack(raw) {
-                    Value::Null | Value::Bool(false) => true,
-                    _ => false
+                    Value::Null | Value::Bool(false) => false,
+                    _ => true
                 }
             }
-            _ => false,
+            _ => true,
         }
     }
 
@@ -268,14 +273,14 @@ mod tests {
     #[test]
     fn pack_and_unpack_sym_id() {
         let _: Arena<Root![()]> = Arena::new(|mu| {
-            let v = Value::SymId(123);
+            let v = Value::SymId(18);
             let tagged = v.as_tagged(mu);
 
             assert_eq!(tagged.ptr.get_tag(), ValueTag::Packed);
 
             let unpacked = Value::from(&tagged);
 
-            if let Value::SymId(123) = unpacked {
+            if let Value::SymId(18) = unpacked {
                 assert!(true);
             } else {
                 assert!(false);
