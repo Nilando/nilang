@@ -407,7 +407,9 @@ fn inner_inputs<'a>() -> Parser<'a, Vec<SymID>> {
 
 fn block(sp: Parser<'_, Stmt>) -> Parser<'_, Vec<Stmt>> {
     let left_curly = ctrl(Ctrl::LeftCurly);
-    let right_curly = ctrl(Ctrl::RightCurly).expect("Expected '}', found something else");
+    let right_curly = ctrl(Ctrl::RightCurly)
+        .recover(Ctrl::SemiColon)
+        .expect("Expected '}', found something else");
     let items = sp.zero_or_more();
 
     items.delimited(left_curly, right_curly)

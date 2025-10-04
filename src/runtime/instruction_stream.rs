@@ -1,5 +1,4 @@
 use super::call_frame::CallFrame;
-use super::tagged_value::TaggedValue;
 use super::ByteCode;
 
 #[derive(Clone)]

@@ -327,10 +327,9 @@ mod tests {
     fn duplicate_args_error() {
         let mut syms = SymbolMap::new();
         let input = "fn test(a, a) {}";
-        let mut _result = stmt().parse_str(input, &mut syms);
+        let result = stmt().parse_str(input, &mut syms);
 
-        todo!()
-        // TODO: assert_eq!(result.unwrap_err().pop().unwrap().item, ParseError::DuplicateArgs);
+        assert!(result.unwrap_err().render().contains("parser error: Function arguments cannot duplicate names"));
     }
 
     #[test]

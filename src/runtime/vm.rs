@@ -95,6 +95,10 @@ impl<'gc> VM<'gc> {
                     return Ok(command);
                 }
             }
+
+            if let Some(cf) = self.stack.last_cf() {
+                cf.set_ip(instr_stream.get_ip());
+            }
         }
     }
 
@@ -135,7 +139,6 @@ impl<'gc> VM<'gc> {
         instr_stream: &mut InstructionStream<'gc>,
     ) -> Result<Option<ExitCode>, RuntimeError> {
         let instr = instr_stream.advance();
-        self.stack.last_cf().unwrap().set_ip(instr_stream.get_ip());
 
         if std::env::var("VM_DEBUG").is_ok() {
             println!("{}: {:?}", instr_stream.get_ip() - 1,instr);
@@ -189,6 +192,9 @@ impl<'gc> VM<'gc> {
 
                 return Ok(Some(ExitCode::Print));
             }
+            ByteCode::Read { .. } => {
+                return Ok(Some(ExitCode::Read));
+            }
             ByteCode::Swap { r1, r2 } => {
                 let r1_val = self.get_reg(r1);
                 let r2_val = self.get_reg(r2);
@@ -201,6 +207,12 @@ impl<'gc> VM<'gc> {
 
                 self.set_reg(val, dest, mu);
             }
+            ByteCode::LoadUpvalue { dest, id } => {
+                let cf = self.stack.last_cf().unwrap();
+                let upval = cf.get_func().get_upvalue(id as usize);
+
+                self.set_reg(upval, dest, mu);
+            }
             ByteCode::StoreUpvalue { func, src } => {
                 self.collect_upvalues_and_create_closure(func, src, mu, instr_stream)?;
             }
@@ -208,17 +220,21 @@ impl<'gc> VM<'gc> {
                 self.count_args_then_call(mu, symbols, instr_stream)?;
             }
             ByteCode::Call { dest, src } => {
-                println!("IP: {}", instr_stream.get_ip());
                 self.call_function(dest, src, 0, mu, symbols, instr_stream)?;
             }
+            ByteCode::Return { src } => {
+                let val = self.get_reg(src);
+
+                self.handle_return(val, instr_stream, mu);
+
+                if self.stack.is_empty() {
+                    return Ok(Some(ExitCode::Exit));
+                }
+            }
             ByteCode::Jump { offset } => {
-                //println!("JUMPING: {offset}");
-                //println!("IP: {}", instr_stream.get_ip());
                 instr_stream.jump(offset - 1);
             }
             ByteCode::Jnt { src, offset } => {
-                //println!("JNT: {offset}");
-                //println!("IP: {}", instr_stream.get_ip());
                 let val = self.get_reg(src);
 
                 if !val.is_truthy() {
@@ -226,25 +242,23 @@ impl<'gc> VM<'gc> {
                 }
             }
             ByteCode::Jit { src, offset } => {
-                //println!("JIT: {offset}");
-                //println!("IP: {}", instr_stream.get_ip());
                 let val = self.get_reg(src);
 
                 if val.is_truthy() {
                     instr_stream.jump(offset - 1);
                 }
             }
-            ByteCode::Add { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, add, mu)?,
-            ByteCode::Sub { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, sub, mu)?,
-            ByteCode::Mult { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, multiply, mu)?,
-            ByteCode::Div { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, divide, mu)?,
-            ByteCode::Modulo { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, modulo, mu)?,
-            ByteCode::Lt { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, less_than, mu)?,
-            ByteCode::Lte { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, less_than_or_equal, mu)?,
-            ByteCode::Gt { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, greater_than, mu)?,
-            ByteCode::Gte { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, greater_than_or_equal, mu)?,
-            ByteCode::Equality { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, equal, mu)?,
-            ByteCode::Inequality { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, not_equal, mu)?,
+            ByteCode::Add { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, add,  instr_stream, mu)?,
+            ByteCode::Sub { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, sub, instr_stream, mu)?,
+            ByteCode::Mult { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, multiply, instr_stream, mu)?,
+            ByteCode::Div { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, divide, instr_stream, mu)?,
+            ByteCode::Modulo { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, modulo, instr_stream, mu)?,
+            ByteCode::Lt { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, less_than, instr_stream, mu)?,
+            ByteCode::Lte { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, less_than_or_equal, instr_stream, mu)?,
+            ByteCode::Gt { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, greater_than, instr_stream, mu)?,
+            ByteCode::Gte { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, greater_than_or_equal, instr_stream, mu)?,
+            ByteCode::Equality { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, equal, instr_stream, mu)?,
+            ByteCode::Inequality { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, not_equal, instr_stream, mu)?,
             ByteCode::MemLoad { dest, store, key } => {
                 let store = Value::from(&self.get_reg(store));
                 let key = Value::from(&self.get_reg(key));
@@ -253,7 +267,10 @@ impl<'gc> VM<'gc> {
                     Ok(value) => {
                         self.set_reg(TaggedValue::from_value(value, mu), dest, mu);
                     }
-                    Err(err) => return Err(self.type_error(err)),
+                    Err(err) => {
+                        self.stack.last_cf().unwrap().set_ip(instr_stream.get_ip());
+                        return Err(self.type_error(err));
+                    }
                 }
             }
             ByteCode::MemStore { store, key, src } => {
@@ -268,25 +285,6 @@ impl<'gc> VM<'gc> {
                     Err(err) => return Err(self.type_error(err)),
                 }
             }
-            ByteCode::Return { src } => {
-                let val = self.get_reg(src);
-
-                self.handle_return(val, instr_stream, mu);
-
-                if self.stack.is_empty() {
-                    return Ok(Some(ExitCode::Exit));
-                }
-            }
-            ByteCode::Read { .. } => {
-                return Ok(Some(ExitCode::Read));
-            }
-            ByteCode::LoadUpvalue { dest, id } => {
-                let cf = self.stack.last_cf().unwrap();
-                let upval = cf.get_func().get_upvalue(id as usize);
-
-                self.set_reg(upval, dest, mu);
-            }
-
             ByteCode::LoadGlobal { dest, sym } => {
                 let sym_val = self.get_reg(sym);
                 let tagged_val = match self.globals.get(&sym_val) {
@@ -338,6 +336,7 @@ impl<'gc> VM<'gc> {
         lhs: Reg,
         rhs: Reg,
         op: for<'a> fn(Value<'a>, Value<'a>) -> Result<Value<'a>, String>, 
+        instr_stream: &InstructionStream<'gc>,
         mu: &'gc Mutator
     ) -> Result<(), RuntimeError> {
         let lhs = Value::from(&self.get_reg(lhs));
@@ -348,7 +347,10 @@ impl<'gc> VM<'gc> {
                 self.set_reg_with_value(value, dest, mu);
                 Ok(())
             }
-            Err(err) => return Err(self.type_error(err)),
+            Err(err) => {
+                self.stack.last_cf().unwrap().set_ip(instr_stream.get_ip());
+                return Err(self.type_error(err))
+            }
         }
     }
 
@@ -455,8 +457,7 @@ impl<'gc> VM<'gc> {
                     count += 1;
                 }
                 ByteCode::Call { dest, src } => {
-                    self.call_function(dest, src, count, mu, syms, instr_stream)?;
-                    return Ok (());
+                    return self.call_function(dest, src, count, mu, syms, instr_stream);
                 }
                 _ => {
                     return Err(RuntimeError::new(
@@ -501,7 +502,7 @@ impl<'gc> VM<'gc> {
                     }
                 }
 
-                instr_stream.jump(-1 * (supplied_args + 1) as i16);
+                instr_stream.jump((-1) * ((supplied_args + 1) as i16));
 
                 for arg_num in 0..supplied_args {
                     if let ByteCode::StoreArg { src } = instr_stream.advance() {
@@ -518,8 +519,7 @@ impl<'gc> VM<'gc> {
                 Ok(())
             }
             Value::SymId(sym_id) => {
-                //println!("supplied args: {supplied_args}");
-                instr_stream.jump(-1 * (supplied_args + 1) as i16);
+                instr_stream.jump((-1) * ((supplied_args + 1) as i16));
 
                 if !SymbolMap::is_intrinsic(sym_id) {
                     return Err(self.new_error(
@@ -543,7 +543,10 @@ impl<'gc> VM<'gc> {
                     }
                 }
             }
-            calle => Err(self.type_error(format!("Tried to call {} type", calle.type_str()))),
+            calle => {
+                self.stack.last_cf().unwrap().set_ip(instr_stream.get_ip());
+                return Err(self.type_error(format!("Tried to call {} type", calle.type_str())));
+            }
         }
     }
 

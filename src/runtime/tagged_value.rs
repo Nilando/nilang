@@ -28,7 +28,6 @@ pub enum ValueTag {
     Map,
 }
 
-
 impl<'gc> From<&TaggedValue<'gc>> for Value<'gc> {
     fn from(value: &TaggedValue<'gc>) -> Self {
         let ptr = value.ptr.clone();
@@ -70,6 +69,33 @@ impl<'gc> From<&TaggedValue<'gc>> for Value<'gc> {
             }
         }
     }
+}
+
+// PACKED VALUE LAYOUT
+// size = 8 bytes
+// first 3 bits are used by the 'primary' tag, ValueTag::Packed
+//
+// There are 5 secondary tags meaning the next 3 bits after the primary tag
+// are used for the secondary Tag
+//
+// Of the entire 64 bit value, 6 bits are used in tagged leaving 58 bits.
+// The packed value is then stored in the 32 top bits. The value could use all 58 bits,
+// specifically the i32 could be grown into a i58, but then we would need special
+// overflow checking logic which I didn't feel like implementing.
+//
+// Value (32 bits)                                                  Secondary Tag (3 bits) => PackedTag::_
+// |                                                                  |
+// |                                                                  |  Primary Tag (3 bits) == ValueTag::PackedTag
+// |                                                                  |   |
+// V                                                                  V   V
+// -----------------------------------                               --- ---
+// 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00 000 000
+
+enum PackedTag {
+    SymId,
+    Int,
+    Bool,
+    Null,
 }
 
 impl<'gc> TaggedValue<'gc> {
@@ -201,35 +227,6 @@ impl<'gc> TaggedValue<'gc> {
         Some(TaggedValue { ptr: tagged })
     }
 }
-
-enum PackedTag {
-    SymId,
-    Int,
-    Bool,
-    Null,
-}
-
-// PACKED VALUE LAYOUT
-// size = 8 bytes
-// first 3 bits are used by the 'primary' tag, ValueTag::Packed
-//
-// There are 5 secondary tags meaning the next 3 bits after the primary tag
-// are used for the secondary Tag
-//
-// Of the entire 64 bit value, 6 bits are used in tagged leaving 58 bits.
-// The packed value is then stored in the 32 top bits. The value could use all 58 bits,
-// specifically the i32 could be grown into a i58, but then we would need special
-// overflow checking logic which I didn't feel like implementing.
-//
-// Value (32 bits)                                                  Secondary Tag (3 bits) => PackedTag::_
-// |                                                                  |
-// |                                                                  |  Primary Tag (3 bits) == ValueTag::PackedTag
-// |                                                                  |   |
-// V                                                                  V   V
-// -----------------------------------                               --- ---
-// 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00 000 000
-
-
 
 #[cfg(test)]
 mod tests {
