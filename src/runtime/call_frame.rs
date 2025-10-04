@@ -1,18 +1,18 @@
 use std::cell::Cell;
 
-use sandpit::{Gc, Trace};
+use sandpit::{Gc, Mutator, Trace};
 use super::func::LoadedFunc;
 
 #[derive(Trace)]
 pub struct CallFrame<'gc> {
     func: Gc<'gc, LoadedFunc<'gc>>,
-    ip: Cell<usize>,
+    ip: Gc<'gc, Cell<usize>>,
 }
 
 impl<'gc> CallFrame<'gc> {
-    pub fn new(loaded_func: Gc<'gc, LoadedFunc<'gc>>) -> Self {
+    pub fn new(loaded_func: Gc<'gc, LoadedFunc<'gc>>, mu: &'gc Mutator) -> Self {
         Self {
-            ip: Cell::new(0),
+            ip: Gc::new(mu, Cell::new(0)),
             func: loaded_func,
         }
     }
@@ -21,8 +21,8 @@ impl<'gc> CallFrame<'gc> {
         self.func.clone()
     }
 
-    pub fn get_ip(&self) -> usize {
-        self.ip.get()
+    pub fn get_ip(&self) -> &'gc Cell<usize> {
+        self.ip.scoped_deref()
     }
 
     pub fn set_ip(&self, ip: usize) {

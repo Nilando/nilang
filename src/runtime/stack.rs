@@ -109,7 +109,7 @@ impl<'gc> Stack<'gc> {
             let module_path = &call_frame.get_func().get_file_path();
             let bt_call = BacktraceCall {
                 path: Some(module_path.as_string()),
-                span: call_frame.get_func().get_spans().get(call_frame.get_ip()).unwrap().clone()
+                span: call_frame.get_func().get_spans().get(call_frame.get_ip().get()).unwrap().clone()
             };
 
             bt.calls.push(bt_call);

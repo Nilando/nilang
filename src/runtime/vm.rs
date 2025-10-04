@@ -84,16 +84,8 @@ impl<'gc> VM<'gc> {
                         println!("VM RECEIVED CMD: {:?}", command);
                     }
 
-                    if let Some(cf) = self.stack.last_cf() {
-                        cf.set_ip(instr_stream.get_ip());
-                    }
-
                     return Ok(command);
                 }
-            }
-
-            if let Some(cf) = self.stack.last_cf() {
-                cf.set_ip(instr_stream.get_ip());
             }
         }
     }
@@ -103,7 +95,7 @@ impl<'gc> VM<'gc> {
         mu: &'gc Mutator,
         func: Gc<'gc, LoadedFunc<'gc>>,
     ) {
-        let cf = CallFrame::new(func);
+        let cf = CallFrame::new(func, mu);
 
         self.stack.push_cf(cf, mu);
     }
@@ -244,17 +236,17 @@ impl<'gc> VM<'gc> {
                     instr_stream.jump(offset - 1);
                 }
             }
-            ByteCode::Add { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, add,  instr_stream, mu)?,
-            ByteCode::Sub { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, sub, instr_stream, mu)?,
-            ByteCode::Mult { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, multiply, instr_stream, mu)?,
-            ByteCode::Div { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, divide, instr_stream, mu)?,
-            ByteCode::Modulo { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, modulo, instr_stream, mu)?,
-            ByteCode::Lt { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, less_than, instr_stream, mu)?,
-            ByteCode::Lte { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, less_than_or_equal, instr_stream, mu)?,
-            ByteCode::Gt { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, greater_than, instr_stream, mu)?,
-            ByteCode::Gte { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, greater_than_or_equal, instr_stream, mu)?,
-            ByteCode::Equality { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, equal, instr_stream, mu)?,
-            ByteCode::Inequality { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, not_equal, instr_stream, mu)?,
+            ByteCode::Add { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, add, mu)?,
+            ByteCode::Sub { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, sub, mu)?,
+            ByteCode::Mult { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, multiply, mu)?,
+            ByteCode::Div { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, divide, mu)?,
+            ByteCode::Modulo { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, modulo, mu)?,
+            ByteCode::Lt { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, less_than, mu)?,
+            ByteCode::Lte { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, less_than_or_equal, mu)?,
+            ByteCode::Gt { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, greater_than, mu)?,
+            ByteCode::Gte { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, greater_than_or_equal, mu)?,
+            ByteCode::Equality { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, equal, mu)?,
+            ByteCode::Inequality { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, not_equal, mu)?,
             ByteCode::MemLoad { dest, store, key } => {
                 let store = Value::from(&self.get_reg(store));
                 let key = Value::from(&self.get_reg(key));
@@ -264,7 +256,6 @@ impl<'gc> VM<'gc> {
                         self.set_reg(TaggedValue::from_value(value, mu), dest, mu);
                     }
                     Err(err) => {
-                        self.stack.last_cf().unwrap().set_ip(instr_stream.get_ip());
                         return Err(self.type_error(err));
                     }
                 }
@@ -314,7 +305,6 @@ impl<'gc> VM<'gc> {
         lhs: Reg,
         rhs: Reg,
         op: for<'a> fn(Value<'a>, Value<'a>) -> Result<Value<'a>, String>, 
-        instr_stream: &InstructionStream<'gc>,
         mu: &'gc Mutator
     ) -> Result<(), RuntimeError> {
         let lhs = Value::from(&self.get_reg(lhs));
@@ -326,7 +316,6 @@ impl<'gc> VM<'gc> {
                 Ok(())
             }
             Err(err) => {
-                self.stack.last_cf().unwrap().set_ip(instr_stream.get_ip());
                 return Err(self.type_error(err))
             }
         }
@@ -463,8 +452,7 @@ impl<'gc> VM<'gc> {
                 self.expect_args(expected_args, supplied_args)?;
 
                 // TODO: store the current ip
-                self.stack.last_cf().unwrap().set_ip(instr_stream.get_ip());
-                self.stack.push_cf(CallFrame::new(func), mu);
+                self.stack.push_cf(CallFrame::new(func, mu), mu);
 
                 if let Some(args) = bound_args {
                     for (arg_num, tagged_val) in args.iter().enumerate() {
@@ -485,6 +473,8 @@ impl<'gc> VM<'gc> {
                     }
                 }
 
+                instr_stream.advance();
+
                 *instr_stream = self.create_instruction_stream()?;
 
                 Ok(())
@@ -492,7 +482,6 @@ impl<'gc> VM<'gc> {
             Value::SymId(sym_id) => {
 
                 if !SymbolMap::is_intrinsic(sym_id) {
-                    self.stack.last_cf().unwrap().set_ip(instr_stream.get_ip());
                     return Err(self.new_error(
                         RuntimeErrorKind::TypeError,
                         "Tried to call non intrinsic symbol".to_string(),
@@ -517,7 +506,6 @@ impl<'gc> VM<'gc> {
                 }
             }
             calle => {
-                self.stack.last_cf().unwrap().set_ip(instr_stream.get_ip());
                 return Err(self.type_error(format!("Tried to call {} type", calle.type_str())));
             }
         }
