@@ -51,7 +51,8 @@ macro_rules! generate_intrinsic_syms {
 
 // Use the macro to generate the necessary parts.
 generate_intrinsic_syms! {
-    NUM_SYM,
+    INT_SYM,
+    FLOAT_SYM,
     ARGS_SYM,
     STR_SYM,
     BOOL_SYM,

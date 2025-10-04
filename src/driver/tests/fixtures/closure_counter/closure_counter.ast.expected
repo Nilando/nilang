@@ -1,6 +1,6 @@
 [
     FuncDecl {
-        ident: 24,
+        ident: 25,
         inputs: Spanned {
             item: [],
             span: Span {
@@ -12,7 +12,7 @@
             Assign {
                 dest: Spanned {
                     item: Local(
-                        25,
+                        26,
                     ),
                     span: Span {
                         start: 21,
@@ -25,7 +25,7 @@
                             [
                                 (
                                     Sym(
-                                        26,
+                                        27,
                                     ),
                                     Spanned {
                                         item: Value(
@@ -67,7 +67,7 @@
                                                 store: Spanned {
                                                     item: Value(
                                                         Ident(
-                                                            25,
+                                                            26,
                                                         ),
                                                     ),
                                                     span: Span {
@@ -75,7 +75,7 @@
                                                         end: 67,
                                                     },
                                                 },
-                                                key: 26,
+                                                key: 27,
                                             },
                                             span: Span {
                                                 start: 62,
@@ -89,7 +89,7 @@
                                                         store: Spanned {
                                                             item: Value(
                                                                 Ident(
-                                                                    25,
+                                                                    26,
                                                                 ),
                                                             ),
                                                             span: Span {
@@ -97,7 +97,7 @@
                                                                 end: 79,
                                                             },
                                                         },
-                                                        key: 26,
+                                                        key: 27,
                                                     },
                                                     span: Span {
                                                         start: 74,
@@ -130,7 +130,7 @@
                                                     store: Spanned {
                                                         item: Value(
                                                             Ident(
-                                                                25,
+                                                                26,
                                                             ),
                                                         ),
                                                         span: Span {
@@ -138,7 +138,7 @@
                                                             end: 106,
                                                         },
                                                     },
-                                                    key: 26,
+                                                    key: 27,
                                                 },
                                                 span: Span {
                                                     start: 101,
@@ -162,7 +162,7 @@
     Assign {
         dest: Spanned {
             item: Local(
-                27,
+                28,
             ),
             span: Span {
                 start: 120,
@@ -174,7 +174,7 @@
                 calle: Spanned {
                     item: Value(
                         Ident(
-                            24,
+                            25,
                         ),
                     ),
                     span: Span {
@@ -193,7 +193,7 @@
     Assign {
         dest: Spanned {
             item: Local(
-                28,
+                29,
             ),
             span: Span {
                 start: 146,
@@ -218,7 +218,7 @@
                 lhs: Spanned {
                     item: Value(
                         Ident(
-                            28,
+                            29,
                         ),
                     ),
                     span: Span {
@@ -253,7 +253,7 @@
                                 calle: Spanned {
                                     item: Value(
                                         Ident(
-                                            27,
+                                            28,
                                         ),
                                     ),
                                     span: Span {
@@ -278,7 +278,7 @@
             Assign {
                 dest: Spanned {
                     item: Local(
-                        28,
+                        29,
                     ),
                     span: Span {
                         start: 190,
@@ -290,7 +290,7 @@
                         lhs: Spanned {
                             item: Value(
                                 Ident(
-                                    28,
+                                    29,
                                 ),
                             ),
                             span: Span {

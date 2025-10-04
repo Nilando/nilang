@@ -296,7 +296,7 @@ impl<'gc> VM<'gc> {
 
                 GcHashMap::insert(self.globals.clone(), sym_val, src_val, mu);
             }
-            ByteCode::Import { dest, path } => {
+            ByteCode::Import { path, .. } => {
                 // assert value is a string
                 let val = Value::from(&self.get_reg(path));
                 let path = val.to_string(symbols, true);
@@ -490,14 +490,16 @@ impl<'gc> VM<'gc> {
                 Ok(())
             }
             Value::SymId(sym_id) => {
-                instr_stream.jump((-1) * ((supplied_args + 1) as i16));
 
                 if !SymbolMap::is_intrinsic(sym_id) {
+                    self.stack.last_cf().unwrap().set_ip(instr_stream.get_ip());
                     return Err(self.new_error(
                         RuntimeErrorKind::TypeError,
                         "Tried to call non intrinsic symbol".to_string(),
                     ));
                 }
+
+                instr_stream.jump((-1) * ((supplied_args + 1) as i16));
 
                 let result = call_intrinsic(&self.stack, instr_stream, supplied_args, sym_id, syms, mu);
 

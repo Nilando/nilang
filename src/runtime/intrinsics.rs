@@ -4,7 +4,7 @@ use sandpit::{Gc, Mutator};
 
 use crate::runtime::string::VMString;
 use crate::symbol_map::{
-    SymID, SymbolMap, ABS_SYM, ARGS_SYM, ARITY_SYM, BIND_SYM, BOOL_SYM, CEIL_SYM, CLONE_SYM, DELETE_SYM, FLOOR_SYM, FN_SYM, LEN_SYM, LIST_SYM, LOG_SYM, MAP_SYM, NULL_SYM, NUM_SYM, POP_SYM, POW_SYM, PUSH_SYM, READ_FILE_SYM, SLEEP_SYM, STR_SYM, SYM_SYM, TYPE_SYM
+    SymID, SymbolMap, ABS_SYM, ARGS_SYM, ARITY_SYM, BIND_SYM, BOOL_SYM, CEIL_SYM, CLONE_SYM, DELETE_SYM, FLOAT_SYM, FLOOR_SYM, FN_SYM, INT_SYM, LEN_SYM, LIST_SYM, LOG_SYM, MAP_SYM, NULL_SYM, POP_SYM, POW_SYM, PUSH_SYM, READ_FILE_SYM, SLEEP_SYM, STR_SYM, SYM_SYM, TYPE_SYM
 };
 
 use super::instruction_stream::InstructionStream;
@@ -27,10 +27,15 @@ pub fn call_intrinsic<'gc>(
         ARGS_SYM => get_program_args(mu),
 
         // SINGLE ARG FUNCS
-        NUM_SYM => {
+        FLOAT_SYM => {
             expect_arg_count(1, supplied_args)?;
             let arg = extract_arg(args, stack);
-            num(arg)
+            float(arg)
+        }
+        INT_SYM => {
+            expect_arg_count(1, supplied_args)?;
+            let arg = extract_arg(args, stack);
+            int(arg)
         }
         STR_SYM => {
             expect_arg_count(1, supplied_args)?;
@@ -379,7 +384,8 @@ fn ttype<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)>
         Value::Null => Ok(Value::SymId(NULL_SYM)),
         Value::Bool(_) => Ok(Value::SymId(BOOL_SYM)),
         Value::SymId(_) => Ok(Value::SymId(SYM_SYM)),
-        Value::Int(_) | Value::Float(_) => Ok(Value::SymId(NUM_SYM)),
+        Value::Float(_) => Ok(Value::SymId(FLOAT_SYM)),
+        Value::Int(_)  => Ok(Value::SymId(INT_SYM)),
         Value::String(_) => Ok(Value::SymId(STR_SYM)),
         Value::List(_) => Ok(Value::SymId(LIST_SYM)),
         Value::Map(_) => Ok(Value::SymId(MAP_SYM)),
@@ -486,9 +492,33 @@ fn get_program_args<'gc>(mu: &'gc Mutator) -> Result<Value<'gc>, (RuntimeErrorKi
     Ok(Value::List(gc_list))
 }
 
-fn num<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+fn float<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
     match arg {
-        Value::Int(_) | Value::Float(_) => Ok(arg),
+        Value::Float(_) => Ok(arg),
+        Value::Int(i) => Ok(Value::Float(i as f64)),
+        Value::Null => Ok(Value::Float(0.0)),
+        Value::Bool(false) => Ok(Value::Float(0.0)),
+        Value::Bool(true) => Ok(Value::Float(1.0)),
+        Value::String(vm_str) => {
+            let s = vm_str.as_string();
+
+            if let Ok(f) = s.parse::<f64>() {
+                return Ok(Value::Float(f));
+            }
+
+            Ok(Value::Null)
+        }
+        _ => Err((
+            RuntimeErrorKind::TypeError,
+            format!("Unexpected arg of type {}", arg.type_str()),
+        )),
+    }
+}
+
+fn int<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+    match arg {
+        Value::Int(_) => Ok(arg),
+        Value::Float(f) => Ok(Value::Int(f as i64)),
         Value::Null => Ok(Value::Int(0)),
         Value::Bool(false) => Ok(Value::Int(0)),
         Value::Bool(true) => Ok(Value::Int(1)),
@@ -497,10 +527,6 @@ fn num<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
 
             if let Ok(int) = s.parse::<i64>() {
                 return Ok(Value::Int(int));
-            }
-
-            if let Ok(float) = s.parse::<f64>() {
-                return Ok(Value::Float(float));
             }
 
             Ok(Value::Null)

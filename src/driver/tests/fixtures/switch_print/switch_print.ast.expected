@@ -2,7 +2,7 @@
     Assign {
         dest: Spanned {
             item: Local(
-                24,
+                25,
             ),
             span: Span {
                 start: 0,
@@ -24,7 +24,7 @@
     Assign {
         dest: Spanned {
             item: Local(
-                25,
+                26,
             ),
             span: Span {
                 start: 7,
@@ -49,7 +49,7 @@
                 lhs: Spanned {
                     item: Value(
                         Ident(
-                            25,
+                            26,
                         ),
                     ),
                     span: Span {
@@ -82,7 +82,7 @@
                         Spanned {
                             item: Value(
                                 Ident(
-                                    24,
+                                    25,
                                 ),
                             ),
                             span: Span {
@@ -103,7 +103,7 @@
                         lhs: Spanned {
                             item: Value(
                                 Ident(
-                                    24,
+                                    25,
                                 ),
                             ),
                             span: Span {
@@ -133,7 +133,7 @@
                     Assign {
                         dest: Spanned {
                             item: Local(
-                                24,
+                                25,
                             ),
                             span: Span {
                                 start: 61,
@@ -157,7 +157,7 @@
                     Assign {
                         dest: Spanned {
                             item: Local(
-                                24,
+                                25,
                             ),
                             span: Span {
                                 start: 83,
@@ -181,7 +181,7 @@
             Assign {
                 dest: Spanned {
                     item: Local(
-                        25,
+                        26,
                     ),
                     span: Span {
                         start: 97,
@@ -193,7 +193,7 @@
                         lhs: Spanned {
                             item: Value(
                                 Ident(
-                                    25,
+                                    26,
                                 ),
                             ),
                             span: Span {

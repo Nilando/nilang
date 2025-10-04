@@ -1,9 +1,9 @@
 [
     FuncDecl {
-        ident: 24,
+        ident: 25,
         inputs: Spanned {
             item: [
-                25,
+                26,
             ],
             span: Span {
                 start: 22,
@@ -17,7 +17,7 @@
                         lhs: Spanned {
                             item: Value(
                                 Ident(
-                                    25,
+                                    26,
                                 ),
                             ),
                             span: Span {
@@ -93,7 +93,7 @@
                                 calle: Spanned {
                                     item: Value(
                                         Ident(
-                                            24,
+                                            25,
                                         ),
                                     ),
                                     span: Span {
@@ -107,7 +107,7 @@
                                             lhs: Spanned {
                                                 item: Value(
                                                     Ident(
-                                                        25,
+                                                        26,
                                                     ),
                                                 ),
                                                 span: Span {
@@ -151,7 +151,7 @@
                 calle: Spanned {
                     item: Value(
                         Ident(
-                            24,
+                            25,
                         ),
                     ),
                     span: Span {

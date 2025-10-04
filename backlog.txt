@@ -6,7 +6,6 @@ IN PROGRESS:
   - import simply parses a file and calls it as a function
 
 FEATURE BACKLOG:
-- separate float and int types
 - auto binding of functions with "self" arg
 - add push and pop operators
 - "monkey patch" intrinsic

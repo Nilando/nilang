@@ -10,7 +10,7 @@ RTN  0
 === FN 0 START ===
 LOC  5, 0
 INT  0, 2
-SYM  6, #22
+SYM  6, #23
 ARG  5
 ARG  0
 CALL 4, 6

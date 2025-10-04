@@ -21,8 +21,8 @@ while i < len(vals) {
 %%%%
 
 #null
-#num
-#num
+#int
+#float
 #str
 #bool
 #list

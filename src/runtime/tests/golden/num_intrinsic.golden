@@ -1,13 +1,13 @@
-print(#num("foo"));
-print(#num(null));
-print(#num(false));
-print(#num(true));
-print(#num("2"));
-print(#num("3.5"));
-num_fn_copy = #num;
+print(#int("foo"));
+print(#int(null));
+print(#int(false));
+print(#int(true));
+print(#int("2"));
+print(#float("3.5"));
+num_fn_copy = #int;
 num = 4;
 print(num);
-print(num_fn_copy("5.0"));
+print(num_fn_copy("05"));
 print(num_fn_copy(6));
 print(num_fn_copy(7.0));
 

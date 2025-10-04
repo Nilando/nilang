@@ -2,7 +2,7 @@
     Assign {
         dest: Spanned {
             item: Global(
-                24,
+                25,
             ),
             span: Span {
                 start: 0,
@@ -24,7 +24,7 @@
     Assign {
         dest: Spanned {
             item: Global(
-                25,
+                26,
             ),
             span: Span {
                 start: 12,
@@ -48,7 +48,7 @@
                                     Spanned {
                                         item: Value(
                                             Global(
-                                                24,
+                                                25,
                                             ),
                                         ),
                                         span: Span {
@@ -66,7 +66,7 @@
                         Assign {
                             dest: Spanned {
                                 item: Global(
-                                    24,
+                                    25,
                                 ),
                                 span: Span {
                                     start: 42,
@@ -78,7 +78,7 @@
                                     lhs: Spanned {
                                         item: Value(
                                             Global(
-                                                24,
+                                                25,
                                             ),
                                         ),
                                         span: Span {
@@ -111,7 +111,7 @@
                                     lhs: Spanned {
                                         item: Value(
                                             Global(
-                                                24,
+                                                25,
                                             ),
                                         ),
                                         span: Span {
@@ -149,7 +149,7 @@
                                     calle: Spanned {
                                         item: Value(
                                             Global(
-                                                26,
+                                                27,
                                             ),
                                         ),
                                         span: Span {
@@ -177,7 +177,7 @@
     Assign {
         dest: Spanned {
             item: Global(
-                26,
+                27,
             ),
             span: Span {
                 start: 108,
@@ -201,7 +201,7 @@
                                     Spanned {
                                         item: Value(
                                             Global(
-                                                24,
+                                                25,
                                             ),
                                         ),
                                         span: Span {
@@ -219,7 +219,7 @@
                         Assign {
                             dest: Spanned {
                                 item: Global(
-                                    24,
+                                    25,
                                 ),
                                 span: Span {
                                     start: 138,
@@ -231,7 +231,7 @@
                                     lhs: Spanned {
                                         item: Value(
                                             Global(
-                                                24,
+                                                25,
                                             ),
                                         ),
                                         span: Span {
@@ -264,7 +264,7 @@
                                     calle: Spanned {
                                         item: Value(
                                             Global(
-                                                27,
+                                                28,
                                             ),
                                         ),
                                         span: Span {
@@ -292,7 +292,7 @@
     Assign {
         dest: Spanned {
             item: Global(
-                27,
+                28,
             ),
             span: Span {
                 start: 169,
@@ -316,7 +316,7 @@
                                     Spanned {
                                         item: Value(
                                             Global(
-                                                24,
+                                                25,
                                             ),
                                         ),
                                         span: Span {
@@ -334,7 +334,7 @@
                         Assign {
                             dest: Spanned {
                                 item: Global(
-                                    24,
+                                    25,
                                 ),
                                 span: Span {
                                     start: 199,
@@ -346,7 +346,7 @@
                                     lhs: Spanned {
                                         item: Value(
                                             Global(
-                                                24,
+                                                25,
                                             ),
                                         ),
                                         span: Span {
@@ -379,7 +379,7 @@
                                     calle: Spanned {
                                         item: Value(
                                             Global(
-                                                25,
+                                                26,
                                             ),
                                         ),
                                         span: Span {
@@ -410,7 +410,7 @@
                 calle: Spanned {
                     item: Value(
                         Global(
-                            25,
+                            26,
                         ),
                     ),
                     span: Span {

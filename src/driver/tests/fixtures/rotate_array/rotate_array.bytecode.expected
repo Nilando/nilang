@@ -4,7 +4,7 @@ INT  3, 1
 INT  1, -1
 MEML 4, 0[1]
 COPY 1, 2
-SYM  2, #18
+SYM  2, #19
 ARG  0
 CALL 2, 2
 LT   2, 1, 2
