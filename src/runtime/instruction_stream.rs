@@ -9,8 +9,8 @@ pub struct InstructionStream<'a> {
     ip: &'a Cell<usize>
 }
 
-impl<'gc> From<&CallFrame<'gc>> for InstructionStream<'gc> {
-    fn from(cf: &CallFrame<'gc>) -> Self {
+impl<'gc> From<&'gc CallFrame<'gc>> for InstructionStream<'gc> {
+    fn from(cf: &'gc CallFrame<'gc>) -> Self {
         Self {
             code: cf.get_func().get_code().scoped_deref(),
             ip: cf.get_ip()

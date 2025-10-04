@@ -56,7 +56,7 @@ impl<'gc> VM<'gc> {
 
     pub fn create_instruction_stream(&self) -> Result<InstructionStream<'gc>, RuntimeError> {
         if let Some(cf) = self.stack.last_cf() {
-            Ok(InstructionStream::from(&*cf))
+            Ok(InstructionStream::from(cf.scoped_deref()))
         } else {
             Err(RuntimeError::new(RuntimeErrorKind::InternalError, Some(format!("VMERROR: Attempted to create an instruction stream with an empty stack")), None))
         }
@@ -95,7 +95,7 @@ impl<'gc> VM<'gc> {
         mu: &'gc Mutator,
         func: Gc<'gc, LoadedFunc<'gc>>,
     ) {
-        let cf = CallFrame::new(func, mu);
+        let cf = CallFrame::new(func);
 
         self.stack.push_cf(cf, mu);
     }
@@ -452,7 +452,7 @@ impl<'gc> VM<'gc> {
                 self.expect_args(expected_args, supplied_args)?;
 
                 // TODO: store the current ip
-                self.stack.push_cf(CallFrame::new(func, mu), mu);
+                self.stack.push_cf(CallFrame::new(func), mu);
 
                 if let Some(args) = bound_args {
                     for (arg_num, tagged_val) in args.iter().enumerate() {
