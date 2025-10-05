@@ -85,6 +85,11 @@ fn lucky_number() {
 }
 
 #[test]
+fn euclidean_gcd() {
+  super::fixture_test("euclidean_gcd")
+}
+
+#[test]
 fn parsing_error() {
   super::fixture_test("parsing_error")
 }
