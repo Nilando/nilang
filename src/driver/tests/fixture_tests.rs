@@ -90,6 +90,11 @@ fn big_backtrace() {
 }
 
 #[test]
+fn basic_delete_usage() {
+  super::fixture_test("basic_delete_usage")
+}
+
+#[test]
 fn one_plus_one() {
   super::fixture_test("one_plus_one")
 }

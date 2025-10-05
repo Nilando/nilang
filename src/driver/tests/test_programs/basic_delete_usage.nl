@@ -28,19 +28,3 @@ print(a);
 a = {};
 delete(a, null);
 print(a);
-
-%%%%
-
-{#a: 0, #b: 1, #c: 2}
-{#b: 1, #c: 2}
-{#c: 2}
-{}
-{2: 2, 1: 1, 0: 0}
-{2: 2, 1: 1}
-{2: 2}
-{}
-{false: false, null: null, true: true}
-{false: false, true: true}
-{false: false}
-{}
-{}

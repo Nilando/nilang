@@ -73,11 +73,6 @@ fn bind_intrinsic_fn() {
 }
 
 #[test]
-fn delete_intrinsic_fn() {
-  super::test_golden_output("./src/runtime/tests/golden/delete_intrinsic_fn.golden")
-}
-
-#[test]
 fn math_intrinsics() {
   super::test_golden_output("./src/runtime/tests/golden/math_intrinsics.golden")
 }
