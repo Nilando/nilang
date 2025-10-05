@@ -1,0 +1,35 @@
+MAIN () {
+block0:
+  a_0 = NEW_LIST
+  b_0 = ""
+  i_0 = 0
+  next block1(i_0)
+
+block1(i_1):
+  t6 = 10
+  t7 = i_1 < t6
+  jnt t7 block3
+  next block2
+
+block2:
+  push_0 = #push
+  STORE_ARG a_0
+  STORE_ARG i_1
+  t9 = CALL push_0
+  str_0 = #str
+  STORE_ARG i_1
+  t11 = CALL str_0
+  STORE_ARG b_0
+  STORE_ARG t11
+  t12 = CALL push_0
+  t13 = 1
+  i_2 = i_1 + t13
+  jump block1(i_2)
+
+block3:
+  PRINT a_0
+  PRINT b_0
+  t17 = null
+  RETURN t17
+
+}

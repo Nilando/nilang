@@ -5,6 +5,16 @@
 */
 
 #[test]
+fn multi_val_closure() {
+  super::fixture_test("multi_val_closure")
+}
+
+#[test]
+fn basic_popping() {
+  super::fixture_test("basic_popping")
+}
+
+#[test]
 fn powers_of_two() {
   super::fixture_test("powers_of_two")
 }
@@ -112,4 +122,9 @@ fn parsing_error() {
 #[test]
 fn if_else() {
   super::fixture_test("if_else")
+}
+
+#[test]
+fn basic_pushing() {
+  super::fixture_test("basic_pushing")
 }

@@ -13,11 +13,6 @@ fn str_intrinsic() {
 }
 
 #[test]
-fn switching_value() {
-  super::test_golden_output("./src/runtime/tests/golden/switching_value.golden")
-}
-
-#[test]
 fn multiplication() {
   super::test_golden_output("./src/runtime/tests/golden/multiplication.golden")
 }
@@ -53,11 +48,6 @@ fn num_intrinsic() {
 }
 
 #[test]
-fn push_intrinsic_fn() {
-  super::test_golden_output("./src/runtime/tests/golden/push_intrinsic_fn.golden")
-}
-
-#[test]
 fn division() {
   super::test_golden_output("./src/runtime/tests/golden/division.golden")
 }
@@ -70,11 +60,6 @@ fn comparisons() {
 #[test]
 fn addition() {
   super::test_golden_output("./src/runtime/tests/golden/addition.golden")
-}
-
-#[test]
-fn closure_printing() {
-  super::test_golden_output("./src/runtime/tests/golden/closure_printing.golden")
 }
 
 #[test]
@@ -105,9 +90,4 @@ fn symbol_comparison_test() {
 #[test]
 fn read_chars_from_string() {
   super::test_golden_output("./src/runtime/tests/golden/read_chars_from_string.golden")
-}
-
-#[test]
-fn pop_intrinsic_fn() {
-  super::test_golden_output("./src/runtime/tests/golden/pop_intrinsic_fn.golden")
 }

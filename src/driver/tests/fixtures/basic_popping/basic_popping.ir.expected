@@ -1,0 +1,50 @@
+MAIN () {
+block0:
+  t0 = NEW_LIST
+  t1 = 0
+  t0[t1] = t1
+  t3 = 1
+  t0[t3] = t3
+  t5 = 2
+  t0[t5] = t5
+  t7 = 3
+  t0[t7] = t7
+  t9 = 4
+  t0[t9] = t9
+  t11 = 5
+  t0[t11] = t11
+  t13 = 6
+  t0[t13] = t13
+  t15 = 7
+  t0[t15] = t15
+  t17 = 8
+  t0[t17] = t17
+  t19 = 9
+  t0[t19] = t19
+  b_0 = "abcdefghij"
+  next block1(t1)
+
+block1(i_1):
+  t26 = 12
+  t27 = i_1 < t26
+  jnt t27 block3
+  next block2
+
+block2:
+  pop_0 = #pop
+  STORE_ARG t0
+  x_0 = CALL pop_0
+  STORE_ARG b_0
+  y_0 = CALL pop_0
+  t33 = NEW_LIST
+  t33[t1] = x_0
+  t33[t3] = y_0
+  PRINT t33
+  i_2 = i_1 + t3
+  jump block1(i_2)
+
+block3:
+  t39 = null
+  RETURN t39
+
+}

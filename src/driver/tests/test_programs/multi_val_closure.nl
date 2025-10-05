@@ -1,18 +1,13 @@
 a = 1;
+b = 2;
 c = 3;
+d = 4;
 
-fn print_stuff(b, d) {
+fn print_stuff() {
   print(a);
   print(b);
   print(c);
   print(d);
 }
 
-print_stuff(2, 4);
-
-%%%%
-
-1
-2
-3
-4
+print_stuff();
