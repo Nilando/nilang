@@ -66,5 +66,5 @@ pub enum RuntimeErrorKind {
     WrongNumArgs,
     InternalError,
     InvalidBind,
-    InvalidByteCode
+    InvalidByteCode,
 }

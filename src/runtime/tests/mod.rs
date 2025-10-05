@@ -59,7 +59,7 @@ fn test_golden_output(filename: &str) {
             assert_eq!(expected_output, out_string.trim());
         }
         Err(runtime_error) => {
-            panic!("{:?}", runtime_error.message)
+            panic!("{:?}", runtime_error)
         }
     }
 }

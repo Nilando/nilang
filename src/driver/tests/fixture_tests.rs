@@ -45,6 +45,11 @@ fn access_list_via_float() {
 }
 
 #[test]
+fn eratosthenes_sieve() {
+  super::fixture_test("eratosthenes_sieve")
+}
+
+#[test]
 fn closure_counter() {
   super::fixture_test("closure_counter")
 }

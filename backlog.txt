@@ -7,15 +7,16 @@ FEATURE BACKLOG:
 - add push and pop operators
 - String Interpolation
 - save assigned vars in repl
-- fix major collection bug (sandpit)
+- fix sandpit gcvec bugs
 - "monkey patch" intrinsic
 - add FFI
 - LSP?
 
 OPTIMIZATION BACKLOG:
 - GC updates:
-  - GcSync derive (reduce allocating callframes)
-    - this update should be a big speed up
+  - GcVecMut
+    - this update should be a big speed up by dramatically reducing number of
+      allocations
 - add benchmarking
 - string internment
 - Memory SSA

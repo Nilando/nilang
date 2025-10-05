@@ -11,10 +11,10 @@ use crate::parser::{parse_program, ParseError};
 use crate::runtime::Runtime;
 use crate::symbol_map::SymbolMap;
 
-use self::error::InterpreterError;
 use self::repl::run_repl;
 
 pub use config::Config;
+pub use error::InterpreterError;
 
 use std::fs::File;
 use std::io::Write;
@@ -47,10 +47,7 @@ pub fn run_script(mut config: Config) -> Result<(), InterpreterError> {
     let mut output = config.get_output();
 
     let mut runtime = Runtime::init(program, symbols, config);
-    match runtime.run(&mut output) {
-        Ok(()) => Ok(()),
-        Err(err) => Err(InterpreterError::RuntimeError(err)),
-    }
+    runtime.run(&mut output)
 }
 
 pub fn compile_source(

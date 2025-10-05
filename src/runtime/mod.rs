@@ -17,7 +17,7 @@ mod instruction_stream;
 mod tests;
 
 use crate::codegen::{Func as ByteCodeFunc, Local};
-use crate::driver::compile_source;
+use crate::driver::{compile_source, InterpreterError};
 use crate::symbol_map::SymbolMap;
 use crate::Config;
 
@@ -63,7 +63,7 @@ impl Runtime {
         self.symbols
     }
 
-    pub fn run(&mut self, f: &mut impl Write) -> Result<(), RuntimeError> {
+    pub fn run(&mut self, f: &mut impl Write) -> Result<(), InterpreterError> {
         let mut vm_result = Ok(ExitCode::Yield);
 
         loop {
@@ -78,38 +78,41 @@ impl Runtime {
                 Ok(ExitCode::LoadModule(path)) => {
                     let module =
                         std::fs::read_to_string(&path).expect("Failed to read file");
-                    let program = compile_source(&self.config, &mut self.symbols, &module)
-                        .expect("Failed to load module");
-                    // TODO: return the parse errors 
-                    // Option 1: have load module return an exit code
-                    //  where the driver then compiles the source, and can be responsible
-                    //  for handling parser errors
-                    // Option 2: change the 
-                    self.arena.mutate(|mu, vm| {
-                        let loaded_program = load_program(program, &path, mu);
-                        let module_func = loaded_program.last().unwrap().clone();
+                    match compile_source(&self.config, &mut self.symbols, &module) {
+                        Err(err) => {
+                            return Err(InterpreterError::ParseError(err));
+                        }
+                        Ok(program) => {
+                            self.arena.mutate(|mu, vm| {
+                                let loaded_program = load_program(program, &path, mu);
+                                let module_func = loaded_program.last().unwrap().clone();
 
-                        vm.load_module(mu, module_func);
-                    });
+                                vm.load_module(mu, module_func);
+                            });
+                        }
+                    }
                 }
                 Ok(ExitCode::Read) => {
                     let stdin = std::io::stdin();
                     let mut buf = String::new();
-                    stdin
-                        .read_line(&mut buf)
-                        .expect("failed to read from stdin");
+                    stdin.read_line(&mut buf).expect("failed to read from stdin");
                     buf = buf.trim_end().to_string();
 
                     self.arena.mutate(|mu, vm| {
-                        vm.read_input_hook(buf, mu);
+                        if let Err(err) = vm.read_input_hook(buf, mu) {
+                            vm_result = Err(err);
+                        }
                     });
+
+                    continue;
                 }
                 Err(err) => {
-                    return Err(err);
+                    return Err(InterpreterError::RuntimeError(err));
                 }
             }
 
             vm_result = Ok(ExitCode::Yield);
+
             self.arena.mutate(|mu, vm| {
                 vm_result = vm.run(mu, &mut self.symbols);
             });
@@ -148,9 +151,6 @@ fn load_program<'gc>(program: Vec<ByteCodeFunc>, path: &String, mu: &'gc Mutator
         result.push(loaded_func_ptr);
     }
 
-    // TODO: Move this logic to some kind of String interner
-    let mut string_map: HashMap<&String, Gc<'gc, [char]>> = HashMap::new();
-
     for func in program.iter() {
         let locals = func.get_locals();
 
@@ -167,18 +167,12 @@ fn load_program<'gc>(program: Vec<ByteCodeFunc>, path: &String, mu: &'gc Mutator
                     LoadedLocal::Func(fn_ptr)
                 }
                 Local::String(s) => {
-                    if let Some(str_id) = string_map.get(&s) {
-                        LoadedLocal::Text(str_id.clone())
-                    } else {
-                        // TODO: this isn't efficient
-                        let mut chars = s.chars();
-                        let len = chars.clone().count();
-                        let gc_text = mu.alloc_array_from_fn(len, |_| chars.next().unwrap());
+                    // TODO: this isn't efficient
+                    let mut chars = s.chars();
+                    let len = chars.clone().count();
+                    let gc_text = mu.alloc_array_from_fn(len, |_| chars.next().unwrap());
 
-                        string_map.insert(s, gc_text.clone());
-
-                        LoadedLocal::Text(gc_text)
-                    }
+                    LoadedLocal::Text(gc_text)
                 }
             }
         });

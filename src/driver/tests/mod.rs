@@ -59,28 +59,19 @@ fn fixture_test(test_name: &str) {
 
     if std::env::var("OVERWRITE_FIXTURES").is_ok() {
         for (actual_path, expected_path) in expected_actual_pairs.iter() {
-            if let Ok(actual) = std::fs::read_to_string(&actual_path) {
+            let actual = std::fs::read_to_string(&actual_path).unwrap_or(String::new());
 
-                if let Ok(mut expected_file) = File::create(&expected_path) {
-                    expected_file.write_all(actual.as_bytes()).unwrap();
-                }
-            } else {
-                File::create(&expected_path).unwrap();
+            if let Ok(mut expected_file) = File::create(&expected_path) {
+                expected_file.write_all(actual.as_bytes()).unwrap();
             }
         }
     }
 
     for (actual_path, expected_path) in expected_actual_pairs.iter() {
-        if let Ok(actual) = std::fs::read_to_string(&actual_path) {
-            let expected = std::fs::read_to_string(&expected_path).unwrap();
-            //let actual = std::fs::read_to_string(&actual_path).unwrap();
+        let actual = std::fs::read_to_string(&actual_path).unwrap_or(String::new());
+        let expected = std::fs::read_to_string(&expected_path).unwrap_or(String::new());
 
-            assert_eq!(expected, actual);
-            std::fs::remove_file(&actual_path).unwrap();
-        } else {
-            let expected = std::fs::read_to_string(&expected_path).unwrap();
-
-            assert_eq!(expected, "");
-        }
+        assert_eq!(expected, actual);
+        let _ = std::fs::remove_file(&actual_path);
     }
 }
