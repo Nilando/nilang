@@ -1,0 +1,428 @@
+[
+    FuncDecl {
+        ident: 25,
+        inputs: Spanned {
+            item: [
+                26,
+            ],
+            span: Span {
+                start: 22,
+                end: 24,
+            },
+        },
+        stmts: [
+            Assign {
+                dest: Spanned {
+                    item: Local(
+                        27,
+                    ),
+                    span: Span {
+                        start: 29,
+                        end: 37,
+                    },
+                },
+                src: Spanned {
+                    item: Value(
+                        List(
+                            [],
+                        ),
+                    ),
+                    span: Span {
+                        start: 38,
+                        end: 41,
+                    },
+                },
+            },
+            Assign {
+                dest: Spanned {
+                    item: Local(
+                        28,
+                    ),
+                    span: Span {
+                        start: 44,
+                        end: 50,
+                    },
+                },
+                src: Spanned {
+                    item: Value(
+                        Int(
+                            0,
+                        ),
+                    ),
+                    span: Span {
+                        start: 51,
+                        end: 53,
+                    },
+                },
+            },
+            Assign {
+                dest: Spanned {
+                    item: Local(
+                        29,
+                    ),
+                    span: Span {
+                        start: 56,
+                        end: 61,
+                    },
+                },
+                src: Spanned {
+                    item: Value(
+                        Int(
+                            1,
+                        ),
+                    ),
+                    span: Span {
+                        start: 62,
+                        end: 64,
+                    },
+                },
+            },
+            While {
+                cond: Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Call {
+                                calle: Spanned {
+                                    item: Value(
+                                        Ident(
+                                            19,
+                                        ),
+                                    ),
+                                    span: Span {
+                                        start: 74,
+                                        end: 77,
+                                    },
+                                },
+                                args: [
+                                    Spanned {
+                                        item: Value(
+                                            Ident(
+                                                27,
+                                            ),
+                                        ),
+                                        span: Span {
+                                            start: 78,
+                                            end: 85,
+                                        },
+                                    },
+                                ],
+                            },
+                            span: Span {
+                                start: 74,
+                                end: 85,
+                            },
+                        },
+                        op: Lt,
+                        rhs: Spanned {
+                            item: Value(
+                                Ident(
+                                    26,
+                                ),
+                            ),
+                            span: Span {
+                                start: 88,
+                                end: 91,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 74,
+                        end: 91,
+                    },
+                },
+                stmts: [
+                    If {
+                        cond: Spanned {
+                            item: Binop {
+                                lhs: Spanned {
+                                    item: Call {
+                                        calle: Spanned {
+                                            item: Value(
+                                                Ident(
+                                                    19,
+                                                ),
+                                            ),
+                                            span: Span {
+                                                start: 99,
+                                                end: 102,
+                                            },
+                                        },
+                                        args: [
+                                            Spanned {
+                                                item: Value(
+                                                    Ident(
+                                                        27,
+                                                    ),
+                                                ),
+                                                span: Span {
+                                                    start: 103,
+                                                    end: 110,
+                                                },
+                                            },
+                                        ],
+                                    },
+                                    span: Span {
+                                        start: 99,
+                                        end: 110,
+                                    },
+                                },
+                                op: Equal,
+                                rhs: Spanned {
+                                    item: Value(
+                                        Int(
+                                            0,
+                                        ),
+                                    ),
+                                    span: Span {
+                                        start: 114,
+                                        end: 117,
+                                    },
+                                },
+                            },
+                            span: Span {
+                                start: 99,
+                                end: 117,
+                            },
+                        },
+                        stmts: [
+                            Expr(
+                                Spanned {
+                                    item: Call {
+                                        calle: Spanned {
+                                            item: Value(
+                                                Ident(
+                                                    20,
+                                                ),
+                                            ),
+                                            span: Span {
+                                                start: 124,
+                                                end: 128,
+                                            },
+                                        },
+                                        args: [
+                                            Spanned {
+                                                item: Value(
+                                                    Ident(
+                                                        27,
+                                                    ),
+                                                ),
+                                                span: Span {
+                                                    start: 129,
+                                                    end: 136,
+                                                },
+                                            },
+                                            Spanned {
+                                                item: Value(
+                                                    Int(
+                                                        0,
+                                                    ),
+                                                ),
+                                                span: Span {
+                                                    start: 137,
+                                                    end: 139,
+                                                },
+                                            },
+                                        ],
+                                    },
+                                    span: Span {
+                                        start: 124,
+                                        end: 140,
+                                    },
+                                },
+                            ),
+                            Continue,
+                        ],
+                    },
+                    Assign {
+                        dest: Spanned {
+                            item: Local(
+                                30,
+                            ),
+                            span: Span {
+                                start: 169,
+                                end: 175,
+                            },
+                        },
+                        src: Spanned {
+                            item: Binop {
+                                lhs: Spanned {
+                                    item: Value(
+                                        Ident(
+                                            28,
+                                        ),
+                                    ),
+                                    span: Span {
+                                        start: 176,
+                                        end: 180,
+                                    },
+                                },
+                                op: Plus,
+                                rhs: Spanned {
+                                    item: Value(
+                                        Ident(
+                                            29,
+                                        ),
+                                    ),
+                                    span: Span {
+                                        start: 183,
+                                        end: 187,
+                                    },
+                                },
+                            },
+                            span: Span {
+                                start: 176,
+                                end: 187,
+                            },
+                        },
+                    },
+                    Expr(
+                        Spanned {
+                            item: Call {
+                                calle: Spanned {
+                                    item: Value(
+                                        Ident(
+                                            20,
+                                        ),
+                                    ),
+                                    span: Span {
+                                        start: 192,
+                                        end: 196,
+                                    },
+                                },
+                                args: [
+                                    Spanned {
+                                        item: Value(
+                                            Ident(
+                                                27,
+                                            ),
+                                        ),
+                                        span: Span {
+                                            start: 197,
+                                            end: 204,
+                                        },
+                                    },
+                                    Spanned {
+                                        item: Value(
+                                            Ident(
+                                                30,
+                                            ),
+                                        ),
+                                        span: Span {
+                                            start: 205,
+                                            end: 210,
+                                        },
+                                    },
+                                ],
+                            },
+                            span: Span {
+                                start: 192,
+                                end: 211,
+                            },
+                        },
+                    ),
+                    Assign {
+                        dest: Spanned {
+                            item: Local(
+                                28,
+                            ),
+                            span: Span {
+                                start: 216,
+                                end: 222,
+                            },
+                        },
+                        src: Spanned {
+                            item: Value(
+                                Ident(
+                                    29,
+                                ),
+                            ),
+                            span: Span {
+                                start: 223,
+                                end: 227,
+                            },
+                        },
+                    },
+                    Assign {
+                        dest: Spanned {
+                            item: Local(
+                                29,
+                            ),
+                            span: Span {
+                                start: 232,
+                                end: 237,
+                            },
+                        },
+                        src: Spanned {
+                            item: Value(
+                                Ident(
+                                    30,
+                                ),
+                            ),
+                            span: Span {
+                                start: 238,
+                                end: 243,
+                            },
+                        },
+                    },
+                ],
+            },
+            Return(
+                Some(
+                    Spanned {
+                        item: Value(
+                            Ident(
+                                27,
+                            ),
+                        ),
+                        span: Span {
+                            start: 258,
+                            end: 265,
+                        },
+                    },
+                ),
+            ),
+        ],
+    },
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Call {
+                        calle: Spanned {
+                            item: Value(
+                                Ident(
+                                    25,
+                                ),
+                            ),
+                            span: Span {
+                                start: 275,
+                                end: 293,
+                            },
+                        },
+                        args: [
+                            Spanned {
+                                item: Value(
+                                    Int(
+                                        50,
+                                    ),
+                                ),
+                                span: Span {
+                                    start: 294,
+                                    end: 297,
+                                },
+                            },
+                        ],
+                    },
+                    span: Span {
+                        start: 275,
+                        end: 298,
+                    },
+                },
+            ),
+            span: Span {
+                start: 269,
+                end: 299,
+            },
+        },
+    ),
+]

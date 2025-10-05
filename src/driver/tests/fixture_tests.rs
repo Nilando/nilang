@@ -40,6 +40,11 @@ fn globals() {
 }
 
 #[test]
+fn basic_map_usage() {
+  super::fixture_test("basic_map_usage")
+}
+
+#[test]
 fn access_list_via_float() {
   super::fixture_test("access_list_via_float")
 }
@@ -60,6 +65,11 @@ fn dead_code() {
 }
 
 #[test]
+fn fibonacci() {
+  super::fixture_test("fibonacci")
+}
+
+#[test]
 fn hello_world() {
   super::fixture_test("hello_world")
 }
@@ -67,6 +77,11 @@ fn hello_world() {
 #[test]
 fn big_backtrace() {
   super::fixture_test("big_backtrace")
+}
+
+#[test]
+fn one_plus_one() {
+  super::fixture_test("one_plus_one")
 }
 
 #[test]

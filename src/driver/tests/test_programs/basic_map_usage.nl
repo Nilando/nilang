@@ -9,12 +9,3 @@ print(a.a);
 print(a.b);
 print(a.c);
 print(a.d);
-
-%%%%
-
-{#b: 1}
-{#b: 2}
-1
-2
-3
-null

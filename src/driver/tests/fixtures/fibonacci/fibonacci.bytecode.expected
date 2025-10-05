@@ -1,0 +1,37 @@
+=== FN 1 START ===
+LIST 5
+INT  4, 0
+INT  2, 1
+COPY 3, 4
+SYM  6, #19
+ARG  5
+CALL 1, 6
+LT   1, 1, 0
+JNT  17, 1
+ARG  5
+CALL 1, 6
+EQ   1, 1, 4
+JNT  6, 1
+SYM  1, #20
+ARG  5
+ARG  4
+CALL 1, 1
+JMP  -13
+ADD  3, 3, 2
+SYM  1, #20
+ARG  5
+ARG  3
+CALL 1, 1
+SWAP 2, 3
+JMP  -20
+RTN  5
+=== END ===
+=== FN 0 START ===
+LOC  1, 0
+INT  0, 50
+ARG  0
+CALL 0, 1
+OUT  0
+LDN  0
+RTN  0
+=== END ===

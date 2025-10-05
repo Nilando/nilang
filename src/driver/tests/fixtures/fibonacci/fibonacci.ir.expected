@@ -1,0 +1,52 @@
+fn1 (n_0) {
+block0:
+  result_0 = NEW_LIST
+  prev_0 = 0
+  cur_0 = 1
+  next block1(prev_0, cur_0)
+
+block1(prev_1, cur_1):
+  len_0 = #len
+  STORE_ARG result_0
+  t8 = CALL len_0
+  t9 = t8 < n_0
+  jnt t9 block5
+  next block2
+
+block2:
+  STORE_ARG result_0
+  t10 = CALL len_0
+  t12 = t10 == prev_0
+  jnt t12 block4
+  next block3
+
+block3:
+  push_1 = #push
+  STORE_ARG result_0
+  STORE_ARG prev_0
+  t15 = CALL push_1
+  jump block1(prev_1, cur_1)
+
+block4:
+  next_0 = prev_1 + cur_1
+  push_0 = #push
+  STORE_ARG result_0
+  STORE_ARG next_0
+  t18 = CALL push_0
+  jump block1(cur_1, next_0)
+
+block5:
+  RETURN result_0
+
+}
+MAIN () {
+block0:
+  fibonacci_sequence_0 = fn1
+  t1 = 50
+  STORE_ARG t1
+  t2 = CALL fibonacci_sequence_0
+  PRINT t2
+  t4 = null
+  RETURN t4
+
+}

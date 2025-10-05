@@ -28,11 +28,6 @@ fn clone_intrinsic_fn() {
 }
 
 #[test]
-fn index_of_list() {
-  super::test_golden_output("./src/runtime/tests/golden/index_of_list.golden")
-}
-
-#[test]
 fn type_intrinsic_fn() {
   super::test_golden_output("./src/runtime/tests/golden/type_intrinsic_fn.golden")
 }
@@ -63,18 +58,8 @@ fn push_intrinsic_fn() {
 }
 
 #[test]
-fn one_plus_one() {
-  super::test_golden_output("./src/runtime/tests/golden/one_plus_one.golden")
-}
-
-#[test]
 fn division() {
   super::test_golden_output("./src/runtime/tests/golden/division.golden")
-}
-
-#[test]
-fn globals_test() {
-  super::test_golden_output("./src/runtime/tests/golden/globals_test.golden")
 }
 
 #[test]
@@ -88,23 +73,13 @@ fn addition() {
 }
 
 #[test]
-fn fibonacci() {
-  super::test_golden_output("./src/runtime/tests/golden/fibonacci.golden")
-}
-
-#[test]
-fn closure_counter() {
-  super::test_golden_output("./src/runtime/tests/golden/closure_counter.golden")
-}
-
-#[test]
 fn closure_printing() {
   super::test_golden_output("./src/runtime/tests/golden/closure_printing.golden")
 }
 
 #[test]
 fn import() {
-  //super::test_golden_output("./src/runtime/tests/golden/import.golden")
+  super::test_golden_output("./src/runtime/tests/golden/import.golden")
 }
 
 #[test]
@@ -118,11 +93,6 @@ fn delete_intrinsic_fn() {
 }
 
 #[test]
-fn euclidean_gcd() {
-  super::test_golden_output("./src/runtime/tests/golden/euclidean_gcd.golden")
-}
-
-#[test]
 fn math_intrinsics() {
   super::test_golden_output("./src/runtime/tests/golden/math_intrinsics.golden")
 }
@@ -130,11 +100,6 @@ fn math_intrinsics() {
 #[test]
 fn symbol_comparison_test() {
   super::test_golden_output("./src/runtime/tests/golden/symbol_comparison_test.golden")
-}
-
-#[test]
-fn basic_map_functionality() {
-  super::test_golden_output("./src/runtime/tests/golden/basic_map_functionality.golden")
 }
 
 #[test]

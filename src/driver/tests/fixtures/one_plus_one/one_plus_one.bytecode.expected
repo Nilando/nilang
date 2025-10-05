@@ -1,0 +1,14 @@
+=== FN 1 START ===
+ADD  0, 0, 1
+RTN  0
+=== END ===
+=== FN 0 START ===
+LOC  1, 0
+INT  0, 1
+ARG  0
+ARG  0
+CALL 0, 1
+OUT  0
+LDN  0
+RTN  0
+=== END ===
