@@ -258,9 +258,11 @@ fn hash_value(v: &Value<'_>) -> usize {
             buffer.push(4);
             buffer.extend_from_slice(&f.to_ne_bytes());
         }
-        Value::List(_) => {
+        Value::List(l) => {
             buffer.push(5);
-            todo!()
+            for i in 0..l.len() {
+                buffer.extend_from_slice(&hash_value(&l.at(i)).to_ne_bytes());
+            }
         }
         Value::Func(_) => {
             buffer.push(6);
@@ -315,6 +317,8 @@ impl Debug for GcHashMap<'_> {
 
 #[cfg(test)]
 mod tests {
+    use crate::runtime::list::List;
+
     use super::*;
     use sandpit::{Arena, Root};
 
@@ -398,6 +402,21 @@ mod tests {
             let found = map.get(&key).unwrap();
 
             matches!(Value::from(&found), Value::Bool(false));
+        });
+    }
+
+    #[test]
+    fn use_list_as_key() {
+        let _: Arena<Root![()]> = Arena::new(|mu| {
+            let map = GcHashMap::alloc(mu);
+            let key = Value::List(Gc::new(mu, List::alloc(mu))).as_tagged(mu);
+            let val = Value::Int(333).as_tagged(mu);
+
+            GcHashMap::insert(map.clone(), key.clone(), val, mu);
+
+            let found = map.get(&key).unwrap();
+
+            matches!(Value::from(&found), Value::Int(333));
         });
     }
 }

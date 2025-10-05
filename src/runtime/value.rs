@@ -89,6 +89,18 @@ impl<'gc> Value<'gc> {
 
                 true
             }
+            (Value::List(lhs), Value::List(rhs)) => {
+                if lhs.len() != rhs.len() {
+                    return false;
+                }
+                for i in 0..lhs.len() {
+                    if !lhs.at(i).is_equal_to(&rhs.at(i)) {
+                        return false;
+                    }
+                }
+
+                true
+            }
             _ => false,
         }
     }

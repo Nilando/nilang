@@ -60,6 +60,11 @@ fn access_list_via_float() {
 }
 
 #[test]
+fn map_with_lists_as_keys() {
+  super::fixture_test("map_with_lists_as_keys")
+}
+
+#[test]
 fn eratosthenes_sieve() {
   super::fixture_test("eratosthenes_sieve")
 }
