@@ -1,0 +1,8 @@
+========= FILE ./src/runtime/tests/fixtures/null_intrinsic/null_intrinsic.bytecode.actual ========
+=== FN 0 START ===
+SYM  0, #5
+CALL 0, 0
+OUT  0
+LDN  0
+RTN  0
+=== END ===

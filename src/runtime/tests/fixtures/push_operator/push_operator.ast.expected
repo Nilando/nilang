@@ -1,0 +1,79 @@
+========= FILE ./src/runtime/tests/fixtures/push_operator/push_operator.ast.actual ========
+[
+    Assign {
+        dest: Spanned {
+            item: Local(
+                17,
+            ),
+            span: Span {
+                start: 0,
+                end: 3,
+            },
+        },
+        src: Spanned {
+            item: Value(
+                List(
+                    [],
+                ),
+            ),
+            span: Span {
+                start: 4,
+                end: 7,
+            },
+        },
+    },
+    Expr(
+        Spanned {
+            item: Binop {
+                lhs: Spanned {
+                    item: Value(
+                        Ident(
+                            17,
+                        ),
+                    ),
+                    span: Span {
+                        start: 9,
+                        end: 10,
+                    },
+                },
+                op: Push,
+                rhs: Spanned {
+                    item: Value(
+                        Int(
+                            1,
+                        ),
+                    ),
+                    span: Span {
+                        start: 14,
+                        end: 16,
+                    },
+                },
+            },
+            span: Span {
+                start: 9,
+                end: 16,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Value(
+                        Ident(
+                            17,
+                        ),
+                    ),
+                    span: Span {
+                        start: 24,
+                        end: 26,
+                    },
+                },
+            ),
+            span: Span {
+                start: 18,
+                end: 27,
+            },
+        },
+    ),
+]

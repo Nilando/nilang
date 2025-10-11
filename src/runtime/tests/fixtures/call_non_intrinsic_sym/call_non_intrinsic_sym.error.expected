@@ -1,0 +1,6 @@
+RUNTIME ERROR
+Traceback: most recent call lowest
+  0: File "./src/runtime/tests/test_programs/call_non_intrinsic_sym.nl", line: 1:68
+    $this_sym_is_not_an_intrinsic_but_its_going_to_get_called_anyways();
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: Tried to call non intrinsic symbol

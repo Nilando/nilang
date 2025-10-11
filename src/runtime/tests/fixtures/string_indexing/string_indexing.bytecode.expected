@@ -1,0 +1,15 @@
+========= FILE ./src/runtime/tests/fixtures/string_indexing/string_indexing.bytecode.actual ========
+=== FN 0 START ===
+LOC  1, 0
+INT  0, 0
+LEN 2, 1
+LT   2, 0, 2
+JNT  6, 2
+MEML 2, 1[0]
+OUT  2
+INT  2, 1
+ADD  0, 0, 2
+JMP  -7
+LDN  0
+RTN  0
+=== END ===

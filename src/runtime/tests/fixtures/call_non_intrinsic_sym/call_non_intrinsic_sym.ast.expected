@@ -1,0 +1,25 @@
+========= FILE ./src/runtime/tests/fixtures/call_non_intrinsic_sym/call_non_intrinsic_sym.ast.actual ========
+[
+    Expr(
+        Spanned {
+            item: Call {
+                calle: Spanned {
+                    item: Value(
+                        Symbol(
+                            17,
+                        ),
+                    ),
+                    span: Span {
+                        start: 0,
+                        end: 65,
+                    },
+                },
+                args: [],
+            },
+            span: Span {
+                start: 0,
+                end: 68,
+            },
+        },
+    ),
+]

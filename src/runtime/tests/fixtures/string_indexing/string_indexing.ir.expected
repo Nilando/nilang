@@ -1,0 +1,25 @@
+========= FILE ./src/runtime/tests/fixtures/string_indexing/string_indexing.ir.actual ========
+MAIN () {
+block0:
+  s_0 = "potato pancake"
+  i_0 = 0
+  next block1(i_0)
+
+block1(i_1):
+  t4 =  # s_0
+  t5 = i_1 < t4
+  jnt t5 block3
+  next block2
+
+block2:
+  t6 = s_0[i_1]
+  PRINT t6
+  t8 = 1
+  i_2 = i_1 + t8
+  jump block1(i_2)
+
+block3:
+  t10 = null
+  RETURN t10
+
+}

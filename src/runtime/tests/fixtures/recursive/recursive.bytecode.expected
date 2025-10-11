@@ -1,0 +1,24 @@
+========= FILE ./src/runtime/tests/fixtures/recursive/recursive.bytecode.actual ========
+=== FN 1 START ===
+OUT  0
+INT  2, 10
+EQ   2, 0, 2
+JNT  2, 2
+RTN  1
+INT  1, 1
+ADD  1, 0, 1
+LDUV 0, 0
+ARG  1
+CALL 0, 0
+LDN  0
+RTN  0
+=== END ===
+=== FN 0 START ===
+LOC  1, 0
+STUV 1, 1
+INT  0, 0
+ARG  0
+CALL 0, 1
+LDN  0
+RTN  0
+=== END ===

@@ -1,65 +1,95 @@
-mod golden_tests;
-use crate::codegen::generate_func;
-use crate::ir::{lower_ast, optimize_func};
-use crate::parser::parse_program;
-use crate::symbol_map::SymbolMap;
-use crate::Config;
+mod fixture_tests;
+
 use std::fs::File;
-use std::io::read_to_string;
+use std::io::Write;
+
 use pretty_assertions::assert_eq;
-use super::Runtime;
 
-fn test_golden_output(filename: &str) {
-    let file = File::open(filename).expect("test file exists");
-    let contents = read_to_string(file).unwrap();
-    let mut split_contents: Vec<&str> = contents.split("%%%%").collect();
-    let expected_output = split_contents.pop().unwrap().trim();
-    let input = split_contents.pop().unwrap().trim();
-    let opt_flags = split_contents.pop();
-    let (mut opt, mut _dce, mut _gvn, mut _mssa, mut no_pretty) =
-        (true, false, false, false, false);
-    if let Some(flags) = opt_flags {
-        for line in flags.lines() {
-            let flag = line.trim();
-            if flag.is_empty() {
-                continue;
+use crate::runtime::Config;
+use crate::SymbolMap;
+
+use super::{InterpreterError, Runtime};
+
+fn fixture_test(test_name: &str) {
+    let full_program_path = format!("./src/runtime/tests/test_programs/{}.nl", test_name);
+    let fixture_folder = format!("./src/runtime/tests/fixtures/{}", test_name);
+
+    let output_path_actual = format!("{}/{}.output.actual", fixture_folder, test_name);
+    let err_path_actual = format!("{}/{}.error.actual", fixture_folder, test_name);
+    let ast_path_actual = format!("{}/{}.ast.actual", fixture_folder, test_name);
+    let ir_path_actual = format!("{}/{}.ir.actual", fixture_folder, test_name);
+    let bytecode_path_actual = format!("{}/{}.bytecode.actual", fixture_folder, test_name);
+
+    let output_path_expected = format!("{}/{}.output.expected", fixture_folder, test_name);
+    let err_path_expected = format!("{}/{}.error.expected", fixture_folder, test_name);
+    let ast_path_expected = format!("{}/{}.ast.expected", fixture_folder, test_name);
+    let ir_path_expected = format!("{}/{}.ir.expected", fixture_folder, test_name);
+    let bytecode_path_expected = format!("{}/{}.bytecode.expected", fixture_folder, test_name);
+
+    let config = Config {
+        __output_override: Some(output_path_actual.clone()),
+        ast_output_path: Some(Some(ast_path_actual.clone())),
+        ir_output_path: Some(Some(ir_path_actual.clone())),
+        bytecode_output_path: Some(Some(bytecode_path_actual.clone())),
+        pretty_ir: true,
+        no_optimize: false,
+        inline: None,
+        stdin: false,
+        dry_run: false,
+        file: Some(full_program_path),
+        script_args: vec![],
+    };
+
+    let expected_actual_pairs = vec![
+        (     &err_path_actual,      &err_path_expected),
+        (  &output_path_actual,   &output_path_expected),
+        (     &ast_path_actual,      &ast_path_expected),
+        (      &ir_path_actual,       &ir_path_expected),
+        (&bytecode_path_actual, &bytecode_path_expected),
+    ];
+
+    std::fs::create_dir_all(fixture_folder).unwrap();
+    File::create(&output_path_actual).unwrap();
+
+    for (actual_path, _) in expected_actual_pairs.iter() {
+        let _ = std::fs::remove_file(&actual_path);
+    }
+
+    let mut file = File::create(err_path_actual.clone()).unwrap(); // Creates or truncates the file
+                                                                   //let 
+    let source_path = config.get_source_path().unwrap();
+    let runtime = Runtime::init(SymbolMap::new(), config);
+    if let Err(err) = run_script(runtime, source_path) {
+        let content = err.render();
+    
+        file.write_all(content.as_bytes()).unwrap();
+    } else {
+        file.write_all(&[] as &[u8]).unwrap();
+    }
+
+
+
+    if std::env::var("OVERWRITE_FIXTURES").is_ok() {
+        for (actual_path, expected_path) in expected_actual_pairs.iter() {
+            let actual = std::fs::read_to_string(&actual_path).unwrap_or(String::new());
+
+            if let Ok(mut expected_file) = File::create(&expected_path) {
+                expected_file.write_all(actual.as_bytes()).unwrap();
             }
-            let mut flag_setting = flag.split('=');
-            let flag = flag_setting.next().unwrap();
-
-            match flag {
-                "NO_OPT" => opt = false,
-                "NO_PRETTY" => no_pretty = true,
-                _ => panic!("unrecognized optimization flag"),
-            }
         }
     }
 
-    let mut syms = SymbolMap::new();
-    let ast = parse_program(input, &mut syms, None).unwrap();
-    let mut ir = lower_ast(ast, !no_pretty);
+    for (actual_path, expected_path) in expected_actual_pairs.iter() {
+        let actual = std::fs::read_to_string(&actual_path).unwrap_or(String::new());
+        let expected = std::fs::read_to_string(&expected_path).unwrap_or(String::new());
 
-    for func in ir.iter_mut() {
-        if opt {
-            optimize_func(func);
-        }
+        assert_eq!(expected, actual);
+        let _ = std::fs::remove_file(&actual_path);
     }
+}
 
-    let mut program = vec![];
-    for ir_func in ir.into_iter() {
-        let func = generate_func(ir_func);
-        program.push(func);
-    }
+fn run_script(mut runtime: Runtime, path: String) -> Result<(), InterpreterError> {
+    runtime.load_module(&path)?;
 
-    let mut runtime = Runtime::init(program, syms, Config::default());
-    let mut output = vec![];
-    match runtime.run(&mut output) {
-        Ok(()) => {
-            let out_string = String::from_utf8(output).expect("valid output");
-            assert_eq!(expected_output, out_string.trim());
-        }
-        Err(runtime_error) => {
-            panic!("{:?}", runtime_error)
-        }
-    }
+    runtime.run()
 }

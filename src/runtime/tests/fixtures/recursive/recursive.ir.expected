@@ -1,0 +1,33 @@
+========= FILE ./src/runtime/tests/fixtures/recursive/recursive.ir.actual ========
+fn1 (i_0) {
+block0:
+  PRINT i_0
+  t2 = 10
+  t3 = i_0 == t2
+  jnt t3 block2
+  next block1
+
+block1:
+  RETURN t4
+
+block2:
+  t5 = 1
+  t6 = i_0 + t5
+  LOAD_UPVAL count_to_ten_from_0
+  STORE_ARG t6
+  t8 = CALL count_to_ten_from_0
+  t9 = null
+  RETURN t9
+
+}
+MAIN () {
+block0:
+  count_to_ten_from_0 = fn1
+  STORE_UPVAL count_to_ten_from_0, count_to_ten_from_0
+  t1 = 0
+  STORE_ARG t1
+  t2 = CALL count_to_ten_from_0
+  t3 = null
+  RETURN t3
+
+}

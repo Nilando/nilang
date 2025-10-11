@@ -1,0 +1,24 @@
+========= FILE ./src/runtime/tests/fixtures/hello_world/hello_world.ast.actual ========
+[
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Value(
+                        String(
+                            "Hello, world!",
+                        ),
+                    ),
+                    span: Span {
+                        start: 6,
+                        end: 22,
+                    },
+                },
+            ),
+            span: Span {
+                start: 0,
+                end: 23,
+            },
+        },
+    ),
+]

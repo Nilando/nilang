@@ -1,0 +1,24 @@
+========= FILE ./src/runtime/tests/fixtures/fibonacci/fibonacci.bytecode.actual ========
+=== FN 1 START ===
+LIST 4
+INT  2, 0
+MEMS 4[2], 2
+INT  1, 1
+LEN 3, 4
+LT   3, 3, 0
+JNT  5, 3
+ADD  2, 2, 1
+PUSH 4, 2
+SWAP 1, 2
+JMP  -6
+RTN  4
+=== END ===
+=== FN 0 START ===
+LOC  1, 0
+INT  0, 50
+ARG  0
+CALL 0, 1
+OUT  0
+LDN  0
+RTN  0
+=== END ===

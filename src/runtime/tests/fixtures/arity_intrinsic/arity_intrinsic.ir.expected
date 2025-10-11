@@ -1,0 +1,66 @@
+========= FILE ./src/runtime/tests/fixtures/arity_intrinsic/arity_intrinsic.ir.actual ========
+fn1 () {
+block0:
+  t0 = null
+  RETURN t0
+
+}
+fn2 (a_0) {
+block0:
+  t1 = null
+  RETURN t1
+
+}
+fn3 (a_0, b_0) {
+block0:
+  t2 = null
+  RETURN t2
+
+}
+fn4 (a_0, b_0, c_0) {
+block0:
+  t3 = null
+  RETURN t3
+
+}
+fn5 (a_0, b_0, c_0, d_0) {
+block0:
+  LOAD_UPVAL x_0
+  PRINT x_0
+  t6 = null
+  RETURN t6
+
+}
+fn6 (a_0, b_0, c_0, d_0, e_0, f_0) {
+block0:
+  t6 = null
+  RETURN t6
+
+}
+MAIN () {
+block0:
+  t0 = fn1
+  t1 =  # t0
+  PRINT t1
+  t3 = fn2
+  t4 =  # t3
+  PRINT t4
+  t6 = fn3
+  t7 =  # t6
+  PRINT t7
+  t9 = fn4
+  t10 =  # t9
+  PRINT t10
+  x_0 = 123
+  t14 = fn5
+  STORE_UPVAL t14, x_0
+  t15 =  # t14
+  PRINT t15
+  f_0 = fn6
+  t19 = null
+  BIND f_1 = f_0 < t19
+  t21 =  # f_1
+  PRINT t21
+  RETURN t19
+
+}

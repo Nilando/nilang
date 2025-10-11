@@ -1,0 +1,10 @@
+========= FILE ./src/runtime/tests/fixtures/exporting/exporting.bytecode.actual ========
+=== FN 0 START ===
+SYM  0, #17
+LDGB 0, #0
+JNT  3, 0
+LOC  0, 0
+RTN  0
+LDN  0
+RTN  0
+=== END ===

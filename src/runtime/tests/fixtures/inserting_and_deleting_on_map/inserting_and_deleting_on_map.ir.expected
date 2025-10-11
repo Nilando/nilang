@@ -1,0 +1,55 @@
+========= FILE ./src/runtime/tests/fixtures/inserting_and_deleting_on_map/inserting_and_deleting_on_map.ir.actual ========
+MAIN () {
+block0:
+  m_0 = NEW_MAP
+  i_0 = 0
+  next block1(i_0)
+
+block1(i_1):
+  t4 = 1000
+  t5 = i_1 < t4
+  jnt t5 block3
+  next block2
+
+block2:
+  m_0[i_1] = i_1
+  t6 = 1
+  i_8 = i_1 + t6
+  jump block1(i_8)
+
+block3:
+  next block4(i_0)
+
+block4(i_3):
+  t10 = i_3 < t4
+  jnt t10 block6
+  next block5
+
+block5:
+  DELETE t11 = m_0 . i_3
+  t12 = "DELETED"
+  m_0[i_3] = t12
+  t13 = 2
+  i_7 = i_3 + t13
+  jump block4(i_7)
+
+block6:
+  next block7(i_0)
+
+block7(i_5):
+  t17 = i_5 < t4
+  jnt t17 block9
+  next block8
+
+block8:
+  t18 = m_0[i_5]
+  PRINT t18
+  t20 = 1
+  i_6 = i_5 + t20
+  jump block7(i_6)
+
+block9:
+  t22 = null
+  RETURN t22
+
+}

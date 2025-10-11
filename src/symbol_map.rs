@@ -53,29 +53,23 @@ macro_rules! generate_intrinsic_syms {
 generate_intrinsic_syms! {
     INT_SYM,
     FLOAT_SYM,
-    ARGS_SYM,
     STR_SYM,
     BOOL_SYM,
-    SLEEP_SYM,
-    TYPE_SYM,
     SYM_SYM,
+    NULL_SYM,
     LIST_SYM,
     MAP_SYM,
     FN_SYM,
+
+    // MAYBE REMOVE THESE
+    ARGS_SYM,
     READ_FILE_SYM,
-    CLONE_SYM,
-    NULL_SYM,
     ABS_SYM,
     FLOOR_SYM,
     CEIL_SYM,
     POW_SYM,
     LOG_SYM,
-    LEN_SYM,
-    PUSH_SYM,
-    POP_SYM,
-    ARITY_SYM,
-    BIND_SYM,
-    DELETE_SYM
+    SLEEP_SYM
 }
 
 impl SymbolMap {

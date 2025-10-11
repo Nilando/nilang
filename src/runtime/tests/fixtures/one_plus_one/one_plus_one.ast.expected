@@ -1,0 +1,106 @@
+========= FILE ./src/runtime/tests/fixtures/one_plus_one/one_plus_one.ast.actual ========
+[
+    FuncDecl {
+        ident: 17,
+        inputs: Spanned {
+            item: [
+                18,
+                19,
+            ],
+            span: Span {
+                start: 7,
+                end: 12,
+            },
+        },
+        stmts: [
+            Return(
+                Some(
+                    Spanned {
+                        item: Binop {
+                            lhs: Spanned {
+                                item: Value(
+                                    Ident(
+                                        18,
+                                    ),
+                                ),
+                                span: Span {
+                                    start: 24,
+                                    end: 25,
+                                },
+                            },
+                            op: Plus,
+                            rhs: Spanned {
+                                item: Value(
+                                    Ident(
+                                        19,
+                                    ),
+                                ),
+                                span: Span {
+                                    start: 28,
+                                    end: 30,
+                                },
+                            },
+                        },
+                        span: Span {
+                            start: 24,
+                            end: 30,
+                        },
+                    },
+                ),
+            ),
+        ],
+    },
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Call {
+                        calle: Spanned {
+                            item: Value(
+                                Ident(
+                                    17,
+                                ),
+                            ),
+                            span: Span {
+                                start: 40,
+                                end: 43,
+                            },
+                        },
+                        args: [
+                            Spanned {
+                                item: Value(
+                                    Int(
+                                        1,
+                                    ),
+                                ),
+                                span: Span {
+                                    start: 44,
+                                    end: 46,
+                                },
+                            },
+                            Spanned {
+                                item: Value(
+                                    Int(
+                                        1,
+                                    ),
+                                ),
+                                span: Span {
+                                    start: 47,
+                                    end: 49,
+                                },
+                            },
+                        ],
+                    },
+                    span: Span {
+                        start: 40,
+                        end: 50,
+                    },
+                },
+            ),
+            span: Span {
+                start: 34,
+                end: 51,
+            },
+        },
+    ),
+]

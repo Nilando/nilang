@@ -14,12 +14,18 @@ pub struct Stack<'gc> {
 }
 
 impl<'gc> Stack<'gc> {
-    pub fn new(mu: &'gc Mutator<'gc>) -> Self {
+    pub fn new(mu: &'gc Mutator) -> Self {
         Self {
             registers: GcVec::new(mu),
             call_frames: GcVec::new(mu),
             frame_start: Cell::new(0)
         }
+    }
+
+    pub fn clear(&self) {
+        while let Some(_) = self.registers.pop() {}
+        while let Some(_) = self.call_frames.pop() {}
+        self.frame_start.set(0);
     }
 
     pub fn is_empty(&self) -> bool {
@@ -106,9 +112,9 @@ impl<'gc> Stack<'gc> {
 
         for i in 0..self.call_frames.len() {
             let call_frame = self.call_frames.get_idx(i).unwrap().unwrap();
-            let module_path = &call_frame.get_func().get_file_path();
+            let module_path = call_frame.get_func().get_file_path();
             let bt_call = BacktraceCall {
-                path: Some(module_path.as_string()),
+                path: module_path.map(|p| p.as_string()),
                 span: call_frame.get_func().get_spans().get(call_frame.get_ip().get()).unwrap().clone()
             };
 

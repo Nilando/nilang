@@ -34,10 +34,6 @@ impl<'gc> InstructionStream<'gc> {
         self.code[self.ip.get() - 1]
     }
 
-    pub fn peek(&self) -> ByteCode {
-        self.code[self.ip.get()]
-    }
-
     pub fn jump(&mut self, offset: i16) {
         if offset > 0 {
             self.ip.set(self.ip.get() + offset as usize);

@@ -1,0 +1,39 @@
+========= FILE ./src/runtime/tests/fixtures/big_backtrace/big_backtrace.ir.actual ========
+fn1 (i_0) {
+block0:
+  t1 = 20
+  t2 = i_0 == t1
+  jnt t2 block2
+  next block1
+
+block1:
+  t3 = "oh no look out for that number!"
+  t4 = 1
+  t5 = t3 + t4
+  PRINT t5
+  jump block3
+
+block2:
+  t7 = 1
+  t8 = i_0 + t7
+  LOAD_UPVAL recursive_function_0
+  STORE_ARG t8
+  t10 = CALL recursive_function_0
+  next block3
+
+block3:
+  t11 = null
+  RETURN t11
+
+}
+MAIN () {
+block0:
+  recursive_function_0 = fn1
+  STORE_UPVAL recursive_function_0, recursive_function_0
+  t1 = 0
+  STORE_ARG t1
+  t2 = CALL recursive_function_0
+  t3 = null
+  RETURN t3
+
+}

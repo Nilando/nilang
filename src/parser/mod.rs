@@ -6,7 +6,7 @@ mod value;
 mod error;
 
 pub use expr::{Expr, LhsExpr};
-pub use lexer::{Ctrl, KeyWord, Lexer, Op, Token};
+pub use lexer::{Ctrl, KeyWord, Lexer, Token};
 pub use spanned::{GcPackedSpans, PackedSpans, Span, Spanned, retrieve_span_snippet};
 pub use stmt::Stmt;
 pub use value::{MapKey, Value};
@@ -15,6 +15,7 @@ pub use error::{ParseError, ParseErrorItem};
 use stmt::stmt;
 
 use super::symbol_map::{SymID, SymbolMap};
+use crate::op::BinaryOp;
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -22,7 +23,7 @@ use std::rc::Rc;
 pub fn parse_program(
     input: &str,
     syms: &mut SymbolMap,
-    path: Option<String>
+    path: Option<&String>
 ) -> Result<Vec<Stmt>, ParseError> {
     stmt()
         .unless(ctrl(Ctrl::End))

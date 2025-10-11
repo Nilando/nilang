@@ -1,0 +1,33 @@
+========= FILE ./src/runtime/tests/fixtures/null_intrinsic/null_intrinsic.ast.actual ========
+[
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Call {
+                        calle: Spanned {
+                            item: Value(
+                                Symbol(
+                                    5,
+                                ),
+                            ),
+                            span: Span {
+                                start: 6,
+                                end: 11,
+                            },
+                        },
+                        args: [],
+                    },
+                    span: Span {
+                        start: 6,
+                        end: 14,
+                    },
+                },
+            ),
+            span: Span {
+                start: 0,
+                end: 15,
+            },
+        },
+    ),
+]

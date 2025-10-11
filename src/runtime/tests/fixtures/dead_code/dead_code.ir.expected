@@ -1,0 +1,20 @@
+========= FILE ./src/runtime/tests/fixtures/dead_code/dead_code.ir.actual ========
+fn1 () {
+block0:
+  t0 = null
+  RETURN t0
+
+}
+MAIN () {
+block0:
+  b_0 = fn1
+  b_1 = CALL b_0
+  t17 = NEW_LIST
+  t18 = 0
+  t17[t18] = t18
+  t17[t18] = t18
+  PRINT t17
+  t23 = null
+  RETURN t23
+
+}

@@ -1,0 +1,181 @@
+========= FILE ./src/runtime/tests/fixtures/importing/importing.ast.actual ========
+[
+    Import {
+        ident: 17,
+        path: Spanned {
+            item: "./src/runtime/tests/test_programs/exporting.nl",
+            span: Span {
+                start: 13,
+                end: 61,
+            },
+        },
+    },
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Value(
+                        Ident(
+                            17,
+                        ),
+                    ),
+                    span: Span {
+                        start: 70,
+                        end: 76,
+                    },
+                },
+            ),
+            span: Span {
+                start: 64,
+                end: 77,
+            },
+        },
+    ),
+    Assign {
+        dest: Spanned {
+            item: Global(
+                18,
+            ),
+            span: Span {
+                start: 79,
+                end: 86,
+            },
+        },
+        src: Spanned {
+            item: Value(
+                Bool(
+                    true,
+                ),
+            ),
+            span: Span {
+                start: 87,
+                end: 92,
+            },
+        },
+    },
+    Import {
+        ident: 17,
+        path: Spanned {
+            item: "./src/runtime/tests/test_programs/exporting.nl",
+            span: Span {
+                start: 107,
+                end: 155,
+            },
+        },
+    },
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Value(
+                        Ident(
+                            17,
+                        ),
+                    ),
+                    span: Span {
+                        start: 164,
+                        end: 170,
+                    },
+                },
+            ),
+            span: Span {
+                start: 158,
+                end: 171,
+            },
+        },
+    ),
+]========= FILE ./src/runtime/tests/fixtures/importing/importing.ast.actual ========
+[
+    IfElse {
+        cond: Spanned {
+            item: Value(
+                Global(
+                    18,
+                ),
+            ),
+            span: Span {
+                start: 3,
+                end: 10,
+            },
+        },
+        stmts: [
+            Return(
+                Some(
+                    Spanned {
+                        item: Value(
+                            String(
+                                "flag is set",
+                            ),
+                        ),
+                        span: Span {
+                            start: 20,
+                            end: 34,
+                        },
+                    },
+                ),
+            ),
+        ],
+        else_stmts: [
+            Return(
+                Some(
+                    Spanned {
+                        item: Value(
+                            Null,
+                        ),
+                        span: Span {
+                            start: 53,
+                            end: 58,
+                        },
+                    },
+                ),
+            ),
+        ],
+    },
+]========= FILE ./src/runtime/tests/fixtures/importing/importing.ast.actual ========
+[
+    IfElse {
+        cond: Spanned {
+            item: Value(
+                Global(
+                    18,
+                ),
+            ),
+            span: Span {
+                start: 3,
+                end: 10,
+            },
+        },
+        stmts: [
+            Return(
+                Some(
+                    Spanned {
+                        item: Value(
+                            String(
+                                "flag is set",
+                            ),
+                        ),
+                        span: Span {
+                            start: 20,
+                            end: 34,
+                        },
+                    },
+                ),
+            ),
+        ],
+        else_stmts: [
+            Return(
+                Some(
+                    Spanned {
+                        item: Value(
+                            Null,
+                        ),
+                        span: Span {
+                            start: 53,
+                            end: 58,
+                        },
+                    },
+                ),
+            ),
+        ],
+    },
+]

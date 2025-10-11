@@ -1,0 +1,20 @@
+========= FILE ./src/runtime/tests/fixtures/expr_precedence/expr_precedence.ir.actual ========
+fn1 () {
+block0:
+  t0 = 1
+  RETURN t0
+
+}
+MAIN () {
+block0:
+  t1 = 9
+  PRINT t1
+  one_0 = fn1
+  t7 = CALL one_0
+  t8 = CALL one_0
+  t9 = t7 + t8
+  PRINT t9
+  t11 = null
+  RETURN t11
+
+}

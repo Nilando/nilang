@@ -1,0 +1,275 @@
+========= FILE ./src/runtime/tests/fixtures/basic_pushing/basic_pushing.ast.actual ========
+[
+    Assign {
+        dest: Spanned {
+            item: Local(
+                17,
+            ),
+            span: Span {
+                start: 0,
+                end: 3,
+            },
+        },
+        src: Spanned {
+            item: Value(
+                List(
+                    [],
+                ),
+            ),
+            span: Span {
+                start: 4,
+                end: 7,
+            },
+        },
+    },
+    Assign {
+        dest: Spanned {
+            item: Local(
+                18,
+            ),
+            span: Span {
+                start: 8,
+                end: 11,
+            },
+        },
+        src: Spanned {
+            item: Value(
+                String(
+                    "",
+                ),
+            ),
+            span: Span {
+                start: 12,
+                end: 15,
+            },
+        },
+    },
+    Assign {
+        dest: Spanned {
+            item: Local(
+                19,
+            ),
+            span: Span {
+                start: 17,
+                end: 20,
+            },
+        },
+        src: Spanned {
+            item: Value(
+                Int(
+                    0,
+                ),
+            ),
+            span: Span {
+                start: 21,
+                end: 23,
+            },
+        },
+    },
+    While {
+        cond: Spanned {
+            item: Binop {
+                lhs: Spanned {
+                    item: Value(
+                        Ident(
+                            19,
+                        ),
+                    ),
+                    span: Span {
+                        start: 30,
+                        end: 31,
+                    },
+                },
+                op: Lt,
+                rhs: Spanned {
+                    item: Value(
+                        Int(
+                            10,
+                        ),
+                    ),
+                    span: Span {
+                        start: 34,
+                        end: 38,
+                    },
+                },
+            },
+            span: Span {
+                start: 30,
+                end: 38,
+            },
+        },
+        stmts: [
+            Expr(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Ident(
+                                    17,
+                                ),
+                            ),
+                            span: Span {
+                                start: 41,
+                                end: 42,
+                            },
+                        },
+                        op: Push,
+                        rhs: Spanned {
+                            item: Value(
+                                Ident(
+                                    19,
+                                ),
+                            ),
+                            span: Span {
+                                start: 46,
+                                end: 48,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 41,
+                        end: 48,
+                    },
+                },
+            ),
+            Expr(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Ident(
+                                    18,
+                                ),
+                            ),
+                            span: Span {
+                                start: 51,
+                                end: 52,
+                            },
+                        },
+                        op: Push,
+                        rhs: Spanned {
+                            item: Call {
+                                calle: Spanned {
+                                    item: Value(
+                                        Ident(
+                                            2,
+                                        ),
+                                    ),
+                                    span: Span {
+                                        start: 56,
+                                        end: 59,
+                                    },
+                                },
+                                args: [
+                                    Spanned {
+                                        item: Value(
+                                            Ident(
+                                                19,
+                                            ),
+                                        ),
+                                        span: Span {
+                                            start: 60,
+                                            end: 62,
+                                        },
+                                    },
+                                ],
+                            },
+                            span: Span {
+                                start: 56,
+                                end: 63,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 51,
+                        end: 63,
+                    },
+                },
+            ),
+            Assign {
+                dest: Spanned {
+                    item: Local(
+                        19,
+                    ),
+                    span: Span {
+                        start: 66,
+                        end: 69,
+                    },
+                },
+                src: Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Ident(
+                                    19,
+                                ),
+                            ),
+                            span: Span {
+                                start: 70,
+                                end: 71,
+                            },
+                        },
+                        op: Plus,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 74,
+                                end: 76,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 70,
+                        end: 76,
+                    },
+                },
+            },
+        ],
+    },
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Value(
+                        Ident(
+                            17,
+                        ),
+                    ),
+                    span: Span {
+                        start: 86,
+                        end: 88,
+                    },
+                },
+            ),
+            span: Span {
+                start: 80,
+                end: 89,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Value(
+                        Ident(
+                            18,
+                        ),
+                    ),
+                    span: Span {
+                        start: 96,
+                        end: 98,
+                    },
+                },
+            ),
+            span: Span {
+                start: 90,
+                end: 99,
+            },
+        },
+    ),
+]

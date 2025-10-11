@@ -1,0 +1,27 @@
+========= FILE ./src/runtime/tests/fixtures/big_backtrace/big_backtrace.bytecode.actual ========
+=== FN 1 START ===
+INT  1, 20
+EQ   1, 0, 1
+JNT  6, 1
+LOC  1, 0
+INT  0, 1
+ADD  0, 1, 0
+OUT  0
+JMP  6
+INT  1, 1
+ADD  1, 0, 1
+LDUV 0, 0
+ARG  1
+CALL 0, 0
+LDN  0
+RTN  0
+=== END ===
+=== FN 0 START ===
+LOC  1, 0
+STUV 1, 1
+INT  0, 0
+ARG  0
+CALL 0, 1
+LDN  0
+RTN  0
+=== END ===

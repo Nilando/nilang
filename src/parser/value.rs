@@ -161,7 +161,7 @@ mod tests {
     #[test]
     fn parse_symbol() {
         let mut syms = SymbolMap::new();
-        let v = parse_value_with_syms("#testing", &mut syms);
+        let v = parse_value_with_syms("$testing", &mut syms);
 
         assert_eq!(v, Ok(Some(Value::Symbol(syms.get_id("testing")))));
     }

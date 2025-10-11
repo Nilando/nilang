@@ -1,0 +1,19 @@
+========= FILE ./src/runtime/tests/fixtures/clone_intrinsic/clone_intrinsic.bytecode.actual ========
+=== FN 0 START ===
+LIST 3
+INT  2, 0
+MEMS 3[2], 2
+CLONE 1, 3
+INT  0, 1
+MEMS 1[2], 0
+OUT  3
+OUT  1
+LOC  1, 0
+CLONE 0, 1
+LOC  2, 1
+PUSH 0, 2
+OUT  1
+OUT  0
+LDN  0
+RTN  0
+=== END ===

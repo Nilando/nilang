@@ -1,7 +1,7 @@
 use crate::codegen::func::{Func, Local};
 use crate::codegen::InterferenceGraph;
 use crate::ir::{Tac, TacConst};
-use crate::parser::Op;
+use crate::op::{BinaryOp, UnaryOp};
 use crate::runtime::ByteCode;
 
 pub fn translate_tac(tac: &Tac, graph: &InterferenceGraph, func: &mut Func) -> Option<ByteCode> {
@@ -63,16 +63,70 @@ pub fn translate_tac(tac: &Tac, graph: &InterferenceGraph, func: &mut Func) -> O
             dest: graph.get_reg(dest),
             path: graph.get_reg(path),
         }),
+        Tac::Push { store, src } => Some(ByteCode::Push {
+            store: graph.get_reg(store),
+            src: graph.get_reg(src),
+        }),
         Tac::Binop { dest, op, lhs, rhs } => Some(translate_binop(*dest, *op, *lhs, *rhs, graph)),
+        Tac::Unaop { dest, op, src } => Some(translate_unaop(*dest, *op, *src, graph)),
+        Tac::Pop { dest, src } => {
+            let dest = graph.get_reg(&dest);
+            let src = graph.get_reg(&src);
+
+            Some(ByteCode::Pop { dest, src })
+        }
         Tac::LoadConst { dest, src } => Some(translate_load_const(*dest, src, graph, func)),
+        Tac::Type { dest, src } => {
+            let dest = graph.get_reg(&dest);
+            let src = graph.get_reg(&src);
+
+            Some(ByteCode::Type { dest, src })
+        }
+        Tac::Clone { dest, src } => {
+            let dest = graph.get_reg(&dest);
+            let src = graph.get_reg(&src);
+
+            Some(ByteCode::Clone { dest, src })
+        }
+        Tac::Bind { dest, func, arg } => {
+            let dest = graph.get_reg(&dest);
+            let func = graph.get_reg(&func);
+            let arg = graph.get_reg(&arg);
+
+            Some(ByteCode::Bind { dest, func, arg })
+        }
+        Tac::Delete { dest, store, key } => {
+            let dest = graph.get_reg(&dest);
+            let store = graph.get_reg(&store);
+            let key = graph.get_reg(&key);
+
+            Some(ByteCode::Delete { dest, store, key })
+        }
         // These are handled specially in the main loop
         Tac::Label { .. } | Tac::Jnt { .. } | Tac::Jit { .. } | Tac::Jump { .. } => None,
     }
 }
 
+fn translate_unaop(
+    dest: crate::ir::VReg,
+    op: UnaryOp,
+    src: crate::ir::VReg,
+    graph: &InterferenceGraph,
+) -> ByteCode {
+    let dest = graph.get_reg(&dest);
+    let src = graph.get_reg(&src);
+
+    match op {
+        UnaryOp::Len => {
+            ByteCode::Len { dest, src }
+        }
+        _ => panic!()
+    }
+}
+
 fn translate_binop(
     dest: crate::ir::VReg,
-    op: Op,
+    op: BinaryOp,
     lhs: crate::ir::VReg,
     rhs: crate::ir::VReg,
     graph: &InterferenceGraph,
@@ -82,17 +136,17 @@ fn translate_binop(
     let rhs = graph.get_reg(&rhs);
 
     match op {
-        Op::Equal => ByteCode::Equality { dest, lhs, rhs },
-        Op::NotEqual => ByteCode::Inequality { dest, lhs, rhs },
-        Op::Lt => ByteCode::Lt { dest, lhs, rhs },
-        Op::Gt => ByteCode::Gt { dest, lhs, rhs },
-        Op::Plus => ByteCode::Add { dest, lhs, rhs },
-        Op::Minus => ByteCode::Sub { dest, lhs, rhs },
-        Op::Modulo => ByteCode::Modulo { dest, lhs, rhs },
-        Op::Multiply => ByteCode::Mult { dest, lhs, rhs },
-        Op::Divide => ByteCode::Div { dest, lhs, rhs },
-        Op::Lte => ByteCode::Lte { dest, lhs, rhs },
-        Op::Gte => ByteCode::Gte { dest, lhs, rhs },
+        BinaryOp::Equal => ByteCode::Equality { dest, lhs, rhs },
+        BinaryOp::NotEqual => ByteCode::Inequality { dest, lhs, rhs },
+        BinaryOp::Lt => ByteCode::Lt { dest, lhs, rhs },
+        BinaryOp::Gt => ByteCode::Gt { dest, lhs, rhs },
+        BinaryOp::Plus => ByteCode::Add { dest, lhs, rhs },
+        BinaryOp::Minus => ByteCode::Sub { dest, lhs, rhs },
+        BinaryOp::Modulo => ByteCode::Modulo { dest, lhs, rhs },
+        BinaryOp::Multiply => ByteCode::Mult { dest, lhs, rhs },
+        BinaryOp::Divide => ByteCode::Div { dest, lhs, rhs },
+        BinaryOp::Lte => ByteCode::Lte { dest, lhs, rhs },
+        BinaryOp::Gte => ByteCode::Gte { dest, lhs, rhs },
         _ => panic!(),
     }
 }

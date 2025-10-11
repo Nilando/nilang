@@ -1,0 +1,44 @@
+========= FILE ./src/runtime/tests/fixtures/divide_by_zero/divide_by_zero.ast.actual ========
+[
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 6,
+                                end: 7,
+                            },
+                        },
+                        op: Divide,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    0,
+                                ),
+                            ),
+                            span: Span {
+                                start: 10,
+                                end: 12,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 6,
+                        end: 12,
+                    },
+                },
+            ),
+            span: Span {
+                start: 0,
+                end: 13,
+            },
+        },
+    ),
+]

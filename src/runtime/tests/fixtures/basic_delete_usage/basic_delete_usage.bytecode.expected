@@ -1,0 +1,49 @@
+========= FILE ./src/runtime/tests/fixtures/basic_delete_usage/basic_delete_usage.bytecode.actual ========
+=== FN 0 START ===
+MAP  4
+SYM  1, #17
+INT  0, 0
+MEMS 4[1], 0
+SYM  6, #18
+INT  3, 1
+MEMS 4[6], 3
+SYM  5, #19
+INT  2, 2
+MEMS 4[5], 2
+OUT  4
+DEL 1, 4[1]
+OUT  4
+DEL 1, 4[6]
+OUT  4
+DEL 1, 4[5]
+OUT  4
+MAP  1
+MEMS 1[0], 0
+MEMS 1[3], 3
+MEMS 1[2], 2
+OUT  1
+DEL 0, 1[0]
+OUT  1
+DEL 0, 1[3]
+OUT  1
+DEL 0, 1[2]
+OUT  1
+MAP  1
+LDN  2
+MEMS 1[2], 2
+BOOL 4, true
+MEMS 1[4], 4
+BOOL 3, false
+MEMS 1[3], 3
+OUT  1
+DEL 0, 1[2]
+OUT  1
+DEL 0, 1[4]
+OUT  1
+DEL 0, 1[3]
+OUT  1
+MAP  0
+DEL 1, 0[2]
+OUT  0
+RTN  2
+=== END ===

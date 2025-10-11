@@ -1,0 +1,2614 @@
+========= FILE ./src/runtime/tests/fixtures/math_ops/math_ops.ast.actual ========
+[
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Value(
+                        String(
+                            "=====  ADDITION",
+                        ),
+                    ),
+                    span: Span {
+                        start: 6,
+                        end: 24,
+                    },
+                },
+            ),
+            span: Span {
+                start: 0,
+                end: 25,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 32,
+                                end: 33,
+                            },
+                        },
+                        op: Plus,
+                        rhs: Spanned {
+                            item: Value(
+                                Float(
+                                    1.0,
+                                ),
+                            ),
+                            span: Span {
+                                start: 36,
+                                end: 40,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 32,
+                        end: 40,
+                    },
+                },
+            ),
+            span: Span {
+                start: 26,
+                end: 41,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Float(
+                                    1.0,
+                                ),
+                            ),
+                            span: Span {
+                                start: 48,
+                                end: 51,
+                            },
+                        },
+                        op: Plus,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 54,
+                                end: 56,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 48,
+                        end: 56,
+                    },
+                },
+            ),
+            span: Span {
+                start: 42,
+                end: 57,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 64,
+                                end: 65,
+                            },
+                        },
+                        op: Plus,
+                        rhs: Spanned {
+                            item: Value(
+                                Float(
+                                    1.0,
+                                ),
+                            ),
+                            span: Span {
+                                start: 68,
+                                end: 72,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 64,
+                        end: 72,
+                    },
+                },
+            ),
+            span: Span {
+                start: 58,
+                end: 73,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 80,
+                                end: 81,
+                            },
+                        },
+                        op: Plus,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 84,
+                                end: 86,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 80,
+                        end: 86,
+                    },
+                },
+            ),
+            span: Span {
+                start: 74,
+                end: 87,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 94,
+                                end: 95,
+                            },
+                        },
+                        op: Plus,
+                        rhs: Spanned {
+                            item: Value(
+                                Float(
+                                    1.123,
+                                ),
+                            ),
+                            span: Span {
+                                start: 98,
+                                end: 104,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 94,
+                        end: 104,
+                    },
+                },
+            ),
+            span: Span {
+                start: 88,
+                end: 105,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Float(
+                                    1.123,
+                                ),
+                            ),
+                            span: Span {
+                                start: 112,
+                                end: 117,
+                            },
+                        },
+                        op: Plus,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 120,
+                                end: 122,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 112,
+                        end: 122,
+                    },
+                },
+            ),
+            span: Span {
+                start: 106,
+                end: 123,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Float(
+                                    1.12,
+                                ),
+                            ),
+                            span: Span {
+                                start: 130,
+                                end: 135,
+                            },
+                        },
+                        op: Plus,
+                        rhs: Spanned {
+                            item: Value(
+                                Float(
+                                    1.003,
+                                ),
+                            ),
+                            span: Span {
+                                start: 138,
+                                end: 144,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 130,
+                        end: 144,
+                    },
+                },
+            ),
+            span: Span {
+                start: 124,
+                end: 145,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    2147483647,
+                                ),
+                            ),
+                            span: Span {
+                                start: 178,
+                                end: 188,
+                            },
+                        },
+                        op: Plus,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 191,
+                                end: 193,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 178,
+                        end: 193,
+                    },
+                },
+            ),
+            span: Span {
+                start: 172,
+                end: 194,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    2147483647,
+                                ),
+                            ),
+                            span: Span {
+                                start: 201,
+                                end: 211,
+                            },
+                        },
+                        op: Plus,
+                        rhs: Spanned {
+                            item: Value(
+                                Float(
+                                    1.123,
+                                ),
+                            ),
+                            span: Span {
+                                start: 214,
+                                end: 220,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 201,
+                        end: 220,
+                    },
+                },
+            ),
+            span: Span {
+                start: 195,
+                end: 221,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Value(
+                        String(
+                            "=====  SUBTRACTION",
+                        ),
+                    ),
+                    span: Span {
+                        start: 229,
+                        end: 250,
+                    },
+                },
+            ),
+            span: Span {
+                start: 223,
+                end: 251,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 258,
+                                end: 259,
+                            },
+                        },
+                        op: Minus,
+                        rhs: Spanned {
+                            item: Value(
+                                Float(
+                                    1.0,
+                                ),
+                            ),
+                            span: Span {
+                                start: 262,
+                                end: 266,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 258,
+                        end: 266,
+                    },
+                },
+            ),
+            span: Span {
+                start: 252,
+                end: 267,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Float(
+                                    1.0,
+                                ),
+                            ),
+                            span: Span {
+                                start: 274,
+                                end: 277,
+                            },
+                        },
+                        op: Minus,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 280,
+                                end: 282,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 274,
+                        end: 282,
+                    },
+                },
+            ),
+            span: Span {
+                start: 268,
+                end: 283,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 290,
+                                end: 291,
+                            },
+                        },
+                        op: Minus,
+                        rhs: Spanned {
+                            item: Value(
+                                Float(
+                                    1.0,
+                                ),
+                            ),
+                            span: Span {
+                                start: 294,
+                                end: 298,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 290,
+                        end: 298,
+                    },
+                },
+            ),
+            span: Span {
+                start: 284,
+                end: 299,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 306,
+                                end: 307,
+                            },
+                        },
+                        op: Minus,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 310,
+                                end: 312,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 306,
+                        end: 312,
+                    },
+                },
+            ),
+            span: Span {
+                start: 300,
+                end: 313,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 320,
+                                end: 321,
+                            },
+                        },
+                        op: Minus,
+                        rhs: Spanned {
+                            item: Value(
+                                Float(
+                                    1.123,
+                                ),
+                            ),
+                            span: Span {
+                                start: 324,
+                                end: 330,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 320,
+                        end: 330,
+                    },
+                },
+            ),
+            span: Span {
+                start: 314,
+                end: 331,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Float(
+                                    1.123,
+                                ),
+                            ),
+                            span: Span {
+                                start: 338,
+                                end: 343,
+                            },
+                        },
+                        op: Minus,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 346,
+                                end: 348,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 338,
+                        end: 348,
+                    },
+                },
+            ),
+            span: Span {
+                start: 332,
+                end: 349,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Float(
+                                    1.123,
+                                ),
+                            ),
+                            span: Span {
+                                start: 356,
+                                end: 361,
+                            },
+                        },
+                        op: Minus,
+                        rhs: Spanned {
+                            item: Value(
+                                Float(
+                                    0.123,
+                                ),
+                            ),
+                            span: Span {
+                                start: 364,
+                                end: 370,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 356,
+                        end: 370,
+                    },
+                },
+            ),
+            span: Span {
+                start: 350,
+                end: 371,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Value(
+                        String(
+                            "=====  MULTIPLICATION",
+                        ),
+                    ),
+                    span: Span {
+                        start: 379,
+                        end: 403,
+                    },
+                },
+            ),
+            span: Span {
+                start: 373,
+                end: 404,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    3,
+                                ),
+                            ),
+                            span: Span {
+                                start: 411,
+                                end: 412,
+                            },
+                        },
+                        op: Multiply,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    3,
+                                ),
+                            ),
+                            span: Span {
+                                start: 415,
+                                end: 417,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 411,
+                        end: 417,
+                    },
+                },
+            ),
+            span: Span {
+                start: 405,
+                end: 418,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Float(
+                                    3.3,
+                                ),
+                            ),
+                            span: Span {
+                                start: 425,
+                                end: 428,
+                            },
+                        },
+                        op: Multiply,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    3,
+                                ),
+                            ),
+                            span: Span {
+                                start: 431,
+                                end: 433,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 425,
+                        end: 433,
+                    },
+                },
+            ),
+            span: Span {
+                start: 419,
+                end: 434,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    3,
+                                ),
+                            ),
+                            span: Span {
+                                start: 441,
+                                end: 442,
+                            },
+                        },
+                        op: Multiply,
+                        rhs: Spanned {
+                            item: Value(
+                                Float(
+                                    3.3,
+                                ),
+                            ),
+                            span: Span {
+                                start: 445,
+                                end: 449,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 441,
+                        end: 449,
+                    },
+                },
+            ),
+            span: Span {
+                start: 435,
+                end: 450,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Float(
+                                    3.3,
+                                ),
+                            ),
+                            span: Span {
+                                start: 457,
+                                end: 460,
+                            },
+                        },
+                        op: Multiply,
+                        rhs: Spanned {
+                            item: Value(
+                                Float(
+                                    3.3,
+                                ),
+                            ),
+                            span: Span {
+                                start: 463,
+                                end: 467,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 457,
+                        end: 467,
+                    },
+                },
+            ),
+            span: Span {
+                start: 451,
+                end: 468,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Float(
+                                    3.3,
+                                ),
+                            ),
+                            span: Span {
+                                start: 475,
+                                end: 478,
+                            },
+                        },
+                        op: Multiply,
+                        rhs: Spanned {
+                            item: Unaop {
+                                op: Negate,
+                                expr: Spanned {
+                                    item: Value(
+                                        Int(
+                                            1,
+                                        ),
+                                    ),
+                                    span: Span {
+                                        start: 482,
+                                        end: 483,
+                                    },
+                                },
+                            },
+                            span: Span {
+                                start: 481,
+                                end: 484,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 475,
+                        end: 484,
+                    },
+                },
+            ),
+            span: Span {
+                start: 469,
+                end: 485,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Float(
+                                    1247928394.3242342,
+                                ),
+                            ),
+                            span: Span {
+                                start: 492,
+                                end: 511,
+                            },
+                        },
+                        op: Multiply,
+                        rhs: Spanned {
+                            item: Value(
+                                Float(
+                                    23423497293.12313,
+                                ),
+                            ),
+                            span: Span {
+                                start: 514,
+                                end: 532,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 492,
+                        end: 532,
+                    },
+                },
+            ),
+            span: Span {
+                start: 486,
+                end: 533,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Value(
+                        String(
+                            "=====  DIVISION",
+                        ),
+                    ),
+                    span: Span {
+                        start: 541,
+                        end: 559,
+                    },
+                },
+            ),
+            span: Span {
+                start: 535,
+                end: 560,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 567,
+                                end: 568,
+                            },
+                        },
+                        op: Divide,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 569,
+                                end: 571,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 567,
+                        end: 571,
+                    },
+                },
+            ),
+            span: Span {
+                start: 561,
+                end: 572,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    2,
+                                ),
+                            ),
+                            span: Span {
+                                start: 579,
+                                end: 580,
+                            },
+                        },
+                        op: Divide,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 581,
+                                end: 583,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 579,
+                        end: 583,
+                    },
+                },
+            ),
+            span: Span {
+                start: 573,
+                end: 584,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 591,
+                                end: 592,
+                            },
+                        },
+                        op: Divide,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    2,
+                                ),
+                            ),
+                            span: Span {
+                                start: 593,
+                                end: 595,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 591,
+                        end: 595,
+                    },
+                },
+            ),
+            span: Span {
+                start: 585,
+                end: 596,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Float(
+                                    1.0,
+                                ),
+                            ),
+                            span: Span {
+                                start: 603,
+                                end: 606,
+                            },
+                        },
+                        op: Divide,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    2,
+                                ),
+                            ),
+                            span: Span {
+                                start: 607,
+                                end: 609,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 603,
+                        end: 609,
+                    },
+                },
+            ),
+            span: Span {
+                start: 597,
+                end: 610,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 617,
+                                end: 618,
+                            },
+                        },
+                        op: Divide,
+                        rhs: Spanned {
+                            item: Value(
+                                Float(
+                                    2.0,
+                                ),
+                            ),
+                            span: Span {
+                                start: 619,
+                                end: 623,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 617,
+                        end: 623,
+                    },
+                },
+            ),
+            span: Span {
+                start: 611,
+                end: 624,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Float(
+                                    1.0,
+                                ),
+                            ),
+                            span: Span {
+                                start: 631,
+                                end: 634,
+                            },
+                        },
+                        op: Divide,
+                        rhs: Spanned {
+                            item: Value(
+                                Float(
+                                    2.0,
+                                ),
+                            ),
+                            span: Span {
+                                start: 635,
+                                end: 639,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 631,
+                        end: 639,
+                    },
+                },
+            ),
+            span: Span {
+                start: 625,
+                end: 640,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Float(
+                                    2.0,
+                                ),
+                            ),
+                            span: Span {
+                                start: 647,
+                                end: 650,
+                            },
+                        },
+                        op: Divide,
+                        rhs: Spanned {
+                            item: Value(
+                                Float(
+                                    1.0,
+                                ),
+                            ),
+                            span: Span {
+                                start: 651,
+                                end: 655,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 647,
+                        end: 655,
+                    },
+                },
+            ),
+            span: Span {
+                start: 641,
+                end: 656,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Value(
+                        String(
+                            "=====  MODULO",
+                        ),
+                    ),
+                    span: Span {
+                        start: 664,
+                        end: 680,
+                    },
+                },
+            ),
+            span: Span {
+                start: 658,
+                end: 681,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 688,
+                                end: 689,
+                            },
+                        },
+                        op: Modulo,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 690,
+                                end: 692,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 688,
+                        end: 692,
+                    },
+                },
+            ),
+            span: Span {
+                start: 682,
+                end: 693,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    2,
+                                ),
+                            ),
+                            span: Span {
+                                start: 700,
+                                end: 701,
+                            },
+                        },
+                        op: Modulo,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 702,
+                                end: 704,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 700,
+                        end: 704,
+                    },
+                },
+            ),
+            span: Span {
+                start: 694,
+                end: 705,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 712,
+                                end: 713,
+                            },
+                        },
+                        op: Modulo,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    2,
+                                ),
+                            ),
+                            span: Span {
+                                start: 714,
+                                end: 716,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 712,
+                        end: 716,
+                    },
+                },
+            ),
+            span: Span {
+                start: 706,
+                end: 717,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Float(
+                                    1.0,
+                                ),
+                            ),
+                            span: Span {
+                                start: 724,
+                                end: 727,
+                            },
+                        },
+                        op: Modulo,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    2,
+                                ),
+                            ),
+                            span: Span {
+                                start: 728,
+                                end: 730,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 724,
+                        end: 730,
+                    },
+                },
+            ),
+            span: Span {
+                start: 718,
+                end: 731,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 738,
+                                end: 739,
+                            },
+                        },
+                        op: Modulo,
+                        rhs: Spanned {
+                            item: Value(
+                                Float(
+                                    2.0,
+                                ),
+                            ),
+                            span: Span {
+                                start: 740,
+                                end: 744,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 738,
+                        end: 744,
+                    },
+                },
+            ),
+            span: Span {
+                start: 732,
+                end: 745,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Float(
+                                    1.0,
+                                ),
+                            ),
+                            span: Span {
+                                start: 752,
+                                end: 755,
+                            },
+                        },
+                        op: Modulo,
+                        rhs: Spanned {
+                            item: Value(
+                                Float(
+                                    2.0,
+                                ),
+                            ),
+                            span: Span {
+                                start: 756,
+                                end: 760,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 752,
+                        end: 760,
+                    },
+                },
+            ),
+            span: Span {
+                start: 746,
+                end: 761,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Float(
+                                    2.0,
+                                ),
+                            ),
+                            span: Span {
+                                start: 768,
+                                end: 771,
+                            },
+                        },
+                        op: Modulo,
+                        rhs: Spanned {
+                            item: Value(
+                                Float(
+                                    1.0,
+                                ),
+                            ),
+                            span: Span {
+                                start: 772,
+                                end: 776,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 768,
+                        end: 776,
+                    },
+                },
+            ),
+            span: Span {
+                start: 762,
+                end: 777,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Value(
+                        String(
+                            "=====  MATH INTRINSICS",
+                        ),
+                    ),
+                    span: Span {
+                        start: 785,
+                        end: 810,
+                    },
+                },
+            ),
+            span: Span {
+                start: 779,
+                end: 811,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Call {
+                        calle: Spanned {
+                            item: Value(
+                                Ident(
+                                    14,
+                                ),
+                            ),
+                            span: Span {
+                                start: 818,
+                                end: 821,
+                            },
+                        },
+                        args: [
+                            Spanned {
+                                item: Value(
+                                    Int(
+                                        2,
+                                    ),
+                                ),
+                                span: Span {
+                                    start: 822,
+                                    end: 824,
+                                },
+                            },
+                            Spanned {
+                                item: Value(
+                                    Int(
+                                        4,
+                                    ),
+                                ),
+                                span: Span {
+                                    start: 825,
+                                    end: 827,
+                                },
+                            },
+                        ],
+                    },
+                    span: Span {
+                        start: 818,
+                        end: 828,
+                    },
+                },
+            ),
+            span: Span {
+                start: 812,
+                end: 829,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Call {
+                        calle: Spanned {
+                            item: Value(
+                                Ident(
+                                    15,
+                                ),
+                            ),
+                            span: Span {
+                                start: 836,
+                                end: 839,
+                            },
+                        },
+                        args: [
+                            Spanned {
+                                item: Value(
+                                    Int(
+                                        16,
+                                    ),
+                                ),
+                                span: Span {
+                                    start: 840,
+                                    end: 843,
+                                },
+                            },
+                            Spanned {
+                                item: Value(
+                                    Int(
+                                        2,
+                                    ),
+                                ),
+                                span: Span {
+                                    start: 844,
+                                    end: 846,
+                                },
+                            },
+                        ],
+                    },
+                    span: Span {
+                        start: 836,
+                        end: 847,
+                    },
+                },
+            ),
+            span: Span {
+                start: 830,
+                end: 848,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Call {
+                        calle: Spanned {
+                            item: Value(
+                                Ident(
+                                    11,
+                                ),
+                            ),
+                            span: Span {
+                                start: 855,
+                                end: 858,
+                            },
+                        },
+                        args: [
+                            Spanned {
+                                item: Unaop {
+                                    op: Negate,
+                                    expr: Spanned {
+                                        item: Value(
+                                            Int(
+                                                1,
+                                            ),
+                                        ),
+                                        span: Span {
+                                            start: 860,
+                                            end: 861,
+                                        },
+                                    },
+                                },
+                                span: Span {
+                                    start: 859,
+                                    end: 862,
+                                },
+                            },
+                        ],
+                    },
+                    span: Span {
+                        start: 855,
+                        end: 863,
+                    },
+                },
+            ),
+            span: Span {
+                start: 849,
+                end: 864,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Call {
+                        calle: Spanned {
+                            item: Value(
+                                Ident(
+                                    13,
+                                ),
+                            ),
+                            span: Span {
+                                start: 871,
+                                end: 875,
+                            },
+                        },
+                        args: [
+                            Spanned {
+                                item: Value(
+                                    Int(
+                                        0,
+                                    ),
+                                ),
+                                span: Span {
+                                    start: 876,
+                                    end: 878,
+                                },
+                            },
+                        ],
+                    },
+                    span: Span {
+                        start: 871,
+                        end: 879,
+                    },
+                },
+            ),
+            span: Span {
+                start: 865,
+                end: 880,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Call {
+                        calle: Spanned {
+                            item: Value(
+                                Ident(
+                                    12,
+                                ),
+                            ),
+                            span: Span {
+                                start: 887,
+                                end: 892,
+                            },
+                        },
+                        args: [
+                            Spanned {
+                                item: Value(
+                                    Int(
+                                        0,
+                                    ),
+                                ),
+                                span: Span {
+                                    start: 893,
+                                    end: 895,
+                                },
+                            },
+                        ],
+                    },
+                    span: Span {
+                        start: 887,
+                        end: 896,
+                    },
+                },
+            ),
+            span: Span {
+                start: 881,
+                end: 897,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Value(
+                        String(
+                            "=====  COMPARISONS",
+                        ),
+                    ),
+                    span: Span {
+                        start: 905,
+                        end: 926,
+                    },
+                },
+            ),
+            span: Span {
+                start: 899,
+                end: 927,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 934,
+                                end: 935,
+                            },
+                        },
+                        op: Gt,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    0,
+                                ),
+                            ),
+                            span: Span {
+                                start: 938,
+                                end: 940,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 934,
+                        end: 940,
+                    },
+                },
+            ),
+            span: Span {
+                start: 928,
+                end: 941,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 948,
+                                end: 949,
+                            },
+                        },
+                        op: Gte,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    0,
+                                ),
+                            ),
+                            span: Span {
+                                start: 953,
+                                end: 955,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 948,
+                        end: 955,
+                    },
+                },
+            ),
+            span: Span {
+                start: 942,
+                end: 956,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 963,
+                                end: 964,
+                            },
+                        },
+                        op: Lt,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    0,
+                                ),
+                            ),
+                            span: Span {
+                                start: 967,
+                                end: 969,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 963,
+                        end: 969,
+                    },
+                },
+            ),
+            span: Span {
+                start: 957,
+                end: 970,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 977,
+                                end: 978,
+                            },
+                        },
+                        op: Lte,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    0,
+                                ),
+                            ),
+                            span: Span {
+                                start: 982,
+                                end: 984,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 977,
+                        end: 984,
+                    },
+                },
+            ),
+            span: Span {
+                start: 971,
+                end: 985,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 992,
+                                end: 993,
+                            },
+                        },
+                        op: Equal,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    0,
+                                ),
+                            ),
+                            span: Span {
+                                start: 997,
+                                end: 999,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 992,
+                        end: 999,
+                    },
+                },
+            ),
+            span: Span {
+                start: 986,
+                end: 1000,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 1007,
+                                end: 1008,
+                            },
+                        },
+                        op: NotEqual,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    0,
+                                ),
+                            ),
+                            span: Span {
+                                start: 1012,
+                                end: 1014,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 1007,
+                        end: 1014,
+                    },
+                },
+            ),
+            span: Span {
+                start: 1001,
+                end: 1015,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 1022,
+                                end: 1023,
+                            },
+                        },
+                        op: Gt,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 1026,
+                                end: 1028,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 1022,
+                        end: 1028,
+                    },
+                },
+            ),
+            span: Span {
+                start: 1016,
+                end: 1029,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 1036,
+                                end: 1037,
+                            },
+                        },
+                        op: Gte,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 1041,
+                                end: 1043,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 1036,
+                        end: 1043,
+                    },
+                },
+            ),
+            span: Span {
+                start: 1030,
+                end: 1044,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 1051,
+                                end: 1052,
+                            },
+                        },
+                        op: Lt,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 1055,
+                                end: 1057,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 1051,
+                        end: 1057,
+                    },
+                },
+            ),
+            span: Span {
+                start: 1045,
+                end: 1058,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 1065,
+                                end: 1066,
+                            },
+                        },
+                        op: Lte,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 1070,
+                                end: 1072,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 1065,
+                        end: 1072,
+                    },
+                },
+            ),
+            span: Span {
+                start: 1059,
+                end: 1073,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 1080,
+                                end: 1081,
+                            },
+                        },
+                        op: Equal,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 1085,
+                                end: 1087,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 1080,
+                        end: 1087,
+                    },
+                },
+            ),
+            span: Span {
+                start: 1074,
+                end: 1088,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 1095,
+                                end: 1096,
+                            },
+                        },
+                        op: NotEqual,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 1100,
+                                end: 1102,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 1095,
+                        end: 1102,
+                    },
+                },
+            ),
+            span: Span {
+                start: 1089,
+                end: 1103,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    0,
+                                ),
+                            ),
+                            span: Span {
+                                start: 1110,
+                                end: 1111,
+                            },
+                        },
+                        op: Gt,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 1114,
+                                end: 1116,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 1110,
+                        end: 1116,
+                    },
+                },
+            ),
+            span: Span {
+                start: 1104,
+                end: 1117,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    0,
+                                ),
+                            ),
+                            span: Span {
+                                start: 1124,
+                                end: 1125,
+                            },
+                        },
+                        op: Gte,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 1129,
+                                end: 1131,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 1124,
+                        end: 1131,
+                    },
+                },
+            ),
+            span: Span {
+                start: 1118,
+                end: 1132,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    0,
+                                ),
+                            ),
+                            span: Span {
+                                start: 1139,
+                                end: 1140,
+                            },
+                        },
+                        op: Lt,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 1143,
+                                end: 1145,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 1139,
+                        end: 1145,
+                    },
+                },
+            ),
+            span: Span {
+                start: 1133,
+                end: 1146,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    0,
+                                ),
+                            ),
+                            span: Span {
+                                start: 1153,
+                                end: 1154,
+                            },
+                        },
+                        op: Lte,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 1158,
+                                end: 1160,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 1153,
+                        end: 1160,
+                    },
+                },
+            ),
+            span: Span {
+                start: 1147,
+                end: 1161,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    0,
+                                ),
+                            ),
+                            span: Span {
+                                start: 1168,
+                                end: 1169,
+                            },
+                        },
+                        op: Equal,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 1173,
+                                end: 1175,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 1168,
+                        end: 1175,
+                    },
+                },
+            ),
+            span: Span {
+                start: 1162,
+                end: 1176,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    0,
+                                ),
+                            ),
+                            span: Span {
+                                start: 1183,
+                                end: 1184,
+                            },
+                        },
+                        op: NotEqual,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 1188,
+                                end: 1190,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 1183,
+                        end: 1190,
+                    },
+                },
+            ),
+            span: Span {
+                start: 1177,
+                end: 1191,
+            },
+        },
+    ),
+]

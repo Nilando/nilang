@@ -1,0 +1,51 @@
+========= FILE ./src/runtime/tests/fixtures/eratosthenes_sieve/eratosthenes_sieve.bytecode.actual ========
+=== FN 1 START ===
+LIST 3
+INT  2, 2
+COPY 1, 2
+LTE  4, 1, 0
+JNT  6, 4
+BOOL 4, true
+PUSH 3, 4
+INT  4, 1
+ADD  1, 1, 4
+JMP  -6
+COPY 4, 2
+LTE  1, 4, 0
+JNT  15, 1
+SUB  1, 4, 2
+MEML 1, 3[1]
+JNT  9, 1
+MULT 1, 4, 2
+LTE  5, 1, 0
+JNT  6, 5
+BOOL 6, false
+SUB  5, 1, 2
+MEMS 3[5], 6
+ADD  1, 4, 1
+JMP  -6
+INT  1, 1
+ADD  4, 4, 1
+JMP  -15
+LIST 4
+COPY 1, 2
+LTE  5, 1, 0
+JNT  8, 5
+SUB  5, 1, 2
+MEML 5, 3[5]
+JNT  2, 5
+PUSH 4, 1
+INT  5, 1
+ADD  1, 1, 5
+JMP  -8
+RTN  4
+=== END ===
+=== FN 0 START ===
+LOC  1, 0
+INT  0, 1000
+ARG  0
+CALL 0, 1
+OUT  0
+LDN  0
+RTN  0
+=== END ===

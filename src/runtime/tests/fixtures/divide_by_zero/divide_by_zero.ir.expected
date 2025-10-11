@@ -1,0 +1,11 @@
+========= FILE ./src/runtime/tests/fixtures/divide_by_zero/divide_by_zero.ir.actual ========
+MAIN () {
+block0:
+  t0 = 1
+  t1 = 0
+  t2 = t0 / t1
+  PRINT t2
+  t4 = null
+  RETURN t4
+
+}

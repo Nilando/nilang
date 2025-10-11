@@ -2,8 +2,7 @@ use crate::symbol_map::SymbolMap;
 
 use super::instruction_stream::InstructionStream;
 use super::op::{
-    add, divide, equal, greater_than, greater_than_or_equal, less_than, less_than_or_equal,
-    mem_load, mem_store, modulo, multiply, not_equal, sub,
+    add, bind, clone, delete, divide, equal, greater_than, greater_than_or_equal, len, less_than, less_than_or_equal, mem_load, mem_store, modulo, multiply, not_equal, pop, push, sub, ttype
 };
 use super::bytecode::Reg;
 use super::call_frame::CallFrame;
@@ -22,7 +21,7 @@ pub use super::bytecode::ByteCode;
 use sandpit::{field, Gc, GcOpt, Mutator, Trace};
 use std::io::Write;
 
-const DISPATCH_LOOP_LENGTH: usize = 100;
+const DISPATCH_LOOP_LENGTH: usize = 1000;
 
 #[derive(Debug)]
 pub enum ExitCode {
@@ -37,8 +36,8 @@ pub enum ExitCode {
 pub struct VM<'gc> {
     // TODO: consider making a thread type
     stack: Stack<'gc>,
-    output_item: Gc<'gc, TaggedValue<'gc>>,
     globals: Gc<'gc, GcHashMap<'gc>>,
+    output_item: Gc<'gc, TaggedValue<'gc>>,
 }
 
 impl<'gc> VM<'gc> {
@@ -88,6 +87,10 @@ impl<'gc> VM<'gc> {
                 }
             }
         }
+    }
+
+    pub fn clear_stack(&self) {
+        self.stack.clear();
     }
 
     pub fn load_module(
@@ -204,6 +207,17 @@ impl<'gc> VM<'gc> {
             ByteCode::StoreUpvalue { func, src } => {
                 self.collect_upvalues_and_create_closure(func, src, mu, instr_stream)?;
             }
+            ByteCode::Bind { dest, func, arg } => {
+                let func = Value::from(&self.get_reg(func));
+                let arg = Value::from(&self.get_reg(arg));
+
+                match bind(func, arg, mu) {
+                    Ok(val) => {
+                        self.set_reg(TaggedValue::from_value(val, mu), dest, mu);
+                    }
+                    Err(err) => return Err(self.type_error(err)),
+                }
+            }
             ByteCode::StoreArg { .. } => {
                 self.count_args_then_call(mu, symbols, instr_stream)?;
             }
@@ -236,17 +250,6 @@ impl<'gc> VM<'gc> {
                     instr_stream.jump(offset - 1);
                 }
             }
-            ByteCode::Add { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, add, mu)?,
-            ByteCode::Sub { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, sub, mu)?,
-            ByteCode::Mult { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, multiply, mu)?,
-            ByteCode::Div { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, divide, mu)?,
-            ByteCode::Modulo { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, modulo, mu)?,
-            ByteCode::Lt { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, less_than, mu)?,
-            ByteCode::Lte { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, less_than_or_equal, mu)?,
-            ByteCode::Gt { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, greater_than, mu)?,
-            ByteCode::Gte { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, greater_than_or_equal, mu)?,
-            ByteCode::Equality { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, equal, mu)?,
-            ByteCode::Inequality { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, not_equal, mu)?,
             ByteCode::MemLoad { dest, store, key } => {
                 let store = Value::from(&self.get_reg(store));
                 let key = Value::from(&self.get_reg(key));
@@ -266,8 +269,66 @@ impl<'gc> VM<'gc> {
                 let src = Value::from(&self.get_reg(src));
 
                 match mem_store(store, key, src, mu) {
-                    Ok(()) => {
-                        // store was successful, nothing to do
+                    Ok(()) => {}
+                    Err(err) => return Err(self.type_error(err)),
+                }
+            }
+            ByteCode::Delete { dest, store, key } => {
+                let store = Value::from(&self.get_reg(store));
+                let key = Value::from(&self.get_reg(key));
+
+                match delete(store, key, mu) {
+                    Ok(val) => {
+                        self.set_reg(TaggedValue::from_value(val, mu), dest, mu);
+                    }
+                    Err(err) => return Err(self.type_error(err)),
+                }
+            }
+            ByteCode::Push { store, src } => {
+                let store = Value::from(&self.get_reg(store));
+                let src = Value::from(&self.get_reg(src));
+
+                match push(store, src, mu) {
+                    Ok(()) => {}
+                    Err(err) => return Err(self.type_error(err)),
+                }
+            }
+            ByteCode::Pop { dest, src } => {
+                let src = Value::from(&self.get_reg(src));
+
+                match pop(src, mu) {
+                    Ok(val) => {
+                        self.set_reg(TaggedValue::from_value(val, mu), dest, mu);
+                    }
+                    Err(err) => return Err(self.type_error(err)),
+                }
+            }
+            ByteCode::Clone { dest, src } => {
+                let src = Value::from(&self.get_reg(src));
+
+                match clone(src, mu) {
+                    Ok(val) => {
+                        self.set_reg(TaggedValue::from_value(val, mu), dest, mu);
+                    }
+                    Err(err) => return Err(self.type_error(err)),
+                }
+            }
+            ByteCode::Type { dest, src } => {
+                let src = Value::from(&self.get_reg(src));
+
+                match ttype(src) {
+                    Ok(val) => {
+                        self.set_reg(TaggedValue::from_value(val, mu), dest, mu);
+                    }
+                    Err(err) => return Err(self.type_error(err)),
+                }
+            }
+            ByteCode::Len { dest, src } => {
+                let src = Value::from(&self.get_reg(src));
+
+                match len(src) {
+                    Ok(val) => {
+                        self.set_reg(TaggedValue::from_value(val, mu), dest, mu);
                     }
                     Err(err) => return Err(self.type_error(err)),
                 }
@@ -294,6 +355,17 @@ impl<'gc> VM<'gc> {
 
                 return Ok(Some(ExitCode::LoadModule(path)));
             }
+            ByteCode::Add { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, add, mu)?,
+            ByteCode::Sub { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, sub, mu)?,
+            ByteCode::Mult { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, multiply, mu)?,
+            ByteCode::Div { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, divide, mu)?,
+            ByteCode::Modulo { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, modulo, mu)?,
+            ByteCode::Lt { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, less_than, mu)?,
+            ByteCode::Lte { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, less_than_or_equal, mu)?,
+            ByteCode::Gt { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, greater_than, mu)?,
+            ByteCode::Gte { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, greater_than_or_equal, mu)?,
+            ByteCode::Equality { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, equal, mu)?,
+            ByteCode::Inequality { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, not_equal, mu)?,
         }
 
         Ok(None)
@@ -451,7 +523,6 @@ impl<'gc> VM<'gc> {
 
                 self.expect_args(expected_args, supplied_args)?;
 
-                // TODO: store the current ip
                 self.stack.push_cf(CallFrame::new(func), mu);
 
                 if let Some(args) = bound_args {
@@ -537,7 +608,7 @@ impl<'gc> VM<'gc> {
         RuntimeError::new(kind, Some(msg), Some(bt))
     }
 
-    fn get_backtrace(
+    pub fn get_backtrace(
         &self,
     ) -> Backtrace {
         self.stack.get_backtrace()

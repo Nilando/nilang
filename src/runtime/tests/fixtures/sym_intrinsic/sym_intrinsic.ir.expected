@@ -1,0 +1,32 @@
+========= FILE ./src/runtime/tests/fixtures/sym_intrinsic/sym_intrinsic.ir.actual ========
+MAIN () {
+block0:
+  t0 = NEW_LIST
+  t1 = "blah"
+  t2 = 0
+  t0[t2] = t1
+  t3 = #test
+  t4 = 1
+  t0[t4] = t3
+  next block1(t2)
+
+block1(i_1):
+  t8 =  # t0
+  t9 = i_1 < t8
+  jnt t9 block3
+  next block2
+
+block2:
+  t10 = t0[i_1]
+  sym_0 = #sym
+  STORE_ARG t10
+  t12 = CALL sym_0
+  PRINT t12
+  i_2 = i_1 + t4
+  jump block1(i_2)
+
+block3:
+  t16 = null
+  RETURN t16
+
+}

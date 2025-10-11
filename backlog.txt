@@ -1,23 +1,31 @@
 VERSION 0.1.0
 
 IN PROGRESS:
+- implement last intrinsic sym funcs
 
 FEATURE BACKLOG:
 - auto binding of functions with "self" arg
-- add push and pop operators
+- for loops
+- bitwise ops
+  - bitflip
+  - xor
+  - or
+  - and
+  - shift
 - String Interpolation
-- save assigned vars in repl
-- fix sandpit gcvec bugs
 - "monkey patch" intrinsic
-- add FFI
-- LSP?
+   - monkey_patch($list, $symbol, value)
+- green threading
+- FFI!!
 
-OPTIMIZATION BACKLOG:
+OPTIMIZATION/REFACTOR BACKLOG:
+- add benchmarking
+- move span to its own module
 - GC updates:
   - GcVecMut
     - this update should be a big speed up by dramatically reducing number of
       allocations
-- add benchmarking
+  - there is some bugs around GcVec still
 - string internment
 - Memory SSA
 - Jump threading pass

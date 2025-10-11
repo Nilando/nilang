@@ -1,0 +1,23 @@
+========= FILE ./src/runtime/tests/fixtures/very_large_map/very_large_map.bytecode.actual ========
+=== FN 0 START ===
+MAP  2
+INT  1, 0
+COPY 0, 1
+INT  4, 1000
+LT   3, 0, 4
+JNT  5, 3
+MEMS 2[0], 0
+INT  3, 1
+ADD  0, 0, 3
+JMP  -6
+COPY 0, 1
+LT   1, 0, 4
+JNT  6, 1
+MEML 1, 2[0]
+OUT  1
+INT  1, 1
+ADD  0, 0, 1
+JMP  -6
+LDN  0
+RTN  0
+=== END ===

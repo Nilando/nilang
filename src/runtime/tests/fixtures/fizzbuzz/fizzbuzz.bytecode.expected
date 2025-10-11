@@ -1,0 +1,96 @@
+========= FILE ./src/runtime/tests/fixtures/fizzbuzz/fizzbuzz.bytecode.actual ========
+=== FN 1 START ===
+INT  2, 0
+LEN 3, 0
+LT   3, 2, 3
+JNT  9, 3
+MEML 3, 0[2]
+EQ   3, 3, 1
+JNT  3, 3
+BOOL 0, true
+RTN  0
+INT  3, 1
+ADD  2, 2, 3
+JMP  -10
+BOOL 0, false
+RTN  0
+=== END ===
+=== FN 2 START ===
+SYM  1, #2
+ARG  0
+CALL 4, 1
+INT  1, 5
+MOD  1, 0, 1
+INT  3, 0
+EQ   1, 1, 3
+JIT  2, 1
+JMP  2
+JMP  6
+LOC  2, 0
+LDUV 1, 0
+ARG  4
+ARG  2
+CALL 1, 1
+INT  2, 7
+MOD  0, 0, 2
+EQ   2, 0, 3
+JIT  2, 2
+JMP  2
+JMP  6
+LOC  0, 1
+LDUV 2, 0
+ARG  4
+ARG  0
+CALL 2, 2
+JNT  2, 1
+JMP  3
+COPY 0, 1
+JMP  2
+COPY 0, 2
+JNT  3, 0
+LOC  0, 2
+RTN  0
+JNT  3, 1
+LOC  0, 3
+RTN  0
+JNT  3, 2
+LOC  0, 4
+RTN  0
+LDN  0
+RTN  0
+=== END ===
+=== FN 0 START ===
+LOC  0, 0
+LOC  1, 1
+STUV 1, 0
+INT  0, 51
+ARG  0
+CALL 0, 1
+OUT  0
+INT  0, 10
+ARG  0
+CALL 0, 1
+OUT  0
+INT  0, 17
+ARG  0
+CALL 0, 1
+OUT  0
+INT  0, 14
+ARG  0
+CALL 0, 1
+OUT  0
+INT  0, 70
+ARG  0
+CALL 0, 1
+OUT  0
+INT  0, 35
+ARG  0
+CALL 0, 1
+OUT  0
+INT  0, 57
+ARG  0
+CALL 0, 1
+OUT  0
+LDN  0
+RTN  0
+=== END ===

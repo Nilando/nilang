@@ -1,4 +1,4 @@
-use crate::parser::Op;
+use crate::op::{BinaryOp, UnaryOp};
 use crate::symbol_map::SymID;
 
 pub type LabelID = usize;
@@ -19,11 +19,24 @@ pub enum TacConst {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Tac {
+    Pop {
+        dest: VReg,
+        src: VReg,
+    },
+    Unaop {
+        dest: VReg,
+        op: UnaryOp,
+        src: VReg,
+    },
     Binop {
         dest: VReg,
-        op: Op,
+        op: BinaryOp,
         lhs: VReg,
         rhs: VReg,
+    },
+    Push {
+        store: VReg,
+        src: VReg
     },
     NewList {
         dest: VReg,
@@ -100,6 +113,24 @@ pub enum Tac {
         dest: VReg,
         path: VReg,
     },
+    Delete {
+        dest: VReg,
+        store: VReg,
+        key: VReg,
+    },
+    Bind {
+        dest: VReg,
+        func: VReg,
+        arg: VReg,
+    },
+    Clone {
+        dest: VReg,
+        src: VReg,
+    },
+    Type {
+        dest: VReg,
+        src: VReg,
+    },
 }
 
 impl Tac {
@@ -114,12 +145,19 @@ impl Tac {
             | Tac::StoreArg { src, .. }
             | Tac::Call { src, .. }
             | Tac::Return { src, .. }
+            | Tac::Pop { src, .. }
+            | Tac::Clone { src, .. }
+            | Tac::Type { src, .. }
             | Tac::Jnt { src, .. }
             | Tac::Jit { src, .. } => [Some(src), None, None],
             Tac::Import { path, .. } => [Some(path), None, None],
+            Tac::Unaop { src, .. } => [Some(src), None, None],
             Tac::MemLoad { store, key, .. } => [Some(store), Some(key), None],
+            Tac::Delete { store, key, .. } => [Some(store), Some(key), None],
+            Tac::Bind { func, arg, .. } => [Some(func), Some(arg), None],
             Tac::MemStore { store, key, src } => [Some(store), Some(key), Some(src)],
             Tac::StoreUpvalue { func, src } => [Some(func), Some(src), None],
+            Tac::Push { store, src } => [Some(store), Some(src), None],
             _ => [None, None, None],
         }
     }
@@ -134,13 +172,19 @@ impl Tac {
             | Tac::StoreArg { src, .. }
             | Tac::Call { src, .. }
             | Tac::Return { src, .. }
+            | Tac::Pop { src, .. }
+            | Tac::Clone { src, .. }
+            | Tac::Type { src, .. }
             | Tac::Jnt { src, .. }
             | Tac::Jit { src, .. } => [Some(src), None, None],
             Tac::Import { path, .. } => [Some(path), None, None],
+            Tac::Unaop { src, .. } => [Some(src), None, None],
             Tac::MemLoad { store, key, .. } => [Some(store), Some(key), None],
+            Tac::Delete { store, key, .. } => [Some(store), Some(key), None],
+            Tac::Bind { func, arg, .. } => [Some(func), Some(arg), None],
             Tac::MemStore { store, key, src } => [Some(store), Some(key), Some(src)],
             Tac::StoreUpvalue { func, src } => [Some(func), Some(src), None],
-
+            Tac::Push { store, src } => [Some(store), Some(src), None],
             _ => [None, None, None],
         }
     }
@@ -156,7 +200,13 @@ impl Tac {
             | Tac::Read { dest, .. }
             | Tac::NewMap { dest, .. }
             | Tac::NewList { dest, .. }
+            | Tac::Pop { dest, .. }
             | Tac::Import { dest, .. }
+            | Tac::Unaop { dest, .. }
+            | Tac::Clone { dest, .. }
+            | Tac::Type { dest, .. }
+            | Tac::Bind { dest, .. }
+            | Tac::Delete { dest, .. }
             | Tac::Binop { dest, .. } => Some(dest),
             _ => None,
         }
@@ -173,6 +223,12 @@ impl Tac {
             | Tac::Read { dest, .. }
             | Tac::NewMap { dest, .. }
             | Tac::NewList { dest, .. }
+            | Tac::Pop { dest, .. }
+            | Tac::Unaop { dest, .. }
+            | Tac::Clone { dest, .. }
+            | Tac::Type { dest, .. }
+            | Tac::Bind { dest, .. }
+            | Tac::Delete { dest, .. }
             | Tac::Binop { dest, .. } => Some(dest),
             _ => None,
         }
@@ -185,6 +241,8 @@ impl Tac {
                 | Tac::Print { .. }
                 | Tac::Call { .. }
                 | Tac::Import { .. }
+                | Tac::Pop { .. }
+                | Tac::Delete { .. }
         )
     }
 }

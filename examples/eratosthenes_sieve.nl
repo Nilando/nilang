@@ -4,11 +4,12 @@ fn eratosthenes(n) {
   // init with all numbers marked as prime
   i = 2;
   while i <= n {
-    push(primes, true);
+    primes << true;
     i = i + 1;
   }
 
   // sieve
+  result = [];
   i = 2;
   while i <= n {
     if primes[i - 2] {
@@ -18,18 +19,10 @@ fn eratosthenes(n) {
         primes[k - 2] = false;
         k = i + k;
       }
+
+      result << i;
     }
 
-    i = i + 1;
-  }
-
-  // collect results
-  result = [];
-  i = 2;
-  while i <= n {
-    if primes[i - 2] {
-      push(result, i);
-    }
     i = i + 1;
   }
 

@@ -1,0 +1,37 @@
+========= FILE ./src/runtime/tests/fixtures/str_intrinsic/str_intrinsic.bytecode.actual ========
+=== FN 0 START ===
+LOC  0, 0
+SYM  2, #2
+ARG  0
+CALL 0, 2
+OUT  0
+LDN  1
+ARG  1
+CALL 0, 2
+OUT  0
+INT  0, 0
+ARG  0
+CALL 0, 2
+OUT  0
+LOC  0, 1
+ARG  0
+CALL 0, 2
+OUT  0
+BOOL 0, true
+ARG  0
+CALL 0, 2
+OUT  0
+BOOL 0, false
+ARG  0
+CALL 0, 2
+OUT  0
+LOC  0, 2
+ARG  0
+CALL 0, 2
+OUT  0
+SYM  0, #17
+ARG  0
+CALL 0, 2
+OUT  0
+RTN  1
+=== END ===

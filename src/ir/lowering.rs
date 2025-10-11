@@ -3,7 +3,8 @@ use super::func_builder::FuncBuilder;
 use super::tac::{FuncID, LabelID, Tac, TacConst};
 use super::VReg;
 
-use crate::parser::{Expr, LhsExpr, MapKey, Op, Span, Spanned, Stmt, Value};
+use crate::parser::{Expr, LhsExpr, MapKey, Span, Spanned, Stmt, Value};
+use crate::op::{BinaryOp, UnaryOp};
 use crate::symbol_map::{SymID, SymbolMap};
 
 use std::collections::BTreeSet;
@@ -143,8 +144,111 @@ impl LoweringCtx {
 
                 self.lower_print(var)
             }
+            Expr::Type(expr) => {
+                let src = self.lower_expr(*expr);
+                let dest = self.new_temp();
+
+                self.emit(Tac::Type {
+                    dest,
+                    src
+                });
+
+                dest
+            }
+            Expr::Clone(expr) => {
+                let src = self.lower_expr(*expr);
+                let dest = self.new_temp();
+
+                self.emit(Tac::Clone {
+                    dest,
+                    src
+                });
+
+                dest
+            }
+            Expr::Delete { store, key } => {
+                let store = self.lower_expr(*store);
+                let key = self.lower_expr(*key);
+                let dest = self.new_temp();
+
+                self.emit(Tac::Delete {
+                    dest,
+                    store,
+                    key
+                });
+
+                dest
+            }
+            Expr::Bind { func, arg } => {
+                let func = self.lower_expr(*func);
+                let arg = self.lower_expr(*arg);
+                let dest = self.new_temp();
+
+                self.emit(Tac::Bind {
+                    dest,
+                    func,
+                    arg
+                });
+
+                dest
+            }
+            Expr::Unaop { op, expr } => {
+                match op {
+                    UnaryOp::Pop => {
+                        let src = self.lower_expr(*expr);
+                        let dest = self.new_temp();
+
+                        self.emit(Tac::Pop {
+                            dest,
+                            src
+                        });
+
+                        dest
+                    }
+                    UnaryOp::Negate => {
+                        let v1 = self.lower_expr(*expr);
+                        let v2 = self.load_const(TacConst::Int(-1));
+
+
+                        self.lower_binop(v1, BinaryOp::Multiply, v2, span)
+                    }
+                    UnaryOp::Not => {
+                        let else_end = self.new_label();
+                        let else_start = self.new_label();
+                        let dest = self.lower_expr(*expr);
+
+                        self.emit(Tac::Jit {
+                            src: dest,
+                            label: else_start,
+                        });
+                        self.emit(Tac::LoadConst {
+                            dest,
+                            src: TacConst::Bool(false),
+                        });
+                        self.emit_jump(else_end);
+                        self.emit_label(else_start);
+                        self.emit(Tac::LoadConst {
+                            dest,
+                            src: TacConst::Bool(true),
+                        });
+                        self.emit_label(else_end);
+                        dest
+                    }
+                    _ => {
+                        let v1 = self.lower_expr(*expr);
+
+                        self.lower_unary_op(op, v1, span)
+                    }
+                }
+            }
             Expr::Binop { lhs, op, rhs } => match op {
-                Op::And | Op::Or => self.lower_shortcircuit(*lhs, op, *rhs),
+                BinaryOp::And | BinaryOp::Or => self.lower_shortcircuit(*lhs, op, *rhs),
+                BinaryOp::Push => {
+                    let v1 = self.lower_expr(*lhs);
+                    let v2 = self.lower_expr(*rhs);
+
+                    self.lower_push(v1, v2, span)
+                }
                 _ => {
                     let v1 = self.lower_expr(*lhs);
                     let v2 = self.lower_expr(*rhs);
@@ -173,7 +277,7 @@ impl LoweringCtx {
         }
     }
 
-    fn lower_shortcircuit(&mut self, lhs: Spanned<Expr>, op: Op, rhs: Spanned<Expr>) -> VReg {
+    fn lower_shortcircuit(&mut self, lhs: Spanned<Expr>, op: BinaryOp, rhs: Spanned<Expr>) -> VReg {
         let label = self.new_label();
         let dest = self.new_temp();
         let src = self.lower_expr(lhs);
@@ -181,8 +285,8 @@ impl LoweringCtx {
         self.emit(Tac::Copy { dest, src });
 
         match op {
-            Op::And => self.emit(Tac::Jnt { src, label }),
-            Op::Or => self.emit(Tac::Jit { src, label }),
+            BinaryOp::And => self.emit(Tac::Jnt { src, label }),
+            BinaryOp::Or => self.emit(Tac::Jit { src, label }),
             _ => panic!("tried to generated shortcircuit for wrong op"),
         }
 
@@ -445,7 +549,21 @@ impl LoweringCtx {
         store
     }
 
-    fn lower_binop(&mut self, lhs: VReg, op: Op, rhs: VReg, span: Span) -> VReg {
+    fn lower_push(&mut self, lhs: VReg, rhs: VReg, span: Span) -> VReg {
+        self.emit_spanned(Tac::Push { store: lhs, src: rhs }, span);
+
+        self.new_temp()
+    }
+
+    fn lower_unary_op(&mut self, op: UnaryOp, src: VReg, span: Span) -> VReg {
+        let dest = self.new_temp();
+
+        self.emit_spanned(Tac::Unaop { dest, op, src }, span);
+
+        dest
+    }
+
+    fn lower_binop(&mut self, lhs: VReg, op: BinaryOp, rhs: VReg, span: Span) -> VReg {
         let dest = self.new_temp();
 
         self.emit_spanned(Tac::Binop { dest, lhs, op, rhs }, span);
@@ -665,13 +783,13 @@ pub mod tests {
             Tac::Binop {
                 dest: 3,
                 lhs: 1,
-                op: Op::Multiply,
+                op: BinaryOp::Multiply,
                 rhs: 2,
             },
             Tac::Binop {
                 dest: 4,
                 lhs: 0,
-                op: Op::Multiply,
+                op: BinaryOp::Multiply,
                 rhs: 3,
             },
             Tac::LoadConst {

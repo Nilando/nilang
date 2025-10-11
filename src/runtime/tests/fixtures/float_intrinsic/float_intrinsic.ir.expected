@@ -1,0 +1,52 @@
+========= FILE ./src/runtime/tests/fixtures/float_intrinsic/float_intrinsic.ir.actual ========
+MAIN () {
+block0:
+  t0 = NEW_LIST
+  t1 = 123
+  t2 = 0
+  t0[t2] = t1
+  t3 = 0.123
+  t4 = 1
+  t0[t4] = t3
+  t5 = null
+  t6 = 2
+  t0[t6] = t5
+  t7 = false
+  t8 = 3
+  t0[t8] = t7
+  t9 = true
+  t10 = 4
+  t0[t10] = t9
+  t11 = "123"
+  t12 = 5
+  t0[t12] = t11
+  t13 = "1.0"
+  t14 = 6
+  t0[t14] = t13
+  t15 = "nan"
+  t16 = 7
+  t0[t16] = t15
+  t17 = "bad"
+  t18 = 8
+  t0[t18] = t17
+  next block1(t2)
+
+block1(i_1):
+  t22 =  # t0
+  t23 = i_1 < t22
+  jnt t23 block3
+  next block2
+
+block2:
+  t24 = t0[i_1]
+  float_0 = #float
+  STORE_ARG t24
+  t26 = CALL float_0
+  PRINT t26
+  i_2 = i_1 + t4
+  jump block1(i_2)
+
+block3:
+  RETURN t5
+
+}

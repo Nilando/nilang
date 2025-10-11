@@ -2,7 +2,7 @@ use super::block::{Block, BlockId};
 use super::func::Func;
 use super::lowering::MAIN_FUNC_ID;
 use super::tac::{Tac, TacConst, VReg};
-use crate::parser::Op;
+use crate::op::{BinaryOp, UnaryOp};
 use crate::symbol_map::{SymID, SymbolMap};
 use std::collections::HashMap;
 
@@ -90,6 +90,17 @@ impl FuncPrinter<'_> {
             self.result.push_str("  ");
 
             match tac {
+                Tac::Unaop { dest, op, src } => {
+                    self.push_var(dest);
+                    self.result.push_str(" = ");
+                    self.push_unary_op(op);
+                    self.push_var(src);
+                }
+                Tac::Push { store, src } => {
+                    self.push_var(store);
+                    self.result.push_str(" << ");
+                    self.push_var(src);
+                }
                 Tac::Copy { dest, src } => {
                     self.push_var(dest);
                     self.result.push_str(" = ");
@@ -128,7 +139,7 @@ impl FuncPrinter<'_> {
                     self.push_var(dest);
                     self.result.push_str(" = ");
                     self.push_var(lhs);
-                    self.push_op(op);
+                    self.push_binary_op(op);
                     self.push_var(rhs);
                 }
                 Tac::Call { dest, src } => {
@@ -206,6 +217,40 @@ impl FuncPrinter<'_> {
                     self.result.push_str(", ");
                     self.push_var(path);
                 }
+                Tac::Pop { dest, src } => {
+                    self.result.push_str("POP ");
+                    self.push_var(dest);
+                    self.result.push_str(" = ");
+                    self.push_var(src);
+                }
+                Tac::Clone { dest, src } => {
+                    self.result.push_str("CLONE ");
+                    self.push_var(dest);
+                    self.result.push_str(" = ");
+                    self.push_var(src);
+                }
+                Tac::Type { dest, src } => {
+                    self.result.push_str("TYPE ");
+                    self.push_var(dest);
+                    self.result.push_str(" = ");
+                    self.push_var(src);
+                }
+                Tac::Bind { dest, func, arg } => {
+                    self.result.push_str("BIND ");
+                    self.push_var(dest);
+                    self.result.push_str(" = ");
+                    self.push_var(func);
+                    self.result.push_str(" < ");
+                    self.push_var(arg);
+                }
+                Tac::Delete { dest, store, key } => {
+                    self.result.push_str("DELETE ");
+                    self.push_var(dest);
+                    self.result.push_str(" = ");
+                    self.push_var(store);
+                    self.result.push_str(" . ");
+                    self.push_var(key);
+                }
             }
             self.result.push('\n');
         }
@@ -241,21 +286,33 @@ impl FuncPrinter<'_> {
         }
     }
 
-    fn push_op(&mut self, op: &Op) {
+    fn push_binary_op(&mut self, op: &BinaryOp) {
         let s = match op {
-            Op::Lt => "<".to_string(),
-            Op::Lte => "<=".to_string(),
-            Op::Gt => ">".to_string(),
-            Op::Gte => ">=".to_string(),
-            Op::Multiply => "*".to_string(),
-            Op::Equal => "==".to_string(),
-            Op::NotEqual => "!=".to_string(),
-            Op::And => "&&".to_string(),
-            Op::Or => "||".to_string(),
-            Op::Modulo => "%".to_string(),
-            Op::Plus => "+".to_string(),
-            Op::Minus => "-".to_string(),
-            Op::Divide => "/".to_string(),
+            BinaryOp::Lt => "<".to_string(),
+            BinaryOp::Lte => "<=".to_string(),
+            BinaryOp::Gt => ">".to_string(),
+            BinaryOp::Gte => ">=".to_string(),
+            BinaryOp::Multiply => "*".to_string(),
+            BinaryOp::Equal => "==".to_string(),
+            BinaryOp::NotEqual => "!=".to_string(),
+            BinaryOp::And => "&&".to_string(),
+            BinaryOp::Or => "||".to_string(),
+            BinaryOp::Modulo => "%".to_string(),
+            BinaryOp::Plus => "+".to_string(),
+            BinaryOp::Minus => "-".to_string(),
+            BinaryOp::Divide => "/".to_string(),
+            BinaryOp::Push => "<<".to_string(),
+        };
+
+        self.result.push_str(&format!(" {} ", s));
+    }
+
+    fn push_unary_op(&mut self, op: &UnaryOp) {
+        let s = match op {
+            UnaryOp::Not => "!".to_string(),
+            UnaryOp::Negate => "-".to_string(),
+            UnaryOp::Len => "#".to_string(),
+            UnaryOp::Pop => panic!("pop should not be converted into a regular unary op")
         };
 
         self.result.push_str(&format!(" {} ", s));

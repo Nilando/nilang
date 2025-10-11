@@ -1,0 +1,351 @@
+========= FILE ./src/runtime/tests/fixtures/arity_intrinsic/arity_intrinsic.ast.actual ========
+[
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Unaop {
+                        op: Len,
+                        expr: Spanned {
+                            item: Value(
+                                InlineFunc {
+                                    inputs: Spanned {
+                                        item: [],
+                                        span: Span {
+                                            start: 10,
+                                            end: 11,
+                                        },
+                                    },
+                                    stmts: [],
+                                },
+                            ),
+                            span: Span {
+                                start: 7,
+                                end: 14,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 6,
+                        end: 15,
+                    },
+                },
+            ),
+            span: Span {
+                start: 0,
+                end: 16,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Unaop {
+                        op: Len,
+                        expr: Spanned {
+                            item: Value(
+                                InlineFunc {
+                                    inputs: Spanned {
+                                        item: [
+                                            17,
+                                        ],
+                                        span: Span {
+                                            start: 27,
+                                            end: 29,
+                                        },
+                                    },
+                                    stmts: [],
+                                },
+                            ),
+                            span: Span {
+                                start: 24,
+                                end: 32,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 23,
+                        end: 33,
+                    },
+                },
+            ),
+            span: Span {
+                start: 17,
+                end: 34,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Unaop {
+                        op: Len,
+                        expr: Spanned {
+                            item: Value(
+                                InlineFunc {
+                                    inputs: Spanned {
+                                        item: [
+                                            17,
+                                            18,
+                                        ],
+                                        span: Span {
+                                            start: 45,
+                                            end: 50,
+                                        },
+                                    },
+                                    stmts: [],
+                                },
+                            ),
+                            span: Span {
+                                start: 42,
+                                end: 53,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 41,
+                        end: 54,
+                    },
+                },
+            ),
+            span: Span {
+                start: 35,
+                end: 55,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Unaop {
+                        op: Len,
+                        expr: Spanned {
+                            item: Value(
+                                InlineFunc {
+                                    inputs: Spanned {
+                                        item: [
+                                            17,
+                                            18,
+                                            19,
+                                        ],
+                                        span: Span {
+                                            start: 66,
+                                            end: 74,
+                                        },
+                                    },
+                                    stmts: [],
+                                },
+                            ),
+                            span: Span {
+                                start: 63,
+                                end: 77,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 62,
+                        end: 78,
+                    },
+                },
+            ),
+            span: Span {
+                start: 56,
+                end: 79,
+            },
+        },
+    ),
+    Assign {
+        dest: Spanned {
+            item: Local(
+                20,
+            ),
+            span: Span {
+                start: 120,
+                end: 123,
+            },
+        },
+        src: Spanned {
+            item: Value(
+                Int(
+                    123,
+                ),
+            ),
+            span: Span {
+                start: 124,
+                end: 128,
+            },
+        },
+    },
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Unaop {
+                        op: Len,
+                        expr: Spanned {
+                            item: Value(
+                                InlineFunc {
+                                    inputs: Spanned {
+                                        item: [
+                                            17,
+                                            18,
+                                            19,
+                                            21,
+                                        ],
+                                        span: Span {
+                                            start: 139,
+                                            end: 150,
+                                        },
+                                    },
+                                    stmts: [
+                                        Expr(
+                                            Spanned {
+                                                item: Print(
+                                                    Spanned {
+                                                        item: Value(
+                                                            Ident(
+                                                                20,
+                                                            ),
+                                                        ),
+                                                        span: Span {
+                                                            start: 159,
+                                                            end: 161,
+                                                        },
+                                                    },
+                                                ),
+                                                span: Span {
+                                                    start: 153,
+                                                    end: 162,
+                                                },
+                                            },
+                                        ),
+                                    ],
+                                },
+                            ),
+                            span: Span {
+                                start: 136,
+                                end: 164,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 135,
+                        end: 165,
+                    },
+                },
+            ),
+            span: Span {
+                start: 129,
+                end: 166,
+            },
+        },
+    ),
+    Assign {
+        dest: Spanned {
+            item: Local(
+                22,
+            ),
+            span: Span {
+                start: 208,
+                end: 211,
+            },
+        },
+        src: Spanned {
+            item: Value(
+                InlineFunc {
+                    inputs: Spanned {
+                        item: [
+                            17,
+                            18,
+                            19,
+                            21,
+                            23,
+                            22,
+                        ],
+                        span: Span {
+                            start: 215,
+                            end: 232,
+                        },
+                    },
+                    stmts: [],
+                },
+            ),
+            span: Span {
+                start: 212,
+                end: 236,
+            },
+        },
+    },
+    Assign {
+        dest: Spanned {
+            item: Local(
+                22,
+            ),
+            span: Span {
+                start: 237,
+                end: 240,
+            },
+        },
+        src: Spanned {
+            item: Bind {
+                func: Spanned {
+                    item: Value(
+                        Ident(
+                            22,
+                        ),
+                    ),
+                    span: Span {
+                        start: 246,
+                        end: 248,
+                    },
+                },
+                arg: Spanned {
+                    item: Value(
+                        Null,
+                    ),
+                    span: Span {
+                        start: 249,
+                        end: 254,
+                    },
+                },
+            },
+            span: Span {
+                start: 241,
+                end: 255,
+            },
+        },
+    },
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Unaop {
+                        op: Len,
+                        expr: Spanned {
+                            item: Value(
+                                Ident(
+                                    22,
+                                ),
+                            ),
+                            span: Span {
+                                start: 263,
+                                end: 264,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 262,
+                        end: 265,
+                    },
+                },
+            ),
+            span: Span {
+                start: 256,
+                end: 266,
+            },
+        },
+    ),
+]

@@ -1,0 +1,9 @@
+========= FILE ./src/runtime/tests/fixtures/push_operator/push_operator.bytecode.actual ========
+=== FN 0 START ===
+LIST 1
+INT  0, 1
+PUSH 1, 0
+OUT  1
+LDN  0
+RTN  0
+=== END ===

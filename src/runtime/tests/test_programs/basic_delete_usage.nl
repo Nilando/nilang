@@ -1,0 +1,30 @@
+a = {a: 0, b: 1, c: 2};
+print(a);
+delete(a, $a);
+print(a);
+delete(a, $b);
+print(a);
+delete(a, $c);
+print(a);
+
+a = {0: 0, 1: 1, 2: 2};
+print(a);
+delete(a, 0);
+print(a);
+delete(a, 1);
+print(a);
+delete(a, 2);
+print(a);
+
+a = {null: null, true: true, false: false};
+print(a);
+delete(a, null);
+print(a);
+delete(a, true);
+print(a);
+delete(a, false);
+print(a);
+
+a = {};
+delete(a, null);
+print(a);

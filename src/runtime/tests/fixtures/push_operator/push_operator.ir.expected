@@ -1,0 +1,11 @@
+========= FILE ./src/runtime/tests/fixtures/push_operator/push_operator.ir.actual ========
+MAIN () {
+block0:
+  a_0 = NEW_LIST
+  t2 = 1
+  a_0 << t2
+  PRINT a_0
+  t5 = null
+  RETURN t5
+
+}

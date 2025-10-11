@@ -3,7 +3,7 @@ use super::super::block::BlockId;
 use super::super::func::Func;
 use super::super::tac::{Tac, TacConst};
 use crate::ir::tac::VReg;
-use crate::parser::Op;
+use crate::op::BinaryOp;
 use std::collections::{BTreeMap, HashMap};
 
 pub type ValueId = usize;
@@ -58,7 +58,7 @@ impl GVNC {
         }
     }
 
-    fn try_fold_entries(&self, lhs: &ValueEntry, op: Op, rhs: &ValueEntry) -> Option<Value> {
+    fn try_fold_entries(&self, lhs: &ValueEntry, op: BinaryOp, rhs: &ValueEntry) -> Option<Value> {
         if let (Some(lhs_const), Some(rhs_const)) = (lhs.const_value(), rhs.const_value()) {
             if let Some(val) = fold_constants(op, lhs_const, rhs_const) {
                 return Some(Value::Const(val));
@@ -68,7 +68,7 @@ impl GVNC {
         None
     }
 
-    fn const_fold_binop(&mut self, dest: VReg, op: Op, lhs: VReg, rhs: VReg) -> Option<Tac> {
+    fn const_fold_binop(&mut self, dest: VReg, op: BinaryOp, lhs: VReg, rhs: VReg) -> Option<Tac> {
         let left_id = self.find_or_create_entry_id(lhs);
         let right_id = self.find_or_create_entry_id(rhs);
         let lhs_entry = self.get_entry(left_id);
@@ -332,13 +332,13 @@ impl ValueEntry {
 
 #[derive(PartialEq)]
 struct CanonicalBinop {
-    op: Op,
+    op: BinaryOp,
     lhs: ValueId,
     rhs: ValueId,
 }
 
 impl CanonicalBinop {
-    fn new(op: Op, lhs: ValueId, rhs: ValueId) -> Self {
+    fn new(op: BinaryOp, lhs: ValueId, rhs: ValueId) -> Self {
         if op.is_commutative() && lhs < rhs {
             Self {
                 op,
@@ -351,9 +351,9 @@ impl CanonicalBinop {
     }
 }
 
-fn fold_constants(op: Op, lhs: &TacConst, rhs: &TacConst) -> Option<TacConst> {
+fn fold_constants(op: BinaryOp, lhs: &TacConst, rhs: &TacConst) -> Option<TacConst> {
     match op {
-        Op::Plus => match (lhs, rhs) {
+        BinaryOp::Plus => match (lhs, rhs) {
             (TacConst::Int(i1), TacConst::Int(i2)) => Some(TacConst::Int(i1 + i2)),
             (TacConst::Float(f1), TacConst::Float(f2)) => Some(TacConst::Float(f1 + f2)),
             (TacConst::Int(i), TacConst::Float(f)) | (TacConst::Float(f), TacConst::Int(i)) => {
@@ -361,7 +361,7 @@ fn fold_constants(op: Op, lhs: &TacConst, rhs: &TacConst) -> Option<TacConst> {
             }
             _ => None,
         },
-        Op::Multiply => match (lhs, rhs) {
+        BinaryOp::Multiply => match (lhs, rhs) {
             (TacConst::Int(i1), TacConst::Int(i2)) => Some(TacConst::Int(i1 * i2)),
             (TacConst::Float(f1), TacConst::Float(f2)) => Some(TacConst::Float(f1 * f2)),
             (TacConst::Int(i), TacConst::Float(f)) | (TacConst::Float(f), TacConst::Int(i)) => {
@@ -369,38 +369,40 @@ fn fold_constants(op: Op, lhs: &TacConst, rhs: &TacConst) -> Option<TacConst> {
             }
             _ => None,
         },
-        Op::Divide => match (lhs, rhs) {
+        BinaryOp::Divide => match (lhs, rhs) {
+            (_, TacConst::Int(0)) => None,
+            (_, TacConst::Float(0.0)) => None,
             (TacConst::Int(i1), TacConst::Int(i2)) => Some(TacConst::Int(i1 / i2)),
             (TacConst::Float(f1), TacConst::Float(f2)) => Some(TacConst::Float(f1 / f2)),
             (TacConst::Float(f), TacConst::Int(i)) => Some(TacConst::Float(f / *i as f64)),
             (TacConst::Int(i), TacConst::Float(f)) => Some(TacConst::Float(*i as f64 / f)),
             _ => None,
-        },
-        Op::Minus => match (lhs, rhs) {
+        }
+        BinaryOp::Minus => match (lhs, rhs) {
             (TacConst::Int(i1), TacConst::Int(i2)) => Some(TacConst::Int(i1 - i2)),
             (TacConst::Float(f1), TacConst::Float(f2)) => Some(TacConst::Float(f1 - f2)),
             (TacConst::Float(f), TacConst::Int(i)) => Some(TacConst::Float(f - *i as f64)),
             (TacConst::Int(i), TacConst::Float(f)) => Some(TacConst::Float(*i as f64 - f)),
             _ => None,
         },
-        Op::Modulo => match (lhs, rhs) {
+        BinaryOp::Modulo => match (lhs, rhs) {
             (TacConst::Int(i1), TacConst::Int(i2)) => Some(TacConst::Int(i1 % i2)),
             (TacConst::Float(f1), TacConst::Float(f2)) => Some(TacConst::Float(f1 % f2)),
             (TacConst::Float(f), TacConst::Int(i)) => Some(TacConst::Float(f % *i as f64)),
             (TacConst::Int(i), TacConst::Float(f)) => Some(TacConst::Float(*i as f64 % f)),
             _ => None,
         },
-        Op::And => match (lhs, rhs) {
+        BinaryOp::And => match (lhs, rhs) {
             (TacConst::Bool(false), _) => Some(TacConst::Bool(false)),
             (TacConst::Null, _) => Some(TacConst::Null),
             (_, rhs) => Some(rhs.clone()),
         },
-        Op::Or => match (lhs, rhs) {
+        BinaryOp::Or => match (lhs, rhs) {
             (TacConst::Bool(false), rhs) | (TacConst::Null, rhs) => Some(rhs.clone()),
             (lhs, _) => Some(lhs.clone()),
         },
-        Op::Equal => Some(TacConst::Bool(lhs == rhs)),
-        Op::NotEqual => Some(TacConst::Bool(lhs != rhs)),
+        BinaryOp::Equal => Some(TacConst::Bool(lhs == rhs)),
+        BinaryOp::NotEqual => Some(TacConst::Bool(lhs != rhs)),
         // TODO: more constatn folding can be added, I just got lazy and stopeed here
         _ => None,
     }

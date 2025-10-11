@@ -1,0 +1,21 @@
+========= FILE ./src/runtime/tests/fixtures/if_else/if_else.ir.actual ========
+MAIN () {
+block0:
+  t4 = false
+  jnt t4 block2
+  next block1
+
+block1:
+  msg_2 = "ohhhh fuuuccckkkkk"
+  jump block3(msg_2)
+
+block2:
+  msg_0 = "things seem to be working?"
+  next block3(msg_0)
+
+block3(msg_1):
+  PRINT msg_1
+  t9 = null
+  RETURN t9
+
+}

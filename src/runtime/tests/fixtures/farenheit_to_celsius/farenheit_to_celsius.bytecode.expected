@@ -1,0 +1,21 @@
+========= FILE ./src/runtime/tests/fixtures/farenheit_to_celsius/farenheit_to_celsius.bytecode.actual ========
+=== FN 1 START ===
+INT  1, 32
+SUB  1, 0, 1
+LOC  0, 0
+MULT 0, 1, 0
+RTN  0
+=== END ===
+=== FN 0 START ===
+LOC  1, 0
+INT  0, 32
+ARG  0
+CALL 0, 1
+OUT  0
+INT  0, 212
+ARG  0
+CALL 0, 1
+OUT  0
+LDN  0
+RTN  0
+=== END ===

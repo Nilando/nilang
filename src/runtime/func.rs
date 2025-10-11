@@ -43,7 +43,7 @@ pub struct Func<'gc> {
     
     // can be moved into meta data ptr
     spans: Option<GcPackedSpans<'gc>>,
-    file_path: Gc<'gc, VMString<'gc>>,
+    file_path: Option<Gc<'gc, VMString<'gc>>>,
     id: u32,
     top_level: bool,
 }
@@ -91,7 +91,7 @@ impl<'gc> Func<'gc> {
         upvalues: GcOpt<'gc, [TaggedValue<'gc>]>,
         bound_args: GcOpt<'gc, [TaggedValue<'gc>]>,
         spans: Option<GcPackedSpans<'gc>>,
-        file_path: Gc<'gc, VMString<'gc>>,
+        file_path: Option<Gc<'gc, VMString<'gc>>>,
         top_level: bool
     ) -> Self {
         Self {
@@ -188,7 +188,7 @@ impl<'gc> Func<'gc> {
         self.spans.clone().unwrap()
     }
 
-    pub fn get_file_path(&self) -> Gc<'gc, VMString<'gc>> {
+    pub fn get_file_path(&self) -> Option<Gc<'gc, VMString<'gc>>> {
         self.file_path.clone()
     }
 }

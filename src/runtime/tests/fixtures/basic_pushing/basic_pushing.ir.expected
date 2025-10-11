@@ -1,0 +1,31 @@
+========= FILE ./src/runtime/tests/fixtures/basic_pushing/basic_pushing.ir.actual ========
+MAIN () {
+block0:
+  a_0 = NEW_LIST
+  b_0 = ""
+  i_0 = 0
+  next block1(i_0)
+
+block1(i_1):
+  t6 = 10
+  t7 = i_1 < t6
+  jnt t7 block3
+  next block2
+
+block2:
+  a_0 << i_1
+  str_0 = #str
+  STORE_ARG i_1
+  t10 = CALL str_0
+  b_0 << t10
+  t12 = 1
+  i_2 = i_1 + t12
+  jump block1(i_2)
+
+block3:
+  PRINT a_0
+  PRINT b_0
+  t16 = null
+  RETURN t16
+
+}

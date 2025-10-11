@@ -1,17 +1,11 @@
 fn fibonacci_sequence(n) {
-  result = [];
+  result = [0];
   prev = 0;
   cur = 1;
 
-  while len(result) < n {
-    if len(result) == 0 {
-      push(result, 0);
-
-      continue;
-    }
-
+  while #result < n {
     next = prev + cur;
-    push(result, next);
+    result << next;
     prev = cur;
     cur = next;
   }

@@ -1,9 +1,23 @@
 use super::spanned::Spanned;
 use super::Span;
+use crate::op::{BinaryOp, UnaryOp};
 use crate::symbol_map::{SymID, SymbolMap};
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Ctrl {
+    Not,
+    Divide,
+    Modulo,
+    And,
+    Or,
+    Lt,
+    Lte,
+    Gt,
+    Gte,
+    NotEqual,
+    Push,
+    Multiply,
+    DoubleEqual,
     LeftParen,
     RightParen,
     LeftBracket,
@@ -16,30 +30,41 @@ pub enum Ctrl {
     SemiColon,
     End,
     Period,
-}
-
-#[derive(Copy, Clone, PartialEq, Debug)]
-pub enum Op {
     Plus,
     Minus,
-    Multiply,
-    Divide,
-    Equal,
-    NotEqual,
-    Or,
-    And,
-    Lt,
-    Lte,
-    Gt,
-    Gte,
-    Modulo,
+    Carrot,
+    HashTag,
 }
 
-impl Op {
-    pub fn is_commutative(&self) -> bool {
-        // TODO: And and Or are commutative BUT they can't always be treated
-        // as such due to short circuiting and the possibility for side effects
-        matches!(self, Op::Plus | Op::Multiply | Op::Equal | Op::NotEqual)
+impl Ctrl {
+    pub fn as_binop(&self) -> Option<BinaryOp> {
+        match self {
+            Ctrl::Plus => Some(BinaryOp::Plus),
+            Ctrl::Minus => Some(BinaryOp::Minus),
+            Ctrl::Multiply => Some(BinaryOp::Multiply),
+            Ctrl::Divide => Some(BinaryOp::Divide),
+            Ctrl::Modulo => Some(BinaryOp::Modulo),
+            Ctrl::Gt => Some(BinaryOp::Gt),
+            Ctrl::Gte => Some(BinaryOp::Gte),
+            Ctrl::Lt => Some(BinaryOp::Lt),
+            Ctrl::Lte => Some(BinaryOp::Lte),
+            Ctrl::NotEqual => Some(BinaryOp::NotEqual),
+            Ctrl::DoubleEqual => Some(BinaryOp::Equal),
+            Ctrl::Or => Some(BinaryOp::Or),
+            Ctrl::And => Some(BinaryOp::And),
+            Ctrl::Push => Some(BinaryOp::Push),
+            _ => None
+        }
+    }
+
+    pub fn as_unaop(&self) -> Option<UnaryOp> {
+        match self {
+            Ctrl::Not => Some(UnaryOp::Not),
+            Ctrl::Minus => Some(UnaryOp::Negate),
+            Ctrl::Carrot => Some(UnaryOp::Pop),
+            Ctrl::HashTag => Some(UnaryOp::Len),
+            _ => None
+        }
     }
 }
 
@@ -54,7 +79,7 @@ pub enum LexError {
 impl LexError {
     pub fn render(&self) -> String {
         match self {
-            LexError::InvalidNumber => String::from("Invalid number"),
+            LexError::InvalidNumber => format!("Invalid number. largest supported integer is {}", i64::MAX),
             LexError::UnclosedComment => String::from("Unclosed multi line comment"),
             LexError::UnclosedString => String::from("Unclosed string"),
             LexError::Unknown => String::from("Unexpected character")
@@ -76,20 +101,22 @@ pub enum KeyWord {
     True,
     Print,
     Read,
-    Import, // Eval
+    Import,
+    Type,
+    Delete,
+    Bind,
+    Clone
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Token<'a> {
     Ctrl(Ctrl),
-    Op(Op),
     Ident(SymID),
     Sym(SymID),
     Global(SymID),
     Float(f64),
     Int(i64),
     String(&'a str),
-    Error(LexError),
     KeyWord(KeyWord),
 }
 
@@ -286,7 +313,7 @@ impl<'a> Lexer<'a> {
     fn lex_symbolic(&mut self, syms: &mut SymbolMap) -> Result<Option<Token<'a>>, LexError> {
         if self.read('@') {
             self.lex_global(syms)
-        } else if self.read('#') {
+        } else if self.read('$') {
             self.lex_symbol(syms)
         } else if self.peek_alphabetic() {
             self.lex_ident_or_keyword(syms)
@@ -337,6 +364,10 @@ impl<'a> Lexer<'a> {
             "return" => Token::KeyWord(KeyWord::Return),
             "continue" => Token::KeyWord(KeyWord::Continue),
             "import" => Token::KeyWord(KeyWord::Import),
+            "type" => Token::KeyWord(KeyWord::Type),
+            "delete" => Token::KeyWord(KeyWord::Delete),
+            "bind" => Token::KeyWord(KeyWord::Bind),
+            "clone" => Token::KeyWord(KeyWord::Clone),
             _ => {
                 let id = syms.get_id(word);
 
@@ -423,12 +454,12 @@ impl<'a> Lexer<'a> {
             if let Ok(f) = num.parse() {
                 Token::Float(f)
             } else {
-                Token::Error(LexError::InvalidNumber)
+                return Err(LexError::InvalidNumber)
             }
         } else if let Ok(i) = num.parse() {
             Token::Int(i)
         } else {
-            Token::Error(LexError::InvalidNumber)
+            return Err(LexError::InvalidNumber)
         }))
     }
 
@@ -457,7 +488,7 @@ impl<'a> Lexer<'a> {
                     self.advance();
 
                     if self.read('=') {
-                        return Ok(Some(Token::Op(Op::Equal)));
+                        return Ok(Some(Token::Ctrl(Ctrl::DoubleEqual)));
                     } else {
                         return Ok(Some(Token::Ctrl(Ctrl::Equal)));
                     }
@@ -466,16 +497,16 @@ impl<'a> Lexer<'a> {
                     self.advance();
 
                     if self.read('=') {
-                        return Ok(Some(Token::Op(Op::NotEqual)));
+                        return Ok(Some(Token::Ctrl(Ctrl::NotEqual)));
                     } else {
-                        return Err(LexError::Unknown);
+                        return Ok(Some(Token::Ctrl(Ctrl::Not)));
                     }
                 }
                 '|' => {
                     self.advance();
 
                     if self.read('|') {
-                        return Ok(Some(Token::Op(Op::Or)));
+                        return Ok(Some(Token::Ctrl(Ctrl::Or)));
                     } else {
                         return Err(LexError::Unknown);
                     }
@@ -484,7 +515,7 @@ impl<'a> Lexer<'a> {
                     self.advance();
 
                     if self.read('&') {
-                        return Ok(Some(Token::Op(Op::And)));
+                        return Ok(Some(Token::Ctrl(Ctrl::And)));
                     } else {
                         return Err(LexError::Unknown);
                     }
@@ -493,18 +524,20 @@ impl<'a> Lexer<'a> {
                     self.advance();
 
                     if self.read('=') {
-                        return Ok(Some(Token::Op(Op::Lte)));
+                        return Ok(Some(Token::Ctrl(Ctrl::Lte)));
+                    } else if self.read('<') {
+                        return Ok(Some(Token::Ctrl(Ctrl::Push)));
                     } else {
-                        return Ok(Some(Token::Op(Op::Lt)));
+                        return Ok(Some(Token::Ctrl(Ctrl::Lt)));
                     }
                 }
                 '>' => {
                     self.advance();
 
                     if self.read('=') {
-                        return Ok(Some(Token::Op(Op::Gte)));
+                        return Ok(Some(Token::Ctrl(Ctrl::Gte)));
                     } else {
-                        return Ok(Some(Token::Op(Op::Gt)));
+                        return Ok(Some(Token::Ctrl(Ctrl::Gt)));
                     }
                 }
                 '(' => Token::Ctrl(Ctrl::LeftParen),
@@ -517,11 +550,13 @@ impl<'a> Lexer<'a> {
                 ';' => Token::Ctrl(Ctrl::SemiColon),
                 ',' => Token::Ctrl(Ctrl::Comma),
                 '.' => Token::Ctrl(Ctrl::Period),
-                '+' => Token::Op(Op::Plus),
-                '-' => Token::Op(Op::Minus),
-                '*' => Token::Op(Op::Multiply),
-                '/' => Token::Op(Op::Divide),
-                '%' => Token::Op(Op::Modulo),
+                '+' => Token::Ctrl(Ctrl::Plus),
+                '-' => Token::Ctrl(Ctrl::Minus),
+                '*' => Token::Ctrl(Ctrl::Multiply),
+                '/' => Token::Ctrl(Ctrl::Divide),
+                '%' => Token::Ctrl(Ctrl::Modulo),
+                '^' => Token::Ctrl(Ctrl::Carrot),
+                '#' => Token::Ctrl(Ctrl::HashTag),
                 _ => return Ok(None),
             };
 
@@ -629,7 +664,7 @@ mod tests {
             Token::Ctrl(Ctrl::SemiColon),
             Token::KeyWord(KeyWord::If),
             Token::Ident(symbol_map.get_id("x")),
-            Token::Op(Op::Gt),
+            Token::Ctrl(Ctrl::Gt),
             Token::Ident(symbol_map.get_id("y")),
             Token::Ctrl(Ctrl::LeftCurly),
             Token::KeyWord(KeyWord::Print),
@@ -742,12 +777,12 @@ mod tests {
         let symbol_map = SymbolMap::new();
         let source = r#"&& || <= >= == !="#;
         let tokens = vec![
-            Token::Op(Op::And),
-            Token::Op(Op::Or),
-            Token::Op(Op::Lte),
-            Token::Op(Op::Gte),
-            Token::Op(Op::Equal),
-            Token::Op(Op::NotEqual),
+            Token::Ctrl(Ctrl::And),
+            Token::Ctrl(Ctrl::Or),
+            Token::Ctrl(Ctrl::Lte),
+            Token::Ctrl(Ctrl::Gte),
+            Token::Ctrl(Ctrl::DoubleEqual),
+            Token::Ctrl(Ctrl::NotEqual),
         ];
 
         assert_src_tokens(source, tokens, symbol_map);
@@ -761,7 +796,7 @@ mod tests {
             Token::Ident(symbol_map.get_id("a")),
             Token::Ctrl(Ctrl::Equal),
             Token::Int(1),
-            Token::Op(Op::Plus),
+            Token::Ctrl(Ctrl::Plus),
             Token::Int(1),
             Token::Ctrl(Ctrl::SemiColon),
         ];
@@ -797,9 +832,59 @@ mod tests {
     #[test]
     fn lex_symbol() {
         let mut syms = SymbolMap::new();
-        let input = "#potato";
+        let input = "$potato";
         let tokens = vec![Token::Sym(syms.get_id("potato"))];
 
         assert_src_tokens(input, tokens, syms);
+    }
+
+    #[test]
+    fn lexing_ampersands() {
+        let mut syms = SymbolMap::new();
+        let input = "&";
+        let mut lexer = Lexer::new(input);
+        let err = lexer.get_token(&mut syms).unwrap_err();
+
+        assert_eq!(err.item, LexError::Unknown);
+
+        let input = "&&";
+        let mut lexer = Lexer::new(input);
+        let tok = lexer.get_token(&mut syms).unwrap();
+
+        assert_eq!(tok.item, Token::Ctrl(Ctrl::And));
+    }
+
+    #[test]
+    fn parse_float_method_call() {
+        let mut syms = SymbolMap::new();
+        let input = "2.2.floor";
+        let tokens = vec![
+            Token::Float(2.2),
+            Token::Ctrl(Ctrl::Period),
+            Token::Ident(syms.get_id("floor"))
+        ];
+
+        assert_src_tokens(input, tokens, syms);
+    }
+
+    #[test]
+    fn parse_huge_float() {
+        let syms = SymbolMap::new();
+        let input = "9999999999999999999999999999999999999999999999999999.9999999999999999999999999999999";
+        let tokens = vec![
+            Token::Float(9999999999999999999999999999999999999999999999999999.9999999999999999999999999999999),
+        ];
+
+        assert_src_tokens(input, tokens, syms);
+    }
+
+    #[test]
+    fn parse_huge_int() {
+        let mut syms = SymbolMap::new();
+        let input = "999999999999999999999999999999999999999999999999999999999";
+        let mut lexer = Lexer::new(input);
+        let err = lexer.get_token(&mut syms).unwrap_err();
+
+        assert_eq!(err.item, LexError::InvalidNumber);
     }
 }

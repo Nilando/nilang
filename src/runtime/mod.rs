@@ -12,175 +12,176 @@ mod vm;
 mod error;
 mod stack;
 mod instruction_stream;
+mod loading;
+mod config;
 
 #[cfg(test)]
 mod tests;
 
-use crate::codegen::{Func as ByteCodeFunc, Local};
-use crate::driver::{compile_source, InterpreterError};
-use crate::symbol_map::SymbolMap;
-use crate::Config;
-
-use self::func::{Func, LoadedLocal};
-use self::string::VMString;
-use self::vm::ExitCode;
-use sandpit::*;
-use std::collections::HashMap;
 use std::io::Write;
 
+use crate::codegen::Func;
+use crate::compile::compile;
+use crate::parser::ParseError;
+use crate::symbol_map::SymbolMap;
+
+use self::error::RuntimeErrorKind;
+use self::loading::load_program;
+use self::vm::ExitCode;
+use sandpit::*;
+
+pub use config::Config;
 pub use self::error::RuntimeError;
 
 pub use bytecode::ByteCode;
 pub use vm::VM;
 
+#[derive(Debug)]
+pub enum InterpreterError {
+    RuntimeError(RuntimeError),
+    ParseError(ParseError),
+}
+
+impl InterpreterError {
+    pub fn render(&self) -> String {
+        match self {
+            InterpreterError::RuntimeError(err) => err.render(),
+            InterpreterError::ParseError(err) => err.render(),
+        }
+    }
+}
+
+
+impl From<ParseError> for InterpreterError {
+    fn from(value: ParseError) -> Self {
+        Self::ParseError(value)
+    }
+}
+
 pub struct Runtime {
     arena: Arena<Root![VM<'_>]>,
-    symbols: SymbolMap,
+    syms: SymbolMap,
     config: Config,
 }
 
 impl Runtime {
-    pub fn init(program: Vec<ByteCodeFunc>, symbols: SymbolMap, config: Config) -> Self {
-        let arena = Arena::new(|mu| {
-            let path = config.get_source_path();
-            let loaded_program = load_program(program, &path, mu);
-            let main = loaded_program.last().unwrap().clone();
-            let vm = VM::new(mu);
-
-            vm.load_module(mu, main);
-
-            vm
-        });
+    pub fn init(syms: SymbolMap, config: Config) -> Self {
+        let arena = Arena::new(|mu| VM::new(mu));
 
         Runtime {
             arena,
-            symbols,
+            syms,
             config,
         }
     }
 
-    pub fn into_symbols(self) -> SymbolMap {
-        self.symbols
-    }
+    pub fn run(&mut self) -> Result<(), InterpreterError> {
+        if self.config.dry_run {
+            println!("DRY RUN: program compiled successfully");
+            return Ok(());
+        }
 
-    pub fn run(&mut self, f: &mut impl Write) -> Result<(), InterpreterError> {
         let mut vm_result = Ok(ExitCode::Yield);
+        let mut output = self.config.get_output();
 
         loop {
+            self.arena.mutate(|mu, vm| {
+                vm_result = vm.run(mu, &mut self.syms);
+            });
+
             match vm_result {
-                Ok(ExitCode::Yield) => {}
                 Ok(ExitCode::Exit) => return Ok(()),
-                Ok(ExitCode::Print) => {
-                    self.arena.view(|vm| {
-                        vm.write_output(f, &mut self.symbols).expect("writing failed");
-                    });
-                }
-                Ok(ExitCode::LoadModule(path)) => {
-                    let module =
-                        std::fs::read_to_string(&path).expect("Failed to read file");
-                    match compile_source(&self.config, &mut self.symbols, &module) {
-                        Err(err) => {
-                            return Err(InterpreterError::ParseError(err));
-                        }
-                        Ok(program) => {
-                            self.arena.mutate(|mu, vm| {
-                                let loaded_program = load_program(program, &path, mu);
-                                let module_func = loaded_program.last().unwrap().clone();
+                Ok(ExitCode::Yield) => {}
+                Ok(ExitCode::Print) => self.print(&mut output)?,
+                Ok(ExitCode::LoadModule(ref path)) => self.load_module(&path)?,
+                Ok(ExitCode::Read) => self.read_input()?,
+                Err(err) => return Err(InterpreterError::RuntimeError(err)),
+            }
+        }
+    }
 
-                                vm.load_module(mu, module_func);
-                            });
-                        }
-                    }
-                }
-                Ok(ExitCode::Read) => {
-                    let stdin = std::io::stdin();
-                    let mut buf = String::new();
-                    stdin.read_line(&mut buf).expect("failed to read from stdin");
-                    buf = buf.trim_end().to_string();
+    pub fn clear_program(&mut self) {
+        self.arena.mutate(|_mu, vm| {
+            vm.clear_stack()
+        });
+    }
 
-                    self.arena.mutate(|mu, vm| {
-                        if let Err(err) = vm.read_input_hook(buf, mu) {
-                            vm_result = Err(err);
-                        }
-                    });
+    pub fn load_inline(&mut self, source: &str) -> Result<(), InterpreterError> {
+        match self.compile_with_config(&source) {
+            Err(err) => {
+                return Err(InterpreterError::ParseError(err));
+            }
+            Ok(program) => self.load_program(program, None),
+        }
 
-                    continue;
-                }
-                Err(err) => {
-                    return Err(InterpreterError::RuntimeError(err));
+        Ok(())
+    }
+
+    pub fn load_module(&mut self, path: &String) -> Result<(), InterpreterError> {
+        match std::fs::read_to_string(&path) {
+            Ok(module) => match self.compile_with_config(&module) {
+                Err(err) => Err(InterpreterError::ParseError(err)),
+                Ok(program) => {
+                    self.load_program(program, Some(&path));
+                    Ok(())
                 }
             }
 
-            vm_result = Ok(ExitCode::Yield);
-
-            self.arena.mutate(|mu, vm| {
-                vm_result = vm.run(mu, &mut self.symbols);
-            });
+            Err(fs_err) => {
+                let runtime_error = RuntimeError::new(
+                    RuntimeErrorKind::FailedImport,
+                    Some(fs_err.to_string()),
+                    None, // TODO: get a backtrace here
+                );
+                Err(InterpreterError::RuntimeError(runtime_error))
+            }
         }
     }
-}
 
-fn load_program<'gc>(program: Vec<ByteCodeFunc>, path: &String, mu: &'gc Mutator) -> Vec<Gc<'gc, Func<'gc>>> {
-    let mut loaded_funcs = HashMap::<u32, Gc<'gc, Func<'gc>>>::new();
-    let mut result = vec![];
+    fn load_program(&mut self, program: Vec<Func>, path: Option<&str>) {
+        self.arena.mutate(|mu, vm| {
+            let loaded_program = load_program(program, path, mu);
+            let module_func = loaded_program.last().unwrap().clone();
 
-    let path = Gc::new(mu, VMString::alloc(path.chars(), mu));
-
-    for i in 0..program.len() {
-        let func = &program[i];
-        let is_top_level = i + 1 == program.len();
-        let locals: Gc<'gc, [LoadedLocal<'gc>]> =
-            mu.alloc_array_from_fn(0, |_| LoadedLocal::Int(0));
-        let code = mu.alloc_array_from_slice(func.get_instrs().as_slice());
-        let spans = func.spans().into_gc(mu);
-        let loaded_func = Func::new(
-            func.id(),
-            func.arg_count(),
-            func.max_clique(),
-            locals,
-            code,
-            GcOpt::new_none(),
-            GcOpt::new_none(),
-            Some(spans),
-            path.clone(),
-            is_top_level,
-        );
-        let loaded_func_ptr = Gc::new(mu, loaded_func);
-
-        loaded_funcs.insert(func.id(), loaded_func_ptr.clone());
-        result.push(loaded_func_ptr);
+            vm.load_module(mu, module_func);
+        });
     }
 
-    for func in program.iter() {
-        let locals = func.get_locals();
+    fn print(&mut self, output: &mut impl Write) -> Result<(), InterpreterError> {
+        self.arena.view(|vm| {
+            vm.write_output(output, &mut self.syms).expect("writing failed");
+        });
 
-        let new_locals = mu.alloc_array_from_fn(locals.len(), |idx| {
-            let local = &locals[idx];
+        Ok(())
+    }
 
-            match local {
-                Local::Sym(s) => LoadedLocal::SymId(*s),
-                Local::Int(i) => LoadedLocal::Int(*i),
-                Local::Float(f) => LoadedLocal::Float(*f),
-                Local::FuncId(fn_id) => {
-                    let fn_ptr = loaded_funcs.get(fn_id).unwrap().clone();
+    fn compile_with_config(&mut self, source: &str) -> Result<Vec<Func>, ParseError> {
+        compile(
+            &mut self.syms,
+            source,
+            self.config.get_source_path(),
+            !self.config.no_optimize,
+            self.config.pretty_ir,
+            self.config.ast_output_path.clone(),
+            self.config.ir_output_path.clone(),
+            self.config.bytecode_output_path.clone()
+        )
+    }
 
-                    LoadedLocal::Func(fn_ptr)
-                }
-                Local::String(s) => {
-                    // TODO: this isn't efficient
-                    let mut chars = s.chars();
-                    let len = chars.clone().count();
-                    let gc_text = mu.alloc_array_from_fn(len, |_| chars.next().unwrap());
+    fn read_input(&self) -> Result<(), InterpreterError> {
+        let stdin = std::io::stdin();
+        let mut buf = String::new();
+        let mut vm_result = Ok(());
 
-                    LoadedLocal::Text(gc_text)
-                }
+        stdin.read_line(&mut buf).expect("failed to read from stdin");
+        buf = buf.trim_end().to_string();
+
+        self.arena.mutate(|mu, vm| {
+            if let Err(err) = vm.read_input_hook(buf, mu) {
+                vm_result = Err(InterpreterError::RuntimeError(err));
             }
         });
 
-        let fn_ptr = loaded_funcs.get(&func.id()).unwrap().clone();
-
-        Func::update_locals(fn_ptr, new_locals, mu)
+        vm_result
     }
-
-    result
 }

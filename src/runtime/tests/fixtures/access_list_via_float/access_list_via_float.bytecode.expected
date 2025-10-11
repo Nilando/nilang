@@ -1,0 +1,16 @@
+========= FILE ./src/runtime/tests/fixtures/access_list_via_float/access_list_via_float.bytecode.actual ========
+=== FN 0 START ===
+LIST 1
+INT  0, 1
+INT  2, 0
+MEMS 1[2], 0
+INT  2, 2
+MEMS 1[0], 2
+INT  0, 3
+MEMS 1[2], 0
+LOC  0, 0
+MEML 0, 1[0]
+OUT  0
+LDN  0
+RTN  0
+=== END ===

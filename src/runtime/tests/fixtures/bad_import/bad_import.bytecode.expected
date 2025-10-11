@@ -1,0 +1,7 @@
+========= FILE ./src/runtime/tests/fixtures/bad_import/bad_import.bytecode.actual ========
+=== FN 0 START ===
+LOC  0, 0
+IMPO 0, 0
+LDN  0
+RTN  0
+=== END ===

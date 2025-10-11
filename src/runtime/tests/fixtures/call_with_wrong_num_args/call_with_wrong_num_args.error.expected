@@ -1,0 +1,6 @@
+RUNTIME ERROR
+Traceback: most recent call lowest
+  0: File "./src/runtime/tests/test_programs/call_with_wrong_num_args.nl", line: 5:13
+    add(1, 2, 3);
+    ^^^^^^^^^^^^
+WrongNumArgs: Expected 2 args, was given 3

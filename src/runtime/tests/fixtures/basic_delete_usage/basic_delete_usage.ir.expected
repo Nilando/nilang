@@ -1,0 +1,51 @@
+========= FILE ./src/runtime/tests/fixtures/basic_delete_usage/basic_delete_usage.ir.actual ========
+MAIN () {
+block0:
+  t0 = NEW_MAP
+  t1 = #a
+  t2 = 0
+  t0[t1] = t2
+  t3 = #b
+  t4 = 1
+  t0[t3] = t4
+  t5 = #c
+  t6 = 2
+  t0[t5] = t6
+  PRINT t0
+  DELETE t10 = t0 . t1
+  PRINT t0
+  DELETE t13 = t0 . t3
+  PRINT t0
+  DELETE t16 = t0 . t5
+  PRINT t0
+  t18 = NEW_MAP
+  t18[t2] = t2
+  t18[t4] = t4
+  t18[t6] = t6
+  PRINT t18
+  DELETE t27 = t18 . t2
+  PRINT t18
+  DELETE t30 = t18 . t4
+  PRINT t18
+  DELETE t33 = t18 . t6
+  PRINT t18
+  t35 = NEW_MAP
+  t36 = null
+  t35[t36] = t36
+  t38 = true
+  t35[t38] = t38
+  t40 = false
+  t35[t40] = t40
+  PRINT t35
+  DELETE t44 = t35 . t36
+  PRINT t35
+  DELETE t47 = t35 . t38
+  PRINT t35
+  DELETE t50 = t35 . t40
+  PRINT t35
+  a_3 = NEW_MAP
+  DELETE t54 = a_3 . t36
+  PRINT a_3
+  RETURN t36
+
+}

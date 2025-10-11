@@ -15,6 +15,7 @@ pub enum ByteCode {
     StoreGlobal { src: Reg, sym: Reg },
     MemLoad { dest: Reg, store: Reg, key: Reg },
     MemStore { store: Reg, key: Reg, src: Reg },
+    Push { store: Reg, src: Reg },
     NewList { dest: Reg },
     NewMap { dest: Reg },
     LoadBool { dest: Reg, val: bool },
@@ -42,6 +43,12 @@ pub enum ByteCode {
     Jnt { src: Reg, offset: i16 },
     Jit { src: Reg, offset: i16 },
     Import { dest: Reg, path: Reg },
+    Pop { dest: Reg, src: Reg },
+    Len { dest: Reg, src: Reg },
+    Clone { dest: Reg, src: Reg },
+    Type { dest: Reg, src: Reg },
+    Delete { dest: Reg, store: Reg, key: Reg },
+    Bind { dest: Reg, func: Reg, arg: Reg }
 }
 
 impl Display for ByteCode {
@@ -79,6 +86,13 @@ impl Display for ByteCode {
             ByteCode::NewMap { dest } => write!(f, "MAP  {dest}"),
             ByteCode::MemLoad { dest, store, key } => write!(f, "MEML {dest}, {store}[{key}]"),
             ByteCode::MemStore { store, key, src } => write!(f, "MEMS {store}[{key}], {src}"),
+            ByteCode::Push { store, src } => write!(f, "PUSH {store}, {src}"),
+            ByteCode::Pop { dest, src } => write!(f, "POP {dest}, {src}"),
+            ByteCode::Len { dest, src } => write!(f, "LEN {dest}, {src}"),
+            ByteCode::Clone { dest, src } => write!(f, "CLONE {dest}, {src}"),
+            ByteCode::Type { dest, src } => write!(f, "TYPE {dest}, {src}"),
+            ByteCode::Delete { dest, store, key } => write!(f, "DEL {dest}, {store}[{key}]"),
+            ByteCode::Bind { dest, func, arg } => write!(f, "BIND {dest}, {func}, {arg}]"),
             ByteCode::LoadGlobal { dest, sym } => write!(f, "LDGB {dest}, #{sym}"),
             ByteCode::StoreGlobal { sym, src } => write!(f, "STGB {src}, #{sym}"),
             ByteCode::Import { dest, path } => write!(f, "IMPO {dest}, {path}"),

@@ -2,7 +2,7 @@ lucky_number = 42;
 
 while true {
   print("guess the lucky number: ");
-  guess = #num(read);
+  guess = $int(read);
 
   if guess == lucky_number {
     break;
@@ -33,7 +33,7 @@ block2:
   t3 = "guess the lucky number: "
   PRINT t3
   READ t5
-  t6 = #num
+  t6 = #int
   STORE_ARG t5
   guess_0 = CALL t6
   t9 = guess_0 == lucky_number_0

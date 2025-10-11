@@ -3,16 +3,17 @@ fn print_row(row, board) {
   b = board[row][1] || " ";
   c = board[row][2] || " ";
 
-  row = str(row);
-  push(row, " ║ ");
-  push(row, a);
-  push(row, " ║ ");
-  push(row, b);
-  push(row, " ║ ");
-  push(row, c);
-  push(row, " ║ ");
+  s = " ";
+  s << " ║ ";
+  s << a;
+  s << " ║ ";
+  s << b;
+  s << " ║ ";
+  s << c;
+  s << " ║ ";
+  s << str(row);
 
-  print(row);
+  print(s);
 }
 
 fn print_board(board) {
@@ -42,8 +43,8 @@ fn read_move() {
       continue;
     }
 
-    col = num(move[0]);
-    row = num(move[1]);
+    col = int(move[0]);
+    row = int(move[1]);
 
     if (col == null) || (row == null) {
       print_move_help();
@@ -73,6 +74,8 @@ fn play_move(row, col, board, move) {
   }
 
   board[row][col] = move;
+
+  return true;
 }
 
 fn is_row_complete(board, row) {
@@ -121,12 +124,12 @@ fn game_loop() {
 
     move_cord = read_move();
 
-    play_move(move_cord[0], move_cord[1], board, move);
-
-    if move != "x" {
-      move = "x";
-    } else {
-      move = "o";
+    if play_move(move_cord[0], move_cord[1], board, move) {
+      if move != "x" {
+        move = "x";
+      } else {
+        move = "o";
+      }
     }
   }
 }

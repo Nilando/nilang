@@ -4,7 +4,7 @@
 def generate_test_file
   fixture_filenames = read_fixture_files
 
-  File.open('./src/driver/tests/fixture_tests.rs', 'w') do |file| 
+  File.open('./src/runtime/tests/fixture_tests.rs', 'w') do |file| 
     file.write(test_file_header())
 
     fixture_filenames.each do |filename|
@@ -18,7 +18,7 @@ end
 def read_fixture_files
   golden_filenames = []
 
-  Dir.entries("./src/driver/tests/test_programs").each do |filename|
+  Dir.entries("./src/runtime/tests/test_programs").each do |filename|
     next if filename == '.' || filename == '..'
 
     golden_filenames << filename.chomp('.nl')

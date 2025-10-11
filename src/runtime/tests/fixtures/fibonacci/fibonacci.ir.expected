@@ -1,0 +1,35 @@
+========= FILE ./src/runtime/tests/fixtures/fibonacci/fibonacci.ir.actual ========
+fn1 (n_0) {
+block0:
+  t1 = NEW_LIST
+  t2 = 0
+  t1[t2] = t2
+  cur_0 = 1
+  next block1(t2, cur_0)
+
+block1(prev_1, cur_1):
+  t9 =  # t1
+  t10 = t9 < n_0
+  jnt t10 block3
+  next block2
+
+block2:
+  next_0 = prev_1 + cur_1
+  t1 << next_0
+  jump block1(cur_1, next_0)
+
+block3:
+  RETURN t1
+
+}
+MAIN () {
+block0:
+  fibonacci_sequence_0 = fn1
+  t1 = 50
+  STORE_ARG t1
+  t2 = CALL fibonacci_sequence_0
+  PRINT t2
+  t4 = null
+  RETURN t4
+
+}

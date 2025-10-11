@@ -1,0 +1,339 @@
+========= FILE ./src/runtime/tests/fixtures/basic_map_usage/basic_map_usage.ast.actual ========
+[
+    Assign {
+        dest: Spanned {
+            item: Local(
+                17,
+            ),
+            span: Span {
+                start: 0,
+                end: 3,
+            },
+        },
+        src: Spanned {
+            item: Value(
+                Map(
+                    [],
+                ),
+            ),
+            span: Span {
+                start: 4,
+                end: 7,
+            },
+        },
+    },
+    Assign {
+        dest: Spanned {
+            item: Access {
+                store: Spanned {
+                    item: Value(
+                        Ident(
+                            17,
+                        ),
+                    ),
+                    span: Span {
+                        start: 8,
+                        end: 9,
+                    },
+                },
+                key: 18,
+            },
+            span: Span {
+                start: 8,
+                end: 13,
+            },
+        },
+        src: Spanned {
+            item: Value(
+                Int(
+                    1,
+                ),
+            ),
+            span: Span {
+                start: 14,
+                end: 16,
+            },
+        },
+    },
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Value(
+                        Ident(
+                            17,
+                        ),
+                    ),
+                    span: Span {
+                        start: 23,
+                        end: 25,
+                    },
+                },
+            ),
+            span: Span {
+                start: 17,
+                end: 26,
+            },
+        },
+    ),
+    Assign {
+        dest: Spanned {
+            item: Index {
+                store: Spanned {
+                    item: Value(
+                        Ident(
+                            17,
+                        ),
+                    ),
+                    span: Span {
+                        start: 27,
+                        end: 28,
+                    },
+                },
+                key: Spanned {
+                    item: Value(
+                        Symbol(
+                            18,
+                        ),
+                    ),
+                    span: Span {
+                        start: 29,
+                        end: 32,
+                    },
+                },
+            },
+            span: Span {
+                start: 27,
+                end: 34,
+            },
+        },
+        src: Spanned {
+            item: Value(
+                Int(
+                    2,
+                ),
+            ),
+            span: Span {
+                start: 35,
+                end: 37,
+            },
+        },
+    },
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Value(
+                        Ident(
+                            17,
+                        ),
+                    ),
+                    span: Span {
+                        start: 44,
+                        end: 46,
+                    },
+                },
+            ),
+            span: Span {
+                start: 38,
+                end: 47,
+            },
+        },
+    ),
+    Assign {
+        dest: Spanned {
+            item: Index {
+                store: Spanned {
+                    item: Value(
+                        Ident(
+                            17,
+                        ),
+                    ),
+                    span: Span {
+                        start: 48,
+                        end: 49,
+                    },
+                },
+                key: Spanned {
+                    item: Value(
+                        Symbol(
+                            17,
+                        ),
+                    ),
+                    span: Span {
+                        start: 50,
+                        end: 53,
+                    },
+                },
+            },
+            span: Span {
+                start: 48,
+                end: 55,
+            },
+        },
+        src: Spanned {
+            item: Value(
+                Int(
+                    1,
+                ),
+            ),
+            span: Span {
+                start: 56,
+                end: 58,
+            },
+        },
+    },
+    Assign {
+        dest: Spanned {
+            item: Access {
+                store: Spanned {
+                    item: Value(
+                        Ident(
+                            17,
+                        ),
+                    ),
+                    span: Span {
+                        start: 59,
+                        end: 60,
+                    },
+                },
+                key: 19,
+            },
+            span: Span {
+                start: 59,
+                end: 64,
+            },
+        },
+        src: Spanned {
+            item: Value(
+                Int(
+                    3,
+                ),
+            ),
+            span: Span {
+                start: 65,
+                end: 67,
+            },
+        },
+    },
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Access {
+                        store: Spanned {
+                            item: Value(
+                                Ident(
+                                    17,
+                                ),
+                            ),
+                            span: Span {
+                                start: 74,
+                                end: 75,
+                            },
+                        },
+                        key: 17,
+                    },
+                    span: Span {
+                        start: 74,
+                        end: 78,
+                    },
+                },
+            ),
+            span: Span {
+                start: 68,
+                end: 79,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Access {
+                        store: Spanned {
+                            item: Value(
+                                Ident(
+                                    17,
+                                ),
+                            ),
+                            span: Span {
+                                start: 86,
+                                end: 87,
+                            },
+                        },
+                        key: 18,
+                    },
+                    span: Span {
+                        start: 86,
+                        end: 90,
+                    },
+                },
+            ),
+            span: Span {
+                start: 80,
+                end: 91,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Access {
+                        store: Spanned {
+                            item: Value(
+                                Ident(
+                                    17,
+                                ),
+                            ),
+                            span: Span {
+                                start: 98,
+                                end: 99,
+                            },
+                        },
+                        key: 19,
+                    },
+                    span: Span {
+                        start: 98,
+                        end: 102,
+                    },
+                },
+            ),
+            span: Span {
+                start: 92,
+                end: 103,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Access {
+                        store: Spanned {
+                            item: Value(
+                                Ident(
+                                    17,
+                                ),
+                            ),
+                            span: Span {
+                                start: 110,
+                                end: 111,
+                            },
+                        },
+                        key: 20,
+                    },
+                    span: Span {
+                        start: 110,
+                        end: 114,
+                    },
+                },
+            ),
+            span: Span {
+                start: 104,
+                end: 115,
+            },
+        },
+    ),
+]

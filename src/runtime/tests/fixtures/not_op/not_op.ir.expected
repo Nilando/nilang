@@ -1,0 +1,88 @@
+========= FILE ./src/runtime/tests/fixtures/not_op/not_op.ir.actual ========
+fn1 (a_0, b_0, c_0) {
+block0:
+  t3 = null
+  RETURN t3
+
+}
+MAIN () {
+block0:
+  t0 = NEW_LIST
+  t1 = null
+  t2 = 0
+  t0[t2] = t1
+  t3 = false
+  t4 = 1
+  t0[t4] = t3
+  t5 = true
+  t6 = 2
+  t0[t6] = t5
+  t8 = 3
+  t0[t8] = t2
+  t10 = 4
+  t0[t10] = t4
+  t11 = 1.234
+  t12 = 5
+  t0[t12] = t11
+  t13 = NEW_LIST
+  t14 = 6
+  t0[t14] = t13
+  t15 = NEW_MAP
+  t16 = 7
+  t0[t16] = t15
+  t17 = ""
+  t18 = 8
+  t0[t18] = t17
+  t19 = "false"
+  t20 = 9
+  t0[t20] = t19
+  t21 = fn1
+  t22 = 10
+  t0[t22] = t21
+  t23 = #sym
+  t24 = 11
+  t0[t24] = t23
+  t25 = #null
+  t26 = 12
+  t0[t26] = t25
+  t27 = #false
+  t28 = 13
+  t0[t28] = t27
+  next block1(t2)
+
+block1(i_1):
+  t32 =  # t0
+  t33 = i_1 < t32
+  jnt t33 block9
+  next block2
+
+block2:
+  v_0 = t0[i_1]
+  jit v_0 block4
+  next block3
+
+block3:
+  jump block5(t3)
+
+block4:
+  next block5(t5)
+
+block5(v_2):
+  jit v_2 block7
+  next block6
+
+block6:
+  jump block8(t3)
+
+block7:
+  next block8(t5)
+
+block8(v_4):
+  PRINT v_4
+  i_2 = i_1 + t4
+  jump block1(i_2)
+
+block9:
+  RETURN t1
+
+}

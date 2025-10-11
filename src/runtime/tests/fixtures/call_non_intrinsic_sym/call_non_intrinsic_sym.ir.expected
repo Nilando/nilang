@@ -1,0 +1,9 @@
+========= FILE ./src/runtime/tests/fixtures/call_non_intrinsic_sym/call_non_intrinsic_sym.ir.actual ========
+MAIN () {
+block0:
+  t0 = #this_sym_is_not_an_intrinsic_but_its_going_to_get_called_anyways
+  t1 = CALL t0
+  t2 = null
+  RETURN t2
+
+}

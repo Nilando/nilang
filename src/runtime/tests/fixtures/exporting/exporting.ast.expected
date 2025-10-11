@@ -1,0 +1,48 @@
+========= FILE ./src/runtime/tests/fixtures/exporting/exporting.ast.actual ========
+[
+    IfElse {
+        cond: Spanned {
+            item: Value(
+                Global(
+                    17,
+                ),
+            ),
+            span: Span {
+                start: 3,
+                end: 10,
+            },
+        },
+        stmts: [
+            Return(
+                Some(
+                    Spanned {
+                        item: Value(
+                            String(
+                                "flag is set",
+                            ),
+                        ),
+                        span: Span {
+                            start: 20,
+                            end: 34,
+                        },
+                    },
+                ),
+            ),
+        ],
+        else_stmts: [
+            Return(
+                Some(
+                    Spanned {
+                        item: Value(
+                            Null,
+                        ),
+                        span: Span {
+                            start: 53,
+                            end: 58,
+                        },
+                    },
+                ),
+            ),
+        ],
+    },
+]

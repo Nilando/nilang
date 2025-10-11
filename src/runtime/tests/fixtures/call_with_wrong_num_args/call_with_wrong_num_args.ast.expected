@@ -1,0 +1,109 @@
+========= FILE ./src/runtime/tests/fixtures/call_with_wrong_num_args/call_with_wrong_num_args.ast.actual ========
+[
+    FuncDecl {
+        ident: 17,
+        inputs: Spanned {
+            item: [
+                18,
+                19,
+            ],
+            span: Span {
+                start: 7,
+                end: 12,
+            },
+        },
+        stmts: [
+            Return(
+                Some(
+                    Spanned {
+                        item: Binop {
+                            lhs: Spanned {
+                                item: Value(
+                                    Ident(
+                                        18,
+                                    ),
+                                ),
+                                span: Span {
+                                    start: 24,
+                                    end: 25,
+                                },
+                            },
+                            op: Plus,
+                            rhs: Spanned {
+                                item: Value(
+                                    Ident(
+                                        19,
+                                    ),
+                                ),
+                                span: Span {
+                                    start: 28,
+                                    end: 30,
+                                },
+                            },
+                        },
+                        span: Span {
+                            start: 24,
+                            end: 30,
+                        },
+                    },
+                ),
+            ),
+        ],
+    },
+    Expr(
+        Spanned {
+            item: Call {
+                calle: Spanned {
+                    item: Value(
+                        Ident(
+                            17,
+                        ),
+                    ),
+                    span: Span {
+                        start: 34,
+                        end: 37,
+                    },
+                },
+                args: [
+                    Spanned {
+                        item: Value(
+                            Int(
+                                1,
+                            ),
+                        ),
+                        span: Span {
+                            start: 38,
+                            end: 40,
+                        },
+                    },
+                    Spanned {
+                        item: Value(
+                            Int(
+                                2,
+                            ),
+                        ),
+                        span: Span {
+                            start: 41,
+                            end: 43,
+                        },
+                    },
+                    Spanned {
+                        item: Value(
+                            Int(
+                                3,
+                            ),
+                        ),
+                        span: Span {
+                            start: 44,
+                            end: 46,
+                        },
+                    },
+                ],
+            },
+            span: Span {
+                start: 34,
+                end: 47,
+            },
+        },
+    ),
+]

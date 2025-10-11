@@ -4,7 +4,7 @@ use sandpit::{Gc, Mutator};
 
 use crate::runtime::string::VMString;
 use crate::symbol_map::{
-    SymID, SymbolMap, ABS_SYM, ARGS_SYM, ARITY_SYM, BIND_SYM, BOOL_SYM, CEIL_SYM, CLONE_SYM, DELETE_SYM, FLOAT_SYM, FLOOR_SYM, FN_SYM, INT_SYM, LEN_SYM, LIST_SYM, LOG_SYM, MAP_SYM, NULL_SYM, POP_SYM, POW_SYM, PUSH_SYM, READ_FILE_SYM, SLEEP_SYM, STR_SYM, SYM_SYM, TYPE_SYM
+    SymID, SymbolMap, ABS_SYM, ARGS_SYM, BOOL_SYM, CEIL_SYM, FLOAT_SYM, FLOOR_SYM, INT_SYM, LOG_SYM, NULL_SYM, POW_SYM, READ_FILE_SYM, SLEEP_SYM, STR_SYM, SYM_SYM
 };
 
 use super::instruction_stream::InstructionStream;
@@ -23,10 +23,6 @@ pub fn call_intrinsic<'gc>(
     mu: &'gc Mutator<'gc>,
 ) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
     match sym_id {
-        // ZERO ARG FUNCS
-        ARGS_SYM => get_program_args(mu),
-
-        // SINGLE ARG FUNCS
         FLOAT_SYM => {
             expect_arg_count(1, supplied_args)?;
             let arg = extract_arg(args, stack);
@@ -52,25 +48,27 @@ pub fn call_intrinsic<'gc>(
             let arg = extract_arg(args, stack);
             bbool(arg)
         }
+        NULL_SYM => {
+            Ok(Value::Null)
+        }
+        // TODO!!!
+        // MAP_SYM
+        // FN_SYM
+        // LIST_SYM
+        
+        ARGS_SYM => get_program_args(mu), // Maybe store in a global?
+
+
+        // NOT SUPER SURE ABOUT THESE, MIGHT REMOVE
         SLEEP_SYM => {
             expect_arg_count(1, supplied_args)?;
             let arg = extract_arg(args, stack);
             sleep(arg)
         }
-        TYPE_SYM => {
-            expect_arg_count(1, supplied_args)?;
-            let arg = extract_arg(args, stack);
-            ttype(arg)
-        }
         READ_FILE_SYM => {
             expect_arg_count(1, supplied_args)?;
             let arg = extract_arg(args, stack);
             read_file(arg, mu)
-        }
-        CLONE_SYM => {
-            expect_arg_count(1, supplied_args)?;
-            let arg = extract_arg(args, stack);
-            clone(arg, mu)
         }
         ABS_SYM => {
             expect_arg_count(1, supplied_args)?;
@@ -87,26 +85,6 @@ pub fn call_intrinsic<'gc>(
             let arg = extract_arg(args, stack);
             ceil(arg)
         }
-        POP_SYM => {
-            expect_arg_count(1, supplied_args)?;
-            let arg = extract_arg(args, stack);
-            pop(arg, mu)
-        }
-        LEN_SYM => {
-            expect_arg_count(1, supplied_args)?;
-            let arg = extract_arg(args, stack);
-            len(arg)
-        }
-        ARITY_SYM => {
-            expect_arg_count(1, supplied_args)?;
-            let arg = extract_arg(args, stack);
-            arity(arg)
-        }
-        BIND_SYM => {
-            expect_arg_count(2, supplied_args)?;
-            let (arg1, arg2) = extract_two_args(args, stack);
-            bind(arg1, arg2, mu)
-        }
         POW_SYM => {
             expect_arg_count(2, supplied_args)?;
             let (arg1, arg2) = extract_two_args(args, stack);
@@ -116,16 +94,6 @@ pub fn call_intrinsic<'gc>(
             expect_arg_count(2, supplied_args)?;
             let (arg1, arg2) = extract_two_args(args, stack);
             log(arg1, arg2)
-        }
-        PUSH_SYM => {
-            expect_arg_count(2, supplied_args)?;
-            let (arg1, arg2) = extract_two_args(args, stack);
-            push(arg1, arg2, mu)
-        }
-        DELETE_SYM => {
-            expect_arg_count(2, supplied_args)?;
-            let (arg1, arg2) = extract_two_args(args, stack);
-            delete(arg1, arg2, mu)
         }
         _ => todo!(),
     }
@@ -162,91 +130,6 @@ fn expect_arg_count(
         Err((RuntimeErrorKind::WrongNumArgs, msg))
     } else {
         Ok(())
-    }
-}
-
-fn len<'gc>(val: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
-    match val {
-        // TODO: remove 'as' casts
-        // should be fine for now as no list should ever get close to i64::MAX length
-        Value::String(s) => Ok(Value::Int(s.len() as i64)),
-        Value::List(list) => Ok(Value::Int(list.len() as i64)),
-        item => {
-            return Err((
-                RuntimeErrorKind::TypeError,
-                format!("Unexpected arg of type {}", item.type_str()),
-            ))
-        }
-    }
-}
-
-fn delete<'gc>(
-    store: Value<'gc>,
-    key: Value<'gc>,
-    mu: &'gc Mutator,
-) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
-    match store {
-        Value::Map(map) => {
-            if let Some(k) = map.delete(key.as_tagged(mu)) {
-                Ok(Value::from(&k))
-            } else {
-                Ok(Value::Null)
-            }
-        }
-        _ => {
-            return Err((
-                RuntimeErrorKind::TypeError,
-                format!("Unexpected arg of type {}", store.type_str()),
-            ))
-        }
-    }
-}
-
-fn push<'gc>(
-    store: Value<'gc>,
-    item: Value<'gc>,
-    mu: &'gc Mutator,
-) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
-    match (store, item) {
-        (Value::String(a), Value::String(b)) => {
-            for i in 0..b.len() {
-                a.push_char(b.at(i).unwrap(), mu);
-            }
-
-            Ok(Value::Null)
-        }
-        (Value::List(list), any) => {
-            list.push(any.as_tagged(mu), mu);
-
-            Ok(Value::Null)
-        }
-        (_, item) => {
-            return Err((
-                RuntimeErrorKind::TypeError,
-                format!("Unexpected arg of type {}", item.type_str()),
-            ))
-        }
-    }
-}
-
-fn pop<'gc>(store: Value<'gc>, mu: &'gc Mutator) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
-    match store {
-        Value::String(s) => match s.pop_char() {
-            None => Ok(Value::Null),
-            Some(c) => {
-                let new_string = VMString::alloc_empty(mu);
-                new_string.push_char(c, mu);
-
-                Ok(Value::String(Gc::new(mu, new_string)))
-            }
-        },
-        Value::List(list) => Ok(Value::from(&list.pop())),
-        item => {
-            return Err((
-                RuntimeErrorKind::TypeError,
-                format!("Unexpected arg of type {}", item.type_str()),
-            ))
-        }
     }
 }
 
@@ -347,51 +230,6 @@ fn read_file<'gc>(
     }
 }
 
-fn clone<'gc>(
-    arg: Value<'gc>,
-    mu: &'gc Mutator<'gc>,
-) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
-    match arg {
-        Value::String(old) => {
-            let new = Gc::new(mu, VMString::alloc_empty(mu));
-
-            for x in 0..old.len() {
-                let c = old.at(usize::try_from(x).unwrap()).unwrap();
-
-                new.push_char(c, mu);
-            }
-
-            Ok(Value::String(new))
-        }
-        Value::Map(_) => todo!("TODO: clone map"),
-        Value::List(old) => {
-            let new_list = Gc::new(mu, List::alloc(mu));
-
-            for x in 0..old.len() {
-                let item = old.at(x);
-
-                new_list.push(item.as_tagged(mu), mu);
-            }
-
-            Ok(Value::List(new_list))
-        }
-        _ => Ok(arg),
-    }
-}
-
-fn ttype<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
-    match arg {
-        Value::Null => Ok(Value::SymId(NULL_SYM)),
-        Value::Bool(_) => Ok(Value::SymId(BOOL_SYM)),
-        Value::SymId(_) => Ok(Value::SymId(SYM_SYM)),
-        Value::Float(_) => Ok(Value::SymId(FLOAT_SYM)),
-        Value::Int(_)  => Ok(Value::SymId(INT_SYM)),
-        Value::String(_) => Ok(Value::SymId(STR_SYM)),
-        Value::List(_) => Ok(Value::SymId(LIST_SYM)),
-        Value::Map(_) => Ok(Value::SymId(MAP_SYM)),
-        Value::Func(_) => Ok(Value::SymId(FN_SYM)),
-    }
-}
 
 fn sleep<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
     // TODO: add sleep ExitCode, this way gc can happen during sleep
@@ -538,35 +376,3 @@ fn int<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
     }
 }
 
-fn arity<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
-    match arg {
-        Value::Func(f) => { 
-            Ok(Value::Int(f.arity() as i64))
-        }
-        _ => Err((
-            RuntimeErrorKind::TypeError,
-            format!("Unexpected arg of type {}", arg.type_str()),
-        )),
-    }
-}
-
-fn bind<'gc>(func: Value<'gc>, arg: Value<'gc>, mu: &'gc Mutator<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
-    match func {
-        Value::Func(f) => { 
-            if f.arity() == 0 {
-                return Err((
-                    RuntimeErrorKind::InvalidBind,
-                    format!("Cannot bind to a 0 arg Func"),
-                ));
-            }
-
-            let partial = f.bind(mu, arg.as_tagged(mu));
-
-            Ok(Value::Func(partial))
-        }
-        _ => Err((
-            RuntimeErrorKind::TypeError,
-            format!("Unexpected arg of type {}", func.type_str()),
-        )),
-    }
-}

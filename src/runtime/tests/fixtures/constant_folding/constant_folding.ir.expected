@@ -1,0 +1,9 @@
+========= FILE ./src/runtime/tests/fixtures/constant_folding/constant_folding.ir.actual ========
+MAIN () {
+block0:
+  h_0 = true
+  PRINT h_0
+  t24 = null
+  RETURN t24
+
+}

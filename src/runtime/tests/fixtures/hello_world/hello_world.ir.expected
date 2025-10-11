@@ -1,0 +1,9 @@
+========= FILE ./src/runtime/tests/fixtures/hello_world/hello_world.ir.actual ========
+MAIN () {
+block0:
+  t0 = "Hello, world!"
+  PRINT t0
+  t2 = null
+  RETURN t2
+
+}

@@ -1,0 +1,164 @@
+========= FILE ./src/runtime/tests/fixtures/recursive/recursive.ast.actual ========
+[
+    FuncDecl {
+        ident: 17,
+        inputs: Spanned {
+            item: [
+                18,
+            ],
+            span: Span {
+                start: 21,
+                end: 23,
+            },
+        },
+        stmts: [
+            Expr(
+                Spanned {
+                    item: Print(
+                        Spanned {
+                            item: Value(
+                                Ident(
+                                    18,
+                                ),
+                            ),
+                            span: Span {
+                                start: 34,
+                                end: 36,
+                            },
+                        },
+                    ),
+                    span: Span {
+                        start: 28,
+                        end: 37,
+                    },
+                },
+            ),
+            If {
+                cond: Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Ident(
+                                    18,
+                                ),
+                            ),
+                            span: Span {
+                                start: 44,
+                                end: 45,
+                            },
+                        },
+                        op: Equal,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    10,
+                                ),
+                            ),
+                            span: Span {
+                                start: 49,
+                                end: 53,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 44,
+                        end: 53,
+                    },
+                },
+                stmts: [
+                    Return(
+                        None,
+                    ),
+                ],
+            },
+            Expr(
+                Spanned {
+                    item: Call {
+                        calle: Spanned {
+                            item: Value(
+                                Ident(
+                                    17,
+                                ),
+                            ),
+                            span: Span {
+                                start: 73,
+                                end: 90,
+                            },
+                        },
+                        args: [
+                            Spanned {
+                                item: Binop {
+                                    lhs: Spanned {
+                                        item: Value(
+                                            Ident(
+                                                18,
+                                            ),
+                                        ),
+                                        span: Span {
+                                            start: 91,
+                                            end: 92,
+                                        },
+                                    },
+                                    op: Plus,
+                                    rhs: Spanned {
+                                        item: Value(
+                                            Int(
+                                                1,
+                                            ),
+                                        ),
+                                        span: Span {
+                                            start: 95,
+                                            end: 97,
+                                        },
+                                    },
+                                },
+                                span: Span {
+                                    start: 91,
+                                    end: 97,
+                                },
+                            },
+                        ],
+                    },
+                    span: Span {
+                        start: 73,
+                        end: 98,
+                    },
+                },
+            ),
+        ],
+    },
+    Expr(
+        Spanned {
+            item: Call {
+                calle: Spanned {
+                    item: Value(
+                        Ident(
+                            17,
+                        ),
+                    ),
+                    span: Span {
+                        start: 102,
+                        end: 119,
+                    },
+                },
+                args: [
+                    Spanned {
+                        item: Value(
+                            Int(
+                                0,
+                            ),
+                        ),
+                        span: Span {
+                            start: 120,
+                            end: 122,
+                        },
+                    },
+                ],
+            },
+            span: Span {
+                start: 102,
+                end: 123,
+            },
+        },
+    ),
+]

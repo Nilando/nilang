@@ -1,0 +1,96 @@
+========= FILE ./src/runtime/tests/fixtures/eratosthenes_sieve/eratosthenes_sieve.ir.actual ========
+fn1 (n_0) {
+block0:
+  primes_0 = NEW_LIST
+  i_0 = 2
+  next block1(i_0)
+
+block1(i_1):
+  t5 = i_1 <= n_0
+  jnt t5 block3
+  next block2
+
+block2:
+  t6 = true
+  primes_0 << t6
+  t8 = 1
+  i_8 = i_1 + t8
+  jump block1(i_8)
+
+block3:
+  next block4(i_0)
+
+block4(i_3):
+  t11 = i_3 <= n_0
+  jnt t11 block11
+  next block5
+
+block5:
+  t13 = i_3 - i_0
+  t14 = primes_0[t13]
+  jnt t14 block10
+  next block6
+
+block6:
+  k_0 = i_3 * i_0
+  next block7(k_0)
+
+block7(k_1):
+  t18 = k_1 <= n_0
+  jnt t18 block9
+  next block8
+
+block8:
+  t19 = false
+  t21 = k_1 - i_0
+  primes_0[t21] = t19
+  k_2 = i_3 + k_1
+  jump block7(k_2)
+
+block9:
+  next block10
+
+block10:
+  t23 = 1
+  i_7 = i_3 + t23
+  jump block4(i_7)
+
+block11:
+  result_0 = NEW_LIST
+  next block12(i_0)
+
+block12(i_5):
+  t28 = i_5 <= n_0
+  jnt t28 block16
+  next block13
+
+block13:
+  t30 = i_5 - i_0
+  t31 = primes_0[t30]
+  jnt t31 block15
+  next block14
+
+block14:
+  result_0 << i_5
+  next block15
+
+block15:
+  t33 = 1
+  i_6 = i_5 + t33
+  jump block12(i_6)
+
+block16:
+  RETURN result_0
+
+}
+MAIN () {
+block0:
+  eratosthenes_0 = fn1
+  t1 = 1000
+  STORE_ARG t1
+  t2 = CALL eratosthenes_0
+  PRINT t2
+  t4 = null
+  RETURN t4
+
+}

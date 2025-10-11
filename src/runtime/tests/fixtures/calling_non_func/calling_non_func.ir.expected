@@ -1,0 +1,9 @@
+========= FILE ./src/runtime/tests/fixtures/calling_non_func/calling_non_func.ir.actual ========
+MAIN () {
+block0:
+  t0 = "don't try this at home kids"
+  t1 = CALL t0
+  t2 = null
+  RETURN t2
+
+}

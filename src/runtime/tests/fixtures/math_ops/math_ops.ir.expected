@@ -1,0 +1,131 @@
+========= FILE ./src/runtime/tests/fixtures/math_ops/math_ops.ir.actual ========
+MAIN () {
+block0:
+  t0 = "=====  ADDITION"
+  PRINT t0
+  t2 = 1
+  t3 = 1
+  t4 = 2
+  PRINT t4
+  PRINT t4
+  PRINT t4
+  t16 = 2
+  PRINT t16
+  t20 = 2.123
+  PRINT t20
+  PRINT t20
+  PRINT t20
+  t32 = 2147483648
+  PRINT t32
+  t36 = 2147483648.123
+  PRINT t36
+  t38 = "=====  SUBTRACTION"
+  PRINT t38
+  t42 = 0
+  PRINT t42
+  PRINT t42
+  PRINT t42
+  t54 = 0
+  PRINT t54
+  t58 = -0.123
+  PRINT t58
+  t62 = 0.123
+  PRINT t62
+  PRINT t3
+  t68 = "=====  MULTIPLICATION"
+  PRINT t68
+  t72 = 9
+  PRINT t72
+  t76 = 9.899999999999999
+  PRINT t76
+  PRINT t76
+  t84 = 10.889999999999999
+  PRINT t84
+  t88 = -1
+  t90 = -3.3
+  PRINT t90
+  t94 = 29230847366465196000
+  PRINT t94
+  t96 = "=====  DIVISION"
+  PRINT t96
+  PRINT t2
+  PRINT t16
+  PRINT t54
+  t112 = 0.5
+  PRINT t112
+  PRINT t112
+  PRINT t112
+  PRINT t4
+  t126 = "=====  MODULO"
+  PRINT t126
+  PRINT t54
+  PRINT t54
+  PRINT t2
+  PRINT t3
+  PRINT t3
+  PRINT t3
+  PRINT t42
+  t156 = "=====  MATH INTRINSICS"
+  PRINT t156
+  t159 = 4
+  pow_0 = #pow
+  STORE_ARG t16
+  STORE_ARG t159
+  t161 = CALL pow_0
+  PRINT t161
+  t163 = 16
+  log_0 = #log
+  STORE_ARG t163
+  STORE_ARG t16
+  t166 = CALL log_0
+  PRINT t166
+  abs_0 = #abs
+  STORE_ARG t88
+  t172 = CALL abs_0
+  PRINT t172
+  ceil_0 = #ceil
+  STORE_ARG t54
+  t176 = CALL ceil_0
+  PRINT t176
+  floor_0 = #floor
+  STORE_ARG t54
+  t180 = CALL floor_0
+  PRINT t180
+  t182 = "=====  COMPARISONS"
+  PRINT t182
+  t186 = t2 > t54
+  PRINT t186
+  t190 = t2 >= t54
+  PRINT t190
+  t194 = t2 < t54
+  PRINT t194
+  t198 = t2 <= t54
+  PRINT t198
+  t202 = false
+  PRINT t202
+  t206 = true
+  PRINT t206
+  t210 = t2 > t2
+  PRINT t210
+  t214 = t2 >= t2
+  PRINT t214
+  t218 = t2 < t2
+  PRINT t218
+  t222 = t2 <= t2
+  PRINT t222
+  PRINT t206
+  PRINT t202
+  t234 = t54 > t2
+  PRINT t234
+  t238 = t54 >= t2
+  PRINT t238
+  t242 = t54 < t2
+  PRINT t242
+  t246 = t54 <= t2
+  PRINT t246
+  PRINT t202
+  PRINT t206
+  t256 = null
+  RETURN t256
+
+}

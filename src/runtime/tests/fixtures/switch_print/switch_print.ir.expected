@@ -1,0 +1,34 @@
+========= FILE ./src/runtime/tests/fixtures/switch_print/switch_print.ir.actual ========
+MAIN () {
+block0:
+  x_0 = 1
+  i_0 = 0
+  next block1(i_0, x_0)
+
+block1(i_1, x_1):
+  t4 = 10
+  t5 = i_1 <= t4
+  jnt t5 block6
+  next block2
+
+block2:
+  PRINT x_1
+  t8 = x_1 == x_0
+  jnt t8 block4
+  next block3
+
+block3:
+  jump block5(i_0)
+
+block4:
+  next block5(x_0)
+
+block5(x_3):
+  i_2 = i_1 + x_0
+  jump block1(i_2, x_3)
+
+block6:
+  t13 = null
+  RETURN t13
+
+}

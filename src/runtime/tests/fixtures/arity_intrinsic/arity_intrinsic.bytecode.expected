@@ -1,0 +1,52 @@
+========= FILE ./src/runtime/tests/fixtures/arity_intrinsic/arity_intrinsic.bytecode.actual ========
+=== FN 1 START ===
+LDN  0
+RTN  0
+=== END ===
+=== FN 2 START ===
+LDN  0
+RTN  0
+=== END ===
+=== FN 3 START ===
+LDN  0
+RTN  0
+=== END ===
+=== FN 4 START ===
+LDN  0
+RTN  0
+=== END ===
+=== FN 5 START ===
+LDUV 0, 0
+OUT  0
+LDN  0
+RTN  0
+=== END ===
+=== FN 6 START ===
+LDN  0
+RTN  0
+=== END ===
+=== FN 0 START ===
+LOC  0, 0
+LEN 0, 0
+OUT  0
+LOC  0, 1
+LEN 0, 0
+OUT  0
+LOC  0, 2
+LEN 0, 0
+OUT  0
+LOC  0, 3
+LEN 0, 0
+OUT  0
+INT  1, 123
+LOC  0, 4
+STUV 0, 1
+LEN 0, 0
+OUT  0
+LOC  0, 5
+LDN  1
+BIND 0, 0, 1]
+LEN 0, 0
+OUT  0
+RTN  1
+=== END ===

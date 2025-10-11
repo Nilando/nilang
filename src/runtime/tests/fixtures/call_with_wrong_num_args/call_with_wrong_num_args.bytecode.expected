@@ -1,0 +1,17 @@
+========= FILE ./src/runtime/tests/fixtures/call_with_wrong_num_args/call_with_wrong_num_args.bytecode.actual ========
+=== FN 1 START ===
+ADD  0, 0, 1
+RTN  0
+=== END ===
+=== FN 0 START ===
+LOC  3, 0
+INT  2, 1
+INT  1, 2
+INT  0, 3
+ARG  2
+ARG  1
+ARG  0
+CALL 0, 3
+LDN  0
+RTN  0
+=== END ===

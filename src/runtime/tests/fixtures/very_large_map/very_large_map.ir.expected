@@ -1,0 +1,39 @@
+========= FILE ./src/runtime/tests/fixtures/very_large_map/very_large_map.ir.actual ========
+MAIN () {
+block0:
+  m_0 = NEW_MAP
+  i_0 = 0
+  next block1(i_0)
+
+block1(i_1):
+  t4 = 1000
+  t5 = i_1 < t4
+  jnt t5 block3
+  next block2
+
+block2:
+  m_0[i_1] = i_1
+  t6 = 1
+  i_5 = i_1 + t6
+  jump block1(i_5)
+
+block3:
+  next block4(i_0)
+
+block4(i_3):
+  t10 = i_3 < t4
+  jnt t10 block6
+  next block5
+
+block5:
+  t11 = m_0[i_3]
+  PRINT t11
+  t13 = 1
+  i_4 = i_3 + t13
+  jump block4(i_4)
+
+block6:
+  t15 = null
+  RETURN t15
+
+}

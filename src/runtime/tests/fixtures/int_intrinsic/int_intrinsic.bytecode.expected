@@ -1,0 +1,43 @@
+========= FILE ./src/runtime/tests/fixtures/int_intrinsic/int_intrinsic.bytecode.actual ========
+=== FN 0 START ===
+LIST 3
+INT  0, 123
+INT  5, 0
+MEMS 3[5], 0
+LOC  0, 0
+INT  2, 1
+MEMS 3[2], 0
+LOC  1, 1
+INT  0, 2
+MEMS 3[0], 1
+LDN  1
+INT  0, 3
+MEMS 3[0], 1
+BOOL 4, false
+INT  0, 4
+MEMS 3[0], 4
+BOOL 4, true
+INT  0, 5
+MEMS 3[0], 4
+LOC  4, 2
+INT  0, 6
+MEMS 3[0], 4
+LOC  4, 3
+INT  0, 7
+MEMS 3[0], 4
+LOC  4, 4
+INT  0, 8
+MEMS 3[0], 4
+COPY 0, 5
+LEN 4, 3
+LT   4, 0, 4
+JNT  8, 4
+MEML 5, 3[0]
+SYM  4, #0
+ARG  5
+CALL 4, 4
+OUT  4
+ADD  0, 0, 2
+JMP  -9
+RTN  1
+=== END ===

@@ -23,8 +23,8 @@ impl ParseError {
         }
     }
 
-    pub fn set_path(&mut self, path: Option<String>) {
-        self.path = path;
+    pub fn set_path(&mut self, path: Option<&String>) {
+        self.path = path.cloned();
     }
 
     pub fn render(&self) -> String {
@@ -39,6 +39,7 @@ impl ParseError {
                 result.push_str(&format!("{}\n", spanned_err.item.render()));
                 result.push_str(&source);
             }
+
             result.push_str(&format!("parser error: Failed to parse \"{}\" due to the previous {} errors.", path, self.items.len()));
         } else {
             for spanned_err in self.items.iter() {

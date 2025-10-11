@@ -1,0 +1,13 @@
+========= FILE ./src/runtime/tests/fixtures/bad_import/bad_import.ast.actual ========
+[
+    Import {
+        ident: 17,
+        path: Spanned {
+            item: "filasdfahsldjfhalsdf",
+            span: Span {
+                start: 12,
+                end: 34,
+            },
+        },
+    },
+]

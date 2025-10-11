@@ -1,0 +1,56 @@
+========= FILE ./src/runtime/tests/fixtures/linear_search/linear_search.ir.actual ========
+fn1 (list_0, len_0, target_0) {
+block0:
+  i_0 = 0
+  next block1(i_0)
+
+block1(i_1):
+  t5 = i_1 < len_0
+  jnt t5 block7
+  next block2
+
+block2:
+  t6 = list_0[i_1]
+  t7 = t6 == target_0
+  jnt t7 block5
+  next block3
+
+block3:
+  RETURN i_1
+
+block5:
+  t8 = 1
+  i_2 = i_1 + t8
+  next block6
+
+block6:
+  jump block1(i_2)
+
+block7:
+  t10 = null
+  RETURN t10
+
+}
+MAIN () {
+block0:
+  linear_search_0 = fn1
+  t1 = NEW_LIST
+  t2 = 0
+  t1[t2] = t2
+  t5 = 1
+  t1[t5] = t2
+  t6 = 420
+  t7 = 2
+  t1[t7] = t6
+  t9 = 3
+  t1[t9] = t2
+  t11 = 4
+  STORE_ARG t1
+  STORE_ARG t11
+  STORE_ARG t6
+  result_0 = CALL linear_search_0
+  PRINT result_0
+  t16 = null
+  RETURN t16
+
+}

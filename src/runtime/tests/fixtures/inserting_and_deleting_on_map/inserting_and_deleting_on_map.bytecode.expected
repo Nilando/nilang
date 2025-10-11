@@ -1,0 +1,32 @@
+========= FILE ./src/runtime/tests/fixtures/inserting_and_deleting_on_map/inserting_and_deleting_on_map.bytecode.actual ========
+=== FN 0 START ===
+MAP  2
+INT  1, 0
+COPY 0, 1
+INT  3, 1000
+LT   4, 0, 3
+JNT  5, 4
+MEMS 2[0], 0
+INT  3, 1
+ADD  0, 0, 3
+JMP  -6
+COPY 0, 1
+LT   4, 0, 3
+JNT  7, 4
+DEL 4, 2[0]
+LOC  4, 0
+MEMS 2[0], 4
+INT  4, 2
+ADD  0, 0, 4
+JMP  -7
+COPY 0, 1
+LT   1, 0, 3
+JNT  6, 1
+MEML 1, 2[0]
+OUT  1
+INT  1, 1
+ADD  0, 0, 1
+JMP  -6
+LDN  0
+RTN  0
+=== END ===

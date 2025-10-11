@@ -1,0 +1,66 @@
+=====  ADDITION
+2
+2
+2
+2
+2.123
+2.123
+2.123
+2147483648
+2147483648.123
+=====  SUBTRACTION
+0
+0
+0
+0
+-0.123
+0.123
+1
+=====  MULTIPLICATION
+9
+9.899999999999999
+9.899999999999999
+10.889999999999999
+-3.3
+29230847366465196000
+=====  DIVISION
+1
+2
+0
+0.5
+0.5
+0.5
+2
+=====  MODULO
+0
+0
+1
+1
+1
+1
+0
+=====  MATH INTRINSICS
+16
+4
+1
+0
+0
+=====  COMPARISONS
+true
+true
+false
+false
+false
+true
+false
+true
+false
+true
+true
+false
+false
+false
+true
+true
+false
+true

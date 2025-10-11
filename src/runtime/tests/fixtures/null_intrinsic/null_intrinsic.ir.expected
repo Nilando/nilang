@@ -1,0 +1,10 @@
+========= FILE ./src/runtime/tests/fixtures/null_intrinsic/null_intrinsic.ir.actual ========
+MAIN () {
+block0:
+  t0 = #null
+  t1 = CALL t0
+  PRINT t1
+  t3 = null
+  RETURN t3
+
+}

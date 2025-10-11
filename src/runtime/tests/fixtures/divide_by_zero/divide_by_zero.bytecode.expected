@@ -1,0 +1,9 @@
+========= FILE ./src/runtime/tests/fixtures/divide_by_zero/divide_by_zero.bytecode.actual ========
+=== FN 0 START ===
+INT  1, 1
+INT  0, 0
+DIV  0, 1, 0
+OUT  0
+LDN  0
+RTN  0
+=== END ===

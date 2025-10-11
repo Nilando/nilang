@@ -1,0 +1,27 @@
+========= FILE ./src/runtime/tests/fixtures/multi_val_closure/multi_val_closure.bytecode.actual ========
+=== FN 1 START ===
+LDUV 0, 0
+OUT  0
+LDUV 0, 1
+OUT  0
+LDUV 0, 2
+OUT  0
+LDUV 0, 3
+OUT  0
+LDN  0
+RTN  0
+=== END ===
+=== FN 0 START ===
+INT  4, 1
+INT  3, 2
+INT  2, 3
+INT  1, 4
+LOC  0, 0
+STUV 0, 4
+STUV 0, 3
+STUV 0, 2
+STUV 0, 1
+CALL 0, 0
+LDN  0
+RTN  0
+=== END ===

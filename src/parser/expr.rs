@@ -1,4 +1,5 @@
-use super::lexer::{Ctrl, KeyWord, Op, Token};
+use super::lexer::{Ctrl, KeyWord, Token};
+use crate::op::{BinaryOp, UnaryOp};
 use super::spanned::Spanned;
 use super::stmt::Stmt;
 use super::value::{value, Value};
@@ -18,12 +19,17 @@ use crate::symbol_map::SymID;
 //  || PrimaryExpr ( Args )
 //  || PrimaryExpr [ Expr ]
 //  || PrimaryExpr . Symbol
+//  || UnaryOp PrimaryExpr
 //
 // SecondaryExpr ->
 //  || Value
 //  || ( Expr )
 //  || Read
-//  || Print ( Args )
+//  || Print ( Arg )
+//  || typeof ( Arg )
+//  || delete ( Store, Key )
+//  || bind ( Func, Arg )
+//  || clone ( Arg )
 //
 // Args ->
 //  || NOTHING
@@ -67,9 +73,13 @@ impl From<Expr> for Option<LhsExpr> {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
     Value(Value),
+    Unaop {
+        op: UnaryOp,
+        expr: Box<Spanned<Expr>>,
+    },
     Binop {
         lhs: Box<Spanned<Expr>>,
-        op: Op,
+        op: BinaryOp,
         rhs: Box<Spanned<Expr>>,
     },
     Access {
@@ -84,7 +94,17 @@ pub enum Expr {
         calle: Box<Spanned<Expr>>,
         args: Vec<Spanned<Expr>>,
     },
+    Bind {
+        func: Box<Spanned<Expr>>,
+        arg: Box<Spanned<Expr>>,
+    },
+    Delete {
+        store: Box<Spanned<Expr>>,
+        key: Box<Spanned<Expr>>,
+    },
     Print(Box<Spanned<Expr>>),
+    Type(Box<Spanned<Expr>>),
+    Clone(Box<Spanned<Expr>>),
     Read,
 }
 
@@ -136,18 +156,23 @@ pub fn expr(sp: Parser<'_, Stmt>) -> Parser<'_, Spanned<Expr>> {
     })
 }
 
-pub fn rhs_binop(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, (Op, Spanned<Expr>)> {
+pub fn rhs_binop(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, (BinaryOp, Spanned<Expr>)> {
     let expr = ep.expect("Expected expression after binary operator");
 
     binop().append(expr)
 }
 
-pub fn binop<'a>() -> Parser<'a, Op> {
+
+pub fn binop<'a>() -> Parser<'a, BinaryOp> {
     Parser::new(move |ctx| match ctx.peek() {
         Some(spanned_token) => match spanned_token.item {
-            Token::Op(op) => {
-                ctx.adv();
-                Some(op)
+            Token::Ctrl(ctrl) => {
+                if let Some(binop) = ctrl.as_binop() {
+                    ctx.adv();
+                    Some(binop)
+                } else {
+                    None
+                }
             }
             _ => None,
         },
@@ -159,17 +184,22 @@ fn primary_expr<'a>(
     ep: Parser<'a, Spanned<Expr>>,
     sp: Parser<'a, Stmt>,
 ) -> Parser<'a, Spanned<Expr>> {
-    secondary_expr(ep.clone(), sp)
-        .append(expr_suffix(ep).zero_or_more())
-        .map(|(secondary_expr, suffixes)| {
-            let mut expr = secondary_expr;
+    recursive(move |recursive_primary_expr| {
+        let primary_expr = secondary_expr(ep.clone(), sp.clone())
+            .append(expr_suffix(ep.clone()).zero_or_more())
+            .map(|(secondary_expr, suffixes)| {
+                let mut expr = secondary_expr;
 
-            for suffix in suffixes.into_iter() {
-                expr = Expr::append_suffix(expr, suffix);
-            }
+                for suffix in suffixes.into_iter() {
+                    expr = Expr::append_suffix(expr, suffix);
+                }
 
-            expr
-        })
+                expr
+            });
+
+        unary_op_expr(recursive_primary_expr)
+            .or(primary_expr)
+    })
 }
 
 fn expr_suffix(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, Spanned<ExprSuffix>> {
@@ -208,7 +238,12 @@ fn secondary_expr<'a>(
     value_expr(ep.clone(), sp)
         .or(nested_expr(ep.clone()))
         .or(read_expr())
-        .or(print_expr(ep))
+        .or(print_expr(ep.clone()))
+
+        .or(type_expr(ep.clone()))
+        .or(clone_expr(ep.clone()))
+        .or(delete_expr(ep.clone()))
+        .or(bind_expr(ep.clone()))
 }
 
 fn nested_expr(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, Spanned<Expr>> {
@@ -221,6 +256,69 @@ fn nested_expr(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, Spanned<Expr>> {
 
 fn print_expr(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, Spanned<Expr>> {
     keyword(KeyWord::Print).then(nested_expr(ep).map(|e| Expr::Print(Box::new(e))).spanned())
+}
+
+fn type_expr(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, Spanned<Expr>> {
+    keyword(KeyWord::Type).then(nested_expr(ep).map(|e| Expr::Type(Box::new(e))).spanned())
+}
+
+fn bind_expr(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, Spanned<Expr>> {
+    keyword(KeyWord::Bind)
+        .then(
+            two_comma_separated_exprs(ep)
+            .delimited(ctrl(Ctrl::LeftParen), ctrl(Ctrl::RightParen))
+        )
+        .map(|(func, arg)| {
+           Expr::Bind { func: Box::new(func), arg: Box::new(arg) } 
+        })
+        .spanned()
+}
+
+fn delete_expr(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, Spanned<Expr>> {
+    keyword(KeyWord::Delete)
+        .then(
+            two_comma_separated_exprs(ep)
+            .delimited(ctrl(Ctrl::LeftParen), ctrl(Ctrl::RightParen))
+        )
+        .map(|(store, key)| {
+           Expr::Delete { store: Box::new(store), key: Box::new(key) } 
+        })
+        .spanned()
+}
+
+fn two_comma_separated_exprs(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, (Spanned<Expr>, Spanned<Expr>)> {
+    ep.clone().append(
+        ctrl(Ctrl::Comma)
+            .then(ep)
+    )
+
+}
+
+fn clone_expr(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, Spanned<Expr>> {
+    keyword(KeyWord::Clone).then(nested_expr(ep).map(|e| Expr::Clone(Box::new(e))).spanned())
+}
+
+fn unary_op_expr(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, Spanned<Expr>> {
+    unary_op().append(ep)
+        .map(|(op, expr)| Expr::Unaop { op, expr: Box::new(expr) } )
+        .spanned()
+}
+
+fn unary_op<'a>() -> Parser<'a, UnaryOp> {
+    Parser::new(move |ctx| match ctx.peek() {
+        Some(spanned_token) => match spanned_token.item {
+            Token::Ctrl(op) => {
+                if let Some(unary_op) = op.as_unaop() {
+                    ctx.adv();
+                    Some(unary_op)
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        },
+        None => None,
+    })
 }
 
 fn read_expr<'a>() -> Parser<'a, Spanned<Expr>> {
@@ -298,11 +396,11 @@ mod tests {
         match parse_expr("1 + 2 - 3") {
             Ok(Some(Expr::Binop { lhs, op, rhs })) => {
                 assert!(lhs.item == Expr::Value(Value::Int(1)));
-                assert!(op == Op::Plus);
+                assert!(op == BinaryOp::Plus);
                 match rhs.item {
                     Expr::Binop { lhs, op, rhs } => {
                         assert!(lhs.item == Expr::Value(Value::Int(2)));
-                        assert!(op == Op::Minus);
+                        assert!(op == BinaryOp::Minus);
                         assert!(rhs.item == Expr::Value(Value::Int(3)));
                     }
                     _ => assert!(false),
@@ -386,7 +484,7 @@ mod tests {
         match parse_expr("1 / 1") {
             Ok(Some(Expr::Binop { lhs, op, rhs })) => {
                 assert!(lhs.item == Expr::Value(Value::Int(1)));
-                assert!(op == Op::Divide);
+                assert!(op == BinaryOp::Divide);
                 assert!(rhs.item == Expr::Value(Value::Int(1)));
             }
             _ => assert!(false),

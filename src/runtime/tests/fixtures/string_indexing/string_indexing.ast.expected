@@ -1,0 +1,173 @@
+========= FILE ./src/runtime/tests/fixtures/string_indexing/string_indexing.ast.actual ========
+[
+    Assign {
+        dest: Spanned {
+            item: Local(
+                17,
+            ),
+            span: Span {
+                start: 0,
+                end: 3,
+            },
+        },
+        src: Spanned {
+            item: Value(
+                String(
+                    "potato pancake",
+                ),
+            ),
+            span: Span {
+                start: 4,
+                end: 21,
+            },
+        },
+    },
+    Assign {
+        dest: Spanned {
+            item: Local(
+                18,
+            ),
+            span: Span {
+                start: 23,
+                end: 26,
+            },
+        },
+        src: Spanned {
+            item: Value(
+                Int(
+                    0,
+                ),
+            ),
+            span: Span {
+                start: 27,
+                end: 29,
+            },
+        },
+    },
+    While {
+        cond: Spanned {
+            item: Binop {
+                lhs: Spanned {
+                    item: Value(
+                        Ident(
+                            18,
+                        ),
+                    ),
+                    span: Span {
+                        start: 36,
+                        end: 37,
+                    },
+                },
+                op: Lt,
+                rhs: Spanned {
+                    item: Unaop {
+                        op: Len,
+                        expr: Spanned {
+                            item: Value(
+                                Ident(
+                                    17,
+                                ),
+                            ),
+                            span: Span {
+                                start: 41,
+                                end: 42,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 40,
+                        end: 44,
+                    },
+                },
+            },
+            span: Span {
+                start: 36,
+                end: 44,
+            },
+        },
+        stmts: [
+            Expr(
+                Spanned {
+                    item: Print(
+                        Spanned {
+                            item: Index {
+                                store: Spanned {
+                                    item: Value(
+                                        Ident(
+                                            17,
+                                        ),
+                                    ),
+                                    span: Span {
+                                        start: 53,
+                                        end: 54,
+                                    },
+                                },
+                                key: Spanned {
+                                    item: Value(
+                                        Ident(
+                                            18,
+                                        ),
+                                    ),
+                                    span: Span {
+                                        start: 55,
+                                        end: 57,
+                                    },
+                                },
+                            },
+                            span: Span {
+                                start: 53,
+                                end: 58,
+                            },
+                        },
+                    ),
+                    span: Span {
+                        start: 47,
+                        end: 59,
+                    },
+                },
+            ),
+            Assign {
+                dest: Spanned {
+                    item: Local(
+                        18,
+                    ),
+                    span: Span {
+                        start: 63,
+                        end: 66,
+                    },
+                },
+                src: Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Ident(
+                                    18,
+                                ),
+                            ),
+                            span: Span {
+                                start: 67,
+                                end: 68,
+                            },
+                        },
+                        op: Plus,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 71,
+                                end: 73,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 67,
+                        end: 73,
+                    },
+                },
+            },
+        ],
+    },
+]

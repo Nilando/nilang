@@ -7,10 +7,10 @@ fn new_grid(size) {
     col = 0;
     while col < size {
       // just doing something random to try and get something to happen
-      push(vals, ((row * col) % 1023) == 0);
+      vals << ((row * col) % 1023) == 0;
       col = col + 1;
     }
-    push(grid, vals);
+    grid << vals;
     row = row + 1;
   }
 
@@ -72,12 +72,12 @@ fn find_cells_to_update(grid) {
       neighbors = count_neighbors(grid, row, col);
       cell_is_alive = grid[row][col];
 
-      if (cell_is_alive == false) && (neighbors == 3) {
-        push(result.new, [row, col]);
+      if !cell_is_alive && (neighbors == 3) {
+        result.new << [row, col];
       }
 
       if cell_is_alive && ((neighbors != 2) && (neighbors != 3)) {
-        push(result.dead, [row, col]);
+        result.dead << [row, col];
       }
 
       col = col + 1;
@@ -111,9 +111,9 @@ fn print_grid(grid) {
     col = 0;
     while col < len(grid) {
       if grid[row][col] {
-        push(s, "██");
+        s << "██";
       } else {
-        push(s, "  ");
+        s << "  ";
       }
       col = col + 1;
     }
@@ -123,9 +123,11 @@ fn print_grid(grid) {
 }
 
 fn run(grid) {
-  while true {
+  i = 0;
+  while i <= 50 {
     update_grid(grid);
     print_grid(grid);
+    i = i + 1;
   }
 }
 

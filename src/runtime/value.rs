@@ -8,6 +8,8 @@ use super::list::List;
 use super::string::VMString;
 use super::tagged_value::TaggedValue;
 
+// values don't need to be traceable as they only exist on the stack, not on the heap
+// Taggedvalues exist on the heap and the stack
 pub enum Value<'gc> {
     Null,
     Bool(bool),
