@@ -368,7 +368,7 @@ mod tests {
 
     #[test]
     fn parse_interpolated_string() {
-        let v = parse_value("'{`blah` << `blah`}{'blah'}blah{`blahblah`}blah'").unwrap().unwrap();
+        let v = parse_value("`{`blah` << `blah`}{'blah'}blah{`blahblah`}blah`").unwrap().unwrap();
 
         if let Value::String(s) = v {
             assert_eq!(s.segments.len(), 6);

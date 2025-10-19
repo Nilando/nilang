@@ -1026,7 +1026,7 @@ mod tests {
     #[test]
     fn lex_empty_interpolated_string() {
         let syms = SymbolMap::new();
-        let input = "'{}{}{}'";
+        let input = "`{}{}{}`";
         let tokens = vec![
             Token::String(""),
             Token::Ctrl(Ctrl::InterpolatedLeftCurly),
@@ -1046,7 +1046,7 @@ mod tests {
     #[test]
     fn lex_nested_interpolated_string() {
         let syms = SymbolMap::new();
-        let input = "'aaa{`bbb{\"ccc{'ddd'}ccc\"}bbb`}aaa'";
+        let input = "`aaa{`bbb{\"ccc{'ddd'}ccc\"}bbb`}aaa`";
         let tokens = vec![
             Token::String("aaa"),
             Token::Ctrl(Ctrl::InterpolatedLeftCurly),
@@ -1069,7 +1069,7 @@ mod tests {
     #[test]
     fn lex_map_inside_a_string() {
         let mut syms = SymbolMap::new();
-        let input = "'start{ {key: true} }end'";
+        let input = "`start{ {key: true} }end`";
         let tokens = vec![
             Token::String("start"),
             Token::Ctrl(Ctrl::InterpolatedLeftCurly),
@@ -1088,7 +1088,7 @@ mod tests {
     #[test]
     fn lex_interpolated_string_with_spaces() {
         let syms = SymbolMap::new();
-        let input = "'start {} end'";
+        let input = "`start {} end`";
         let tokens = vec![
             Token::String("start "),
             Token::Ctrl(Ctrl::InterpolatedLeftCurly),
