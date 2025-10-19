@@ -34,6 +34,9 @@ pub enum Ctrl {
     Minus,
     Carrot,
     HashTag,
+
+    InterpolatedLeftCurly,
+    InterpolatedRightCurly,
 }
 
 impl Ctrl {
@@ -120,6 +123,14 @@ pub enum Token<'a> {
     KeyWord(KeyWord),
 }
 
+#[derive(Clone, Copy, PartialEq, Debug)]
+enum Delimiter {
+    DoubleQuote,
+    SingleQuote,
+    Backtick,
+    Curly,
+}
+
 use std::iter::Peekable;
 use std::str::Chars;
 
@@ -129,6 +140,8 @@ pub struct Lexer<'a> {
     input: &'a str,
     pos: usize,
     eof: bool,
+    delimiter_stack: Vec<Delimiter>,
+    string_mode: bool
 }
 
 impl<'a> Lexer<'a> {
@@ -139,6 +152,8 @@ impl<'a> Lexer<'a> {
             peek: None,
             pos: 0,
             eof: false,
+            delimiter_stack: vec![],
+            string_mode: false
         }
     }
 
@@ -192,6 +207,8 @@ impl<'a> Lexer<'a> {
             n += 1;
         }
 
+        let saved_stack = self.delimiter_stack.clone();
+
         for _ in 1..n {
             let _ = self.lex_token(syms);
         }
@@ -199,6 +216,7 @@ impl<'a> Lexer<'a> {
         let token = self.lex_token(syms);
 
         // rewind to where we started
+        self.delimiter_stack = saved_stack;
         self.eof = eof;
         self.pos = starting_pos;
         self.chars = self.input[starting_pos..(self.input.len())]
@@ -221,10 +239,17 @@ impl<'a> Lexer<'a> {
     }
 
     fn lex_token(&mut self, syms: &mut SymbolMap) -> Result<Spanned<Token<'a>>, Spanned<LexError>> {
-        self.skip_ignored_input()?;
-
-        let start = self.pos;
-        let result = self.lex_token_inner(syms);
+        let start;
+        let result;
+        if self.string_mode {
+            self.string_mode = false;
+            start = self.pos;
+            result = self.lex_string_segment();
+        } else {
+            self.skip_ignored_input()?;
+            start = self.pos;
+            result = self.lex_token_inner(syms);
+        }
         let end = self.pos;
         let span = Span::new(start, end);
 
@@ -463,21 +488,69 @@ impl<'a> Lexer<'a> {
         }))
     }
 
+    fn is_inside_string(&mut self) -> bool {
+        match self.delimiter_stack.last() {
+            Some(Delimiter::DoubleQuote) |
+            Some(Delimiter::SingleQuote) |
+            Some(Delimiter::Backtick) => true,
+            _ => false
+        }
+    }
+
     fn lex_string(&mut self) -> Result<Option<Token<'a>>, LexError> {
         if self.read('"') {
-            let start_pos = self.pos;
-            self.read_until('"');
-            let end_pos = self.pos;
-
-            if self.read('"') {
-                let string = &self.input[start_pos..end_pos];
-
-                Ok(Some(Token::String(string)))
-            } else {
-                Err(LexError::UnclosedString)
-            }
+            self.delimiter_stack.push(Delimiter::DoubleQuote);
+        } else if self.read('\'') {
+            self.delimiter_stack.push(Delimiter::SingleQuote);
+        } else if self.read('`') {
+            self.delimiter_stack.push(Delimiter::Backtick);
         } else {
-            Ok(None)
+            return Ok(None);
+        }
+
+        Ok(Some(self.lex_string_segment()?))
+    }
+
+    fn lex_string_segment(&mut self) -> Result<Token<'a>, LexError> {
+        let start_pos = self.pos;
+
+        let delimiter;
+        match self.delimiter_stack.last() {
+            Some(Delimiter::DoubleQuote) => delimiter = '"',
+            Some(Delimiter::SingleQuote) => delimiter = '\'',
+            Some(Delimiter::Backtick) => delimiter = '`',
+            _ => panic!("bad lexer state"),
+        };
+
+        let mut escape_flag = false;
+        loop {
+            if let Some(c) = self.chars.peek() {
+                if *c == '\\' {
+                    self.advance();
+                    if escape_flag {
+                        escape_flag = false;
+                    } else {
+                        escape_flag = true;
+                    }
+                } else if (*c == delimiter) && !escape_flag {
+                    self.delimiter_stack.pop();
+                    self.advance();
+                    let end_pos = self.pos - 1;
+                    let string = &self.input[start_pos..end_pos];
+
+                    return Ok(Token::String(string));
+                } else if *c == '{' && !escape_flag && (delimiter != '\'') {
+                    let end_pos = self.pos;
+                    let string = &self.input[start_pos..end_pos];
+
+                    return Ok(Token::String(string));
+                } else {
+                    self.advance();
+                    escape_flag = false
+                }
+            } else {
+                return Err(LexError::UnclosedString);
+            }
         }
     }
 
@@ -544,8 +617,36 @@ impl<'a> Lexer<'a> {
                 ')' => Token::Ctrl(Ctrl::RightParen),
                 '[' => Token::Ctrl(Ctrl::LeftBracket),
                 ']' => Token::Ctrl(Ctrl::RightBracket),
-                '{' => Token::Ctrl(Ctrl::LeftCurly),
-                '}' => Token::Ctrl(Ctrl::RightCurly),
+                '{' => {
+                    let token =
+                    if self.is_inside_string() {
+                        Token::Ctrl(Ctrl::InterpolatedLeftCurly)
+                    } else {
+                        Token::Ctrl(Ctrl::LeftCurly)
+                    };
+
+                    self.delimiter_stack.push(Delimiter::Curly);
+
+                    token
+                }
+                '}' => {
+                    if let Some(Delimiter::Curly) = self.delimiter_stack.pop() {
+                    } else {
+                        return Err(LexError::Unknown) // TODO: make this a different error
+                    }
+
+                    match self.delimiter_stack.last() {
+                        Some(Delimiter::DoubleQuote) | 
+                        Some(Delimiter::SingleQuote) | 
+                        Some(Delimiter::Backtick) => {
+                            self.string_mode = true;
+                            Token::Ctrl(Ctrl::InterpolatedRightCurly)
+                        }
+                        _ => {
+                            Token::Ctrl(Ctrl::RightCurly)
+                        }
+                    }
+                }
                 ':' => Token::Ctrl(Ctrl::Colon),
                 ';' => Token::Ctrl(Ctrl::SemiColon),
                 ',' => Token::Ctrl(Ctrl::Comma),
@@ -589,13 +690,15 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn advance(&mut self) {
+    fn advance(&mut self) -> Option<char> {
         match self.chars.next() {
             Some(c) => {
                 self.pos += c.len_utf8();
+                Some(c)
             }
             None => {
                 self.eof = true;
+                None
             }
         }
     }
@@ -886,5 +989,113 @@ mod tests {
         let err = lexer.get_token(&mut syms).unwrap_err();
 
         assert_eq!(err.item, LexError::InvalidNumber);
+    }
+
+    #[test]
+    fn lex_three_strings() {
+        let mut syms = SymbolMap::new();
+        let input = "\"a\"'bb'`ccc`";
+        let mut lexer = Lexer::new(input);
+        let t1 = lexer.get_token(&mut syms).unwrap();
+        let t2 = lexer.get_token(&mut syms).unwrap();
+        let t3 = lexer.get_token(&mut syms).unwrap();
+
+        assert_eq!(t1.item, Token::String("a"));
+        assert_eq!(t2.item, Token::String("bb"));
+        assert_eq!(t3.item, Token::String("ccc"));
+    }
+
+    #[test]
+    fn lex_interpolated_string() {
+        let mut syms = SymbolMap::new();
+        let input = "`test{123}test`";
+        let mut lexer = Lexer::new(input);
+        let t1 = lexer.get_token(&mut syms).unwrap();
+        let t2 = lexer.get_token(&mut syms).unwrap();
+        let t3 = lexer.get_token(&mut syms).unwrap();
+        let t4 = lexer.get_token(&mut syms).unwrap();
+        let t5 = lexer.get_token(&mut syms).unwrap();
+
+        assert_eq!(t1.item, Token::String("test"));
+        assert_eq!(t2.item, Token::Ctrl(Ctrl::InterpolatedLeftCurly));
+        assert_eq!(t3.item, Token::Int(123));
+        assert_eq!(t4.item, Token::Ctrl(Ctrl::InterpolatedRightCurly));
+        assert_eq!(t5.item, Token::String("test"));
+    }
+
+    #[test]
+    fn lex_empty_interpolated_string() {
+        let syms = SymbolMap::new();
+        let input = "'{}{}{}'";
+        let tokens = vec![
+            Token::String(""),
+            Token::Ctrl(Ctrl::InterpolatedLeftCurly),
+            Token::Ctrl(Ctrl::InterpolatedRightCurly),
+            Token::String(""),
+            Token::Ctrl(Ctrl::InterpolatedLeftCurly),
+            Token::Ctrl(Ctrl::InterpolatedRightCurly),
+            Token::String(""),
+            Token::Ctrl(Ctrl::InterpolatedLeftCurly),
+            Token::Ctrl(Ctrl::InterpolatedRightCurly),
+            Token::String(""),
+        ];
+
+        assert_src_tokens(input, tokens, syms);
+    }
+
+    #[test]
+    fn lex_nested_interpolated_string() {
+        let syms = SymbolMap::new();
+        let input = "'aaa{`bbb{\"ccc{'ddd'}ccc\"}bbb`}aaa'";
+        let tokens = vec![
+            Token::String("aaa"),
+            Token::Ctrl(Ctrl::InterpolatedLeftCurly),
+            Token::String("bbb"),
+            Token::Ctrl(Ctrl::InterpolatedLeftCurly),
+            Token::String("ccc"),
+            Token::Ctrl(Ctrl::InterpolatedLeftCurly),
+            Token::String("ddd"),
+            Token::Ctrl(Ctrl::InterpolatedRightCurly),
+            Token::String("ccc"),
+            Token::Ctrl(Ctrl::InterpolatedRightCurly),
+            Token::String("bbb"),
+            Token::Ctrl(Ctrl::InterpolatedRightCurly),
+            Token::String("aaa"),
+        ];
+
+        assert_src_tokens(input, tokens, syms);
+    }
+
+    #[test]
+    fn lex_map_inside_a_string() {
+        let mut syms = SymbolMap::new();
+        let input = "'start{ {key: true} }end'";
+        let tokens = vec![
+            Token::String("start"),
+            Token::Ctrl(Ctrl::InterpolatedLeftCurly),
+            Token::Ctrl(Ctrl::LeftCurly),
+            Token::Ident(syms.get_id("key")),
+            Token::Ctrl(Ctrl::Colon),
+            Token::KeyWord(KeyWord::True),
+            Token::Ctrl(Ctrl::RightCurly),
+            Token::Ctrl(Ctrl::InterpolatedRightCurly),
+            Token::String("end"),
+        ];
+
+        assert_src_tokens(input, tokens, syms);
+    }
+
+    #[test]
+    fn lex_interpolated_string_with_spaces() {
+        let syms = SymbolMap::new();
+        let input = "'start {} end'";
+        let tokens = vec![
+            Token::String("start "),
+            Token::Ctrl(Ctrl::InterpolatedLeftCurly),
+            Token::Ctrl(Ctrl::InterpolatedRightCurly),
+            Token::String(" end"),
+        ];
+
+        assert_src_tokens(input, tokens, syms);
     }
 }

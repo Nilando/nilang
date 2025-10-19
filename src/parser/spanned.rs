@@ -31,7 +31,7 @@ impl Span {
 
 pub struct SpanSnippet {
     pub line: usize,
-    pub line_count: usize,
+    pub _line_count: usize,
     pub start: usize,
     pub end: usize,
     pub source_line: String
@@ -58,7 +58,7 @@ pub fn retrieve_span_snippet(path: &String, span: Span) -> io::Result<SpanSnippe
 
             return Ok(SpanSnippet {
                 line: line_number,
-                line_count,
+                _line_count: line_count,
                 start: col_start,
                 end: col_end,
                 source_line: line.to_string(),

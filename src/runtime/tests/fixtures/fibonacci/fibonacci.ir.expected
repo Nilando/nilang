@@ -3,7 +3,7 @@ fn1 (n_0) {
 block0:
   t1 = NEW_LIST
   t2 = 0
-  t1[t2] = t2
+  t1 << t2
   cur_0 = 1
   next block1(t2, cur_0)
 

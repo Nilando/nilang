@@ -1,23 +1,22 @@
 ========= FILE ./src/runtime/tests/fixtures/sym_intrinsic/sym_intrinsic.bytecode.actual ========
 === FN 0 START ===
-LIST 2
+LIST 1
 LOC  0, 0
-INT  3, 0
-MEMS 2[3], 0
+PUSH 1, 0
 SYM  0, #18
-INT  1, 1
-MEMS 2[1], 0
-COPY 0, 3
-LEN 3, 2
-LT   3, 0, 3
-JNT  8, 3
-MEML 4, 2[0]
-SYM  3, #4
-ARG  4
-CALL 3, 3
-OUT  3
-ADD  0, 0, 1
-JMP  -9
+PUSH 1, 0
+INT  0, 0
+LEN 2, 1
+LT   2, 0, 2
+JNT  9, 2
+MEML 3, 1[0]
+SYM  2, #4
+ARG  3
+CALL 2, 2
+OUT  2
+INT  2, 1
+ADD  0, 0, 2
+JMP  -10
 LDN  0
 RTN  0
 === END ===

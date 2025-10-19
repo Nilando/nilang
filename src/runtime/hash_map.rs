@@ -190,7 +190,7 @@ impl<'gc> GcHashMap<'gc> {
                     let v1 = Value::from(key);
                     let v2 = Value::from(&entry.key);
 
-                    if let Ok(Value::Bool(true)) = equal(v1, v2) {
+                    if let Value::Bool(true) = equal(v1, v2) {
                         return Some(probe_pos);
                     }
                 }
@@ -374,7 +374,7 @@ mod tests {
                 let key = Value::Int(i).as_tagged(mu);
                 let found = Value::from(&map.get(&key).unwrap());
 
-                if let Ok(Value::Bool(true)) = equal(found, Value::Int(i)) {
+                if let Value::Bool(true) = equal(found, Value::Int(i)) {
                 } else {
                     assert!(false)
                 }

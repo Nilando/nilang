@@ -4,43 +4,43 @@ block0:
   m_0 = NEW_MAP
   t2 = 0
   t3 = NEW_LIST
-  t3[t2] = t2
-  t7 = 1
-  t3[t7] = t2
+  t3 << t2
+  t3 << t2
   m_0[t3] = t2
+  t8 = 1
   t9 = NEW_LIST
-  t9[t2] = t2
-  t9[t7] = t7
-  m_0[t9] = t7
+  t9 << t2
+  t9 << t8
+  m_0[t9] = t8
   t14 = 2
   t15 = NEW_LIST
-  t15[t2] = t7
-  t15[t7] = t2
+  t15 << t8
+  t15 << t2
   m_0[t15] = t14
   t20 = 3
   t21 = NEW_LIST
-  t21[t2] = t7
-  t21[t7] = t7
+  t21 << t8
+  t21 << t8
   m_0[t21] = t20
   PRINT m_0
   t27 = NEW_LIST
-  t27[t2] = t2
-  t27[t7] = t2
+  t27 << t2
+  t27 << t2
   t32 = m_0[t27]
   PRINT t32
   t34 = NEW_LIST
-  t34[t2] = t2
-  t34[t7] = t7
+  t34 << t2
+  t34 << t8
   t39 = m_0[t34]
   PRINT t39
   t41 = NEW_LIST
-  t41[t2] = t7
-  t41[t7] = t2
+  t41 << t8
+  t41 << t2
   t46 = m_0[t41]
   PRINT t46
   t48 = NEW_LIST
-  t48[t2] = t7
-  t48[t7] = t7
+  t48 << t8
+  t48 << t8
   t53 = m_0[t48]
   PRINT t53
   t55 = null

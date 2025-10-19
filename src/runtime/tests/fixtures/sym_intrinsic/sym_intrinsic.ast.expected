@@ -17,7 +17,13 @@
                         Spanned {
                             item: Value(
                                 String(
-                                    "blah",
+                                    SegmentedString {
+                                        segments: [
+                                            String(
+                                                "blah",
+                                            ),
+                                        ],
+                                    },
                                 ),
                             ),
                             span: Span {

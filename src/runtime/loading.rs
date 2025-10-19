@@ -51,9 +51,8 @@ pub fn load_program<'gc>(program: Vec<ByteCodeFunc>, path: Option<&str>, mu: &'g
                     LoadedLocal::Func(fn_ptr)
                 }
                 Local::String(s) => {
-                    // TODO: this isn't efficient
+                    let len = s.len();
                     let mut chars = s.chars();
-                    let len = chars.clone().count();
                     let gc_text = mu.alloc_array_from_fn(len, |_| chars.next().unwrap());
 
                     LoadedLocal::Text(gc_text)

@@ -285,7 +285,13 @@
                 src: Spanned {
                     item: Value(
                         String(
-                            "DELETED",
+                            SegmentedString {
+                                segments: [
+                                    String(
+                                        "DELETED",
+                                    ),
+                                ],
+                            },
                         ),
                     ),
                     span: Span {

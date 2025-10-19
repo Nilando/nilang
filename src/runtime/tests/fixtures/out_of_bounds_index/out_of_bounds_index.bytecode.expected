@@ -1,0 +1,9 @@
+========= FILE ./src/runtime/tests/fixtures/out_of_bounds_index/out_of_bounds_index.bytecode.actual ========
+=== FN 0 START ===
+LIST 1
+INT  0, 0
+MEML 0, 1[0]
+OUT  0
+LDN  0
+RTN  0
+=== END ===

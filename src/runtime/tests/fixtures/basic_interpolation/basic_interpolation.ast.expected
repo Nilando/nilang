@@ -1,0 +1,52 @@
+========= FILE ./src/runtime/tests/fixtures/basic_interpolation/basic_interpolation.ast.actual ========
+[
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Value(
+                        String(
+                            SegmentedString {
+                                segments: [
+                                    String(
+                                        "Hello, ",
+                                    ),
+                                    Expr(
+                                        Spanned {
+                                            item: Value(
+                                                String(
+                                                    SegmentedString {
+                                                        segments: [
+                                                            String(
+                                                                "interpolated",
+                                                            ),
+                                                        ],
+                                                    },
+                                                ),
+                                            ),
+                                            span: Span {
+                                                start: 15,
+                                                end: 30,
+                                            },
+                                        },
+                                    ),
+                                    String(
+                                        " world!",
+                                    ),
+                                ],
+                            },
+                        ),
+                    ),
+                    span: Span {
+                        start: 6,
+                        end: 39,
+                    },
+                },
+            ),
+            span: Span {
+                start: 0,
+                end: 40,
+            },
+        },
+    ),
+]

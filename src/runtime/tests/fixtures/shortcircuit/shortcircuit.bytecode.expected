@@ -1,0 +1,52 @@
+========= FILE ./src/runtime/tests/fixtures/shortcircuit/shortcircuit.bytecode.actual ========
+=== FN 1 START ===
+JNT  2, 0
+JMP  2
+JMP  8
+INT  0, 2
+NEQ  0, 1, 0
+JNT  2, 0
+JMP  2
+JMP  3
+INT  0, 3
+NEQ  0, 2, 0
+JNT  3, 0
+LOC  0, 0
+OUT  0
+LDN  0
+RTN  0
+=== END ===
+=== FN 0 START ===
+LOC  4, 0
+BOOL 3, false
+INT  2, 2
+INT  1, 3
+ARG  3
+ARG  2
+ARG  1
+CALL 0, 4
+BOOL 6, true
+ARG  6
+ARG  2
+ARG  1
+CALL 0, 4
+INT  5, 0
+ARG  6
+ARG  5
+ARG  1
+CALL 0, 4
+ARG  6
+ARG  5
+ARG  5
+CALL 0, 4
+ARG  3
+ARG  5
+ARG  1
+CALL 0, 4
+ARG  3
+ARG  2
+ARG  1
+CALL 0, 4
+LDN  0
+RTN  0
+=== END ===

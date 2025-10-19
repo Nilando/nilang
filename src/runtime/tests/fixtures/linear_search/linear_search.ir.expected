@@ -36,14 +36,11 @@ block0:
   linear_search_0 = fn1
   t1 = NEW_LIST
   t2 = 0
-  t1[t2] = t2
-  t5 = 1
-  t1[t5] = t2
+  t1 << t2
+  t1 << t2
   t6 = 420
-  t7 = 2
-  t1[t7] = t6
-  t9 = 3
-  t1[t9] = t2
+  t1 << t6
+  t1 << t2
   t11 = 4
   STORE_ARG t1
   STORE_ARG t11

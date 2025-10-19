@@ -1,0 +1,12 @@
+========= FILE ./src/runtime/tests/fixtures/not_op_assignment_bug/not_op_assignment_bug.bytecode.actual ========
+=== FN 0 START ===
+BOOL 1, true
+JNT  3, 1
+BOOL 0, false
+JMP  2
+COPY 0, 1
+OUT  0
+OUT  1
+LDN  0
+RTN  0
+=== END ===

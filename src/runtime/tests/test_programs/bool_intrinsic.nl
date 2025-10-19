@@ -1,8 +1,8 @@
 vals = [
   null,
   false,
-  true,
   0,
+  true,
   1,
   1.234,
   [],

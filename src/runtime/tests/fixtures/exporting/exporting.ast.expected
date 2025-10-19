@@ -18,7 +18,13 @@
                     Spanned {
                         item: Value(
                             String(
-                                "flag is set",
+                                SegmentedString {
+                                    segments: [
+                                        String(
+                                            "flag is set",
+                                        ),
+                                    ],
+                                },
                             ),
                         ),
                         span: Span {

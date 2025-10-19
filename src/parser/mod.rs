@@ -15,7 +15,8 @@ pub use error::{ParseError, ParseErrorItem};
 use stmt::stmt;
 
 use super::symbol_map::{SymID, SymbolMap};
-use crate::op::BinaryOp;
+
+pub use value::{SegmentedString, StringSegment};
 
 use std::cell::RefCell;
 use std::rc::Rc;

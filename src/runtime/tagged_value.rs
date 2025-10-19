@@ -160,11 +160,15 @@ impl<'gc> TaggedValue<'gc> {
                 let raw = self.ptr.get_stripped_raw() as u64;
 
                 match TaggedValue::unpack(raw) {
-                    Value::Null | Value::Bool(false) => false,
+                    Value::Null | 
+                    Value::Int(0) | 
+                    Value::Bool(false) => false,
                     _ => true
                 }
             }
-            _ => true,
+            _ => {
+                Value::from(self).is_truthy()
+            }
         }
     }
 

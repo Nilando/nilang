@@ -2,13 +2,14 @@ use sandpit::{Gc, Mutator};
 
 use crate::symbol_map::{BOOL_SYM, FLOAT_SYM, FN_SYM, INT_SYM, LIST_SYM, MAP_SYM, NULL_SYM, STR_SYM, SYM_SYM};
 
+use super::error::RuntimeErrorKind;
 use super::hash_map::GcHashMap;
 use super::list::List;
 use super::string::VMString;
-use super::tagged_value::TaggedValue;
 use super::value::Value;
+use super::RuntimeError;
 
-pub fn add<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, String> {
+pub fn add<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, RuntimeError> {
     match (lhs, rhs) {
         (Value::Int(lhs), Value::Int(rhs)) => Ok(match lhs.checked_add(rhs) {
             Some(val) => Value::Int(val),
@@ -18,15 +19,19 @@ pub fn add<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, String> 
         (Value::Float(f), Value::Int(i)) | (Value::Int(i), Value::Float(f)) => {
             Ok(Value::Float(f + i as f64))
         }
-        (lhs, rhs) => Err(format!(
-            "Attempted to add {} with {}",
-            lhs.type_str(),
-            rhs.type_str()
-        )),
+        (lhs, rhs) => Err(RuntimeError::new(
+            RuntimeErrorKind::TypeError,
+            Some(format!(
+                "Attempted to add {} with {}",
+                lhs.type_str(),
+                rhs.type_str()
+            )),
+            None
+        ))
     }
 }
 
-pub fn sub<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, String> {
+pub fn sub<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, RuntimeError> {
     match (lhs, rhs) {
         (Value::Int(lhs), Value::Int(rhs)) => Ok(match lhs.checked_sub(rhs) {
             Some(val) => Value::Int(val),
@@ -35,15 +40,19 @@ pub fn sub<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, String> 
         (Value::Float(lhs), Value::Float(rhs)) => Ok(Value::Float(lhs - rhs)),
         (Value::Float(lhs), Value::Int(rhs)) => Ok(Value::Float(lhs - rhs as f64)),
         (Value::Int(lhs), Value::Float(rhs)) => Ok(Value::Float(lhs as f64 - rhs)),
-        (lhs, rhs) => Err(format!(
-            "Attempted to subtract {} by {}",
-            lhs.type_str(),
-            rhs.type_str()
-        )),
+        (lhs, rhs) => Err(RuntimeError::new(
+            RuntimeErrorKind::TypeError,
+            Some(format!(
+                "Attempted to subtract {} with {}",
+                lhs.type_str(),
+                rhs.type_str()
+            )),
+            None
+        ))
     }
 }
 
-pub fn multiply<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, String> {
+pub fn multiply<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, RuntimeError> {
     match (lhs, rhs) {
         (Value::Int(lhs), Value::Int(rhs)) => Ok(match lhs.checked_mul(rhs) {
             Some(val) => Value::Int(val),
@@ -53,17 +62,25 @@ pub fn multiply<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, Str
         (Value::Float(f), Value::Int(i)) | (Value::Int(i), Value::Float(f)) => {
             Ok(Value::Float(f * i as f64))
         }
-        (lhs, rhs) => Err(format!(
-            "Attempted to multiply {} by {}",
-            lhs.type_str(),
-            rhs.type_str()
-        )),
+        (lhs, rhs) => Err(RuntimeError::new(
+            RuntimeErrorKind::TypeError,
+            Some(format!(
+                "Attempted to multiply {} with {}",
+                lhs.type_str(),
+                rhs.type_str()
+            )),
+            None
+        ))
     }
 }
 
-pub fn divide<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, String> {
+pub fn divide<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, RuntimeError> {
     match (lhs, rhs) {
-        (_, Value::Int(0)) | (_, Value::Float(0.0))=> Err("Attempted to divide by zero.".to_string()),
+        (_, Value::Int(0)) | (_, Value::Float(0.0))=> Err(RuntimeError::new(
+            RuntimeErrorKind::DivideByZero,
+            Some(format!("Attempted to divide by zero")),
+            None
+        )),
         (Value::Int(lhs), Value::Int(rhs)) => Ok(match lhs.checked_div(rhs) {
             Some(val) => Value::Int(val),
             None => Value::Float(lhs as f64 / rhs as f64),
@@ -71,104 +88,144 @@ pub fn divide<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, Strin
         (Value::Float(lhs), Value::Float(rhs)) => Ok(Value::Float(lhs / rhs)),
         (Value::Float(lhs), Value::Int(rhs)) => Ok(Value::Float(lhs / rhs as f64)),
         (Value::Int(lhs), Value::Float(rhs)) => Ok(Value::Float(lhs as f64 / rhs)),
-        (lhs, rhs) => Err(format!(
-            "Attempted to divide {} by {}",
-            lhs.type_str(),
-            rhs.type_str()
-        )),
+        (lhs, rhs) => Err(RuntimeError::new(
+            RuntimeErrorKind::TypeError,
+            Some(format!(
+                "Attempted to divide {} with {}",
+                lhs.type_str(),
+                rhs.type_str()
+            )),
+            None
+        ))
     }
 }
 
-pub fn modulo<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, String> {
+pub fn modulo<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, RuntimeError> {
     match (lhs, rhs) {
         (Value::Float(lhs), Value::Float(rhs)) => Ok(Value::Float(lhs % rhs)),
         (Value::Int(lhs), Value::Int(rhs)) => Ok(Value::Int(lhs % rhs)),
         (Value::Float(lhs), Value::Int(rhs)) => Ok(Value::Float(lhs % rhs as f64)),
         (Value::Int(lhs), Value::Float(rhs)) => Ok(Value::Float(lhs as f64 % rhs)),
-        (lhs, rhs) => Err(format!(
-            "Attempted to modulo {} by {}",
-            lhs.type_str(),
-            rhs.type_str()
-        )),
+        (lhs, rhs) => Err(RuntimeError::new(
+            RuntimeErrorKind::TypeError,
+            Some(format!(
+                "Attempted to modulo {} with {}",
+                lhs.type_str(),
+                rhs.type_str()
+            )),
+            None
+        ))
     }
 }
 
-pub fn less_than<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, String> {
+pub fn less_than<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, RuntimeError> {
     match (lhs, rhs) {
         (Value::Float(lhs), Value::Float(rhs)) => Ok(Value::Bool(lhs < rhs)),
         (Value::Int(lhs), Value::Int(rhs)) => Ok(Value::Bool(lhs < rhs)),
         (Value::Float(lhs), Value::Int(rhs)) => Ok(Value::Bool(lhs < rhs as f64)),
         (Value::Int(lhs), Value::Float(rhs)) => Ok(Value::Bool((lhs as f64) < rhs)),
-        (lhs, rhs) => Err(format!(
-            "Attempted to perform a comparison between {} and {}",
-            lhs.type_str(),
-            rhs.type_str()
-        )),
+        (lhs, rhs) => Err(RuntimeError::new(
+            RuntimeErrorKind::TypeError,
+            Some(format!(
+                "Attempted to perform comparison between {} and {}",
+                lhs.type_str(),
+                rhs.type_str()
+            )),
+            None
+        ))
     }
 }
 
-pub fn less_than_or_equal<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, String> {
+pub fn less_than_or_equal<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, RuntimeError> {
     match (lhs, rhs) {
         (Value::Float(lhs), Value::Float(rhs)) => Ok(Value::Bool(lhs <= rhs)),
         (Value::Int(lhs), Value::Int(rhs)) => Ok(Value::Bool(lhs <= rhs)),
         (Value::Float(lhs), Value::Int(rhs)) => Ok(Value::Bool(lhs <= rhs as f64)),
         (Value::Int(lhs), Value::Float(rhs)) => Ok(Value::Bool((lhs as f64) <= rhs)),
-        (lhs, rhs) => Err(format!(
-            "Attempted to perform a comparison between {} and {}",
-            lhs.type_str(),
-            rhs.type_str()
-        )),
+        (lhs, rhs) => Err(RuntimeError::new(
+            RuntimeErrorKind::TypeError,
+            Some(format!(
+                "Attempted to perform comparison between {} and {}",
+                lhs.type_str(),
+                rhs.type_str()
+            )),
+            None
+        ))
     }
 }
 
-pub fn greater_than<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, String> {
+pub fn greater_than<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, RuntimeError> {
     match (lhs, rhs) {
         (Value::Float(lhs), Value::Float(rhs)) => Ok(Value::Bool(lhs > rhs)),
         (Value::Int(lhs), Value::Int(rhs)) => Ok(Value::Bool(lhs > rhs)),
         (Value::Float(lhs), Value::Int(rhs)) => Ok(Value::Bool(lhs > rhs as f64)),
         (Value::Int(lhs), Value::Float(rhs)) => Ok(Value::Bool((lhs as f64) > rhs)),
-        (lhs, rhs) => Err(format!(
-            "Attempted to perform a comparison between {} and {}",
-            lhs.type_str(),
-            rhs.type_str()
-        )),
+        (lhs, rhs) => Err(RuntimeError::new(
+            RuntimeErrorKind::TypeError,
+            Some(format!(
+                "Attempted to perform comparison between {} and {}",
+                lhs.type_str(),
+                rhs.type_str()
+            )),
+            None
+        ))
     }
 }
 
-pub fn greater_than_or_equal<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, String> {
+pub fn greater_than_or_equal<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, RuntimeError> {
     match (lhs, rhs) {
         (Value::Float(lhs), Value::Float(rhs)) => Ok(Value::Bool(lhs >= rhs)),
         (Value::Int(lhs), Value::Int(rhs)) => Ok(Value::Bool(lhs >= rhs)),
         (Value::Float(lhs), Value::Int(rhs)) => Ok(Value::Bool(lhs >= rhs as f64)),
         (Value::Int(lhs), Value::Float(rhs)) => Ok(Value::Bool((lhs as f64) >= rhs)),
-        (lhs, rhs) => Err(format!(
-            "Attempted to perform a comparison between {} and {}",
-            lhs.type_str(),
-            rhs.type_str()
-        )),
+        (lhs, rhs) => Err(RuntimeError::new(
+            RuntimeErrorKind::TypeError,
+            Some(format!(
+                "Attempted to perform comparison between {} and {}",
+                lhs.type_str(),
+                rhs.type_str()
+            )),
+            None
+        ))
     }
 }
 
-pub fn equal<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, String> {
-    Ok(Value::Bool(lhs.is_equal_to(&rhs)))
+pub fn equal<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Value<'gc>{
+    Value::Bool(lhs.is_equal_to(&rhs))
 }
 
-pub fn not_equal<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, String> {
-    Ok(Value::Bool(!lhs.is_equal_to(&rhs)))
+pub fn not_equal<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Value<'gc> {
+    Value::Bool(!lhs.is_equal_to(&rhs))
 }
 
 pub fn mem_load<'gc>(
     store: Value<'gc>,
     key: Value<'gc>,
     mu: &'gc Mutator,
-) -> Result<Value<'gc>, String> {
+) -> Result<Value<'gc>, RuntimeError> {
     match (&store, key) {
         (Value::List(list), Value::Int(idx)) => {
-            if idx >= 0  {
-                Ok(list.at(idx as usize))
+            let out_of_bounds = if idx >= 0  {
+                list.len() <= idx as usize
             } else {
-                Ok(list.at(list.len() - (idx.abs() as usize)))
+                list.len() < idx.abs() as usize
+            };
+
+            if out_of_bounds {
+                return Err(RuntimeError::new(
+                        RuntimeErrorKind::OutOfBoundsAccess,
+                        Some(format!("Attempted to access list of len {} at index {}", list.len(), idx)),
+                        None
+                    ));
             }
+
+            let adjusted_idx = if idx >= 0  {
+                idx as usize
+            } else {
+                list.len() - idx.abs() as usize
+            };
+
+            Ok(list.at(adjusted_idx))
         }
         (Value::String(s), Value::Int(idx)) => {
             if let Some(c) = s.at(usize::try_from(idx).unwrap()) {
@@ -189,11 +246,15 @@ pub fn mem_load<'gc>(
                 Ok(Value::Null)
             }
         }
-        (lhs, rhs) => Err(format!(
-            "Invalid memory access of {} via a {}",
-            lhs.type_str(),
-            rhs.type_str()
-        )),
+        (lhs, rhs) => Err(RuntimeError::new(
+            RuntimeErrorKind::TypeError,
+            Some(format!(
+                "Invalid memory access of {} via a {}",
+                lhs.type_str(),
+                rhs.type_str()
+            )),
+            None
+        ))
         // here you could check if the thing we are loading is a function,
         // and if its first arg is Value<'gc>, load the thing we are calling this on
         // into Value<'gc> as a upvalue?
@@ -206,15 +267,9 @@ pub fn mem_store<'gc>(
     key: Value<'gc>,
     src: Value<'gc>,
     mu: &'gc Mutator,
-) -> Result<(), String> {
+) -> Result<(), RuntimeError> {
     match (store, key) {
         (Value::List(list), Value::Int(idx)) => {
-            let null = TaggedValue::new_null();
-            // TODO: missing logic here for if idx is negative
-            while list.len() <= usize::try_from(idx).unwrap() {
-                list.push(null.clone(), mu);
-            }
-
             list.set(
                 usize::try_from(idx).unwrap(),
                 src.as_tagged(mu),
@@ -229,17 +284,21 @@ pub fn mem_store<'gc>(
             Ok(())
         }
         (Value::String(_), Value::Int(_)) => {
-            todo!("xxxxx")
+            todo!("assign to char index of string?")
         }
-        (lhs, rhs) => Err(format!(
-            "Invalid memory access of {} via a {}",
-            lhs.type_str(),
-            rhs.type_str()
-        )),
+        (lhs, rhs) => Err(RuntimeError::new(
+            RuntimeErrorKind::TypeError,
+            Some(format!(
+                "Invalid memory access of {} via a {}",
+                lhs.type_str(),
+                rhs.type_str()
+            )),
+            None
+        ))
     }
 }
 
-pub fn push<'gc>(lhs: Value<'gc>, rhs: Value<'gc>, mu: &'gc Mutator) -> Result<(), String> {
+pub fn push<'gc>(lhs: Value<'gc>, rhs: Value<'gc>, mu: &'gc Mutator) -> Result<(), RuntimeError> {
     match (lhs, rhs) {
         (Value::String(a), Value::String(b)) => {
             for i in 0..b.len() {
@@ -249,17 +308,21 @@ pub fn push<'gc>(lhs: Value<'gc>, rhs: Value<'gc>, mu: &'gc Mutator) -> Result<(
         (Value::List(list), any) => {
             list.push(any.as_tagged(mu), mu);
         }
-        (lhs, rhs) => return Err(format!(
-            "Attempted to push {} into a {}",
-            lhs.type_str(),
-            rhs.type_str()
-        )),
+        (lhs, rhs) => return Err(RuntimeError::new(
+            RuntimeErrorKind::TypeError,
+            Some(format!(
+                "Attempted to push {} into a {}",
+                lhs.type_str(),
+                rhs.type_str()
+            )),
+            None
+        ))
     };
 
     Ok(())
 }
 
-pub fn pop<'gc>(store: Value<'gc>, mu: &'gc Mutator) -> Result<Value<'gc>, String> {
+pub fn pop<'gc>(store: Value<'gc>, mu: &'gc Mutator) -> Result<Value<'gc>, RuntimeError> {
     match store {
         Value::String(s) => match s.pop_char() {
             None => Ok(Value::Null),
@@ -271,15 +334,18 @@ pub fn pop<'gc>(store: Value<'gc>, mu: &'gc Mutator) -> Result<Value<'gc>, Strin
             }
         },
         Value::List(list) => Ok(Value::from(&list.pop())),
-        item => {
-            return Err(
-                format!("Unexpected arg of type {}", item.type_str()),
-            )
-        }
+        _ => return Err(RuntimeError::new(
+            RuntimeErrorKind::TypeError,
+            Some(format!(
+                "Attempted to call pop on a {} type",
+                store.type_str(),
+            )),
+            None
+        ))
     }
 }
 
-pub fn len<'gc>(val: Value<'gc>) -> Result<Value<'gc>, String> {
+pub fn len<'gc>(val: Value<'gc>) -> Result<Value<'gc>, RuntimeError> {
     match val {
         // TODO: remove 'as' casts
         // should be fine for now as no list should ever get close to i64::MAX length
@@ -288,18 +354,21 @@ pub fn len<'gc>(val: Value<'gc>) -> Result<Value<'gc>, String> {
         Value::Func(f) => { 
             Ok(Value::Int(f.arity() as i64))
         }
-        item => {
-            return Err(
-                format!("Attempted to get length of {} value", item.type_str()),
-            )
-        }
+        _ => return Err(RuntimeError::new(
+            RuntimeErrorKind::TypeError,
+            Some(format!(
+                "Attempted to call len on a {} type",
+                val.type_str(),
+            )),
+            None
+        ))
     }
 }
 
 pub fn clone<'gc>(
     arg: Value<'gc>,
     mu: &'gc Mutator<'gc>,
-) -> Result<Value<'gc>, String> {
+) -> Value<'gc> {
     match arg {
         Value::String(old) => {
             let new = Gc::new(mu, VMString::alloc_empty(mu));
@@ -310,9 +379,9 @@ pub fn clone<'gc>(
                 new.push_char(c, mu);
             }
 
-            Ok(Value::String(new))
+            Value::String(new)
         }
-        Value::Map(_) => todo!("TODO: clone map"),
+        Value::Map(_) => todo!("clone map"),
         Value::List(old) => {
             let new_list = Gc::new(mu, List::alloc(mu));
 
@@ -322,23 +391,23 @@ pub fn clone<'gc>(
                 new_list.push(item.as_tagged(mu), mu);
             }
 
-            Ok(Value::List(new_list))
+            Value::List(new_list)
         }
-        _ => Ok(arg),
+        _ => arg,
     }
 }
 
-pub fn ttype<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, String> {
+pub fn ttype<'gc>(arg: Value<'gc>) -> Value<'gc> {
     match arg {
-        Value::Null => Ok(Value::SymId(NULL_SYM)),
-        Value::Bool(_) => Ok(Value::SymId(BOOL_SYM)),
-        Value::SymId(_) => Ok(Value::SymId(SYM_SYM)),
-        Value::Float(_) => Ok(Value::SymId(FLOAT_SYM)),
-        Value::Int(_)  => Ok(Value::SymId(INT_SYM)),
-        Value::String(_) => Ok(Value::SymId(STR_SYM)),
-        Value::List(_) => Ok(Value::SymId(LIST_SYM)),
-        Value::Map(_) => Ok(Value::SymId(MAP_SYM)),
-        Value::Func(_) => Ok(Value::SymId(FN_SYM)),
+        Value::Null => Value::SymId(NULL_SYM),
+        Value::Bool(_) => Value::SymId(BOOL_SYM),
+        Value::SymId(_) => Value::SymId(SYM_SYM),
+        Value::Float(_) => Value::SymId(FLOAT_SYM),
+        Value::Int(_)  => Value::SymId(INT_SYM),
+        Value::String(_) => Value::SymId(STR_SYM),
+        Value::List(_) => Value::SymId(LIST_SYM),
+        Value::Map(_) => Value::SymId(MAP_SYM),
+        Value::Func(_) => Value::SymId(FN_SYM),
     }
 }
 
@@ -346,7 +415,7 @@ pub fn delete<'gc>(
     store: Value<'gc>,
     key: Value<'gc>,
     mu: &'gc Mutator,
-) -> Result<Value<'gc>, String> {
+) -> Result<Value<'gc>, RuntimeError> {
     match store {
         Value::Map(map) => {
             if let Some(k) = map.delete(key.as_tagged(mu)) {
@@ -355,25 +424,39 @@ pub fn delete<'gc>(
                 Ok(Value::Null)
             }
         }
-        _ => {
-            return Err(
-                format!("Unexpected arg of type {}", store.type_str()),
-            )
-        }
+        _ => return Err(RuntimeError::new(
+            RuntimeErrorKind::TypeError,
+            Some(format!(
+                "Attempted to call delete on a {} type",
+                store.type_str(),
+            )),
+            None
+        ))
     }
 }
 
-pub fn bind<'gc>(func: Value<'gc>, arg: Value<'gc>, mu: &'gc Mutator<'gc>) -> Result<Value<'gc>, String> {
+pub fn bind<'gc>(func: Value<'gc>, arg: Value<'gc>, mu: &'gc Mutator<'gc>) -> Result<Value<'gc>, RuntimeError> {
     match func {
         Value::Func(f) => { 
             if f.arity() == 0 {
-                return Err(format!("Cannot bind to a 0 arg Func"));
+                return Err(RuntimeError::new(
+                        RuntimeErrorKind::InvalidBind,
+                        Some(format!("Attempted to call bind on a 0 arg function")),
+                        None
+                ));
             }
 
             let partial = f.bind(mu, arg.as_tagged(mu));
 
             Ok(Value::Func(partial))
         }
-        _ => Err(format!("Unexpected arg of type {}", func.type_str())),
+        _ => return Err(RuntimeError::new(
+            RuntimeErrorKind::TypeError,
+            Some(format!(
+                "Attempted to call bind on a {} type",
+                func.type_str(),
+            )),
+            None
+        ))
     }
 }

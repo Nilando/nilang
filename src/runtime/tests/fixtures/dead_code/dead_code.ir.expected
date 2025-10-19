@@ -11,7 +11,7 @@ block0:
   b_1 = CALL b_0
   t17 = NEW_LIST
   t18 = 0
-  t17[t18] = t18
+  t17 << t18
   t17[t18] = t18
   PRINT t17
   t23 = null

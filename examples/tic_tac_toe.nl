@@ -3,17 +3,7 @@ fn print_row(row, board) {
   b = board[row][1] || " ";
   c = board[row][2] || " ";
 
-  s = " ";
-  s << " ║ ";
-  s << a;
-  s << " ║ ";
-  s << b;
-  s << " ║ ";
-  s << c;
-  s << " ║ ";
-  s << str(row);
-
-  print(s);
+  print("  ║ {a} ║ {b} ║ {c} ║ {str(row)}");
 }
 
 fn print_board(board) {
@@ -34,11 +24,10 @@ fn print_move_help() {
 
 fn read_move() {
   while true {
-    // TODO: add split and trim to std lib
     raw_move = read;
     move = [raw_move[0], raw_move[2]];
 
-    if len(move) != 2 {
+    if #move != 2 {
       print_move_help();
       continue;
     }

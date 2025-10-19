@@ -1,0 +1,65 @@
+========= FILE ./src/runtime/tests/fixtures/out_of_bounds_index/out_of_bounds_index.ast.actual ========
+[
+    Assign {
+        dest: Spanned {
+            item: Local(
+                17,
+            ),
+            span: Span {
+                start: 0,
+                end: 3,
+            },
+        },
+        src: Spanned {
+            item: Value(
+                List(
+                    [],
+                ),
+            ),
+            span: Span {
+                start: 4,
+                end: 7,
+            },
+        },
+    },
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Index {
+                        store: Spanned {
+                            item: Value(
+                                Ident(
+                                    17,
+                                ),
+                            ),
+                            span: Span {
+                                start: 14,
+                                end: 15,
+                            },
+                        },
+                        key: Spanned {
+                            item: Value(
+                                Int(
+                                    0,
+                                ),
+                            ),
+                            span: Span {
+                                start: 16,
+                                end: 18,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 14,
+                        end: 19,
+                    },
+                },
+            ),
+            span: Span {
+                start: 8,
+                end: 20,
+            },
+        },
+    ),
+]

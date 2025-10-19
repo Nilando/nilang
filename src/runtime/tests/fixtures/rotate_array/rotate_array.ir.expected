@@ -29,14 +29,13 @@ block0:
   rotate_array_0 = fn1
   t1 = NEW_LIST
   t2 = 1
-  t3 = 0
-  t1[t3] = t2
+  t1 << t2
   t4 = 2
-  t1[t2] = t4
+  t1 << t4
   t6 = 3
-  t1[t4] = t6
+  t1 << t6
   t8 = 4
-  t1[t6] = t8
+  t1 << t8
   STORE_ARG t1
   t11 = CALL rotate_array_0
   PRINT t1

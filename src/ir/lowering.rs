@@ -3,7 +3,7 @@ use super::func_builder::FuncBuilder;
 use super::tac::{FuncID, LabelID, Tac, TacConst};
 use super::VReg;
 
-use crate::parser::{Expr, LhsExpr, MapKey, Span, Spanned, Stmt, Value};
+use crate::parser::{Expr, LhsExpr, MapKey, SegmentedString, Span, Spanned, Stmt, StringSegment, Value};
 use crate::op::{BinaryOp, UnaryOp};
 use crate::symbol_map::{SymID, SymbolMap};
 
@@ -215,10 +215,11 @@ impl LoweringCtx {
                     UnaryOp::Not => {
                         let else_end = self.new_label();
                         let else_start = self.new_label();
-                        let dest = self.lower_expr(*expr);
+                        let temp = self.lower_expr(*expr);
+                        let dest = self.new_temp();
 
-                        self.emit(Tac::Jit {
-                            src: dest,
+                        self.emit(Tac::Jnt {
+                            src: temp,
                             label: else_start,
                         });
                         self.emit(Tac::LoadConst {
@@ -232,6 +233,7 @@ impl LoweringCtx {
                             src: TacConst::Bool(true),
                         });
                         self.emit_label(else_end);
+
                         dest
                     }
                     _ => {
@@ -305,7 +307,7 @@ impl LoweringCtx {
             Value::Null => self.load_const(TacConst::Null),
             Value::Float(f) => self.load_const(TacConst::Float(f)),
             Value::Bool(b) => self.load_const(TacConst::Bool(b)),
-            Value::String(s) => self.load_const(TacConst::String(s)),
+            Value::String(s) => self.lower_segmented_string(s),
             Value::Symbol(s) => self.load_const(TacConst::Sym(s)),
             Value::Global(sym_id) => self.load_global(sym_id),
             Value::Ident(sym_id) => self.lower_ident(sym_id),
@@ -313,6 +315,32 @@ impl LoweringCtx {
             Value::List(list) => self.lower_list(list),
             Value::InlineFunc { inputs, stmts } => self.lower_func(inputs, stmts, None),
         }
+    }
+
+    fn lower_segmented_string(&mut self, segmented_string: SegmentedString) -> VReg {
+        let mut store = None;
+
+        for (i, segment) in segmented_string.segments.into_iter().enumerate() {
+
+            match segment {
+                StringSegment::String(s) => {
+                    let src = self.load_const(TacConst::String(s));
+
+                    if i == 0 {
+                        store = Some(src);
+                    } else {
+                        self.emit(Tac::Push { store: store.unwrap(), src });
+                    }
+                }
+                StringSegment::Expr(e) => {
+                    let src = self.lower_expr(e);
+
+                    self.emit(Tac::Push { store: store.unwrap(), src });
+                }
+            }
+        }
+
+        store.unwrap()
     }
 
     fn load_global(&mut self, sym_id: SymID) -> VReg {
@@ -543,7 +571,7 @@ impl LoweringCtx {
                 src: TacConst::Int(i64::try_from(i).unwrap()),
             });
 
-            self.emit(Tac::MemStore { store, key, src });
+            self.emit(Tac::Push { store, src });
         }
 
         store
@@ -819,10 +847,9 @@ pub mod tests {
                 dest: 3,
                 src: TacConst::Int(0),
             },
-            Tac::MemStore {
+            Tac::Push {
                 src: 2,
                 store: 1,
-                key: 3,
             },
             Tac::LoadConst {
                 dest: 4,

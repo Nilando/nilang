@@ -70,7 +70,13 @@
                         Spanned {
                             item: Value(
                                 String(
-                                    "123",
+                                    SegmentedString {
+                                        segments: [
+                                            String(
+                                                "123",
+                                            ),
+                                        ],
+                                    },
                                 ),
                             ),
                             span: Span {
@@ -81,7 +87,13 @@
                         Spanned {
                             item: Value(
                                 String(
-                                    "1.0",
+                                    SegmentedString {
+                                        segments: [
+                                            String(
+                                                "1.0",
+                                            ),
+                                        ],
+                                    },
                                 ),
                             ),
                             span: Span {
@@ -92,7 +104,13 @@
                         Spanned {
                             item: Value(
                                 String(
-                                    "nan",
+                                    SegmentedString {
+                                        segments: [
+                                            String(
+                                                "nan",
+                                            ),
+                                        ],
+                                    },
                                 ),
                             ),
                             span: Span {
@@ -103,7 +121,13 @@
                         Spanned {
                             item: Value(
                                 String(
-                                    "bad",
+                                    SegmentedString {
+                                        segments: [
+                                            String(
+                                                "bad",
+                                            ),
+                                        ],
+                                    },
                                 ),
                             ),
                             span: Span {

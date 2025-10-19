@@ -1,0 +1,21 @@
+========= FILE ./src/runtime/tests/fixtures/not_op_assignment_bug/not_op_assignment_bug.ir.actual ========
+MAIN () {
+block0:
+  t_0 = true
+  jnt t_0 block2
+  next block1
+
+block1:
+  t7 = false
+  jump block3(t7)
+
+block2:
+  next block3(t_0)
+
+block3(t6):
+  PRINT t6
+  PRINT t_0
+  t5 = null
+  RETURN t5
+
+}

@@ -53,12 +53,18 @@
                                         lhs: Spanned {
                                             item: Value(
                                                 String(
-                                                    "oh no look out for that number!",
+                                                    SegmentedString {
+                                                        segments: [
+                                                            String(
+                                                                "oh no look out for that number!",
+                                                            ),
+                                                        ],
+                                                    },
                                                 ),
                                             ),
                                             span: Span {
                                                 start: 52,
-                                                end: 85,
+                                                end: 87,
                                             },
                                         },
                                         op: Plus,

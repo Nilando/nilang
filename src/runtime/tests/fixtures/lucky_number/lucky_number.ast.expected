@@ -50,7 +50,13 @@
                 Spanned {
                     item: Value(
                         String(
-                            "guess the lucky number: ",
+                            SegmentedString {
+                                segments: [
+                                    String(
+                                        "guess the lucky number: ",
+                                    ),
+                                ],
+                            },
                         ),
                     ),
                     span: Span {
@@ -104,7 +110,13 @@
                         Spanned {
                             item: Value(
                                 String(
-                                    "You got it!",
+                                    SegmentedString {
+                                        segments: [
+                                            String(
+                                                "You got it!",
+                                            ),
+                                        ],
+                                    },
                                 ),
                             ),
                             span: Span {
@@ -160,7 +172,13 @@
                                 Spanned {
                                     item: Value(
                                         String(
-                                            "too high!",
+                                            SegmentedString {
+                                                segments: [
+                                                    String(
+                                                        "too high!",
+                                                    ),
+                                                ],
+                                            },
                                         ),
                                     ),
                                     span: Span {
@@ -183,7 +201,13 @@
                                 Spanned {
                                     item: Value(
                                         String(
-                                            "too low :(",
+                                            SegmentedString {
+                                                segments: [
+                                                    String(
+                                                        "too low :(",
+                                                    ),
+                                                ],
+                                            },
                                         ),
                                     ),
                                     span: Span {

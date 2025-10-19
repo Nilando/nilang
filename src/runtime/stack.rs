@@ -67,8 +67,6 @@ impl<'gc> Stack<'gc> {
     pub fn pop_cf(&self) -> Option<Gc<'gc, CallFrame<'gc>>> {
         let old_cf = self.call_frames.pop()?;
 
-        // TODO: have Gc reduce vec capacity
-
         if let Some(new_cf) = self.last_cf() {
             let new_frame_start = self.frame_start.get() - new_cf.get_func().get_max_clique() as usize;
             self.frame_start.set(new_frame_start);

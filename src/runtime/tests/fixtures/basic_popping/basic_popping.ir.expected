@@ -3,25 +3,25 @@ MAIN () {
 block0:
   t0 = NEW_LIST
   t1 = 0
-  t0[t1] = t1
+  t0 << t1
   t3 = 1
-  t0[t3] = t3
+  t0 << t3
   t5 = 2
-  t0[t5] = t5
+  t0 << t5
   t7 = 3
-  t0[t7] = t7
+  t0 << t7
   t9 = 4
-  t0[t9] = t9
+  t0 << t9
   t11 = 5
-  t0[t11] = t11
+  t0 << t11
   t13 = 6
-  t0[t13] = t13
+  t0 << t13
   t15 = 7
-  t0[t15] = t15
+  t0 << t15
   t17 = 8
-  t0[t17] = t17
+  t0 << t17
   t19 = 9
-  t0[t19] = t19
+  t0 << t19
   b_0 = "abcdefghij"
   next block1(t1)
 
@@ -35,8 +35,8 @@ block2:
   POP x_0 = t0
   POP y_0 = b_0
   t32 = NEW_LIST
-  t32[t1] = x_0
-  t32[t3] = y_0
+  t32 << x_0
+  t32 << y_0
   PRINT t32
   i_2 = i_1 + t3
   jump block1(i_2)

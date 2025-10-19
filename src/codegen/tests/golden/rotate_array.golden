@@ -39,20 +39,19 @@ LDN  0
 RTN  0
 === END ===
 === FN 0 START ===
-LOC  3, 0
+LOC  2, 0
 LIST 1
-INT  2, 1
-INT  0, 0
-MEMS 1[0], 2
+INT  0, 1
+PUSH 1, 0
 INT  0, 2
-MEMS 1[2], 0
-INT  2, 3
-MEMS 1[0], 2
+PUSH 1, 0
+INT  0, 3
+PUSH 1, 0
 INT  0, 4
-MEMS 1[2], 0
+PUSH 1, 0
 ARG  1
 ARG  0
-CALL 0, 3
+CALL 0, 2
 OUT  1
 LDN  0
 RTN  0

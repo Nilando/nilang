@@ -8,7 +8,7 @@ LOC  0, 0
 CALL 0, 0
 LIST 1
 INT  0, 0
-MEMS 1[0], 0
+PUSH 1, 0
 MEMS 1[0], 0
 OUT  1
 LDN  0

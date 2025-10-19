@@ -90,7 +90,13 @@
                 src: Spanned {
                     item: Value(
                         String(
-                            "ohhhh fuuuccckkkkk",
+                            SegmentedString {
+                                segments: [
+                                    String(
+                                        "ohhhh fuuuccckkkkk",
+                                    ),
+                                ],
+                            },
                         ),
                     ),
                     span: Span {
@@ -114,7 +120,13 @@
                 src: Spanned {
                     item: Value(
                         String(
-                            "things seem to be working?",
+                            SegmentedString {
+                                segments: [
+                                    String(
+                                        "things seem to be working?",
+                                    ),
+                                ],
+                            },
                         ),
                     ),
                     span: Span {

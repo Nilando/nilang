@@ -36,23 +36,23 @@
                         },
                         Spanned {
                             item: Value(
-                                Bool(
-                                    true,
-                                ),
-                            ),
-                            span: Span {
-                                start: 28,
-                                end: 33,
-                            },
-                        },
-                        Spanned {
-                            item: Value(
                                 Int(
                                     0,
                                 ),
                             ),
                             span: Span {
-                                start: 36,
+                                start: 28,
+                                end: 30,
+                            },
+                        },
+                        Spanned {
+                            item: Value(
+                                Bool(
+                                    true,
+                                ),
+                            ),
+                            span: Span {
+                                start: 33,
                                 end: 38,
                             },
                         },
@@ -103,7 +103,13 @@
                         Spanned {
                             item: Value(
                                 String(
-                                    "",
+                                    SegmentedString {
+                                        segments: [
+                                            String(
+                                                "",
+                                            ),
+                                        ],
+                                    },
                                 ),
                             ),
                             span: Span {
@@ -114,7 +120,13 @@
                         Spanned {
                             item: Value(
                                 String(
-                                    "false",
+                                    SegmentedString {
+                                        segments: [
+                                            String(
+                                                "false",
+                                            ),
+                                        ],
+                                    },
                                 ),
                             ),
                             span: Span {

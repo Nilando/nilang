@@ -350,6 +350,7 @@ mod tests {
     use super::super::expr::expr;
     use super::super::stmt::stmt;
     use super::*;
+    use crate::parser::value::StringSegment;
     use crate::parser::ParseError;
     use crate::symbol_map::SymbolMap;
 
@@ -369,7 +370,13 @@ mod tests {
     fn print_string() {
         match parse_expr("print (\"potato\")") {
             Ok(Some(Expr::Print(v))) => {
-                assert!(v.item == Expr::Value(Value::String("potato".to_string())));
+                if let Expr::Value(Value::String(segmented_string)) = &v.item {
+                    if let StringSegment::String(s) = &segmented_string.segments[0] {
+                        return assert_eq!(s, "potato");
+                    }
+                }
+
+                assert!(false);
             }
             _ => assert!(false),
         }

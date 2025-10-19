@@ -4,6 +4,51 @@ use crate::parser::stmt::Stmt;
 use crate::parser::{Expr, Spanned};
 use crate::symbol_map::SymID;
 
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct SegmentedString {
+    pub segments: Vec<StringSegment>
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum StringSegment {
+    String(String),
+    Expr(Spanned<Expr>)
+}
+
+pub fn segmented_string<'a>(ep: Parser<'a, Spanned<Expr>>) -> Parser<'a, Value> {
+    atom_string()
+        .map(|s| StringSegment::String(s))
+        .append(
+                ep.clone()
+                .delimited(ctrl(Ctrl::InterpolatedLeftCurly), ctrl(Ctrl::InterpolatedRightCurly))
+                .map(|e| StringSegment::Expr(e))
+                .append(
+                    atom_string()
+                    .map(|s| StringSegment::String(s))
+                )
+                .zero_or_more()
+
+        )
+        .map(|(atom_str, interpolated_section)| {
+            let mut segments = vec![];
+
+            segments.push(atom_str);
+
+            for (expr, str) in interpolated_section.into_iter() {
+                segments.push(expr);
+                if let StringSegment::String(s) = str {
+                    if !s.is_empty() {
+                        segments.push(StringSegment::String(s));
+                    }
+                }
+            }
+
+
+            Value::String(SegmentedString { segments })
+        })
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Ident(SymID),
@@ -12,7 +57,7 @@ pub enum Value {
     Float(f64),
     Int(i64),
     Symbol(SymID),
-    String(String),
+    String(SegmentedString),
     Bool(bool),
     List(Vec<Spanned<Expr>>),
     Map(Vec<(MapKey, Spanned<Expr>)>),
@@ -33,6 +78,7 @@ pub fn value<'a>(ep: Parser<'a, Spanned<Expr>>, sp: Parser<'a, Stmt>) -> Parser<
         .or(list(ep.clone()))
         .or(map(ep.clone()))
         .or(inline_func(sp))
+        .or(segmented_string(ep))
 }
 
 fn inline_func(sp: Parser<'_, Stmt>) -> Parser<'_, Value> {
@@ -99,7 +145,6 @@ fn atom_value<'a>() -> Parser<'a, Value> {
                 Token::Sym(sym_id) => Value::Symbol(sym_id),
                 Token::Float(f) => Value::Float(f),
                 Token::Int(i) => Value::Int(i),
-                Token::String(s) => Value::String(s.to_string()),
                 Token::KeyWord(KeyWord::True) => Value::Bool(true),
                 Token::KeyWord(KeyWord::False) => Value::Bool(false),
                 Token::KeyWord(KeyWord::Null) => Value::Null,
@@ -114,7 +159,7 @@ fn atom_value<'a>() -> Parser<'a, Value> {
     })
 }
 
-pub fn string<'a>() -> Parser<'a, String> {
+pub fn atom_string<'a>() -> Parser<'a, String> {
     Parser::new(|ctx| match ctx.peek() {
         Some(spanned_token) => {
             let value = match spanned_token.item {
@@ -183,8 +228,11 @@ mod tests {
     #[test]
     fn parse_string() {
         let v = parse_value("\"bababooy\"");
-
-        assert_eq!(v, Ok(Some(Value::String("bababooy".to_string()))));
+        if let Ok(Some(Value::String(segmented_string))) = v {
+            if let StringSegment::String(s) = &segmented_string.segments[0] {
+                assert_eq!(s, "bababooy");
+            }
+        }
     }
 
     #[test]
@@ -264,7 +312,13 @@ mod tests {
             panic!()
         };
 
-        assert!(expr.item == Expr::Value(Value::String("test".to_string())));
+        if let Expr::Value(Value::String(segmented_string)) = &expr.item {
+            if let StringSegment::String(s) = &segmented_string.segments[0] {
+                return assert_eq!(s, "test");
+            }
+        }
+
+        assert!(false);
     }
 
     #[test]
@@ -310,5 +364,17 @@ mod tests {
     #[test]
     fn parse_comment() {
         assert_eq!(parse_value("// this is a comment!").unwrap(), None)
+    }
+
+    #[test]
+    fn parse_interpolated_string() {
+        let v = parse_value("'{`blah` << `blah`}{'blah'}blah{`blahblah`}blah'").unwrap().unwrap();
+
+        if let Value::String(s) = v {
+            assert_eq!(s.segments.len(), 6);
+            return;
+        }
+
+        assert!(false);
     }
 }

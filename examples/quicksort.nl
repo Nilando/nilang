@@ -35,7 +35,7 @@ fn inner_quicksort(A, lo, hi) {
 }
 
 fn sort(numbers) {
-  inner_quicksort(numbers, 0, len(numbers) - 1);
+  inner_quicksort(numbers, 0, #numbers - 1);
 }
 
 unsorted_list = [3, 5, 9, 0, 8, 7, 4, 6, 2, 1];

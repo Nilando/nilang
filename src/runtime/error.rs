@@ -94,5 +94,7 @@ pub enum RuntimeErrorKind {
     InternalError,
     InvalidBind,
     InvalidByteCode,
-    FailedImport
+    FailedImport,
+    OutOfBoundsAccess,
+    DivideByZero
 }

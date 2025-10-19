@@ -6,8 +6,13 @@ fn new_grid(size) {
     vals = [];
     col = 0;
     while col < size {
-      // just doing something random to try and get something to happen
-      vals << ((row * col) % 1023) == 0;
+
+      // just doing something random stuff to try and get something to happen
+      vals << (col == 0) || 
+        (((((col*row) * 123) + 5) % 11) == 0) || 
+        (((((col*row) * 343) + 8) % 23) == 0) ||
+        (row == 5);
+
       col = col + 1;
     }
     grid << vals;
@@ -21,8 +26,8 @@ fn count_neighbors(grid, row, col) {
   count = 0;
   not_top = 0 < row;
   not_left = 0 < col;
-  not_right = (col+1) < len(grid);
-  not_bottom = (row+1) < len(grid);
+  not_right = (col+1) < #grid;
+  not_bottom = (row+1) < #grid;
 
   if not_top && grid[row - 1][col] {
       count = count + 1;
@@ -66,9 +71,9 @@ fn find_cells_to_update(grid) {
   result = { dead: [], new: [] };
 
   row = 0;
-  while row < len(grid) {
+  while row < #grid {
     col = 0;
-    while col < len(grid) {
+    while col < #grid {
       neighbors = count_neighbors(grid, row, col);
       cell_is_alive = grid[row][col];
 
@@ -93,23 +98,23 @@ fn update_grid(grid) {
   dead_cells = cells_to_update.dead;
   new_cells = cells_to_update.new;
   
-  while len(dead_cells) != 0 {
-      dead_cell = pop(dead_cells);
+  while #dead_cells {
+      dead_cell = ^dead_cells;
       grid[dead_cell[0]][dead_cell[1]] = false;
   }
 
-  while len(new_cells) != 0 {
-      new_cell = pop(new_cells);
+  while #new_cells {
+      new_cell = ^new_cells;
       grid[new_cell[0]][new_cell[1]] = true;
   }
 }
 
 fn print_grid(grid) {
   row = 0;
-  while row < len(grid) {
+  while row < #grid {
     s = "";
     col = 0;
-    while col < len(grid) {
+    while col < #grid {
       if grid[row][col] {
         s << "██";
       } else {
@@ -124,13 +129,14 @@ fn print_grid(grid) {
 
 fn run(grid) {
   i = 0;
-  while i <= 50 {
-    update_grid(grid);
+  while i <= 120 {
     print_grid(grid);
+    sleep(0.05);
+    update_grid(grid);
     i = i + 1;
   }
 }
 
-grid = new_grid(38);
+grid = new_grid(37);
 
 run(grid);

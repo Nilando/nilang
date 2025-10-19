@@ -1,25 +1,27 @@
 VERSION 0.1.0
 
 IN PROGRESS:
-- implement last intrinsic sym funcs
+- auto binding of functions with "self" arg
 
 FEATURE BACKLOG:
-- auto binding of functions with "self" arg
 - for loops
+- importing refactored
+  - make it so an import is an expression import("blah")
 - bitwise ops
   - bitflip
   - xor
   - or
   - and
   - shift
-- String Interpolation
 - "monkey patch" intrinsic
    - monkey_patch($list, $symbol, value)
-- green threading
 - FFI!!
+- async
+- throwing and catching
 
 OPTIMIZATION/REFACTOR BACKLOG:
 - add benchmarking
+- const locals for maps and lists
 - move span to its own module
 - GC updates:
   - GcVecMut
@@ -38,6 +40,7 @@ GOALS
 - complete AOC 2025 with this language
 - learn about compilers and interpreters
 - have fun
+- make a game!
 
 DECEMBER -> COMPLETE AOC
 NOVEMBER

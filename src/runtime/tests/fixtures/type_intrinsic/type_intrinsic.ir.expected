@@ -9,32 +9,24 @@ MAIN () {
 block0:
   t0 = NEW_LIST
   t1 = null
-  t2 = 0
-  t0[t2] = t1
-  t4 = 1
-  t0[t4] = t2
+  t0 << t1
+  t3 = 0
+  t0 << t3
   t5 = 1
-  t6 = 2
-  t0[t6] = t5
+  t0 << t5
   t7 = "foo"
-  t8 = 3
-  t0[t8] = t7
+  t0 << t7
   t9 = true
-  t10 = 4
-  t0[t10] = t9
+  t0 << t9
   t11 = NEW_LIST
-  t12 = 5
-  t0[t12] = t11
+  t0 << t11
   t13 = NEW_MAP
-  t14 = 6
-  t0[t14] = t13
+  t0 << t13
   t15 = fn1
-  t16 = 7
-  t0[t16] = t15
+  t0 << t15
   t17 = #bar
-  t18 = 8
-  t0[t18] = t17
-  next block1(t2)
+  t0 << t17
+  next block1(t3)
 
 block1(i_1):
   t22 =  # t0
@@ -46,7 +38,8 @@ block2:
   val_0 = t0[i_1]
   TYPE t26 = val_0
   PRINT t26
-  i_2 = i_1 + t4
+  t28 = 1
+  i_2 = i_1 + t28
   jump block1(i_2)
 
 block3:

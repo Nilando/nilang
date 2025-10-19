@@ -6,59 +6,47 @@ RTN  0
 === FN 0 START ===
 LIST 5
 LDN  4
-INT  7, 0
-MEMS 5[7], 4
+PUSH 5, 4
 BOOL 3, false
-INT  2, 1
-MEMS 5[2], 3
-BOOL 1, true
-INT  0, 2
-MEMS 5[0], 1
-INT  0, 3
-MEMS 5[0], 7
-INT  0, 4
-MEMS 5[0], 2
-LOC  6, 0
-INT  0, 5
-MEMS 5[0], 6
-LIST 6
-INT  0, 6
-MEMS 5[0], 6
-MAP  6
-INT  0, 7
-MEMS 5[0], 6
-LOC  6, 1
-INT  0, 8
-MEMS 5[0], 6
-LOC  6, 2
-INT  0, 9
-MEMS 5[0], 6
-LOC  6, 3
-INT  0, 10
-MEMS 5[0], 6
-SYM  6, #4
-INT  0, 11
-MEMS 5[0], 6
-SYM  6, #5
-INT  0, 12
-MEMS 5[0], 6
-SYM  6, #21
-INT  0, 13
-MEMS 5[0], 6
+PUSH 5, 3
+INT  6, 0
+PUSH 5, 6
+BOOL 2, true
+PUSH 5, 2
+INT  1, 1
+PUSH 5, 1
+LOC  0, 0
+PUSH 5, 0
+LIST 0
+PUSH 5, 0
+MAP  0
+PUSH 5, 0
+LOC  0, 1
+PUSH 5, 0
+LOC  0, 2
+PUSH 5, 0
+LOC  0, 3
+PUSH 5, 0
+SYM  0, #4
+PUSH 5, 0
+SYM  0, #5
+PUSH 5, 0
+SYM  0, #21
+PUSH 5, 0
 LEN 0, 5
-LT   0, 7, 0
+LT   0, 6, 0
 JNT  13, 0
-MEML 0, 5[7]
-JIT  3, 0
+MEML 0, 5[6]
+JNT  3, 0
 COPY 0, 3
 JMP  2
-COPY 0, 1
-JIT  3, 0
+COPY 0, 2
+JNT  3, 0
 COPY 0, 3
 JMP  2
-COPY 0, 1
+COPY 0, 2
 OUT  0
-ADD  7, 7, 2
+ADD  6, 6, 1
 JMP  -14
 RTN  4
 === END ===

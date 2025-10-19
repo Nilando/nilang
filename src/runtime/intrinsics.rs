@@ -240,7 +240,7 @@ fn sleep<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)>
             Ok(Value::Null)
         }
         Value::Float(f) => {
-            std::thread::sleep(Duration::from_secs(f as u64));
+            std::thread::sleep(Duration::from_millis((1000.0 * f) as u64));
 
             Ok(Value::Null)
         }
@@ -254,10 +254,7 @@ fn sleep<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)>
 }
 
 fn bbool<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
-    match arg {
-        Value::Null | Value::Bool(false) => Ok(Value::Bool(false)),
-        _ => Ok(Value::Bool(true)),
-    }
+    Ok(Value::Bool(arg.is_truthy()))
 }
 
 fn sym<'gc>(

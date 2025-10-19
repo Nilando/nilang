@@ -3,12 +3,11 @@ MAIN () {
 block0:
   t0 = NEW_LIST
   t1 = 1
-  t2 = 0
-  t0[t2] = t1
+  t0 << t1
   t3 = 2
-  t0[t1] = t3
+  t0 << t3
   t5 = 3
-  t0[t3] = t5
+  t0 << t5
   t8 = 1.5
   t9 = t0[t8]
   PRINT t9

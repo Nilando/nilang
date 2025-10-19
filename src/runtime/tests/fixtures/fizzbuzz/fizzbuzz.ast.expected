@@ -354,7 +354,13 @@
                                     Spanned {
                                         item: Value(
                                             String(
-                                                "5",
+                                                SegmentedString {
+                                                    segments: [
+                                                        String(
+                                                            "5",
+                                                        ),
+                                                    ],
+                                                },
                                             ),
                                         ),
                                         span: Span {
@@ -468,7 +474,13 @@
                                     Spanned {
                                         item: Value(
                                             String(
-                                                "7",
+                                                SegmentedString {
+                                                    segments: [
+                                                        String(
+                                                            "7",
+                                                        ),
+                                                    ],
+                                                },
                                             ),
                                         ),
                                         span: Span {
@@ -528,7 +540,13 @@
                             Spanned {
                                 item: Value(
                                     String(
-                                        "fizzbuzz",
+                                        SegmentedString {
+                                            segments: [
+                                                String(
+                                                    "fizzbuzz",
+                                                ),
+                                            ],
+                                        },
                                     ),
                                 ),
                                 span: Span {
@@ -558,7 +576,13 @@
                             Spanned {
                                 item: Value(
                                     String(
-                                        "fizz",
+                                        SegmentedString {
+                                            segments: [
+                                                String(
+                                                    "fizz",
+                                                ),
+                                            ],
+                                        },
                                     ),
                                 ),
                                 span: Span {
@@ -588,7 +612,13 @@
                             Spanned {
                                 item: Value(
                                     String(
-                                        "buzz",
+                                        SegmentedString {
+                                            segments: [
+                                                String(
+                                                    "buzz",
+                                                ),
+                                            ],
+                                        },
                                     ),
                                 ),
                                 span: Span {

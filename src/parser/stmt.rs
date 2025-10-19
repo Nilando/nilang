@@ -1,7 +1,7 @@
 use super::expr::{expr, Expr, LhsExpr};
 use super::lexer::{Ctrl, KeyWord, Token};
 use super::spanned::Spanned;
-use super::value::string;
+use super::value::{atom_string};
 use super::{block, ctrl, inputs, keyword, nothing, recursive, symbol, Parser};
 
 use crate::symbol_map::SymID;
@@ -53,7 +53,7 @@ pub fn stmt<'a>() -> Parser<'a, Stmt> {
 fn import_stmt(_: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
     keyword(KeyWord::Import)
         .then(symbol())
-        .append(string().spanned())
+        .append(atom_string().spanned())
         .map(|(ident, path)| Stmt::Import { ident, path })
 }
 
@@ -184,6 +184,7 @@ fn continue_stmt<'a>() -> Parser<'a, Stmt> {
 #[cfg(test)]
 mod tests {
     use super::super::value::Value;
+    use crate::parser::value::StringSegment;
     use crate::parser::ParseError;
     use super::*;
     use crate::parser::Span;
@@ -217,7 +218,13 @@ mod tests {
     fn string_value_expr_stmt() {
         match parse_stmt("\"string\";") {
             Ok(Some(Stmt::Expr(e))) => {
-                assert!(e.item == Expr::Value(Value::String("string".to_string())));
+                if let Expr::Value(Value::String(segmented_string)) = &e.item {
+                    if let StringSegment::String(s) = &segmented_string.segments[0] {
+                        return assert_eq!(s, "string");
+                    }
+                }
+
+                assert!(false);
             }
             _ => assert!(false),
         }

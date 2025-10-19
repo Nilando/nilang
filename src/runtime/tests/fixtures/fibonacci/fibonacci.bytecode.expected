@@ -2,7 +2,7 @@
 === FN 1 START ===
 LIST 4
 INT  2, 0
-MEMS 4[2], 2
+PUSH 4, 2
 INT  1, 1
 LEN 3, 4
 LT   3, 3, 0

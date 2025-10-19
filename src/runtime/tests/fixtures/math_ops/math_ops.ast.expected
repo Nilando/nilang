@@ -6,7 +6,13 @@
                 Spanned {
                     item: Value(
                         String(
-                            "=====  ADDITION",
+                            SegmentedString {
+                                segments: [
+                                    String(
+                                        "=====  ADDITION",
+                                    ),
+                                ],
+                            },
                         ),
                     ),
                     span: Span {
@@ -396,7 +402,13 @@
                 Spanned {
                     item: Value(
                         String(
-                            "=====  SUBTRACTION",
+                            SegmentedString {
+                                segments: [
+                                    String(
+                                        "=====  SUBTRACTION",
+                                    ),
+                                ],
+                            },
                         ),
                     ),
                     span: Span {
@@ -704,7 +716,13 @@
                 Spanned {
                     item: Value(
                         String(
-                            "=====  MULTIPLICATION",
+                            SegmentedString {
+                                segments: [
+                                    String(
+                                        "=====  MULTIPLICATION",
+                                    ),
+                                ],
+                            },
                         ),
                     ),
                     span: Span {
@@ -980,7 +998,13 @@
                 Spanned {
                     item: Value(
                         String(
-                            "=====  DIVISION",
+                            SegmentedString {
+                                segments: [
+                                    String(
+                                        "=====  DIVISION",
+                                    ),
+                                ],
+                            },
                         ),
                     ),
                     span: Span {
@@ -1288,7 +1312,13 @@
                 Spanned {
                     item: Value(
                         String(
-                            "=====  MODULO",
+                            SegmentedString {
+                                segments: [
+                                    String(
+                                        "=====  MODULO",
+                                    ),
+                                ],
+                            },
                         ),
                     ),
                     span: Span {
@@ -1596,7 +1626,13 @@
                 Spanned {
                     item: Value(
                         String(
-                            "=====  MATH INTRINSICS",
+                            SegmentedString {
+                                segments: [
+                                    String(
+                                        "=====  MATH INTRINSICS",
+                                    ),
+                                ],
+                            },
                         ),
                     ),
                     span: Span {
@@ -1858,7 +1894,13 @@
                 Spanned {
                     item: Value(
                         String(
-                            "=====  COMPARISONS",
+                            SegmentedString {
+                                segments: [
+                                    String(
+                                        "=====  COMPARISONS",
+                                    ),
+                                ],
+                            },
                         ),
                     ),
                     span: Span {

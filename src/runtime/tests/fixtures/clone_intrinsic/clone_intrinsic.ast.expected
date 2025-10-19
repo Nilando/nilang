@@ -162,7 +162,13 @@
         src: Spanned {
             item: Value(
                 String(
-                    "foo",
+                    SegmentedString {
+                        segments: [
+                            String(
+                                "foo",
+                            ),
+                        ],
+                    },
                 ),
             ),
             span: Span {
@@ -219,7 +225,13 @@
                 rhs: Spanned {
                     item: Value(
                         String(
-                            "bar",
+                            SegmentedString {
+                                segments: [
+                                    String(
+                                        "bar",
+                                    ),
+                                ],
+                            },
                         ),
                     ),
                     span: Span {

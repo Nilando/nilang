@@ -1,0 +1,70 @@
+========= FILE ./src/runtime/tests/fixtures/shortcircuit/shortcircuit.ir.actual ========
+fn1 (flag_0, a_0, b_0) {
+block0:
+  jnt flag_0 block4(flag_0)
+  next block1
+
+block1:
+  t5 = 2
+  t6 = a_0 != t5
+  jnt t6 block3(t6)
+  next block2
+
+block2:
+  t7 = 3
+  t8 = b_0 != t7
+  next block3(t8)
+
+block3(t13):
+  next block4(t13)
+
+block4(t12):
+  jnt t12 block6
+  next block5
+
+block5:
+  t9 = "test"
+  PRINT t9
+  next block6
+
+block6:
+  t11 = null
+  RETURN t11
+
+}
+MAIN () {
+block0:
+  test_0 = fn1
+  t1 = false
+  t2 = 2
+  t3 = 3
+  STORE_ARG t1
+  STORE_ARG t2
+  STORE_ARG t3
+  t4 = CALL test_0
+  t5 = true
+  STORE_ARG t5
+  STORE_ARG t2
+  STORE_ARG t3
+  t8 = CALL test_0
+  t10 = 0
+  STORE_ARG t5
+  STORE_ARG t10
+  STORE_ARG t3
+  t12 = CALL test_0
+  STORE_ARG t5
+  STORE_ARG t10
+  STORE_ARG t10
+  t16 = CALL test_0
+  STORE_ARG t1
+  STORE_ARG t10
+  STORE_ARG t3
+  t20 = CALL test_0
+  STORE_ARG t1
+  STORE_ARG t2
+  STORE_ARG t3
+  t24 = CALL test_0
+  t25 = null
+  RETURN t25
+
+}

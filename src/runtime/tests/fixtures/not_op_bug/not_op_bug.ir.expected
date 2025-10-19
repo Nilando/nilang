@@ -1,0 +1,40 @@
+========= FILE ./src/runtime/tests/fixtures/not_op_bug/not_op_bug.ir.actual ========
+MAIN () {
+block0:
+  t1 = true
+  jnt t1 block2
+  next block1
+
+block1:
+  t12 = false
+  jump block3(t12)
+
+block2:
+  next block3(t1)
+
+block3(t9):
+  jnt t9 block5(t9)
+  next block4
+
+block4:
+  next block5(t1)
+
+block5(t10):
+  jnt t10 block7
+  next block6
+
+block6:
+  t4 = "error! uh oh spaghetti o"
+  PRINT t4
+  jump block8
+
+block7:
+  t6 = "success!"
+  PRINT t6
+  next block8
+
+block8:
+  t8 = null
+  RETURN t8
+
+}

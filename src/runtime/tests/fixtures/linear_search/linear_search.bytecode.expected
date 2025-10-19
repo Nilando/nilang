@@ -16,15 +16,12 @@ RTN  0
 === FN 0 START ===
 LOC  3, 0
 LIST 2
-INT  4, 0
-MEMS 2[4], 4
-INT  0, 1
-MEMS 2[0], 4
+INT  0, 0
+PUSH 2, 0
+PUSH 2, 0
 INT  1, 420
-INT  0, 2
-MEMS 2[0], 1
-INT  0, 3
-MEMS 2[0], 4
+PUSH 2, 1
+PUSH 2, 0
 INT  0, 4
 ARG  2
 ARG  0

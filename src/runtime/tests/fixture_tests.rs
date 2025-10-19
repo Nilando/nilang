@@ -5,6 +5,11 @@
 */
 
 #[test]
+fn not_op_bug() {
+  super::fixture_test("not_op_bug")
+}
+
+#[test]
 fn clone_intrinsic() {
   super::fixture_test("clone_intrinsic")
 }
@@ -60,6 +65,16 @@ fn rotate_array() {
 }
 
 #[test]
+fn shortcircuit() {
+  super::fixture_test("shortcircuit")
+}
+
+#[test]
+fn basic_interpolation() {
+  super::fixture_test("basic_interpolation")
+}
+
+#[test]
 fn math_ops() {
   super::fixture_test("math_ops")
 }
@@ -87,6 +102,11 @@ fn calling_non_func() {
 #[test]
 fn null_intrinsic() {
   super::fixture_test("null_intrinsic")
+}
+
+#[test]
+fn not_op_assignment_bug() {
+  super::fixture_test("not_op_assignment_bug")
 }
 
 #[test]
@@ -187,6 +207,11 @@ fn big_backtrace() {
 #[test]
 fn not_op() {
   super::fixture_test("not_op")
+}
+
+#[test]
+fn out_of_bounds_index() {
+  super::fixture_test("out_of_bounds_index")
 }
 
 #[test]

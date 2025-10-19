@@ -26,7 +26,7 @@ pub enum BinaryOp {
 
 impl BinaryOp {
     pub fn is_commutative(&self) -> bool {
-        // TODO: And and Or are commutative BUT they can't always be treated
+        // NOTE: And and Or are commutative BUT they can't always be treated
         // as such due to short circuiting and the possibility for side effects
         matches!(self, BinaryOp::Plus | BinaryOp::Multiply | BinaryOp::Equal | BinaryOp::NotEqual)
     }

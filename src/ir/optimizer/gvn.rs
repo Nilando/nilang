@@ -403,7 +403,7 @@ fn fold_constants(op: BinaryOp, lhs: &TacConst, rhs: &TacConst) -> Option<TacCon
         },
         BinaryOp::Equal => Some(TacConst::Bool(lhs == rhs)),
         BinaryOp::NotEqual => Some(TacConst::Bool(lhs != rhs)),
-        // TODO: more constatn folding can be added, I just got lazy and stopeed here
+        // TODO: more constant folding can be added, I just got lazy and stopped here
         _ => None,
     }
 }

@@ -1,0 +1,103 @@
+========= FILE ./src/runtime/tests/fixtures/not_op_bug/not_op_bug.ast.actual ========
+[
+    IfElse {
+        cond: Spanned {
+            item: Binop {
+                lhs: Spanned {
+                    item: Unaop {
+                        op: Not,
+                        expr: Spanned {
+                            item: Value(
+                                Bool(
+                                    true,
+                                ),
+                            ),
+                            span: Span {
+                                start: 4,
+                                end: 8,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 3,
+                        end: 11,
+                    },
+                },
+                op: And,
+                rhs: Spanned {
+                    item: Value(
+                        Bool(
+                            true,
+                        ),
+                    ),
+                    span: Span {
+                        start: 12,
+                        end: 18,
+                    },
+                },
+            },
+            span: Span {
+                start: 3,
+                end: 18,
+            },
+        },
+        stmts: [
+            Expr(
+                Spanned {
+                    item: Print(
+                        Spanned {
+                            item: Value(
+                                String(
+                                    SegmentedString {
+                                        segments: [
+                                            String(
+                                                "error! uh oh spaghetti o",
+                                            ),
+                                        ],
+                                    },
+                                ),
+                            ),
+                            span: Span {
+                                start: 27,
+                                end: 54,
+                            },
+                        },
+                    ),
+                    span: Span {
+                        start: 21,
+                        end: 55,
+                    },
+                },
+            ),
+        ],
+        else_stmts: [
+            Expr(
+                Spanned {
+                    item: Print(
+                        Spanned {
+                            item: Value(
+                                String(
+                                    SegmentedString {
+                                        segments: [
+                                            String(
+                                                "success!",
+                                            ),
+                                        ],
+                                    },
+                                ),
+                            ),
+                            span: Span {
+                                start: 73,
+                                end: 84,
+                            },
+                        },
+                    ),
+                    span: Span {
+                        start: 67,
+                        end: 85,
+                    },
+                },
+            ),
+        ],
+    },
+]

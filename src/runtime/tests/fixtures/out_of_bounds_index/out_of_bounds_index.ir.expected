@@ -1,0 +1,11 @@
+========= FILE ./src/runtime/tests/fixtures/out_of_bounds_index/out_of_bounds_index.ir.actual ========
+MAIN () {
+block0:
+  a_0 = NEW_LIST
+  t2 = 0
+  t3 = a_0[t2]
+  PRINT t3
+  t5 = null
+  RETURN t5
+
+}

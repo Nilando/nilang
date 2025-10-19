@@ -20,7 +20,13 @@
                             Spanned {
                                 item: Value(
                                     String(
-                                        "",
+                                        SegmentedString {
+                                            segments: [
+                                                String(
+                                                    "",
+                                                ),
+                                            ],
+                                        },
                                     ),
                                 ),
                                 span: Span {
@@ -270,7 +276,13 @@
                             Spanned {
                                 item: Value(
                                     String(
-                                        "test",
+                                        SegmentedString {
+                                            segments: [
+                                                String(
+                                                    "test",
+                                                ),
+                                            ],
+                                        },
                                     ),
                                 ),
                                 span: Span {

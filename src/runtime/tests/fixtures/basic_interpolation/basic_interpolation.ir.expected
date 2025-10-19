@@ -1,0 +1,13 @@
+========= FILE ./src/runtime/tests/fixtures/basic_interpolation/basic_interpolation.ir.actual ========
+MAIN () {
+block0:
+  t0 = "Hello, "
+  t1 = "interpolated"
+  t0 << t1
+  t2 = " world!"
+  t0 << t2
+  PRINT t0
+  t4 = null
+  RETURN t4
+
+}

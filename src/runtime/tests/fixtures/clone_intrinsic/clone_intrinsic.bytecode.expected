@@ -2,7 +2,7 @@
 === FN 0 START ===
 LIST 3
 INT  2, 0
-MEMS 3[2], 2
+PUSH 3, 2
 CLONE 1, 3
 INT  0, 1
 MEMS 1[2], 0

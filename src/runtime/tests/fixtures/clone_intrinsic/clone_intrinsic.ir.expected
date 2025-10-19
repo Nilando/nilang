@@ -3,7 +3,7 @@ MAIN () {
 block0:
   t0 = NEW_LIST
   t1 = 0
-  t0[t1] = t1
+  t0 << t1
   CLONE b_0 = t0
   t6 = 1
   b_0[t1] = t6

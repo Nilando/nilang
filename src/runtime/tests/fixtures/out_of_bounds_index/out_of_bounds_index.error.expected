@@ -1,0 +1,6 @@
+RUNTIME ERROR
+Traceback: most recent call lowest
+  0: File "./src/runtime/tests/test_programs/out_of_bounds_index.nl", line: 2:11
+    print(a[0]);
+          ^^^^
+OutOfBoundsAccess: Attempted to access list of len 0 at index 0

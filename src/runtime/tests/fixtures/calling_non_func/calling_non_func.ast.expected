@@ -6,12 +6,18 @@
                 calle: Spanned {
                     item: Value(
                         String(
-                            "don't try this at home kids",
+                            SegmentedString {
+                                segments: [
+                                    String(
+                                        "don't try this at home kids",
+                                    ),
+                                ],
+                            },
                         ),
                     ),
                     span: Span {
                         start: 0,
-                        end: 29,
+                        end: 30,
                     },
                 },
                 args: [],

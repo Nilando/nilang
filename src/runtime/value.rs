@@ -28,7 +28,7 @@ impl<'gc> Value<'gc> {
             Value::Null => "null".to_string(),
             Value::Int(i) => format!("{i}"),
             Value::Float(v) => format!("{v}"),
-            Value::SymId(id) => format!("#{}", syms.get_str(id).to_string()),
+            Value::SymId(id) => format!("${}", syms.get_str(id).to_string()),
             Value::Bool(b) => format!("{b}"),
             Value::Map(map) => map.to_string(syms),
             Value::List(list) => {
@@ -68,7 +68,7 @@ impl<'gc> Value<'gc> {
     }
 
     pub fn is_truthy(&self) -> bool {
-        !matches!(self, Value::Null | Value::Bool(false))
+        !matches!(self, Value::Null | Value::Bool(false) | Value::Int(0) | Value::Float(0.0))
     }
 
     pub fn is_equal_to(&self, other: &Value<'gc>) -> bool {

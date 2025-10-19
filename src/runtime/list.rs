@@ -23,10 +23,13 @@ impl<'gc> List<'gc> {
     }
 
     pub fn at(&self, idx: usize) -> Value<'gc> {
-        let tagged_value = self.vec.get_idx(idx).unwrap();
-        let tagged_value = TaggedValue::__new(tagged_value);
+        if let Some(tagged_value) = self.vec.get_idx(idx) {
+            let tagged_value = TaggedValue::__new(tagged_value);
 
-        Value::from(&tagged_value)
+            Value::from(&tagged_value)
+        } else {
+            panic!("Internal out of bounds access on list length {} with index {}", self.len(), idx)
+        }
     }
 
     pub fn len(&self) -> usize {

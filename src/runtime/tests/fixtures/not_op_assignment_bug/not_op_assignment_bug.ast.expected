@@ -1,0 +1,76 @@
+========= FILE ./src/runtime/tests/fixtures/not_op_assignment_bug/not_op_assignment_bug.ast.actual ========
+[
+    Assign {
+        dest: Spanned {
+            item: Local(
+                17,
+            ),
+            span: Span {
+                start: 0,
+                end: 3,
+            },
+        },
+        src: Spanned {
+            item: Value(
+                Bool(
+                    true,
+                ),
+            ),
+            span: Span {
+                start: 4,
+                end: 9,
+            },
+        },
+    },
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Unaop {
+                        op: Not,
+                        expr: Spanned {
+                            item: Value(
+                                Ident(
+                                    17,
+                                ),
+                            ),
+                            span: Span {
+                                start: 17,
+                                end: 18,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 16,
+                        end: 19,
+                    },
+                },
+            ),
+            span: Span {
+                start: 10,
+                end: 20,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Value(
+                        Ident(
+                            17,
+                        ),
+                    ),
+                    span: Span {
+                        start: 27,
+                        end: 29,
+                    },
+                },
+            ),
+            span: Span {
+                start: 21,
+                end: 30,
+            },
+        },
+    ),
+]

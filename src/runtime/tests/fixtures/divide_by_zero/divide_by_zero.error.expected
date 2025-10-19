@@ -3,4 +3,4 @@ Traceback: most recent call lowest
   0: File "./src/runtime/tests/test_programs/divide_by_zero.nl", line: 1:12
     print(1 / 0);
           ^^^^^
-TypeError: Attempted to divide by zero.
+DivideByZero: Attempted to divide by zero
