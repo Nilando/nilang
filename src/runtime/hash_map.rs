@@ -1,6 +1,7 @@
 use crate::symbol_map::SymbolMap;
 use std::cell::Cell;
 
+use super::list::List;
 use super::op::equal;
 
 use murmurhash3::murmurhash3_x64_128;
@@ -17,7 +18,7 @@ use super::value::Value;
 const MAX_LOAD: f64 = 0.7;
 const INIT_CAPACITY: usize = 16;
 
-#[derive(TraceLeaf, Copy, Clone)]
+#[derive(TraceLeaf, Copy, Clone, PartialEq)]
 enum EntryStatus {
     Used,
     Free,
@@ -59,6 +60,22 @@ pub struct GcHashMap<'gc> {
 // that way we can use the null key to represent a tombstone entry
 
 impl<'gc> GcHashMap<'gc> {
+    pub fn as_list(&self, mu: &'gc Mutator) -> Gc<'gc, List<'gc>> {
+        let gc_list = Gc::new(mu, List::alloc(mu));
+
+        for entry in self.buckets.iter() {
+            if entry.status.get() == EntryStatus::Used {
+                let inner_list = Gc::new(mu, List::alloc(mu));
+
+                inner_list.push(entry.key.clone(), mu);
+                inner_list.push(entry.val.clone(), mu);
+                gc_list.push(Value::List(inner_list).as_tagged(mu), mu);
+            }
+        }
+
+        gc_list
+    }
+
     pub fn alloc(mu: &'gc Mutator) -> Gc<'gc, Self> {
         let hash_map = GcHashMap {
             buckets: mu.alloc_array_from_fn(INIT_CAPACITY, |_| Entry::new()),

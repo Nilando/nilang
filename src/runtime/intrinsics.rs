@@ -4,7 +4,7 @@ use sandpit::{Gc, Mutator};
 
 use crate::runtime::string::VMString;
 use crate::symbol_map::{
-    SymID, SymbolMap, ABS_SYM, ARGS_SYM, BOOL_SYM, CEIL_SYM, FLOAT_SYM, FLOOR_SYM, INT_SYM, LOG_SYM, NULL_SYM, POW_SYM, READ_FILE_SYM, SLEEP_SYM, STR_SYM, SYM_SYM
+    SymID, SymbolMap, ABS_SYM, ARGS_SYM, BOOL_SYM, CEIL_SYM, FLOAT_SYM, FLOOR_SYM, FN_SYM, INT_SYM, LIST_SYM, LOG_SYM, MAP_SYM, NULL_SYM, POW_SYM, READ_FILE_SYM, SLEEP_SYM, STR_SYM, SYM_SYM
 };
 
 use super::instruction_stream::InstructionStream;
@@ -51,11 +51,59 @@ pub fn call_intrinsic<'gc>(
         NULL_SYM => {
             Ok(Value::Null)
         }
-        // TODO!!!
-        // MAP_SYM
-        // FN_SYM
-        // LIST_SYM
-        
+        LIST_SYM => {
+            match supplied_args {
+                0 => Ok(Value::List(Gc::new(mu, List::alloc(mu)))),
+                1 => {
+                    let arg = extract_arg(args, stack);
+                    match arg {
+                        Value::List(_) => Ok(arg),
+                        Value::String(vm_string) => {
+                            let gc_list = Gc::new(mu, List::alloc(mu));
+
+                            for c in 0.. vm_string.len() {
+                                let c = vm_string.at(c).unwrap();
+                                let char_string =  VMString::alloc([c].into_iter(), mu);
+                                let value = Value::String(Gc::new(mu, char_string));
+
+                                gc_list.push(value.as_tagged(mu), mu);
+                            }
+
+                            Ok(Value::List(gc_list))
+                        }
+                        Value::Map(vm_map) => {
+                            let gc_list = vm_map.as_list(mu);
+
+                            Ok(Value::List(gc_list))
+                        }
+                        _ => {
+                            let gc_list = Gc::new(mu, List::alloc(mu));
+                            gc_list.push(arg.as_tagged(mu), mu);
+                            Ok(Value::List(gc_list))
+                        }
+                    }
+                },
+                _ => {
+                    let gc_list = Gc::new(mu, List::alloc(mu));
+
+                    for _ in 0..supplied_args {
+                        let arg = extract_arg(args, stack);
+                        gc_list.push(arg.as_tagged(mu), mu);
+                    }
+
+                    Ok(Value::List(gc_list))
+                }
+            }
+        }
+        FN_SYM => {
+            // return a 0 arg function that returns the value passed
+            todo!()
+        }
+        MAP_SYM => {
+            // not sure how this should work..
+            todo!()
+        }
+       
         ARGS_SYM => get_program_args(mu), // Maybe store in a global?
 
 
