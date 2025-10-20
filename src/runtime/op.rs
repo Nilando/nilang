@@ -239,9 +239,16 @@ pub fn mem_load<'gc>(
         }
         (Value::Map(map), key) => {
             if let Some(val) = map.get(&key.as_tagged(mu)) {
-                // TODO: if val is a function with auto binding
-                // create a partial with the map bound 
-                Ok(Value::from(&val))
+                match Value::from(&val) {
+                    Value::Func(func) => {
+                        if func.auto_binds() {
+                            bind(Value::Func(func), Value::Map(map.clone()), mu)
+                        } else {
+                            Ok(Value::Func(func))
+                        }
+                    }
+                    value => Ok(value)
+                }
             } else {
                 Ok(Value::Null)
             }
@@ -280,7 +287,7 @@ pub fn mem_store<'gc>(
         }
         (Value::Map(map), key) => {
             GcHashMap::insert(map, key.as_tagged(mu), src.as_tagged(mu), mu);
-
+            
             Ok(())
         }
         (Value::String(_), Value::Int(_)) => {

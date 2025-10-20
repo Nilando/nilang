@@ -1,22 +1,47 @@
 VERSION 0.1.0
 
 IN PROGRESS:
-- auto binding of functions with "self" arg
+- for loops
+  for item in list {
+    ...
+  }
+
+  for char in string {
+    ...
+  }
+
+  for entry in list(map) {
+    key = entry[0]; 
+    value = entry[1]; 
+    ...
+  }
+
+  iter_reg = 0
+  LABEL: START
+  FORLOOP: iter_reg, item_reg, store_reg, 
+  JUMP: label
+  ...
+  LABEL: END
 
 FEATURE BACKLOG:
-- for loops
 - importing refactored
   - make it so an import is an expression import("blah")
+  - imported file is only ran once
 - bitwise ops
   - bitflip
   - xor
   - or
   - and
   - shift
+- repl 
+  - auto print value returned from expression
 - "monkey patch" intrinsic
    - monkey_patch($list, $symbol, value)
 - FFI!!
 - async
+  - await, async fn
+  - running an async fn returns a promise
+  - a promise can be awaited
 - throwing and catching
 
 OPTIMIZATION/REFACTOR BACKLOG:
@@ -45,6 +70,12 @@ GOALS
 DECEMBER -> COMPLETE AOC
 NOVEMBER
 OCTOBER
+- added string interpolation
+- push and pop operators
+- unary operators
+- list intrinsic
+- auto binding of functions with "self" arg
+
 SEPTEMBER
 - added backtraces
 - re-worked how errors are displayed

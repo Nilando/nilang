@@ -19,6 +19,7 @@ pub fn load_program<'gc>(program: Vec<ByteCodeFunc>, path: Option<&str>, mu: &'g
         let spans = func.spans().into_gc(mu);
         let loaded_func = Func::new(
             func.id(),
+            func.auto_binds(),
             func.arg_count(),
             func.max_clique(),
             locals,

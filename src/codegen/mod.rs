@@ -36,6 +36,7 @@ pub fn generate_func(ir_func: IRFunc) -> Func {
 fn generate_bytecode(ir_func: &IRFunc, graph: &InterferenceGraph, max_clique: u8) -> Func {
     let mut func = Func::new(
         ir_func.get_id(),
+        ir_func.auto_binds(),
         u8::try_from(ir_func.get_args().len()).unwrap(),
         max_clique,
     );

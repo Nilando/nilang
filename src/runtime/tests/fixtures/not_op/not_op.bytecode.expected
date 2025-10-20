@@ -31,7 +31,7 @@ SYM  0, #4
 PUSH 5, 0
 SYM  0, #5
 PUSH 5, 0
-SYM  0, #21
+SYM  0, #22
 PUSH 5, 0
 LEN 0, 5
 LT   0, 6, 0

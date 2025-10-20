@@ -7,6 +7,7 @@ use std::iter::Iterator;
 #[derive(Debug)]
 pub struct Func {
     id: FuncID,
+    auto_binds: bool,
     args: Vec<VReg>,
     blocks: Vec<Block>,
     vreg_counter: u32,
@@ -14,9 +15,10 @@ pub struct Func {
 }
 
 impl Func {
-    pub fn new(id: FuncID, args: Vec<VReg>, blocks: Vec<Block>, vreg_counter: u32) -> Self {
+    pub fn new(id: FuncID, auto_binds: bool, args: Vec<VReg>, blocks: Vec<Block>, vreg_counter: u32) -> Self {
         Self {
             id,
+            auto_binds,
             args,
             blocks,
             vreg_counter,
@@ -95,5 +97,9 @@ impl Func {
         self.blocks
             .iter_mut()
             .find(|block| block.get_id() == block_id)
+    }
+
+    pub fn auto_binds(&self) -> bool {
+        self.auto_binds
     }
 }

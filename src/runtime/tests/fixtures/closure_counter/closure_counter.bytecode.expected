@@ -1,7 +1,7 @@
 ========= FILE ./src/runtime/tests/fixtures/closure_counter/closure_counter.bytecode.actual ========
 === FN 2 START ===
 LDUV 2, 0
-SYM  1, #19
+SYM  1, #20
 MEML 3, 2[1]
 INT  0, 1
 ADD  0, 3, 0
@@ -11,7 +11,7 @@ RTN  0
 === END ===
 === FN 1 START ===
 MAP  1
-SYM  2, #19
+SYM  2, #20
 INT  0, 0
 MEMS 1[2], 0
 LOC  0, 0

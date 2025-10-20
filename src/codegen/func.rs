@@ -13,6 +13,7 @@ pub enum Local {
 #[derive(Debug)]
 pub struct Func {
     id: u32,
+    auto_binds: bool,
     arg_count: u8,
     max_clique: u8,
     locals: Vec<Local>,
@@ -21,9 +22,10 @@ pub struct Func {
 }
 
 impl Func {
-    pub fn new(id: u32, arg_count: u8, max_clique: u8) -> Self {
+    pub fn new(id: u32, auto_binds: bool, arg_count: u8, max_clique: u8) -> Self {
         Self {
             id,
+            auto_binds,
             arg_count,
             max_clique,
             locals: vec![],
@@ -105,5 +107,9 @@ impl Func {
         result.push_str("=== END ===\n");
 
         result
+    }
+
+    pub fn auto_binds(&self) -> bool {
+        self.auto_binds
     }
 }

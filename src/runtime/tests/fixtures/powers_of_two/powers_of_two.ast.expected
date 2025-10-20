@@ -1,11 +1,11 @@
 ========= FILE ./src/runtime/tests/fixtures/powers_of_two/powers_of_two.ast.actual ========
 [
     FuncDecl {
-        ident: 17,
+        ident: 18,
         inputs: Spanned {
             item: [
-                18,
                 19,
+                20,
             ],
             span: Span {
                 start: 9,
@@ -19,7 +19,7 @@
                         lhs: Spanned {
                             item: Value(
                                 Ident(
-                                    19,
+                                    20,
                                 ),
                             ),
                             span: Span {
@@ -66,7 +66,7 @@
             Assign {
                 dest: Spanned {
                     item: Local(
-                        20,
+                        21,
                     ),
                     span: Span {
                         start: 52,
@@ -76,7 +76,7 @@
                 src: Spanned {
                     item: Value(
                         Ident(
-                            18,
+                            19,
                         ),
                     ),
                     span: Span {
@@ -88,7 +88,7 @@
             Assign {
                 dest: Spanned {
                     item: Local(
-                        19,
+                        20,
                     ),
                     span: Span {
                         start: 67,
@@ -100,7 +100,7 @@
                         lhs: Spanned {
                             item: Value(
                                 Ident(
-                                    19,
+                                    20,
                                 ),
                             ),
                             span: Span {
@@ -133,7 +133,7 @@
                         lhs: Spanned {
                             item: Value(
                                 Ident(
-                                    19,
+                                    20,
                                 ),
                             ),
                             span: Span {
@@ -163,7 +163,7 @@
                     Assign {
                         dest: Spanned {
                             item: Local(
-                                20,
+                                21,
                             ),
                             span: Span {
                                 start: 99,
@@ -175,7 +175,7 @@
                                 lhs: Spanned {
                                     item: Value(
                                         Ident(
-                                            20,
+                                            21,
                                         ),
                                     ),
                                     span: Span {
@@ -187,7 +187,7 @@
                                 rhs: Spanned {
                                     item: Value(
                                         Ident(
-                                            18,
+                                            19,
                                         ),
                                     ),
                                     span: Span {
@@ -205,7 +205,7 @@
                     Assign {
                         dest: Spanned {
                             item: Local(
-                                19,
+                                20,
                             ),
                             span: Span {
                                 start: 125,
@@ -217,7 +217,7 @@
                                 lhs: Spanned {
                                     item: Value(
                                         Ident(
-                                            19,
+                                            20,
                                         ),
                                     ),
                                     span: Span {
@@ -251,7 +251,7 @@
                     Spanned {
                         item: Value(
                             Ident(
-                                20,
+                                21,
                             ),
                         ),
                         span: Span {
@@ -266,7 +266,7 @@
     Assign {
         dest: Spanned {
             item: Local(
-                21,
+                22,
             ),
             span: Span {
                 start: 161,
@@ -291,7 +291,7 @@
                 lhs: Spanned {
                     item: Value(
                         Ident(
-                            21,
+                            22,
                         ),
                     ),
                     span: Span {
@@ -326,7 +326,7 @@
                                 calle: Spanned {
                                     item: Value(
                                         Ident(
-                                            17,
+                                            18,
                                         ),
                                     ),
                                     span: Span {
@@ -349,7 +349,7 @@
                                     Spanned {
                                         item: Value(
                                             Ident(
-                                                21,
+                                                22,
                                             ),
                                         ),
                                         span: Span {
@@ -374,7 +374,7 @@
             Assign {
                 dest: Spanned {
                     item: Local(
-                        21,
+                        22,
                     ),
                     span: Span {
                         start: 208,
@@ -386,7 +386,7 @@
                         lhs: Spanned {
                             item: Value(
                                 Ident(
-                                    21,
+                                    22,
                                 ),
                             ),
                             span: Span {

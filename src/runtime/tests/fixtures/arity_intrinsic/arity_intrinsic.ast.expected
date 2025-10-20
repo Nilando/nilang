@@ -48,7 +48,7 @@
                                 InlineFunc {
                                     inputs: Spanned {
                                         item: [
-                                            17,
+                                            18,
                                         ],
                                         span: Span {
                                             start: 27,
@@ -87,8 +87,8 @@
                                 InlineFunc {
                                     inputs: Spanned {
                                         item: [
-                                            17,
                                             18,
+                                            19,
                                         ],
                                         span: Span {
                                             start: 45,
@@ -127,9 +127,9 @@
                                 InlineFunc {
                                     inputs: Spanned {
                                         item: [
-                                            17,
                                             18,
                                             19,
+                                            20,
                                         ],
                                         span: Span {
                                             start: 66,
@@ -160,7 +160,7 @@
     Assign {
         dest: Spanned {
             item: Local(
-                20,
+                21,
             ),
             span: Span {
                 start: 120,
@@ -190,10 +190,10 @@
                                 InlineFunc {
                                     inputs: Spanned {
                                         item: [
-                                            17,
                                             18,
                                             19,
-                                            21,
+                                            20,
+                                            22,
                                         ],
                                         span: Span {
                                             start: 139,
@@ -207,7 +207,7 @@
                                                     Spanned {
                                                         item: Value(
                                                             Ident(
-                                                                20,
+                                                                21,
                                                             ),
                                                         ),
                                                         span: Span {
@@ -246,7 +246,7 @@
     Assign {
         dest: Spanned {
             item: Local(
-                22,
+                23,
             ),
             span: Span {
                 start: 208,
@@ -258,12 +258,12 @@
                 InlineFunc {
                     inputs: Spanned {
                         item: [
-                            17,
                             18,
                             19,
-                            21,
-                            23,
+                            20,
                             22,
+                            24,
+                            23,
                         ],
                         span: Span {
                             start: 215,
@@ -282,7 +282,7 @@
     Assign {
         dest: Spanned {
             item: Local(
-                22,
+                23,
             ),
             span: Span {
                 start: 237,
@@ -294,7 +294,7 @@
                 func: Spanned {
                     item: Value(
                         Ident(
-                            22,
+                            23,
                         ),
                     ),
                     span: Span {
@@ -327,7 +327,7 @@
                         expr: Spanned {
                             item: Value(
                                 Ident(
-                                    22,
+                                    23,
                                 ),
                             ),
                             span: Span {

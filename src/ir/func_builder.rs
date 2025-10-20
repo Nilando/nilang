@@ -6,11 +6,12 @@ use super::ssa::convert_to_ssa;
 use super::tac::{FuncID, LabelID, Tac, VReg};
 use crate::ir::TacConst;
 use crate::parser::Span;
-use crate::symbol_map::SymID;
+use crate::symbol_map::{SymID, SELF_SYM};
 use std::collections::HashMap;
 
 pub struct FuncBuilder {
     id: FuncID,
+    auto_binds: bool,
     inputs: Vec<VReg>,
     pub upvalues: Vec<SymID>,
     blocks: Vec<Block>,
@@ -25,8 +26,10 @@ pub struct FuncBuilder {
 
 impl FuncBuilder {
     pub fn new(id: FuncID, input_syms: &Vec<SymID>, pretty_ir: bool) -> Self {
+        let auto_binds = input_syms.len() > 0 && input_syms[0] == SELF_SYM;
         let mut this = Self {
             id,
+            auto_binds,
             inputs: vec![],
             upvalues: Vec::new(),
             blocks: vec![],
@@ -68,7 +71,7 @@ impl FuncBuilder {
         self.insert_current();
         self.link_blocks();
 
-        let mut func = Func::new(self.id, self.inputs, self.blocks, self.vreg_counter);
+        let mut func = Func::new(self.id, self.auto_binds, self.inputs, self.blocks, self.vreg_counter);
 
         remove_dead_blocks(&mut func);
 

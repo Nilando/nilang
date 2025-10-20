@@ -3,7 +3,7 @@
 LIST 1
 LOC  0, 0
 PUSH 1, 0
-SYM  0, #18
+SYM  0, #19
 PUSH 1, 0
 INT  0, 0
 LEN 2, 1

@@ -111,15 +111,15 @@ pub enum KeyWord {
     Clone
 }
 
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub enum Token<'a> {
+#[derive(Clone, PartialEq, Debug)]
+pub enum Token {
     Ctrl(Ctrl),
     Ident(SymID),
     Sym(SymID),
     Global(SymID),
     Float(f64),
     Int(i64),
-    String(&'a str),
+    String(String),
     KeyWord(KeyWord),
 }
 
@@ -135,7 +135,7 @@ use std::iter::Peekable;
 use std::str::Chars;
 
 pub struct Lexer<'a> {
-    peek: Option<Spanned<Token<'a>>>,
+    peek: Option<Spanned<Token>>,
     chars: Peekable<Chars<'a>>,
     input: &'a str,
     pos: usize,
@@ -160,7 +160,7 @@ impl<'a> Lexer<'a> {
     pub fn get_token(
         &mut self,
         syms: &mut SymbolMap,
-    ) -> Result<Spanned<Token<'a>>, Spanned<LexError>> {
+    ) -> Result<Spanned<Token>, Spanned<LexError>> {
         if self.eof {
             // TODO: don't return a 0 len span
             return Ok(Spanned::new(self.end_token(), Span::new(self.pos, self.pos)));
@@ -173,18 +173,18 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    pub fn peek(&mut self, syms: &mut SymbolMap) -> Result<Spanned<Token<'a>>, Spanned<LexError>> {
+    pub fn peek(&mut self, syms: &mut SymbolMap) -> Result<Spanned<Token>, Spanned<LexError>> {
         if self.eof {
             // TODO: don't return a 0 len span
             return Ok(Spanned::new(self.end_token(), Span::new(self.pos, self.pos)));
         }
 
-        if let Some(token) = self.peek {
-            Ok(token)
+        if let Some(token) = &self.peek {
+            Ok(token.clone())
         } else {
             let peek = self.lex_token(syms)?;
             self.peek = Some(peek);
-            Ok(peek)
+            Ok(self.peek.as_ref().unwrap().clone())
         }
     }
 
@@ -193,7 +193,7 @@ impl<'a> Lexer<'a> {
         &mut self,
         mut n: usize,
         syms: &mut SymbolMap,
-    ) -> Result<Spanned<Token<'a>>, Spanned<LexError>> {
+    ) -> Result<Spanned<Token>, Spanned<LexError>> {
         if n == 0 {
             return self.peek(syms);
         }
@@ -238,7 +238,7 @@ impl<'a> Lexer<'a> {
         self.input
     }
 
-    fn lex_token(&mut self, syms: &mut SymbolMap) -> Result<Spanned<Token<'a>>, Spanned<LexError>> {
+    fn lex_token(&mut self, syms: &mut SymbolMap) -> Result<Spanned<Token>, Spanned<LexError>> {
         let start;
         let result;
         if self.string_mode {
@@ -259,7 +259,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn lex_token_inner(&mut self, syms: &mut SymbolMap) -> Result<Token<'a>, LexError> {
+    fn lex_token_inner(&mut self, syms: &mut SymbolMap) -> Result<Token, LexError> {
         if let Some(token) = self.lex_symbolic(syms)? {
             return Ok(token);
         }
@@ -335,7 +335,7 @@ impl<'a> Lexer<'a> {
         Ok(false)
     }
 
-    fn lex_symbolic(&mut self, syms: &mut SymbolMap) -> Result<Option<Token<'a>>, LexError> {
+    fn lex_symbolic(&mut self, syms: &mut SymbolMap) -> Result<Option<Token>, LexError> {
         if self.read('@') {
             self.lex_global(syms)
         } else if self.read('$') {
@@ -347,7 +347,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn lex_global(&mut self, syms: &mut SymbolMap) -> Result<Option<Token<'a>>, LexError> {
+    fn lex_global(&mut self, syms: &mut SymbolMap) -> Result<Option<Token>, LexError> {
         if !self.peek_alphabetic() {
             return Err(LexError::Unknown);
         }
@@ -358,7 +358,7 @@ impl<'a> Lexer<'a> {
         Ok(Some(Token::Global(id)))
     }
 
-    fn lex_symbol(&mut self, syms: &mut SymbolMap) -> Result<Option<Token<'a>>, LexError> {
+    fn lex_symbol(&mut self, syms: &mut SymbolMap) -> Result<Option<Token>, LexError> {
         if !self.peek_alphabetic() {
             return Err(LexError::Unknown);
         }
@@ -372,7 +372,7 @@ impl<'a> Lexer<'a> {
     fn lex_ident_or_keyword(
         &mut self,
         syms: &mut SymbolMap,
-    ) -> Result<Option<Token<'a>>, LexError> {
+    ) -> Result<Option<Token>, LexError> {
         let word: &str = self.lex_word();
 
         let ident = match word {
@@ -429,7 +429,7 @@ impl<'a> Lexer<'a> {
         false
     }
 
-    fn lex_num(&mut self) -> Result<Option<Token<'a>>, LexError> {
+    fn lex_num(&mut self) -> Result<Option<Token>, LexError> {
         if let Some(p) = self.chars.peek() {
             if !p.is_numeric() {
                 return Ok(None);
@@ -497,7 +497,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn lex_string(&mut self) -> Result<Option<Token<'a>>, LexError> {
+    fn lex_string(&mut self) -> Result<Option<Token>, LexError> {
         if self.read('"') {
             self.delimiter_stack.push(Delimiter::DoubleQuote);
         } else if self.read('\'') {
@@ -511,7 +511,7 @@ impl<'a> Lexer<'a> {
         Ok(Some(self.lex_string_segment()?))
     }
 
-    fn lex_string_segment(&mut self) -> Result<Token<'a>, LexError> {
+    fn lex_string_segment(&mut self) -> Result<Token, LexError> {
         let start_pos = self.pos;
 
         let delimiter;
@@ -536,14 +536,16 @@ impl<'a> Lexer<'a> {
                     self.delimiter_stack.pop();
                     self.advance();
                     let end_pos = self.pos - 1;
-                    let string = &self.input[start_pos..end_pos];
+                    let str = &self.input[start_pos..end_pos];
+                    let escaped_string = Self::escape_string(str, delimiter)?;
 
-                    return Ok(Token::String(string));
+                    return Ok(Token::String(escaped_string));
                 } else if *c == '{' && !escape_flag && (delimiter != '\'') {
                     let end_pos = self.pos;
-                    let string = &self.input[start_pos..end_pos];
+                    let str = &self.input[start_pos..end_pos];
+                    let escaped_string = Self::escape_string(str, delimiter)?;
 
-                    return Ok(Token::String(string));
+                    return Ok(Token::String(escaped_string));
                 } else {
                     self.advance();
                     escape_flag = false
@@ -554,7 +556,38 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn lex_ctrl(&mut self) -> Result<Option<Token<'a>>, LexError> {
+    fn escape_string(str: &str, delimiter: char) -> Result<String, LexError> {
+        let mut result = String::new();
+        let mut escape_flag = false;
+
+        for c in str.chars() {
+            if escape_flag {
+                escape_flag = false;
+                let escaped_char = 
+                if c == '\\' {
+                    '\\'
+                } else if c == 'n' {
+                    '\n'
+                } else if c == delimiter {
+                    c
+                } else {
+                    return Err(LexError::Unknown);
+                };
+
+                result.push(escaped_char);
+            } else {
+                if c == '\\' {
+                    escape_flag = true;
+                } else {
+                    result.push(c);
+                }
+            }
+        }
+
+        Ok(result)
+    }
+
+    fn lex_ctrl(&mut self) -> Result<Option<Token>, LexError> {
         if let Some(c) = self.chars.peek() {
             let token = match *c {
                 '=' => {
@@ -707,7 +740,7 @@ impl<'a> Lexer<'a> {
         self.chars = self.input[self.pos..self.input.len()].chars().peekable();
     }
 
-    fn end_token(&self) -> Token<'a> {
+    fn end_token(&self) -> Token {
         Token::Ctrl(Ctrl::End)
     }
 
@@ -772,7 +805,7 @@ mod tests {
             Token::Ctrl(Ctrl::LeftCurly),
             Token::KeyWord(KeyWord::Print),
             Token::Ctrl(Ctrl::LeftParen),
-            Token::String("x is greater"),
+            Token::String("x is greater".to_string()),
             Token::Ctrl(Ctrl::RightParen),
             Token::Ctrl(Ctrl::SemiColon),
             Token::Ctrl(Ctrl::RightCurly),
@@ -780,7 +813,7 @@ mod tests {
             Token::Ctrl(Ctrl::LeftCurly),
             Token::KeyWord(KeyWord::Print),
             Token::Ctrl(Ctrl::LeftParen),
-            Token::String("y is greater"),
+            Token::String("y is greater".to_string()),
             Token::Ctrl(Ctrl::RightParen),
             Token::Ctrl(Ctrl::SemiColon),
             Token::Ctrl(Ctrl::RightCurly),
@@ -1000,9 +1033,9 @@ mod tests {
         let t2 = lexer.get_token(&mut syms).unwrap();
         let t3 = lexer.get_token(&mut syms).unwrap();
 
-        assert_eq!(t1.item, Token::String("a"));
-        assert_eq!(t2.item, Token::String("bb"));
-        assert_eq!(t3.item, Token::String("ccc"));
+        assert_eq!(t1.item, Token::String("a".to_string()));
+        assert_eq!(t2.item, Token::String("bb".to_string()));
+        assert_eq!(t3.item, Token::String("ccc".to_string()));
     }
 
     #[test]
@@ -1016,11 +1049,11 @@ mod tests {
         let t4 = lexer.get_token(&mut syms).unwrap();
         let t5 = lexer.get_token(&mut syms).unwrap();
 
-        assert_eq!(t1.item, Token::String("test"));
+        assert_eq!(t1.item, Token::String("test".to_string()));
         assert_eq!(t2.item, Token::Ctrl(Ctrl::InterpolatedLeftCurly));
         assert_eq!(t3.item, Token::Int(123));
         assert_eq!(t4.item, Token::Ctrl(Ctrl::InterpolatedRightCurly));
-        assert_eq!(t5.item, Token::String("test"));
+        assert_eq!(t5.item, Token::String("test".to_string()));
     }
 
     #[test]
@@ -1028,16 +1061,16 @@ mod tests {
         let syms = SymbolMap::new();
         let input = "`{}{}{}`";
         let tokens = vec![
-            Token::String(""),
+            Token::String("".to_string()),
             Token::Ctrl(Ctrl::InterpolatedLeftCurly),
             Token::Ctrl(Ctrl::InterpolatedRightCurly),
-            Token::String(""),
+            Token::String("".to_string()),
             Token::Ctrl(Ctrl::InterpolatedLeftCurly),
             Token::Ctrl(Ctrl::InterpolatedRightCurly),
-            Token::String(""),
+            Token::String("".to_string()),
             Token::Ctrl(Ctrl::InterpolatedLeftCurly),
             Token::Ctrl(Ctrl::InterpolatedRightCurly),
-            Token::String(""),
+            Token::String("".to_string()),
         ];
 
         assert_src_tokens(input, tokens, syms);
@@ -1048,19 +1081,19 @@ mod tests {
         let syms = SymbolMap::new();
         let input = "`aaa{`bbb{\"ccc{'ddd'}ccc\"}bbb`}aaa`";
         let tokens = vec![
-            Token::String("aaa"),
+            Token::String("aaa".to_string()),
             Token::Ctrl(Ctrl::InterpolatedLeftCurly),
-            Token::String("bbb"),
+            Token::String("bbb".to_string()),
             Token::Ctrl(Ctrl::InterpolatedLeftCurly),
-            Token::String("ccc"),
+            Token::String("ccc".to_string()),
             Token::Ctrl(Ctrl::InterpolatedLeftCurly),
-            Token::String("ddd"),
+            Token::String("ddd".to_string()),
             Token::Ctrl(Ctrl::InterpolatedRightCurly),
-            Token::String("ccc"),
+            Token::String("ccc".to_string()),
             Token::Ctrl(Ctrl::InterpolatedRightCurly),
-            Token::String("bbb"),
+            Token::String("bbb".to_string()),
             Token::Ctrl(Ctrl::InterpolatedRightCurly),
-            Token::String("aaa"),
+            Token::String("aaa".to_string()),
         ];
 
         assert_src_tokens(input, tokens, syms);
@@ -1071,7 +1104,7 @@ mod tests {
         let mut syms = SymbolMap::new();
         let input = "`start{ {key: true} }end`";
         let tokens = vec![
-            Token::String("start"),
+            Token::String("start".to_string()),
             Token::Ctrl(Ctrl::InterpolatedLeftCurly),
             Token::Ctrl(Ctrl::LeftCurly),
             Token::Ident(syms.get_id("key")),
@@ -1079,7 +1112,7 @@ mod tests {
             Token::KeyWord(KeyWord::True),
             Token::Ctrl(Ctrl::RightCurly),
             Token::Ctrl(Ctrl::InterpolatedRightCurly),
-            Token::String("end"),
+            Token::String("end".to_string()),
         ];
 
         assert_src_tokens(input, tokens, syms);
@@ -1090,10 +1123,10 @@ mod tests {
         let syms = SymbolMap::new();
         let input = "`start {} end`";
         let tokens = vec![
-            Token::String("start "),
+            Token::String("start ".to_string()),
             Token::Ctrl(Ctrl::InterpolatedLeftCurly),
             Token::Ctrl(Ctrl::InterpolatedRightCurly),
-            Token::String(" end"),
+            Token::String(" end".to_string()),
         ];
 
         assert_src_tokens(input, tokens, syms);

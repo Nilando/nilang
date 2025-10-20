@@ -69,7 +69,8 @@ generate_intrinsic_syms! {
     CEIL_SYM,
     POW_SYM,
     LOG_SYM,
-    SLEEP_SYM
+    SLEEP_SYM,
+    SELF_SYM // TODO: REMOVE THIS JUST MAKE CONSTANT NOT INTRINSIC
 }
 
 impl SymbolMap {

@@ -2,16 +2,16 @@
 === FN 0 START ===
 MAP  1
 INT  0, 1
-SYM  3, #18
+SYM  3, #19
 MEMS 1[3], 0
 OUT  1
 INT  2, 2
 MEMS 1[3], 2
 OUT  1
-SYM  4, #17
+SYM  4, #18
 MEMS 1[4], 0
 INT  0, 3
-SYM  2, #19
+SYM  2, #20
 MEMS 1[2], 0
 MEML 0, 1[4]
 OUT  0
@@ -19,7 +19,7 @@ MEML 0, 1[3]
 OUT  0
 MEML 0, 1[2]
 OUT  0
-SYM  0, #20
+SYM  0, #21
 MEML 0, 1[0]
 OUT  0
 LDN  0

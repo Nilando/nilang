@@ -42,6 +42,7 @@ pub struct Func<'gc> {
     bound_args: GcOpt<'gc, [TaggedValue<'gc>]>,
     
     // can be moved into meta data ptr
+    auto_binds: bool,
     spans: Option<GcPackedSpans<'gc>>,
     file_path: Option<Gc<'gc, VMString<'gc>>>,
     id: u32,
@@ -57,6 +58,7 @@ impl<'gc> Func<'gc> {
     ) -> Gc<'gc, Self> {
         let closure = Self {
             id: self.id,
+            auto_binds: self.auto_binds,
             arity: self.arity,
             max_clique: self.max_clique,
             locals: self.locals.clone(),
@@ -84,6 +86,7 @@ impl<'gc> Func<'gc> {
 
     pub fn new(
         id: u32,
+        auto_binds: bool,
         arity: u8,
         max_clique: u8,
         locals: Gc<'gc, [LoadedLocal<'gc>]>,
@@ -96,6 +99,7 @@ impl<'gc> Func<'gc> {
     ) -> Self {
         Self {
             id,
+            auto_binds,
             arity,
             max_clique,
             locals,
@@ -143,6 +147,7 @@ impl<'gc> Func<'gc> {
 
         let partial = Self {
             id: self.id,
+            auto_binds: false,
             arity: self.arity,
             max_clique: self.max_clique,
             locals: self.locals.clone(),
@@ -190,5 +195,9 @@ impl<'gc> Func<'gc> {
 
     pub fn get_file_path(&self) -> Option<Gc<'gc, VMString<'gc>>> {
         self.file_path.clone()
+    }
+
+    pub fn auto_binds(&self) -> bool {
+        self.auto_binds
     }
 }

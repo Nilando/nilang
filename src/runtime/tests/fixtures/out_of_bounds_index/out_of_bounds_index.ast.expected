@@ -3,7 +3,7 @@
     Assign {
         dest: Spanned {
             item: Local(
-                17,
+                18,
             ),
             span: Span {
                 start: 0,
@@ -30,7 +30,7 @@
                         store: Spanned {
                             item: Value(
                                 Ident(
-                                    17,
+                                    18,
                                 ),
                             ),
                             span: Span {

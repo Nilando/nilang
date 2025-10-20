@@ -49,7 +49,7 @@ struct ParseContext<'a> {
 }
 
 impl<'a> ParseContext<'a> {
-    fn peek(&mut self) -> Option<Spanned<Token<'a>>> {
+    fn peek(&mut self) -> Option<Spanned<Token>> {
         match self.lexer.peek(self.syms) {
             Err(lex_error) => {
                 let parse_error = lex_error.map(ParseErrorItem::LexError);
@@ -65,7 +65,7 @@ impl<'a> ParseContext<'a> {
         let _ = self.lexer.get_token(self.syms);
     }
 
-    fn peek_one_ahead(&mut self) -> Option<Spanned<Token<'a>>> {
+    fn peek_one_ahead(&mut self) -> Option<Spanned<Token>> {
         self.lexer.peek_nth(1, self.syms).ok()
     }
 

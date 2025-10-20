@@ -1,6 +1,6 @@
 ========= FILE ./src/runtime/tests/fixtures/call_non_intrinsic_sym/call_non_intrinsic_sym.bytecode.actual ========
 === FN 0 START ===
-SYM  0, #17
+SYM  0, #18
 CALL 0, 0
 LDN  0
 RTN  0
