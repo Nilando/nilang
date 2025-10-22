@@ -120,6 +120,9 @@ fn translate_unaop(
         UnaryOp::Len => {
             ByteCode::Len { dest, src }
         }
+        UnaryOp::BitFlip => {
+            ByteCode::BitFlip { dest, src }
+        }
         _ => panic!()
     }
 }
@@ -147,6 +150,10 @@ fn translate_binop(
         BinaryOp::Divide => ByteCode::Div { dest, lhs, rhs },
         BinaryOp::Lte => ByteCode::Lte { dest, lhs, rhs },
         BinaryOp::Gte => ByteCode::Gte { dest, lhs, rhs },
+        BinaryOp::BitOr => ByteCode::BitOr { dest, lhs, rhs },
+        BinaryOp::BitXor => ByteCode::BitXor { dest, lhs, rhs },
+        BinaryOp::BitShift => ByteCode::BitShift { dest, lhs, rhs },
+        BinaryOp::BitAnd => ByteCode::BitAnd { dest, lhs, rhs },
         _ => panic!(),
     }
 }

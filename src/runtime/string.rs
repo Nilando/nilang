@@ -44,6 +44,11 @@ impl<'gc> VMString<'gc> {
     // The places that are calling this should instead implement custom
     // functions. This is just a placeholder to allow those places to uses The
     // methods that are already implemented on String.
+    //
+    // A possible but sketchy solution would be to allow somehow casting to
+    // a &str, this would likely need some kind of RefCell style guard to go along
+    // with is as the VMString would need to disallow popping/pushing when something
+    // holds a reference to its underlying data
     pub fn as_string(&self) -> String {
         let mut result = String::new();
 

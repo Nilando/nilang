@@ -190,6 +190,112 @@ pub fn greater_than_or_equal<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Va
     }
 }
 
+pub fn bit_shift<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, RuntimeError> {
+    match (lhs, rhs) {
+        (Value::Int(lhs), Value::Int(rhs)) => {
+            if rhs > 0 {
+                Ok(Value::Int(lhs << rhs))
+            } else {
+                Ok(Value::Int(lhs >> rhs.abs()))
+            }
+        }
+        (Value::Float(lhs), Value::Int(rhs)) => {
+            if rhs > 0 {
+                Ok(Value::Float(f64::from_bits(lhs.to_bits() << rhs)))
+            } else {
+                Ok(Value::Float(f64::from_bits(lhs.to_bits() >> rhs.abs())))
+            }
+        }
+        (lhs, rhs) => Err(RuntimeError::new(
+            RuntimeErrorKind::TypeError,
+            Some(format!(
+                "Attempted to perform bit shift between {} and {}",
+                lhs.type_str(),
+                rhs.type_str()
+            )),
+            None
+        ))
+    }
+}
+
+pub fn bit_xor<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, RuntimeError> {
+    match (lhs, rhs) {
+        (Value::Int(lhs), Value::Int(rhs)) => {
+            Ok(Value::Int(lhs ^ rhs))
+        }
+        (Value::Float(lhs), Value::Int(rhs)) | (Value::Int(rhs), Value::Float(lhs)) => {
+            Ok(Value::Float(f64::from_bits(lhs.to_bits() ^ rhs as u64)))
+        }
+        (lhs, rhs) => Err(RuntimeError::new(
+            RuntimeErrorKind::TypeError,
+            Some(format!(
+                "Attempted to perform bitwise 'xor' between {} and {}",
+                lhs.type_str(),
+                rhs.type_str()
+            )),
+            None
+        ))
+    }
+}
+
+pub fn bit_or<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, RuntimeError> {
+    match (lhs, rhs) {
+        (Value::Int(lhs), Value::Int(rhs)) => {
+            Ok(Value::Int(lhs | rhs))
+        }
+        (Value::Float(lhs), Value::Int(rhs)) | (Value::Int(rhs), Value::Float(lhs)) => {
+            Ok(Value::Float(f64::from_bits(lhs.to_bits() | rhs as u64)))
+        }
+        (lhs, rhs) => Err(RuntimeError::new(
+            RuntimeErrorKind::TypeError,
+            Some(format!(
+                "Attempted to perform bitwise 'or' between {} and {}",
+                lhs.type_str(),
+                rhs.type_str()
+            )),
+            None
+        ))
+    }
+}
+
+pub fn bit_and<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, RuntimeError> {
+    match (lhs, rhs) {
+        (Value::Int(lhs), Value::Int(rhs)) => {
+            Ok(Value::Int(lhs & rhs))
+        }
+        (Value::Float(lhs), Value::Int(rhs)) | (Value::Int(rhs), Value::Float(lhs)) => {
+            Ok(Value::Float(f64::from_bits(lhs.to_bits() & rhs as u64)))
+        }
+        (lhs, rhs) => Err(RuntimeError::new(
+            RuntimeErrorKind::TypeError,
+            Some(format!(
+                "Attempted to perform bitwise 'and' between {} and {}",
+                lhs.type_str(),
+                rhs.type_str()
+            )),
+            None
+        ))
+    }
+}
+pub fn bit_flip<'gc>(src: Value<'gc>) -> Result<Value<'gc>, RuntimeError> {
+    match src {
+        Value::Int(src) => {
+            Ok(Value::Int(!src))
+        }
+        Value::Float(src) => {
+            Ok(Value::Float(f64::from_bits(!src.to_bits())))
+        }
+        src => Err(RuntimeError::new(
+            RuntimeErrorKind::TypeError,
+            Some(format!(
+                "Attempted to perform bit flip on {}",
+                src.type_str(),
+            )),
+            None
+        ))
+    }
+}
+
 pub fn equal<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Value<'gc>{
     Value::Bool(lhs.is_equal_to(&rhs))
 }

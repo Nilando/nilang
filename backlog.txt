@@ -20,32 +20,30 @@ IN PROGRESS:
   LABEL: START
   FORLOOP: iter_reg, item_reg, store_reg, 
   JUMP: label
-  ...
+  ... body of for loop ...
   LABEL: END
 
 FEATURE BACKLOG:
 - importing refactored
   - make it so an import is an expression import("blah")
   - imported file is only ran once
-- bitwise ops
-  - bitflip
-  - xor
-  - or
-  - and
-  - shift
 - repl 
   - auto print value returned from expression
 - "monkey patch" intrinsic
    - monkey_patch($list, $symbol, value)
 - FFI!!
+
+MAYBE???
 - async
   - await, async fn
   - running an async fn returns a promise
   - a promise can be awaited
+  - I think a promise would need to be a new primitive value?
 - throwing and catching
 
 OPTIMIZATION/REFACTOR BACKLOG:
 - add benchmarking
+- strength reduction for mod/mult/div by powers of 2
 - const locals for maps and lists
 - move span to its own module
 - GC updates:
@@ -124,3 +122,10 @@ MARCH
 - completely redesigned the parser by using parser combinators
   - this gave a huge improvement in readability
 - started redesign of the tac generator
+
+
+THE BEFORE TIMES
+- I was working on the garbage collector, Sandpit, and its accompanying
+  allocator, Nimix. Development on that I think lasted around 4 or 5 months and
+  was slower going as I was still newer to Rust and there was lots more unsafe
+  code to wrangle in those crates.

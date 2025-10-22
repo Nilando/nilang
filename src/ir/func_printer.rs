@@ -302,6 +302,10 @@ impl FuncPrinter<'_> {
             BinaryOp::Minus => "-".to_string(),
             BinaryOp::Divide => "/".to_string(),
             BinaryOp::Push => "<<".to_string(),
+            BinaryOp::BitShift => "<>".to_string(),
+            BinaryOp::BitXor => "^".to_string(),
+            BinaryOp::BitOr => "|".to_string(),
+            BinaryOp::BitAnd => "&".to_string(),
         };
 
         self.result.push_str(&format!(" {} ", s));
@@ -312,6 +316,7 @@ impl FuncPrinter<'_> {
             UnaryOp::Not => "!".to_string(),
             UnaryOp::Negate => "-".to_string(),
             UnaryOp::Len => "#".to_string(),
+            UnaryOp::BitFlip => "~".to_string(),
             UnaryOp::Pop => panic!("pop should not be converted into a regular unary op")
         };
 

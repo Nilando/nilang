@@ -15,7 +15,6 @@ pub enum ByteCode {
     StoreGlobal { src: Reg, sym: Reg },
     MemLoad { dest: Reg, store: Reg, key: Reg },
     MemStore { store: Reg, key: Reg, src: Reg },
-    Push { store: Reg, src: Reg },
     NewList { dest: Reg },
     NewMap { dest: Reg },
     LoadBool { dest: Reg, val: bool },
@@ -43,12 +42,18 @@ pub enum ByteCode {
     Jnt { src: Reg, offset: i16 },
     Jit { src: Reg, offset: i16 },
     Import { dest: Reg, path: Reg },
+    Push { store: Reg, src: Reg },
     Pop { dest: Reg, src: Reg },
     Len { dest: Reg, src: Reg },
     Clone { dest: Reg, src: Reg },
     Type { dest: Reg, src: Reg },
     Delete { dest: Reg, store: Reg, key: Reg },
-    Bind { dest: Reg, func: Reg, arg: Reg }
+    Bind { dest: Reg, func: Reg, arg: Reg },
+    BitFlip { dest: Reg, src: Reg },
+    BitXor { dest: Reg, lhs: Reg, rhs: Reg },
+    BitOr { dest: Reg, lhs: Reg, rhs: Reg },
+    BitAnd { dest: Reg, lhs: Reg, rhs: Reg },
+    BitShift { dest: Reg, lhs: Reg, rhs: Reg }
 }
 
 impl Display for ByteCode {
@@ -96,6 +101,11 @@ impl Display for ByteCode {
             ByteCode::LoadGlobal { dest, sym } => write!(f, "LDGB {dest}, #{sym}"),
             ByteCode::StoreGlobal { sym, src } => write!(f, "STGB {src}, #{sym}"),
             ByteCode::Import { dest, path } => write!(f, "IMPO {dest}, {path}"),
+            ByteCode::BitFlip { dest, src } => write!(f, "FLIP {dest}, {src}"),
+            ByteCode::BitXor { dest, lhs, rhs } => write!(f, "XOR {dest}, {lhs}, {rhs}"),
+            ByteCode::BitOr { dest, lhs, rhs } => write!(f, "OR {dest}, {lhs}, {rhs}"),
+            ByteCode::BitAnd { dest, lhs, rhs } => write!(f, "And {dest}, {lhs}, {rhs}"),
+            ByteCode::BitShift { dest, lhs, rhs } => write!(f, "SHIF {dest}, {lhs}, {rhs}"),
             ByteCode::Noop => write!(f, "NOOP"),
         }
     }

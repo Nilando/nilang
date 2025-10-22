@@ -34,6 +34,9 @@ pub enum Ctrl {
     Minus,
     Carrot,
     HashTag,
+    Tilde,
+    Pipe,
+    Ampersand,
 
     InterpolatedLeftCurly,
     InterpolatedRightCurly,
@@ -56,6 +59,12 @@ impl Ctrl {
             Ctrl::Or => Some(BinaryOp::Or),
             Ctrl::And => Some(BinaryOp::And),
             Ctrl::Push => Some(BinaryOp::Push),
+            Ctrl::Carrot => Some(BinaryOp::BitXor),
+            Ctrl::Pipe => Some(BinaryOp::BitOr),
+            Ctrl::Ampersand => Some(BinaryOp::BitAnd),
+
+            // maybe make bitshift be <>
+            // Ctrl::DoubleGt => Some(BinaryOp::BitShift), we already have a push operator
             _ => None
         }
     }
@@ -66,6 +75,7 @@ impl Ctrl {
             Ctrl::Minus => Some(UnaryOp::Negate),
             Ctrl::Carrot => Some(UnaryOp::Pop),
             Ctrl::HashTag => Some(UnaryOp::Len),
+            Ctrl::Tilde => Some(UnaryOp::BitFlip),
             _ => None
         }
     }
@@ -614,7 +624,7 @@ impl<'a> Lexer<'a> {
                     if self.read('|') {
                         return Ok(Some(Token::Ctrl(Ctrl::Or)));
                     } else {
-                        return Err(LexError::Unknown);
+                        return Ok(Some(Token::Ctrl(Ctrl::Pipe)));
                     }
                 }
                 '&' => {
@@ -623,7 +633,7 @@ impl<'a> Lexer<'a> {
                     if self.read('&') {
                         return Ok(Some(Token::Ctrl(Ctrl::And)));
                     } else {
-                        return Err(LexError::Unknown);
+                        return Ok(Some(Token::Ctrl(Ctrl::Ampersand)));
                     }
                 }
                 '<' => {
@@ -691,6 +701,7 @@ impl<'a> Lexer<'a> {
                 '%' => Token::Ctrl(Ctrl::Modulo),
                 '^' => Token::Ctrl(Ctrl::Carrot),
                 '#' => Token::Ctrl(Ctrl::HashTag),
+                '~' => Token::Ctrl(Ctrl::Tilde),
                 _ => return Ok(None),
             };
 

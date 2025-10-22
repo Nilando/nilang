@@ -110,9 +110,9 @@ fn update_grid(grid) {
 }
 
 fn print_grid(grid) {
+  s = "";
   row = 0;
   while row < #grid {
-    s = "";
     col = 0;
     while col < #grid {
       if grid[row][col] {
@@ -122,16 +122,17 @@ fn print_grid(grid) {
       }
       col = col + 1;
     }
-    print(s);
+    s << "\n";
     row = row + 1;
   }
+  print(s);
 }
 
 fn run(grid) {
   i = 0;
   while i <= 120 {
     print_grid(grid);
-    sleep(0.05);
+    //sleep(0.05);
     update_grid(grid);
     i = i + 1;
   }

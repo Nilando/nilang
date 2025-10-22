@@ -2,7 +2,7 @@ use crate::symbol_map::SymbolMap;
 
 use super::instruction_stream::InstructionStream;
 use super::op::{
-    add, bind, clone, delete, divide, equal, greater_than, greater_than_or_equal, len, less_than, less_than_or_equal, mem_load, mem_store, modulo, multiply, not_equal, pop, push, sub, ttype
+    add, bind, bit_and, bit_flip, bit_or, bit_shift, bit_xor, clone, delete, divide, equal, greater_than, greater_than_or_equal, len, less_than, less_than_or_equal, mem_load, mem_store, modulo, multiply, not_equal, pop, push, sub, ttype
 };
 use super::bytecode::Reg;
 use super::call_frame::CallFrame;
@@ -349,6 +349,15 @@ impl<'gc> VM<'gc> {
             ByteCode::Lte { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, less_than_or_equal, mu)?,
             ByteCode::Gt { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, greater_than, mu)?,
             ByteCode::Gte { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, greater_than_or_equal, mu)?,
+            ByteCode::BitShift { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, bit_shift, mu)?,
+            ByteCode::BitXor { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, bit_xor, mu)?,
+            ByteCode::BitOr { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, bit_or, mu)?,
+            ByteCode::BitAnd { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, bit_and, mu)?,
+            ByteCode::BitFlip { dest, src } => {
+                let src = Value::from(&self.get_reg(src));
+                let val = bit_flip(src)?;
+                self.set_reg_with_value(val, dest, mu);
+            }
         }
 
         Ok(None)

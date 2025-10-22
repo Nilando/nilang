@@ -4,6 +4,7 @@ pub enum UnaryOp {
     Negate,
     Pop,
     Len,
+    BitFlip,
 }
 
 #[derive(Copy, Clone, PartialEq, Debug)]
@@ -22,6 +23,10 @@ pub enum BinaryOp {
     Or,
     Push,
     Plus,
+    BitShift,
+    BitXor,
+    BitOr,
+    BitAnd,
 }
 
 impl BinaryOp {
