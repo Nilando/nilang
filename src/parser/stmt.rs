@@ -18,6 +18,11 @@ pub enum Stmt {
         inputs: Spanned<Vec<SymID>>,
         stmts: Vec<Stmt>,
     },
+    ForLoop {
+        item: SymID,
+        store: Spanned<Expr>,
+        stmts: Vec<Stmt>,
+    },
     While {
         cond: Spanned<Expr>,
         stmts: Vec<Stmt>,
@@ -46,8 +51,38 @@ pub fn stmt<'a>() -> Parser<'a, Stmt> {
             .or(closed_stmt(stmt_parser.clone()))
             .or(if_or_ifelse_stmt(stmt_parser.clone()))
             .or(while_stmt(stmt_parser.clone()))
-            .or(import_stmt(stmt_parser))
+            .or(import_stmt(stmt_parser.clone()))
+            .or(for_stmt(stmt_parser))
     })
+}
+
+// for loops are syntactic sugar!
+//
+// for value in list {
+//      print(value);
+// }
+//
+// translates into...
+//
+// iter = $iter(list);
+// while true {
+//      value = iter();
+//      if value == null {
+//          break;
+//      }
+//      print(value);
+// } 
+fn for_stmt(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
+    keyword(KeyWord::For)
+        .then(symbol())
+        .append(keyword(KeyWord::In).then(expr(sp.clone())))
+        .append(block(sp))
+        .map(|((item, store), stmts)| {
+            Stmt::ForLoop { item,
+                store,
+                stmts,
+            }
+        })
 }
 
 fn import_stmt(_: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
