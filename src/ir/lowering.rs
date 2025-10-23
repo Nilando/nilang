@@ -5,9 +5,10 @@ use super::VReg;
 
 use crate::parser::{Expr, LhsExpr, MapKey, SegmentedString, Span, Spanned, Stmt, StringSegment, Value};
 use crate::op::{BinaryOp, UnaryOp};
-use crate::symbol_map::{SymID, SymbolMap};
+use crate::symbol_map::{SymID, SymbolMap, ITER_SYM, SELF_SYM};
 
 use std::collections::BTreeSet;
+use std::fmt::Binary;
 
 pub const MAIN_FUNC_ID: u32 = 0;
 
@@ -55,9 +56,10 @@ impl LoweringCtx {
 
     fn lower_stmt(&mut self, stmt: Stmt) {
         match stmt {
-            Stmt::Expr(expr) => {
+            Stmt::Expr(expr) => { 
                 self.lower_expr(expr);
             }
+            Stmt::ForLoop { item, store, stmts } => self.lower_for_loop(item, store, stmts),
             Stmt::Return(expr) => self.lower_return(expr),
             Stmt::Break => self.lower_break(),
             Stmt::Continue => self.lower_continue(),
@@ -392,6 +394,57 @@ impl LoweringCtx {
         self.define_var(ident);
 
         self.lower_func(inputs, stmts, Some(ident));
+    }
+
+    // for loops are syntactic sugar!
+    //
+    // for value in list {
+    //      print(value);
+    // }
+    //
+    // translates into...
+    //
+    // iter = $iter(list);
+    // while true {
+    //      value = iter();
+    //      if value == null {
+    //          break;
+    //      }
+    //      print(value);
+    // } 
+    fn lower_for_loop(
+        &mut self,
+        item_sym: SymID,
+        store_expr: Spanned<Expr>,
+        stmts: Vec<Stmt>,
+    ) {
+        let store_span = store_expr.get_span();
+        let store_reg = self.lower_expr(store_expr);
+        let calle = self.load_const(TacConst::Sym(ITER_SYM));
+        let args = vec![store_reg];
+        let iter_fn_reg = self.lower_call(calle, args, store_span);
+
+        let start = self.new_label();
+        let end = self.new_label();
+
+        self.push_loop_ctx(LoopCtx { start, end });
+
+        self.emit_label(start);
+        self.emit(Tac::Jump { label: end });
+
+        self.define_var(item_sym);
+        let value_reg = self.lower_ident(item_sym);
+        self.emit(Tac::Call { dest: value_reg, src: iter_fn_reg });
+
+        let null_reg = self.load_const(TacConst::Null);
+        let temp = self.new_temp();
+        self.emit(Tac::Binop { dest: temp, op: BinaryOp::Equal, lhs: value_reg, rhs: null_reg });
+        self.emit(Tac::Jnt { src: temp, label: end });
+
+        self.lower_stmts(stmts);
+
+        self.emit_jump(start);
+        self.emit_label(end);
     }
 
     fn lower_func(
