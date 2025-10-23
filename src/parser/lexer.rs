@@ -118,7 +118,9 @@ pub enum KeyWord {
     Type,
     Delete,
     Bind,
-    Clone
+    Clone,
+    For,
+    In
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -403,6 +405,8 @@ impl<'a> Lexer<'a> {
             "delete" => Token::KeyWord(KeyWord::Delete),
             "bind" => Token::KeyWord(KeyWord::Bind),
             "clone" => Token::KeyWord(KeyWord::Clone),
+            "for" => Token::KeyWord(KeyWord::For),
+            "in" => Token::KeyWord(KeyWord::In),
             _ => {
                 let id = syms.get_id(word);
 
@@ -954,7 +958,7 @@ mod tests {
     #[test]
     fn lex_unexpected_token() {
         let mut syms = SymbolMap::new();
-        let source = r#"~"#;
+        let source = r#"@"#;
         let mut lexer = Lexer::new(source);
         let result = lexer.get_token(&mut syms);
         let error = result.unwrap_err().item;
@@ -990,9 +994,9 @@ mod tests {
         let mut syms = SymbolMap::new();
         let input = "&";
         let mut lexer = Lexer::new(input);
-        let err = lexer.get_token(&mut syms).unwrap_err();
+        let t = lexer.get_token(&mut syms).unwrap();
 
-        assert_eq!(err.item, LexError::Unknown);
+        assert_eq!(t.item, Token::Ctrl(Ctrl::Ampersand));
 
         let input = "&&";
         let mut lexer = Lexer::new(input);
@@ -1138,6 +1142,23 @@ mod tests {
             Token::Ctrl(Ctrl::InterpolatedLeftCurly),
             Token::Ctrl(Ctrl::InterpolatedRightCurly),
             Token::String(" end".to_string()),
+        ];
+
+        assert_src_tokens(input, tokens, syms);
+    }
+
+    #[test]
+    fn lex_empty_for_loop() {
+        let mut syms = SymbolMap::new();
+        let input = "for i in [] {}";
+        let tokens = vec![
+            Token::KeyWord(KeyWord::For),
+            Token::Ident(syms.get_id("i")),
+            Token::KeyWord(KeyWord::In),
+            Token::Ctrl(Ctrl::LeftBracket),
+            Token::Ctrl(Ctrl::RightBracket),
+            Token::Ctrl(Ctrl::LeftCurly),
+            Token::Ctrl(Ctrl::RightCurly),
         ];
 
         assert_src_tokens(input, tokens, syms);
