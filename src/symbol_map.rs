@@ -34,7 +34,7 @@ macro_rules! generate_intrinsic_syms {
             }
 
             // Create the init function to insert each intrinsic symbol in the correct order.
-            pub fn init(&mut self) {
+            pub fn insert_intrinsics(&mut self) {
                 let symbols = vec![
                     $(
                         stringify!($name).trim_end_matches("_SYM").to_ascii_lowercase(),
@@ -84,10 +84,11 @@ impl SymbolMap {
             id_to_str: Vec::new(),
         };
 
-        this.init();
+        this.insert_intrinsics();
 
         this
     }
+
 
     pub fn get_id(&mut self, str: &str) -> SymID {
         let str = str.to_string();

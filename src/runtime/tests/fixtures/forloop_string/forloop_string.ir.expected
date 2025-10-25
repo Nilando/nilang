@@ -1,0 +1,67 @@
+========= FILE ./src/runtime/tests/fixtures/forloop_string/forloop_string.ir.actual ========
+fn2 () {
+block0:
+  LOAD_UPVAL i_0
+  t1 = 0
+  n_0 = i_0[t1]
+  t5 = i_0[t1]
+  LOAD_UPVAL self_0
+  t7 =  # self_0
+  t8 = t5 < t7
+  jnt t8 block3
+  next block1
+
+block1:
+  t10 = i_0[t1]
+  t11 = 1
+  t12 = t10 + t11
+  i_0[t1] = t12
+  t14 = self_0[n_0]
+  RETURN t14
+
+block3:
+  t15 = null
+  RETURN t15
+
+}
+fn1 (self_0) {
+block0:
+  t1 = NEW_LIST
+  t2 = 0
+  t1 << t2
+  t5 = fn2
+  STORE_UPVAL t5, t1
+  STORE_UPVAL t5, self_0
+  RETURN t5
+
+}
+MAIN () {
+block0:
+  t0 = #str
+  t1 = #iter
+  t2 = fn1
+  patch_0 = #patch
+  STORE_ARG t0
+  STORE_ARG t1
+  STORE_ARG t2
+  t4 = CALL patch_0
+  text_0 = "Hello"
+  t8 = text_0[t1]
+  t9 = CALL t8
+  next block1
+
+block1:
+  char_0 = CALL t9
+  t11 = null
+  t12 = char_0 == t11
+  jit t12 block3
+  next block2
+
+block2:
+  PRINT char_0
+  jump block1
+
+block3:
+  RETURN t11
+
+}

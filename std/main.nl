@@ -7,7 +7,7 @@ fn default_iter(self) {
       i[0] = n + 1;
       return self[n];
     } else {
-      return null;
+      return $__end__;
     }
   };
 };
@@ -137,6 +137,38 @@ fn map(self, f) {
   return result;
 }
 
+fn list_compact(self) {
+  return self.filter(fn(v) { return v != null; });
+}
+
+fn map_compact(self) {
+  result = {};
+
+  for pair in self {
+    if pair[1] != null {
+      result[pair[0]] = pair[1];
+    }
+  }
+
+  return result;
+}
+
+fn flatten(self) {
+  result = [];
+
+  for v in self {
+    if type(v) == $list {
+      for k in v.flatten() {
+        result << k;
+      }
+    } else {
+      result << v;
+    }
+  }
+
+  return result;
+}
+
 patch($list, $join, join);
 patch($list, $iter, default_iter);
 patch($list, $find, find);
@@ -144,6 +176,8 @@ patch($list, $enumerate, default_enumerate);
 patch($list, $reverse, reverse_list);
 patch($list, $map, map);
 patch($list, $filter, filter);
+patch($list, $compact, list_compact);
+patch($list, $flatten, flatten);
 
 patch($str, $iter, default_iter);
 patch($str, $enumerate, default_enumerate);
@@ -153,5 +187,6 @@ patch($map, $iter, default_map_iter);
 patch($map, $keys, keys);
 patch($map, $values, values);
 patch($map, $contains_key, contains_key);
+patch($map, $compact, map_compact);
 
 patch($fn, $iter, fn(self) { return self; });

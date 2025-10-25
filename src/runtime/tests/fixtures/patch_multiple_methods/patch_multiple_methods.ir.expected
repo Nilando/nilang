@@ -1,0 +1,159 @@
+========= FILE ./src/runtime/tests/fixtures/patch_multiple_methods/patch_multiple_methods.ir.actual ========
+fn2 () {
+block0:
+  LOAD_UPVAL i_0
+  t1 = 0
+  n_0 = i_0[t1]
+  t5 = i_0[t1]
+  LOAD_UPVAL self_0
+  t7 =  # self_0
+  t8 = t5 < t7
+  jnt t8 block3
+  next block1
+
+block1:
+  t10 = i_0[t1]
+  t11 = 1
+  t12 = t10 + t11
+  i_0[t1] = t12
+  t14 = self_0[n_0]
+  RETURN t14
+
+block3:
+  t15 = null
+  RETURN t15
+
+}
+fn1 (self_0) {
+block0:
+  t1 = NEW_LIST
+  t2 = 0
+  t1 << t2
+  t5 = fn2
+  STORE_UPVAL t5, t1
+  STORE_UPVAL t5, self_0
+  RETURN t5
+
+}
+fn3 (self_0) {
+block0:
+  t1 =  # self_0
+  t2 = 0
+  t3 = t1 > t2
+  jnt t3 block2
+  next block1
+
+block1:
+  t5 = self_0[t2]
+  RETURN t5
+
+block2:
+  t6 = null
+  RETURN t6
+
+}
+fn4 (self_0) {
+block0:
+  t1 =  # self_0
+  t2 = 0
+  t3 = t1 > t2
+  jnt t3 block2
+  next block1
+
+block1:
+  t4 =  # self_0
+  t5 = 1
+  t6 = t4 - t5
+  t7 = self_0[t6]
+  RETURN t7
+
+block2:
+  t8 = null
+  RETURN t8
+
+}
+fn5 (self_0) {
+block0:
+  total_0 = 0
+  t3 = #iter
+  t4 = self_0[t3]
+  t5 = CALL t4
+  next block1(total_0)
+
+block1(total_1):
+  item_0 = CALL t5
+  t7 = null
+  t8 = item_0 == t7
+  jit t8 block3
+  next block2
+
+block2:
+  total_2 = total_1 + item_0
+  jump block1(total_2)
+
+block3:
+  RETURN total_1
+
+}
+MAIN () {
+block0:
+  t0 = #list
+  t1 = #iter
+  t2 = fn1
+  patch_0 = #patch
+  STORE_ARG t0
+  STORE_ARG t1
+  STORE_ARG t2
+  t4 = CALL patch_0
+  t6 = #first
+  t7 = fn3
+  STORE_ARG t0
+  STORE_ARG t6
+  STORE_ARG t7
+  t8 = CALL patch_0
+  t10 = #last
+  t11 = fn4
+  STORE_ARG t0
+  STORE_ARG t10
+  STORE_ARG t11
+  t12 = CALL patch_0
+  t14 = #sum
+  t15 = fn5
+  STORE_ARG t0
+  STORE_ARG t14
+  STORE_ARG t15
+  t16 = CALL patch_0
+  t17 = NEW_LIST
+  t18 = 1
+  t17 << t18
+  t20 = 2
+  t17 << t20
+  t22 = 3
+  t17 << t22
+  t24 = 4
+  t17 << t24
+  t26 = 5
+  t17 << t26
+  t30 = t17[t6]
+  t31 = CALL t30
+  PRINT t31
+  t34 = t17[t10]
+  t35 = CALL t34
+  PRINT t35
+  t38 = t17[t14]
+  t39 = CALL t38
+  PRINT t39
+  empty_0 = NEW_LIST
+  t44 = empty_0[t6]
+  t45 = CALL t44
+  PRINT t45
+  t48 = empty_0[t10]
+  t49 = CALL t48
+  PRINT t49
+  t52 = empty_0[t14]
+  t53 = CALL t52
+  PRINT t53
+  t55 = null
+  RETURN t55
+
+}

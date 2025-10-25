@@ -30,6 +30,11 @@ fn multi_val_closure() {
 }
 
 #[test]
+fn forloop_custom_iterator() {
+  super::fixture_test("forloop_custom_iterator")
+}
+
+#[test]
 fn basic_popping() {
   super::fixture_test("basic_popping")
 }
@@ -37,6 +42,11 @@ fn basic_popping() {
 #[test]
 fn fizzbuzz() {
   super::fixture_test("fizzbuzz")
+}
+
+#[test]
+fn forloop_nested() {
+  super::fixture_test("forloop_nested")
 }
 
 #[test]
@@ -130,8 +140,18 @@ fn call_with_wrong_num_args() {
 }
 
 #[test]
+fn patch_with_closure() {
+  super::fixture_test("patch_with_closure")
+}
+
+#[test]
 fn very_large_map() {
   super::fixture_test("very_large_map")
+}
+
+#[test]
+fn forloop_with_return() {
+  super::fixture_test("forloop_with_return")
 }
 
 #[test]
@@ -165,8 +185,23 @@ fn closure_counter() {
 }
 
 #[test]
+fn forloop_basic() {
+  super::fixture_test("forloop_basic")
+}
+
+#[test]
+fn patch_basic() {
+  super::fixture_test("patch_basic")
+}
+
+#[test]
 fn dead_code() {
   super::fixture_test("dead_code")
+}
+
+#[test]
+fn forloop_accumulator() {
+  super::fixture_test("forloop_accumulator")
 }
 
 #[test]
@@ -205,6 +240,11 @@ fn big_backtrace() {
 }
 
 #[test]
+fn forloop_string() {
+  super::fixture_test("forloop_string")
+}
+
+#[test]
 fn not_op() {
   super::fixture_test("not_op")
 }
@@ -240,6 +280,16 @@ fn constant_folding() {
 }
 
 #[test]
+fn forloop_building_list() {
+  super::fixture_test("forloop_building_list")
+}
+
+#[test]
+fn forloop_empty_list() {
+  super::fixture_test("forloop_empty_list")
+}
+
+#[test]
 fn string_indexing() {
   super::fixture_test("string_indexing")
 }
@@ -257,6 +307,11 @@ fn divide_by_zero() {
 #[test]
 fn bool_intrinsic() {
   super::fixture_test("bool_intrinsic")
+}
+
+#[test]
+fn patch_multiple_methods() {
+  super::fixture_test("patch_multiple_methods")
 }
 
 #[test]

@@ -1,0 +1,26 @@
+========= FILE ./src/runtime/tests/fixtures/patch_basic/patch_basic.ir.actual ========
+fn1 (self_0) {
+block0:
+  t2 = "!"
+  self_0 << t2
+  RETURN self_0
+
+}
+MAIN () {
+block0:
+  t0 = #str
+  t1 = #exclaim
+  t2 = fn1
+  patch_0 = #patch
+  STORE_ARG t0
+  STORE_ARG t1
+  STORE_ARG t2
+  t4 = CALL patch_0
+  message_0 = "Hello"
+  t8 = message_0[t1]
+  result_0 = CALL t8
+  PRINT result_0
+  t12 = null
+  RETURN t12
+
+}

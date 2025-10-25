@@ -1,0 +1,51 @@
+========= FILE ./src/runtime/tests/fixtures/forloop_empty_list/forloop_empty_list.bytecode.actual ========
+=== FN 2 START ===
+LDUV 4, 0
+INT  3, 0
+MEML 2, 4[3]
+MEML 5, 4[3]
+LDUV 1, 1
+LEN 0, 1
+LT   0, 5, 0
+JNT  7, 0
+MEML 5, 4[3]
+INT  0, 1
+ADD  0, 5, 0
+MEMS 4[3], 0
+MEML 0, 1[2]
+RTN  0
+LDN  0
+RTN  0
+=== END ===
+=== FN 1 START ===
+LIST 2
+INT  1, 0
+PUSH 2, 1
+LOC  1, 0
+STUV 1, 2
+STUV 1, 0
+RTN  1
+=== END ===
+=== FN 0 START ===
+SYM  3, #6
+SYM  2, #19
+LOC  1, 0
+SYM  0, #17
+ARG  3
+ARG  2
+ARG  1
+CALL 0, 0
+LIST 1
+INT  0, 0
+MEML 1, 1[2]
+CALL 1, 1
+CALL 2, 1
+LDN  3
+EQ   2, 2, 3
+JIT  4, 2
+INT  2, 1
+ADD  0, 0, 2
+JMP  -6
+OUT  0
+RTN  3
+=== END ===

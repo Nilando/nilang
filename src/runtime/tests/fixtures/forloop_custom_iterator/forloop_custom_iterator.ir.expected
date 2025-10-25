@@ -1,0 +1,79 @@
+========= FILE ./src/runtime/tests/fixtures/forloop_custom_iterator/forloop_custom_iterator.ir.actual ========
+fn3 () {
+block0:
+  LOAD_UPVAL current_0
+  t1 = 0
+  t2 = current_0[t1]
+  LOAD_UPVAL self_0
+  t4 = #end
+  t5 = self_0[t4]
+  t6 = t2 < t5
+  jnt t6 block3
+  next block1
+
+block1:
+  val_0 = current_0[t1]
+  t11 = current_0[t1]
+  t12 = 1
+  t13 = t11 + t12
+  current_0[t1] = t13
+  RETURN val_0
+
+block3:
+  t15 = null
+  RETURN t15
+
+}
+fn2 (self_0) {
+block0:
+  t1 = NEW_LIST
+  t2 = #start
+  t3 = self_0[t2]
+  t1 << t3
+  t6 = fn3
+  STORE_UPVAL t6, t1
+  STORE_UPVAL t6, self_0
+  RETURN t6
+
+}
+fn1 (start_0, end_0) {
+block0:
+  range_0 = NEW_MAP
+  t4 = #start
+  range_0[t4] = start_0
+  t5 = #end
+  range_0[t5] = end_0
+  t6 = fn2
+  t7 = #iter
+  range_0[t7] = t6
+  RETURN range_0
+
+}
+MAIN () {
+block0:
+  make_range_0 = fn1
+  t1 = 2
+  t2 = 7
+  STORE_ARG t1
+  STORE_ARG t2
+  range_0 = CALL make_range_0
+  t5 = #iter
+  t6 = range_0[t5]
+  t7 = CALL t6
+  next block1
+
+block1:
+  n_0 = CALL t7
+  t9 = null
+  t10 = n_0 == t9
+  jit t10 block3
+  next block2
+
+block2:
+  PRINT n_0
+  jump block1
+
+block3:
+  RETURN t9
+
+}

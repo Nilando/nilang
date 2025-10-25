@@ -1,0 +1,22 @@
+========= FILE ./src/runtime/tests/fixtures/patch_basic/patch_basic.bytecode.actual ========
+=== FN 1 START ===
+LOC  1, 0
+PUSH 0, 1
+RTN  0
+=== END ===
+=== FN 0 START ===
+SYM  3, #2
+SYM  1, #20
+LOC  2, 0
+SYM  0, #17
+ARG  3
+ARG  1
+ARG  2
+CALL 0, 0
+LOC  0, 1
+MEML 0, 0[1]
+CALL 0, 0
+OUT  0
+LDN  0
+RTN  0
+=== END ===

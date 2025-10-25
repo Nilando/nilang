@@ -1,0 +1,32 @@
+========= FILE ./src/runtime/tests/fixtures/patch_with_closure/patch_with_closure.ir.actual ========
+fn1 (self_0) {
+block0:
+  LOAD_UPVAL multiplier_0
+  t2 = self_0 * multiplier_0
+  RETURN t2
+
+}
+MAIN () {
+block0:
+  multiplier_0 = 10
+  t2 = #int
+  t3 = #scale
+  t4 = fn1
+  STORE_UPVAL t4, multiplier_0
+  patch_0 = #patch
+  STORE_ARG t2
+  STORE_ARG t3
+  STORE_ARG t4
+  t6 = CALL patch_0
+  value_0 = 1
+  t10 = value_0[t3]
+  t11 = CALL t10
+  PRINT t11
+  value_1 = 2
+  t15 = value_1[t3]
+  t16 = CALL t15
+  PRINT t16
+  t18 = null
+  RETURN t18
+
+}

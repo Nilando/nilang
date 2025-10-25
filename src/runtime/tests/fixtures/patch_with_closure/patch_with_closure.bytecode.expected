@@ -1,0 +1,28 @@
+========= FILE ./src/runtime/tests/fixtures/patch_with_closure/patch_with_closure.bytecode.actual ========
+=== FN 1 START ===
+LDUV 1, 0
+MULT 0, 0, 1
+RTN  0
+=== END ===
+=== FN 0 START ===
+INT  0, 10
+SYM  3, #0
+SYM  1, #21
+LOC  2, 0
+STUV 2, 0
+SYM  0, #17
+ARG  3
+ARG  1
+ARG  2
+CALL 0, 0
+INT  0, 1
+MEML 0, 0[1]
+CALL 0, 0
+OUT  0
+INT  0, 2
+MEML 0, 0[1]
+CALL 0, 0
+OUT  0
+LDN  0
+RTN  0
+=== END ===
