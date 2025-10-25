@@ -35,6 +35,7 @@ fn fixture_test(test_name: &str) {
         no_optimize: false,
         inline: None,
         stdin: false,
+        std_lib: Some(None),
         dry_run: false,
         file: Some(full_program_path),
         script_args: vec![],
@@ -58,7 +59,7 @@ fn fixture_test(test_name: &str) {
     let mut file = File::create(err_path_actual.clone()).unwrap(); // Creates or truncates the file
                                                                    //let 
     let source_path = config.get_source_path().unwrap();
-    let runtime = Runtime::init(SymbolMap::new(), config);
+    let runtime = Runtime::init(SymbolMap::new(), config).unwrap();
     if let Err(err) = run_script(runtime, source_path) {
         let content = err.render();
     

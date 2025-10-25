@@ -1,6 +1,6 @@
 use sandpit::{Gc, Mutator};
 
-use crate::symbol_map::{SymID, BOOL_SYM, FLOAT_SYM, FN_SYM, INT_SYM, LIST_SYM, MAP_SYM, NULL_SYM, STR_SYM, SYM_SYM};
+use crate::symbol_map::SymID;
 
 use super::error::RuntimeErrorKind;
 use super::hash_map::GcHashMap;
@@ -8,7 +8,7 @@ use super::list::List;
 use super::string::VMString;
 use super::type_objects::TypeObjects;
 use super::value::Value;
-use super::{type_objects, RuntimeError};
+use super::RuntimeError;
 
 pub fn add<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, RuntimeError> {
     match (lhs, rhs) {

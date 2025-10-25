@@ -10,3 +10,4 @@ mod op;
 pub use runtime::{Runtime, Config, InterpreterError};
 pub use symbol_map::SymbolMap;
 pub use repl::run_repl;
+pub use compile::compile;

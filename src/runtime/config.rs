@@ -44,6 +44,9 @@ pub struct Config {
     #[clap(last = true)]
     pub script_args: Vec<String>,
 
+    #[clap(short = 'l', long)]
+    pub std_lib: Option<Option<String>>,
+
     // only meant to be used by tests in order to provide a way to redirect 
     // output for testing purposes
     pub __output_override: Option<String>
@@ -60,6 +63,7 @@ impl Config {
             inline: None,
             stdin: true,
             dry_run: false,
+            std_lib: None,
             file: None,
             script_args: vec![],
             __output_override: None,

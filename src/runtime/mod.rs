@@ -66,14 +66,40 @@ pub struct Runtime {
 }
 
 impl Runtime {
-    pub fn init(syms: SymbolMap, config: Config) -> Self {
+    pub fn init(syms: SymbolMap, config: Config) -> Result<Self, InterpreterError> {
         let arena = Arena::new(|mu| VM::new(mu));
 
-        Runtime {
+        let mut runtime = Runtime {
             arena,
             syms,
             config,
+        };
+
+        match runtime.load_std() {
+            Err(err) => {
+                eprintln!("ERROR: failed to load std lib");
+                Err(err)
+            }
+            Ok(_) => Ok(runtime)
         }
+    }
+
+    fn load_std(&mut self) -> Result<(), InterpreterError> {
+        let std_lib_path = 
+        if let Some(arg) = &self.config.std_lib {
+            if let Some(path) = arg {
+                path.clone()
+            } else {
+                return Ok(());
+            }
+        } else {
+            "./std/main.nl".to_string()
+        };
+
+        self.load_module(&std_lib_path)?;
+        self.run()?;
+
+        return Ok(());
     }
 
     pub fn run(&mut self) -> Result<(), InterpreterError> {
@@ -92,7 +118,9 @@ impl Runtime {
 
             match vm_result {
                 // TODO have exit also return an exit value?
-                Ok(ExitCode::Exit) => return Ok(()),
+                Ok(ExitCode::Exit) => {
+                    return Ok(());
+                },
                 Ok(ExitCode::Yield) => {}
                 Ok(ExitCode::Print) => self.print(&mut output)?,
                 Ok(ExitCode::LoadModule(ref path)) => self.load_module(&path)?,
@@ -109,7 +137,7 @@ impl Runtime {
     }
 
     pub fn load_inline(&mut self, source: &str) -> Result<(), InterpreterError> {
-        match self.compile_with_config(&source) {
+        match self.compile_with_config(&source, None) {
             Err(err) => {
                 return Err(InterpreterError::ParseError(err));
             }
@@ -121,7 +149,7 @@ impl Runtime {
 
     pub fn load_module(&mut self, path: &String) -> Result<(), InterpreterError> {
         match std::fs::read_to_string(&path) {
-            Ok(module) => match self.compile_with_config(&module) {
+            Ok(module) => match self.compile_with_config(&module, Some(path.clone())) {
                 Err(err) => Err(InterpreterError::ParseError(err)),
                 Ok(program) => {
                     self.load_program(program, Some(&path));
@@ -157,11 +185,11 @@ impl Runtime {
         Ok(())
     }
 
-    fn compile_with_config(&mut self, source: &str) -> Result<Vec<Func>, ParseError> {
+    fn compile_with_config(&mut self, source: &str, path: Option<String>) -> Result<Vec<Func>, ParseError> {
         compile(
             &mut self.syms,
             source,
-            self.config.get_source_path(),
+            path,
             !self.config.no_optimize,
             self.config.pretty_ir,
             self.config.ast_output_path.clone(),

@@ -5,10 +5,9 @@ use super::VReg;
 
 use crate::parser::{Expr, LhsExpr, MapKey, SegmentedString, Span, Spanned, Stmt, StringSegment, Value};
 use crate::op::{BinaryOp, UnaryOp};
-use crate::symbol_map::{SymID, SymbolMap, ITER_SYM, SELF_SYM};
+use crate::symbol_map::{SymID, SymbolMap, ITER_SYM};
 
 use std::collections::BTreeSet;
-use std::fmt::Binary;
 
 pub const MAIN_FUNC_ID: u32 = 0;
 

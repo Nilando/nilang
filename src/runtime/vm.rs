@@ -1,4 +1,4 @@
-use crate::symbol_map::{SymbolMap, ITER_SYM};
+use crate::symbol_map::SymbolMap;
 
 use super::instruction_stream::InstructionStream;
 use super::op::{

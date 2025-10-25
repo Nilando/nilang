@@ -1,18 +1,15 @@
 VERSION 0.1.0
 
 IN PROGRESS:
-- for loops
-  - support custom iter fn
-  - maybe shouldn't rely on global setting?
-- add a preloaded std library
-- and allow importing from said library!
 - importing refactored
   - make it so an import is an expression import("blah")
   - imported file is only ran once
-
-FEATURE BACKLOG:
 - repl 
   - auto print value returned from expression
+- flush out the std lib just a little
+- FFI
+- implicit returns
+- LSP
 
 OPTIMIZATION/REFACTOR BACKLOG:
 - add benchmarking

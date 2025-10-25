@@ -11,7 +11,16 @@ use clap::Parser as CliParser;
 fn main() {
     let config = Config::parse();
     let source_path = config.get_source_path();
-    let runtime = Runtime::init(SymbolMap::new(), config);
+    let runtime =
+    match Runtime::init(SymbolMap::new(), config) {
+        Ok(runtime) => runtime,
+        Err(err) => {
+            let err_msg = err.render();
+
+            eprintln!("{}", err_msg);
+            return;
+        }
+    };
 
     if let Some(path) = source_path {
         match run_script(runtime, path) {
