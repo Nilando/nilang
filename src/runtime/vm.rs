@@ -1,4 +1,4 @@
-use crate::symbol_map::SymbolMap;
+use crate::symbol_map::{SymbolMap, ITER_SYM};
 
 use super::instruction_stream::InstructionStream;
 use super::op::{
@@ -13,6 +13,7 @@ use super::list::List;
 use super::stack::Stack;
 use super::string::VMString;
 use super::tagged_value::TaggedValue;
+use super::type_objects::TypeObjects;
 use super::value::Value;
 use super::error::{Backtrace, RuntimeError, RuntimeErrorKind};
 
@@ -38,6 +39,7 @@ pub struct VM<'gc> {
     stack: Stack<'gc>,
     globals: Gc<'gc, GcHashMap<'gc>>,
     output_item: Gc<'gc, TaggedValue<'gc>>,
+    type_objects: TypeObjects<'gc>,
 }
 
 impl<'gc> VM<'gc> {
@@ -45,11 +47,13 @@ impl<'gc> VM<'gc> {
         let globals = GcHashMap::alloc(mu);
         let output_item = Gc::new(mu, TaggedValue::new_null());
         let stack = Stack::new(mu);
+        let type_objects = TypeObjects::alloc(mu);
 
         Self {
             stack,
             globals,
-            output_item
+            output_item,
+            type_objects
         }
     }
 
@@ -225,7 +229,8 @@ impl<'gc> VM<'gc> {
                 self.count_args_then_call(mu, symbols, instr_stream)?;
             }
             ByteCode::Call { dest, src } => {
-                self.call_function(dest, src, 0, mu, symbols, instr_stream)?;
+                let calle = Value::from(&self.get_reg(src));
+                self.call_function(dest, calle, 0, mu, symbols, instr_stream)?;
             }
             ByteCode::Return { src } => {
                 let val = self.get_reg(src);
@@ -256,7 +261,7 @@ impl<'gc> VM<'gc> {
             ByteCode::MemLoad { dest, store, key } => {
                 let store = Value::from(&self.get_reg(store));
                 let key = Value::from(&self.get_reg(key));
-                let value = mem_load(store, key, mu)?;
+                let value = mem_load(store, key, &self.type_objects, mu)?;
 
                 self.set_reg(TaggedValue::from_value(value, mu), dest, mu);
             }
@@ -294,7 +299,7 @@ impl<'gc> VM<'gc> {
             }
             ByteCode::Type { dest, src } => {
                 let src = Value::from(&self.get_reg(src));
-                let val = ttype(src);
+                let val = ttype(&src);
 
                 self.set_reg(TaggedValue::from_value(val, mu), dest, mu);
             }
@@ -475,7 +480,8 @@ impl<'gc> VM<'gc> {
                     count += 1;
                 }
                 ByteCode::Call { dest, src } => {
-                    return self.call_function(dest, src, count, mu, syms, instr_stream);
+                    let calle = Value::from(&self.get_reg(src));
+                    return self.call_function(dest, calle, count, mu, syms, instr_stream);
                 }
                 _ => {
                     return Err(RuntimeError::new(
@@ -491,13 +497,13 @@ impl<'gc> VM<'gc> {
     fn call_function(
         &self,
         dest: Reg,
-        src: Reg,
+        calle: Value<'gc>,
         supplied_args: usize,
         mu: &'gc Mutator,
         syms: &mut SymbolMap,
         instr_stream: &mut InstructionStream<'gc>,
     ) -> Result<(), RuntimeError> {
-        match Value::from(&self.get_reg(src)) {
+        match calle {
             Value::Func(func) => {
                 let expected_args = func.arity() as usize;
                 let bound_args = func.get_bound_args();
@@ -537,7 +543,6 @@ impl<'gc> VM<'gc> {
                 Ok(())
             }
             Value::SymId(sym_id) => {
-
                 if !SymbolMap::is_intrinsic(sym_id) {
                     return Err(self.new_error(
                         RuntimeErrorKind::TypeError,
@@ -547,7 +552,7 @@ impl<'gc> VM<'gc> {
 
                 instr_stream.jump((-1) * ((supplied_args + 1) as i16));
 
-                let result = call_intrinsic(&self.stack, instr_stream, supplied_args, sym_id, syms, mu);
+                let result = call_intrinsic(&self.stack, instr_stream, supplied_args, sym_id, syms, mu, &self.type_objects);
 
                 instr_stream.advance();
 

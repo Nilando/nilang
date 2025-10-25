@@ -1,6 +1,6 @@
 use sandpit::{Gc, Mutator};
 
-use crate::symbol_map::SymbolMap;
+use crate::symbol_map::{SymID, SymbolMap, BOOL_SYM, FLOAT_SYM, FN_SYM, INT_SYM, LIST_SYM, MAP_SYM, NULL_SYM, STR_SYM, SYM_SYM};
 
 use super::func::Func;
 use super::hash_map::GcHashMap;
@@ -104,6 +104,20 @@ impl<'gc> Value<'gc> {
                 true
             }
             _ => false,
+        }
+    }
+
+    pub fn get_type_id(&self) -> SymID {
+        match self {
+            Value::Null => NULL_SYM,
+            Value::Bool(_) => BOOL_SYM,
+            Value::SymId(_) => SYM_SYM,
+            Value::Float(_) => FLOAT_SYM,
+            Value::Int(_)  => INT_SYM,
+            Value::String(_) => STR_SYM,
+            Value::List(_) => LIST_SYM,
+            Value::Map(_) => MAP_SYM,
+            Value::Func(_) => FN_SYM,
         }
     }
 

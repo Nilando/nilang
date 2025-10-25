@@ -70,7 +70,11 @@ generate_intrinsic_syms! {
     POW_SYM,
     LOG_SYM,
     SLEEP_SYM,
-    SELF_SYM // TODO: REMOVE THIS JUST MAKE CONSTANT NOT INTRINSIC
+    PATCH_SYM,
+
+    // TODO: REMOVE THESE JUST MAKE CONSTANT NOT INTRINSIC
+    SELF_SYM,
+    ITER_SYM
 }
 
 impl SymbolMap {

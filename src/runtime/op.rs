@@ -1,13 +1,14 @@
 use sandpit::{Gc, Mutator};
 
-use crate::symbol_map::{BOOL_SYM, FLOAT_SYM, FN_SYM, INT_SYM, LIST_SYM, MAP_SYM, NULL_SYM, STR_SYM, SYM_SYM};
+use crate::symbol_map::{SymID, BOOL_SYM, FLOAT_SYM, FN_SYM, INT_SYM, LIST_SYM, MAP_SYM, NULL_SYM, STR_SYM, SYM_SYM};
 
 use super::error::RuntimeErrorKind;
 use super::hash_map::GcHashMap;
 use super::list::List;
 use super::string::VMString;
+use super::type_objects::TypeObjects;
 use super::value::Value;
-use super::RuntimeError;
+use super::{type_objects, RuntimeError};
 
 pub fn add<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, RuntimeError> {
     match (lhs, rhs) {
@@ -307,9 +308,10 @@ pub fn not_equal<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Value<'gc> {
 pub fn mem_load<'gc>(
     store: Value<'gc>,
     key: Value<'gc>,
+    type_objects: &TypeObjects<'gc>,
     mu: &'gc Mutator,
 ) -> Result<Value<'gc>, RuntimeError> {
-    match (&store, key) {
+    match (store, key) {
         (Value::List(list), Value::Int(idx)) => {
             let out_of_bounds = if idx >= 0  {
                 list.len() <= idx as usize
@@ -344,7 +346,8 @@ pub fn mem_load<'gc>(
             }
         }
         (Value::Map(map), key) => {
-            if let Some(val) = map.get(&key.as_tagged(mu)) {
+            let tagged_key = key.as_tagged(mu);
+            if let Some(val) = map.get(&tagged_key.clone()) {
                 match Value::from(&val) {
                     Value::Func(func) => {
                         if func.auto_binds() {
@@ -356,9 +359,14 @@ pub fn mem_load<'gc>(
                     value => Ok(value)
                 }
             } else {
-                Ok(Value::Null)
+                if let Value::SymId(sym_id) = Value::from(&tagged_key) {
+                    access_type_object(Value::Map(map), sym_id, type_objects, mu)
+                } else {
+                    Ok(Value::Null)
+                }
             }
         }
+        (store, Value::SymId(sym_id)) => access_type_object(store, sym_id, type_objects, mu),
         (lhs, rhs) => Err(RuntimeError::new(
             RuntimeErrorKind::TypeError,
             Some(format!(
@@ -368,10 +376,29 @@ pub fn mem_load<'gc>(
             )),
             None
         ))
-        // here you could check if the thing we are loading is a function,
-        // and if its first arg is Value<'gc>, load the thing we are calling this on
-        // into Value<'gc> as a upvalue?
-        // can also be a value::map, followed by any value
+    }
+}
+
+fn access_type_object<'gc>(
+    store_value: Value<'gc>,
+    key: SymID,
+    type_objects: &TypeObjects<'gc>,
+    mu: &'gc Mutator,
+) -> Result<Value<'gc>, RuntimeError> {
+    let type_obj = type_objects.get_type_obj(store_value.get_type_id()).unwrap();
+    if let Some(val) = type_obj.get(&Value::SymId(key).as_tagged(mu)) {
+        match Value::from(&val) {
+            Value::Func(func) => {
+                if func.auto_binds() {
+                    bind(Value::Func(func), store_value, mu)
+                } else {
+                    Ok(Value::Func(func))
+                }
+            }
+            value => Ok(value)
+        }
+    } else {
+        Ok(Value::Null)
     }
 }
 
@@ -510,18 +537,8 @@ pub fn clone<'gc>(
     }
 }
 
-pub fn ttype<'gc>(arg: Value<'gc>) -> Value<'gc> {
-    match arg {
-        Value::Null => Value::SymId(NULL_SYM),
-        Value::Bool(_) => Value::SymId(BOOL_SYM),
-        Value::SymId(_) => Value::SymId(SYM_SYM),
-        Value::Float(_) => Value::SymId(FLOAT_SYM),
-        Value::Int(_)  => Value::SymId(INT_SYM),
-        Value::String(_) => Value::SymId(STR_SYM),
-        Value::List(_) => Value::SymId(LIST_SYM),
-        Value::Map(_) => Value::SymId(MAP_SYM),
-        Value::Func(_) => Value::SymId(FN_SYM),
-    }
+pub fn ttype<'gc>(arg: &Value<'gc>) -> Value<'gc> {
+    Value::SymId(arg.get_type_id())
 }
 
 pub fn delete<'gc>(

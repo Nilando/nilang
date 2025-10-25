@@ -4,7 +4,7 @@ LOC  0, 0
 IMPO 0, 0
 OUT  0
 BOOL 1, true
-SYM  0, #19
+SYM  0, #21
 STGB 1, #0
 LOC  0, 0
 IMPO 0, 0
@@ -14,7 +14,7 @@ RTN  0
 === END ===
 ========= FILE ./src/runtime/tests/fixtures/importing/importing.bytecode.actual ========
 === FN 0 START ===
-SYM  0, #19
+SYM  0, #21
 LDGB 0, #0
 JNT  3, 0
 LOC  0, 0
@@ -24,7 +24,7 @@ RTN  0
 === END ===
 ========= FILE ./src/runtime/tests/fixtures/importing/importing.bytecode.actual ========
 === FN 0 START ===
-SYM  0, #19
+SYM  0, #21
 LDGB 0, #0
 JNT  3, 0
 LOC  0, 0

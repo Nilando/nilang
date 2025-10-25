@@ -74,6 +74,9 @@ impl<'a> ParseContext<'a> {
     }
 
     fn pos(&self) -> usize {
+        // TODO: This function is only used in one place, and instead of 
+        // getting the current position of the lexer, I think we actually want
+        // the last parsed tokens span.end
         self.lexer.pos()
     }
 

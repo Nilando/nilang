@@ -1,3 +1,17 @@
+@LIST_ITER = fn(list) {
+  i = [0];
+
+  return fn() {
+    n = i[0];
+    if i[0] < #list {
+      i[0] = i[0] + 1;
+      return list[n];
+    } else {
+      return null;
+    }
+  };
+};
+
 fn new_grid(size) {
   grid = [];
 
@@ -111,19 +125,15 @@ fn update_grid(grid) {
 
 fn print_grid(grid) {
   s = "";
-  row = 0;
-  while row < #grid {
-    col = 0;
-    while col < #grid {
-      if grid[row][col] {
+  for row in grid {
+    for cell in row {
+      if cell {
         s << "██";
       } else {
         s << "  ";
       }
-      col = col + 1;
     }
     s << "\n";
-    row = row + 1;
   }
   print(s);
 }

@@ -4,15 +4,17 @@ use sandpit::{Gc, Mutator};
 
 use crate::runtime::string::VMString;
 use crate::symbol_map::{
-    SymID, SymbolMap, ABS_SYM, ARGS_SYM, BOOL_SYM, CEIL_SYM, FLOAT_SYM, FLOOR_SYM, FN_SYM, INT_SYM, LIST_SYM, LOG_SYM, MAP_SYM, NULL_SYM, POW_SYM, READ_FILE_SYM, SLEEP_SYM, STR_SYM, SYM_SYM
+    SymID, SymbolMap, ABS_SYM, ARGS_SYM, BOOL_SYM, CEIL_SYM, FLOAT_SYM, FLOOR_SYM, FN_SYM, INT_SYM, LIST_SYM, LOG_SYM, MAP_SYM, NULL_SYM, PATCH_SYM, POW_SYM, READ_FILE_SYM, SLEEP_SYM, STR_SYM, SYM_SYM
 };
 
+use super::hash_map::GcHashMap;
 use super::instruction_stream::InstructionStream;
 use super::list::List;
 use super::stack::Stack;
+use super::type_objects::TypeObjects;
 use super::value::Value;
 use super::error::RuntimeErrorKind;
-use super::ByteCode;
+use super::{ByteCode};
 
 pub fn call_intrinsic<'gc>(
     stack: &Stack<'gc>,
@@ -21,6 +23,7 @@ pub fn call_intrinsic<'gc>(
     sym_id: SymID,
     symbol_map: &mut SymbolMap,
     mu: &'gc Mutator<'gc>,
+    type_objects: &TypeObjects<'gc>,
 ) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
     match sym_id {
         FLOAT_SYM => {
@@ -105,7 +108,14 @@ pub fn call_intrinsic<'gc>(
         }
        
         ARGS_SYM => get_program_args(mu), // Maybe store in a global?
-
+                                          //
+        PATCH_SYM => {
+            expect_arg_count(3, supplied_args)?;
+            let arg1 = extract_arg(args, stack);
+            let arg2 = extract_arg(args, stack);
+            let arg3 = extract_arg(args, stack);
+            patch(arg1, arg2, arg3, type_objects, mu)
+        }
 
         // NOT SUPER SURE ABOUT THESE, MIGHT REMOVE
         SLEEP_SYM => {
@@ -421,3 +431,34 @@ fn int<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
     }
 }
 
+
+fn patch<'gc>(
+    primitive_sym: Value<'gc>,
+    key: Value<'gc>,
+    value: Value<'gc>,
+    type_objects: &TypeObjects<'gc>,
+    mu: &'gc Mutator,
+) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+    match primitive_sym {
+        Value::SymId(sym_id) => {
+            if let Some(type_obj) = type_objects.get_type_obj(sym_id) {
+                if let Value::SymId(_) = key {
+                    GcHashMap::insert(type_obj, key.as_tagged(mu), value.as_tagged(mu), mu);
+
+                    return Ok(Value::Null);
+                } else {
+                    return Err((
+                        RuntimeErrorKind::TypeError,
+                        format!("Patch expects a symbol as key, received {}", key.type_str()),
+                    ));
+                }
+            } 
+        },
+        _ => {}
+    }
+
+    Err((
+        RuntimeErrorKind::TypeError,
+        format!("Failed to patch non primitive symbol"),
+    ))
+}

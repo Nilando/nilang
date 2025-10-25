@@ -1,7 +1,7 @@
 ========= FILE ./src/runtime/tests/fixtures/importing/importing.ast.actual ========
 [
     Import {
-        ident: 18,
+        ident: 20,
         path: Spanned {
             item: "./src/runtime/tests/test_programs/exporting.nl",
             span: Span {
@@ -16,7 +16,7 @@
                 Spanned {
                     item: Value(
                         Ident(
-                            18,
+                            20,
                         ),
                     ),
                     span: Span {
@@ -34,7 +34,7 @@
     Assign {
         dest: Spanned {
             item: Global(
-                19,
+                21,
             ),
             span: Span {
                 start: 79,
@@ -54,7 +54,7 @@
         },
     },
     Import {
-        ident: 18,
+        ident: 20,
         path: Spanned {
             item: "./src/runtime/tests/test_programs/exporting.nl",
             span: Span {
@@ -69,7 +69,7 @@
                 Spanned {
                     item: Value(
                         Ident(
-                            18,
+                            20,
                         ),
                     ),
                     span: Span {
@@ -90,7 +90,7 @@
         cond: Spanned {
             item: Value(
                 Global(
-                    19,
+                    21,
                 ),
             ),
             span: Span {
@@ -143,7 +143,7 @@
         cond: Spanned {
             item: Value(
                 Global(
-                    19,
+                    21,
                 ),
             ),
             span: Span {

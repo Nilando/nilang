@@ -21,7 +21,7 @@ MAP  0
 PUSH 2, 0
 LOC  0, 2
 PUSH 2, 0
-SYM  0, #19
+SYM  0, #21
 PUSH 2, 0
 COPY 0, 3
 LEN 3, 2

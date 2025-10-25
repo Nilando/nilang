@@ -1,7 +1,7 @@
 ========= FILE ./src/runtime/tests/fixtures/bad_import/bad_import.ast.actual ========
 [
     Import {
-        ident: 18,
+        ident: 20,
         path: Spanned {
             item: "filasdfahsldjfhalsdf",
             span: Span {

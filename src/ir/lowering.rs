@@ -404,7 +404,7 @@ impl LoweringCtx {
     //
     // translates into...
     //
-    // iter = $iter(list);
+    // iter = list.iter();
     // while true {
     //      value = iter();
     //      if value == null {
@@ -420,9 +420,14 @@ impl LoweringCtx {
     ) {
         let store_span = store_expr.get_span();
         let store_reg = self.lower_expr(store_expr);
-        let calle = self.load_const(TacConst::Sym(ITER_SYM));
-        let args = vec![store_reg];
-        let iter_fn_reg = self.lower_call(calle, args, store_span);
+        let iter_sym = self.load_const(TacConst::Sym(ITER_SYM));
+        let loaded_iter = self.new_temp();
+        self.emit(Tac::MemLoad {
+            dest: loaded_iter,
+            store: store_reg,
+            key: iter_sym
+        });
+        let iter_fn_reg = self.lower_call(loaded_iter, vec![], store_span);
 
         let start = self.new_label();
         let end = self.new_label();
@@ -430,8 +435,6 @@ impl LoweringCtx {
         self.push_loop_ctx(LoopCtx { start, end });
 
         self.emit_label(start);
-        self.emit(Tac::Jump { label: end });
-
         self.define_var(item_sym);
         let value_reg = self.lower_ident(item_sym);
         self.emit(Tac::Call { dest: value_reg, src: iter_fn_reg });
@@ -439,7 +442,7 @@ impl LoweringCtx {
         let null_reg = self.load_const(TacConst::Null);
         let temp = self.new_temp();
         self.emit(Tac::Binop { dest: temp, op: BinaryOp::Equal, lhs: value_reg, rhs: null_reg });
-        self.emit(Tac::Jnt { src: temp, label: end });
+        self.emit(Tac::Jit { src: temp, label: end });
 
         self.lower_stmts(stmts);
 

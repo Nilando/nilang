@@ -29,7 +29,7 @@ LOC  0, 2
 ARG  0
 CALL 0, 2
 OUT  0
-SYM  0, #18
+SYM  0, #20
 ARG  0
 CALL 0, 2
 OUT  0

@@ -14,6 +14,7 @@ mod stack;
 mod instruction_stream;
 mod loading;
 mod config;
+mod type_objects;
 
 #[cfg(test)]
 mod tests;
@@ -90,6 +91,7 @@ impl Runtime {
             });
 
             match vm_result {
+                // TODO have exit also return an exit value?
                 Ok(ExitCode::Exit) => return Ok(()),
                 Ok(ExitCode::Yield) => {}
                 Ok(ExitCode::Print) => self.print(&mut output)?,

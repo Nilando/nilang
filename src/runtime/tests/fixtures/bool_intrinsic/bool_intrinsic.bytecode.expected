@@ -31,7 +31,7 @@ SYM  0, #4
 PUSH 3, 0
 SYM  0, #5
 PUSH 3, 0
-SYM  0, #22
+SYM  0, #24
 PUSH 3, 0
 COPY 0, 4
 LEN 4, 3
