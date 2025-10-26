@@ -151,7 +151,7 @@ fn closed_stmt(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
         .or(return_stmt(sp.clone()))
         .or(break_stmt())
         .or(continue_stmt())
-        .closed_by(ctrl(Ctrl::SemiColon).expect("expected ';' at end of stmt"))
+        .closed_by(ctrl(Ctrl::SemiColon).or(nothing()).expect("expected ';' at end of stmt"))
 }
 
 fn basic_stmt(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
