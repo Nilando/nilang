@@ -38,6 +38,7 @@ pub struct VM<'gc> {
     // TODO: make a thread type
     stack: Stack<'gc>,
     globals: Gc<'gc, GcHashMap<'gc>>,
+    import_cache: Gc<'gc, GcHashMap<'gc>>,
     output_item: Gc<'gc, TaggedValue<'gc>>,
     type_objects: TypeObjects<'gc>,
 }
@@ -45,6 +46,7 @@ pub struct VM<'gc> {
 impl<'gc> VM<'gc> {
     pub fn new(mu: &'gc Mutator) -> Self {
         let globals = GcHashMap::alloc(mu);
+        let import_cache = GcHashMap::alloc(mu);
         let output_item = Gc::new(mu, TaggedValue::new_null());
         let stack = Stack::new(mu);
         let type_objects = TypeObjects::alloc(mu);
@@ -52,6 +54,7 @@ impl<'gc> VM<'gc> {
         Self {
             stack,
             globals,
+            import_cache,
             output_item,
             type_objects
         }
@@ -235,9 +238,15 @@ impl<'gc> VM<'gc> {
             ByteCode::Return { src } => {
                 let val = self.get_reg(src);
 
-                self.handle_return(val, instr_stream, mu);
+                self.handle_return(val.clone(), instr_stream, mu);
 
                 if self.stack.is_empty() {
+                    // Store the return value in output_item for REPL to access
+                    self.output_item.clone().write_barrier(mu, |barrier| {
+                        let barrier = field!(barrier, TaggedValue, ptr);
+                        barrier.set(val.__get_ptr());
+                    });
+
                     return Ok(Some(ExitCode::Exit));
                 }
             }
@@ -324,12 +333,20 @@ impl<'gc> VM<'gc> {
 
                 GcHashMap::insert(self.globals.clone(), sym_val, src_val, mu);
             }
-            ByteCode::Import { path, .. } => {
-                // assert value is a string
-                let val = Value::from(&self.get_reg(path));
-                let path = val.to_string(symbols, true);
+            ByteCode::Import { dest, path } => {
+                // The path register contains a VMString
+                let cache_key = self.get_reg(path);
 
-                return Ok(Some(ExitCode::LoadModule(path)));
+                // Check if this module is already cached
+                if let Some(cached_value) = self.import_cache.get(&cache_key) {
+                    // Use cached value
+                    self.set_reg(cached_value, dest, mu);
+                } else {
+                    // Module not cached, need to load it
+                    let val = Value::from(&cache_key);
+                    let path_string = val.to_string(symbols, true);
+                    return Ok(Some(ExitCode::LoadModule(path_string)));
+                }
             }
             ByteCode::Equality { dest, lhs, rhs } => {
                 let lhs = Value::from(&self.get_reg(lhs));
@@ -459,7 +476,13 @@ impl<'gc> VM<'gc> {
 
         if let ByteCode::Call { dest, .. } = instr_stream.prev() {
             self.set_reg(return_val, dest, mu);
-        } else if let ByteCode::Import { dest, .. } = instr_stream.prev() {
+        } else if let ByteCode::Import { dest, path } = instr_stream.prev() {
+            // Cache the imported module's return value
+            // The path register contains the VMString key we used to check the cache
+            let cache_key = self.get_reg(path);
+            GcHashMap::insert(self.import_cache.clone(), cache_key, return_val.clone(), mu);
+
+            // do set the return reg after, b/c return reg and path reg may be the same
             self.set_reg(return_val, dest, mu);
         } else {
             todo!("bad return from function")

@@ -31,20 +31,3 @@ block3:
   RETURN t3
 
 }
-========= FILE ./src/runtime/tests/fixtures/importing/importing.ir.actual ========
-MAIN () {
-block0:
-  t0 = #flag
-  LOAD_GLB t1, t0
-  jnt t1 block3
-  next block1
-
-block1:
-  t2 = "flag is set"
-  RETURN t2
-
-block3:
-  t3 = null
-  RETURN t3
-
-}

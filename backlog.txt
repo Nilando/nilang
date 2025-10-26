@@ -1,14 +1,8 @@
 VERSION 0.1.0
 
 IN PROGRESS:
-- importing refactored
-  - make it so an import is an expression import("blah")
-  - imported file is only ran once
-- repl 
-  - auto print value returned from expression
-- flush out the std lib just a little
-- FFI
 - implicit returns
+- FFI
 - try catch
   try {
     // ...

@@ -1,0 +1,304 @@
+========= FILE ./src/runtime/tests/fixtures/import_caching/import_caching.ast.actual ========
+[
+    Assign {
+        dest: Spanned {
+            item: Local(
+                20,
+            ),
+            span: Span {
+                start: 212,
+                end: 219,
+            },
+        },
+        src: Spanned {
+            item: Import(
+                Spanned {
+                    item: Value(
+                        String(
+                            SegmentedString {
+                                segments: [
+                                    String(
+                                        "./examples/export_example.nl",
+                                    ),
+                                ],
+                            },
+                        ),
+                    ),
+                    span: Span {
+                        start: 227,
+                        end: 258,
+                    },
+                },
+            ),
+            span: Span {
+                start: 220,
+                end: 259,
+            },
+        },
+    },
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Access {
+                        store: Spanned {
+                            item: Value(
+                                Ident(
+                                    20,
+                                ),
+                            ),
+                            span: Span {
+                                start: 266,
+                                end: 271,
+                            },
+                        },
+                        key: 21,
+                    },
+                    span: Span {
+                        start: 266,
+                        end: 276,
+                    },
+                },
+            ),
+            span: Span {
+                start: 260,
+                end: 277,
+            },
+        },
+    ),
+    Assign {
+        dest: Spanned {
+            item: Local(
+                22,
+            ),
+            span: Span {
+                start: 351,
+                end: 358,
+            },
+        },
+        src: Spanned {
+            item: Import(
+                Spanned {
+                    item: Value(
+                        String(
+                            SegmentedString {
+                                segments: [
+                                    String(
+                                        "./examples/export_example.nl",
+                                    ),
+                                ],
+                            },
+                        ),
+                    ),
+                    span: Span {
+                        start: 366,
+                        end: 397,
+                    },
+                },
+            ),
+            span: Span {
+                start: 359,
+                end: 398,
+            },
+        },
+    },
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Access {
+                        store: Spanned {
+                            item: Value(
+                                Ident(
+                                    22,
+                                ),
+                            ),
+                            span: Span {
+                                start: 405,
+                                end: 410,
+                            },
+                        },
+                        key: 21,
+                    },
+                    span: Span {
+                        start: 405,
+                        end: 415,
+                    },
+                },
+            ),
+            span: Span {
+                start: 399,
+                end: 416,
+            },
+        },
+    ),
+    Assign {
+        dest: Spanned {
+            item: Local(
+                23,
+            ),
+            span: Span {
+                start: 465,
+                end: 472,
+            },
+        },
+        src: Spanned {
+            item: Import(
+                Spanned {
+                    item: Value(
+                        String(
+                            SegmentedString {
+                                segments: [
+                                    String(
+                                        "./examples/export_example.nl",
+                                    ),
+                                ],
+                            },
+                        ),
+                    ),
+                    span: Span {
+                        start: 480,
+                        end: 511,
+                    },
+                },
+            ),
+            span: Span {
+                start: 473,
+                end: 512,
+            },
+        },
+    },
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Access {
+                        store: Spanned {
+                            item: Value(
+                                Ident(
+                                    23,
+                                ),
+                            ),
+                            span: Span {
+                                start: 519,
+                                end: 524,
+                            },
+                        },
+                        key: 21,
+                    },
+                    span: Span {
+                        start: 519,
+                        end: 529,
+                    },
+                },
+            ),
+            span: Span {
+                start: 513,
+                end: 530,
+            },
+        },
+    ),
+]========= FILE ./src/runtime/tests/fixtures/import_caching/import_caching.ast.actual ========
+[
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Value(
+                        String(
+                            SegmentedString {
+                                segments: [
+                                    String(
+                                        "Calculating Important Data!",
+                                    ),
+                                ],
+                            },
+                        ),
+                    ),
+                    span: Span {
+                        start: 6,
+                        end: 36,
+                    },
+                },
+            ),
+            span: Span {
+                start: 0,
+                end: 37,
+            },
+        },
+    ),
+    Assign {
+        dest: Spanned {
+            item: Local(
+                24,
+            ),
+            span: Span {
+                start: 39,
+                end: 55,
+            },
+        },
+        src: Spanned {
+            item: Value(
+                Map(
+                    [
+                        (
+                            Sym(
+                                21,
+                            ),
+                            Spanned {
+                                item: Binop {
+                                    lhs: Spanned {
+                                        item: Value(
+                                            Int(
+                                                60,
+                                            ),
+                                        ),
+                                        span: Span {
+                                            start: 65,
+                                            end: 67,
+                                        },
+                                    },
+                                    op: Plus,
+                                    rhs: Spanned {
+                                        item: Value(
+                                            Int(
+                                                9,
+                                            ),
+                                        ),
+                                        span: Span {
+                                            start: 70,
+                                            end: 73,
+                                        },
+                                    },
+                                },
+                                span: Span {
+                                    start: 65,
+                                    end: 73,
+                                },
+                            },
+                        ),
+                    ],
+                ),
+            ),
+            span: Span {
+                start: 56,
+                end: 74,
+            },
+        },
+    },
+    Return(
+        Some(
+            Spanned {
+                item: Value(
+                    Ident(
+                        24,
+                    ),
+                ),
+                span: Span {
+                    start: 83,
+                    end: 98,
+                },
+            },
+        ),
+    ),
+]

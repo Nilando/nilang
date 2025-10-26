@@ -6,8 +6,8 @@
                 20,
             ),
             span: Span {
-                start: 0,
-                end: 7,
+                start: 119,
+                end: 126,
             },
         },
         src: Spanned {
@@ -25,14 +25,14 @@
                         ),
                     ),
                     span: Span {
-                        start: 15,
-                        end: 64,
+                        start: 134,
+                        end: 183,
                     },
                 },
             ),
             span: Span {
-                start: 8,
-                end: 65,
+                start: 127,
+                end: 184,
             },
         },
     },
@@ -46,14 +46,14 @@
                         ),
                     ),
                     span: Span {
-                        start: 73,
-                        end: 79,
+                        start: 192,
+                        end: 198,
                     },
                 },
             ),
             span: Span {
-                start: 67,
-                end: 80,
+                start: 186,
+                end: 199,
             },
         },
     ),
@@ -63,8 +63,8 @@
                 21,
             ),
             span: Span {
-                start: 82,
-                end: 89,
+                start: 201,
+                end: 208,
             },
         },
         src: Spanned {
@@ -74,8 +74,8 @@
                 ),
             ),
             span: Span {
-                start: 90,
-                end: 95,
+                start: 209,
+                end: 214,
             },
         },
     },
@@ -85,8 +85,8 @@
                 20,
             ),
             span: Span {
-                start: 97,
-                end: 104,
+                start: 316,
+                end: 323,
             },
         },
         src: Spanned {
@@ -104,14 +104,14 @@
                         ),
                     ),
                     span: Span {
-                        start: 112,
-                        end: 161,
+                        start: 331,
+                        end: 380,
                     },
                 },
             ),
             span: Span {
-                start: 105,
-                end: 162,
+                start: 324,
+                end: 381,
             },
         },
     },
@@ -125,70 +125,17 @@
                         ),
                     ),
                     span: Span {
-                        start: 170,
-                        end: 176,
+                        start: 389,
+                        end: 395,
                     },
                 },
             ),
             span: Span {
-                start: 164,
-                end: 177,
+                start: 383,
+                end: 396,
             },
         },
     ),
-]========= FILE ./src/runtime/tests/fixtures/importing/importing.ast.actual ========
-[
-    IfElse {
-        cond: Spanned {
-            item: Value(
-                Global(
-                    21,
-                ),
-            ),
-            span: Span {
-                start: 3,
-                end: 10,
-            },
-        },
-        stmts: [
-            Return(
-                Some(
-                    Spanned {
-                        item: Value(
-                            String(
-                                SegmentedString {
-                                    segments: [
-                                        String(
-                                            "flag is set",
-                                        ),
-                                    ],
-                                },
-                            ),
-                        ),
-                        span: Span {
-                            start: 20,
-                            end: 34,
-                        },
-                    },
-                ),
-            ),
-        ],
-        else_stmts: [
-            Return(
-                Some(
-                    Spanned {
-                        item: Value(
-                            Null,
-                        ),
-                        span: Span {
-                            start: 53,
-                            end: 58,
-                        },
-                    },
-                ),
-            ),
-        ],
-    },
 ]========= FILE ./src/runtime/tests/fixtures/importing/importing.ast.actual ========
 [
     IfElse {

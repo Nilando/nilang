@@ -1,6 +1,11 @@
-// TODO: change import to be an expression
-// so you instead write 
-// data = import "./path/file.nl"
-import data "./examples/export_example.nl"
+data = import("./examples/export_example.nl");
+
+print(data);
+
+data.foo = "updated";
+
+// Imported values are cached, so we should see that 
+// the data has updated.
+data = import("./examples/export_example.nl");
 
 print(data);

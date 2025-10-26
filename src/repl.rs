@@ -16,7 +16,14 @@ fn interpret_input(runtime: &mut Runtime, input: &str) {
     }
 
     match runtime.run() {
-        Ok(()) => {},
+        Ok(()) => {
+            // Print the return value with "=> " prefix
+            let mut stdout = std::io::stdout();
+            print!("=> ");
+            if let Err(err) = runtime.print(&mut stdout) {
+                eprintln!("{}", err.render());
+            }
+        },
         Err(err) => eprintln!("{}", err.render()),
     }
 }

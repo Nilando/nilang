@@ -177,7 +177,7 @@ impl Runtime {
         });
     }
 
-    fn print(&mut self, output: &mut impl Write) -> Result<(), InterpreterError> {
+    pub fn print(&mut self, output: &mut impl Write) -> Result<(), InterpreterError> {
         self.arena.view(|vm| {
             vm.write_output(output, &mut self.syms).expect("writing failed");
         });

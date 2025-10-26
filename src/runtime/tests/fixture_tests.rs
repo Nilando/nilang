@@ -150,6 +150,11 @@ fn very_large_map() {
 }
 
 #[test]
+fn import_caching() {
+  super::fixture_test("import_caching")
+}
+
+#[test]
 fn forloop_with_return() {
   super::fixture_test("forloop_with_return")
 }
