@@ -1,1 +1,1 @@
-import data "filasdfahsldjfhalsdf";
+data = import("filasdfahsldjfhalsdf");

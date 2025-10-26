@@ -1,9 +1,9 @@
 ========= FILE ./src/runtime/tests/fixtures/bad_import/bad_import.ir.actual ========
 MAIN () {
 block0:
-  t1 = "filasdfahsldjfhalsdf"
-  IMPORT data_0, t1
-  t2 = null
-  RETURN t2
+  t0 = "filasdfahsldjfhalsdf"
+  IMPORT data_0, t0
+  t3 = null
+  RETURN t3
 
 }

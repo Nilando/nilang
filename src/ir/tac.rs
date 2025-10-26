@@ -229,6 +229,7 @@ impl Tac {
             | Tac::Type { dest, .. }
             | Tac::Bind { dest, .. }
             | Tac::Delete { dest, .. }
+            | Tac::Import { dest, .. }
             | Tac::Binop { dest, .. } => Some(dest),
             _ => None,
         }

@@ -55,7 +55,7 @@ impl LoweringCtx {
 
     fn lower_stmt(&mut self, stmt: Stmt) {
         match stmt {
-            Stmt::Expr(expr) => { 
+            Stmt::Expr(expr) => {
                 self.lower_expr(expr);
             }
             Stmt::ForLoop { item, store, stmts } => self.lower_for_loop(item, store, stmts),
@@ -75,17 +75,7 @@ impl LoweringCtx {
                 stmts,
             } => self.lower_func_decl(ident, inputs, stmts),
             Stmt::Assign { dest, src } => self.lower_assign(dest, src),
-            Stmt::Import { ident, path } => self.lower_import(ident, path),
         };
-    }
-
-    fn lower_import(&mut self, ident: SymID, module_path: Spanned<String>) {
-        self.define_var(ident);
-
-        let dest = self.sym_to_reg(&ident);
-        let path = self.load_const(TacConst::String(module_path.item));
-
-        self.emit(Tac::Import { dest, path });
     }
 
     fn lower_return(&mut self, return_expr: Option<Spanned<Expr>>) {
@@ -144,6 +134,14 @@ impl LoweringCtx {
                 let var = self.lower_expr(*expr);
 
                 self.lower_print(var)
+            }
+            Expr::Import(expr) => {
+                let path = self.lower_expr(*expr);
+                let dest = self.new_temp();
+
+                self.emit(Tac::Import { dest, path });
+
+                dest
             }
             Expr::Type(expr) => {
                 let src = self.lower_expr(*expr);

@@ -1,17 +1,17 @@
 ========= FILE ./src/runtime/tests/fixtures/importing/importing.ir.actual ========
 MAIN () {
 block0:
-  t1 = "./src/runtime/tests/test_programs/exporting.nl"
-  IMPORT value_0, t1
+  t0 = "./src/runtime/tests/test_programs/exporting.nl"
+  IMPORT value_0, t0
   PRINT value_0
-  t3 = true
-  t4 = #flag
-  STORE_GLB t4, t3
-  t5 = "./src/runtime/tests/test_programs/exporting.nl"
-  IMPORT value_0, t5
-  PRINT value_0
-  t7 = null
-  RETURN t7
+  t4 = true
+  t5 = #flag
+  STORE_GLB t5, t4
+  t6 = "./src/runtime/tests/test_programs/exporting.nl"
+  IMPORT value_1, t6
+  PRINT value_1
+  t9 = null
+  RETURN t9
 
 }
 ========= FILE ./src/runtime/tests/fixtures/importing/importing.ir.actual ========

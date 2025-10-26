@@ -7,7 +7,7 @@ fn default_iter(self) {
       i[0] = n + 1;
       return self[n];
     } else {
-      return $__end__;
+      return null;
     }
   };
 };
@@ -168,6 +168,28 @@ fn flatten(self) {
 
   return result;
 }
+
+patch($list, $first, fn(self) {
+  if #self > 0 {
+    return self[0];
+  }
+  return null;
+});
+
+patch($list, $last, fn(self) {
+  if #self > 0 {
+    return self[#self - 1];
+  }
+  return null;
+});
+
+patch($list, $sum, fn(self) {
+  total = 0;
+  for item in self {
+    total = total + item;
+  }
+  return total;
+});
 
 patch($list, $join, join);
 patch($list, $iter, default_iter);

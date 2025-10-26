@@ -1,7 +1,6 @@
 use super::expr::{expr, Expr, LhsExpr};
 use super::lexer::{Ctrl, KeyWord, Token};
 use super::spanned::Spanned;
-use super::value::{atom_string};
 use super::{block, ctrl, inputs, keyword, nothing, recursive, symbol, Parser};
 
 use crate::symbol_map::SymID;
@@ -37,10 +36,6 @@ pub enum Stmt {
         else_stmts: Vec<Stmt>,
     },
     Return(Option<Spanned<Expr>>),
-    Import {
-        ident: SymID,
-        path: Spanned<String>,
-    },
     Continue,
     Break,
 }
@@ -51,7 +46,6 @@ pub fn stmt<'a>() -> Parser<'a, Stmt> {
             .or(closed_stmt(stmt_parser.clone()))
             .or(if_or_ifelse_stmt(stmt_parser.clone()))
             .or(while_stmt(stmt_parser.clone()))
-            .or(import_stmt(stmt_parser.clone()))
             .or(for_stmt(stmt_parser))
     })
 }
@@ -83,13 +77,6 @@ fn for_stmt(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
                 stmts,
             }
         })
-}
-
-fn import_stmt(_: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
-    keyword(KeyWord::Import)
-        .then(symbol())
-        .append(atom_string().spanned())
-        .map(|(ident, path)| Stmt::Import { ident, path })
 }
 
 fn func_decl(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {

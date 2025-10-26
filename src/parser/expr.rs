@@ -105,6 +105,7 @@ pub enum Expr {
     Print(Box<Spanned<Expr>>),
     Type(Box<Spanned<Expr>>),
     Clone(Box<Spanned<Expr>>),
+    Import(Box<Spanned<Expr>>),
     Read,
 }
 
@@ -239,7 +240,7 @@ fn secondary_expr<'a>(
         .or(nested_expr(ep.clone()))
         .or(read_expr())
         .or(print_expr(ep.clone()))
-
+        .or(import_expr(ep.clone()))
         .or(type_expr(ep.clone()))
         .or(clone_expr(ep.clone()))
         .or(delete_expr(ep.clone()))
@@ -256,6 +257,10 @@ fn nested_expr(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, Spanned<Expr>> {
 
 fn print_expr(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, Spanned<Expr>> {
     keyword(KeyWord::Print).then(nested_expr(ep).map(|e| Expr::Print(Box::new(e))).spanned())
+}
+
+fn import_expr(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, Spanned<Expr>> {
+    keyword(KeyWord::Import).then(nested_expr(ep).map(|e| Expr::Import(Box::new(e))).spanned())
 }
 
 fn type_expr(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, Spanned<Expr>> {

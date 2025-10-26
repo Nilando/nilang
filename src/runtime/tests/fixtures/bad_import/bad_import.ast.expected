@@ -1,12 +1,38 @@
 ========= FILE ./src/runtime/tests/fixtures/bad_import/bad_import.ast.actual ========
 [
-    Import {
-        ident: 20,
-        path: Spanned {
-            item: "filasdfahsldjfhalsdf",
+    Assign {
+        dest: Spanned {
+            item: Local(
+                20,
+            ),
             span: Span {
-                start: 12,
-                end: 34,
+                start: 0,
+                end: 6,
+            },
+        },
+        src: Spanned {
+            item: Import(
+                Spanned {
+                    item: Value(
+                        String(
+                            SegmentedString {
+                                segments: [
+                                    String(
+                                        "filasdfahsldjfhalsdf",
+                                    ),
+                                ],
+                            },
+                        ),
+                    ),
+                    span: Span {
+                        start: 14,
+                        end: 37,
+                    },
+                },
+            ),
+            span: Span {
+                start: 7,
+                end: 38,
             },
         },
     },

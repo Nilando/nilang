@@ -9,7 +9,13 @@ IN PROGRESS:
 - flush out the std lib just a little
 - FFI
 - implicit returns
-- LSP
+- try catch
+  try {
+    // ...
+  } catch(err) {
+    // ...
+  }
+- compile to wasm
 
 OPTIMIZATION/REFACTOR BACKLOG:
 - add benchmarking
@@ -32,10 +38,10 @@ OPTIMIZATION/REFACTOR BACKLOG:
 - JIT?
 
 GOALS
-- complete AOC 2025 with this language
-- learn about compilers and interpreters
-- have fun
-- make a game!
+- complete AOC 2025 with this language [TODO]
+- learn about compilers and interpreters [IN PROGRESS]
+- have fun [IN PROGRESS]
+- make a game! [TODO]
 
 DECEMBER -> COMPLETE AOC
 NOVEMBER

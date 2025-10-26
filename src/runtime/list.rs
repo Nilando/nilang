@@ -5,11 +5,6 @@ use super::value::Value;
 
 use sandpit::Tagged;
 
-// FIXME: there really needs to be a fix up around what value is used to access a list
-// fn at -> i32
-// fn len -> u64
-// fn set -> usize
-
 #[derive(Trace)]
 pub struct List<'gc> {
     vec: GcVec<'gc, Tagged<'gc, ValueTag>>,

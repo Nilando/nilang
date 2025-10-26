@@ -1,12 +1,38 @@
 ========= FILE ./src/runtime/tests/fixtures/importing/importing.ast.actual ========
 [
-    Import {
-        ident: 20,
-        path: Spanned {
-            item: "./src/runtime/tests/test_programs/exporting.nl",
+    Assign {
+        dest: Spanned {
+            item: Local(
+                20,
+            ),
             span: Span {
-                start: 13,
-                end: 61,
+                start: 0,
+                end: 7,
+            },
+        },
+        src: Spanned {
+            item: Import(
+                Spanned {
+                    item: Value(
+                        String(
+                            SegmentedString {
+                                segments: [
+                                    String(
+                                        "./src/runtime/tests/test_programs/exporting.nl",
+                                    ),
+                                ],
+                            },
+                        ),
+                    ),
+                    span: Span {
+                        start: 15,
+                        end: 64,
+                    },
+                },
+            ),
+            span: Span {
+                start: 8,
+                end: 65,
             },
         },
     },
@@ -20,14 +46,14 @@
                         ),
                     ),
                     span: Span {
-                        start: 70,
-                        end: 76,
+                        start: 73,
+                        end: 79,
                     },
                 },
             ),
             span: Span {
-                start: 64,
-                end: 77,
+                start: 67,
+                end: 80,
             },
         },
     ),
@@ -37,8 +63,8 @@
                 21,
             ),
             span: Span {
-                start: 79,
-                end: 86,
+                start: 82,
+                end: 89,
             },
         },
         src: Spanned {
@@ -48,18 +74,44 @@
                 ),
             ),
             span: Span {
-                start: 87,
-                end: 92,
+                start: 90,
+                end: 95,
             },
         },
     },
-    Import {
-        ident: 20,
-        path: Spanned {
-            item: "./src/runtime/tests/test_programs/exporting.nl",
+    Assign {
+        dest: Spanned {
+            item: Local(
+                20,
+            ),
             span: Span {
-                start: 107,
-                end: 155,
+                start: 97,
+                end: 104,
+            },
+        },
+        src: Spanned {
+            item: Import(
+                Spanned {
+                    item: Value(
+                        String(
+                            SegmentedString {
+                                segments: [
+                                    String(
+                                        "./src/runtime/tests/test_programs/exporting.nl",
+                                    ),
+                                ],
+                            },
+                        ),
+                    ),
+                    span: Span {
+                        start: 112,
+                        end: 161,
+                    },
+                },
+            ),
+            span: Span {
+                start: 105,
+                end: 162,
             },
         },
     },
@@ -73,14 +125,14 @@
                         ),
                     ),
                     span: Span {
-                        start: 164,
-                        end: 170,
+                        start: 170,
+                        end: 176,
                     },
                 },
             ),
             span: Span {
-                start: 158,
-                end: 171,
+                start: 164,
+                end: 177,
             },
         },
     ),
