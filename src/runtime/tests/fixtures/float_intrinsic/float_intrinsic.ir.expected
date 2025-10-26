@@ -35,8 +35,8 @@ block2:
   STORE_ARG t24
   t26 = CALL float_0
   PRINT t26
-  t28 = 1
-  i_2 = i_1 + t28
+  t29 = 1
+  i_2 = i_1 + t29
   jump block1(i_2)
 
 block3:

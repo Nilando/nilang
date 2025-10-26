@@ -10,7 +10,6 @@ ADD  1, 0, 1
 LDUV 0, 0
 ARG  1
 CALL 0, 0
-LDN  0
 RTN  0
 === END ===
 === FN 0 START ===
@@ -19,6 +18,5 @@ STUV 1, 1
 INT  0, 0
 ARG  0
 CALL 0, 1
-LDN  0
 RTN  0
 === END ===

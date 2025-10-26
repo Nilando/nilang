@@ -13,8 +13,8 @@ block1(i_1, x_1):
 
 block2:
   PRINT x_1
-  t8 = x_1 == x_0
-  jnt t8 block4
+  t9 = x_1 == x_0
+  jnt t9 block4
   next block3
 
 block3:
@@ -28,7 +28,7 @@ block5(x_3):
   jump block1(i_2, x_3)
 
 block6:
-  t13 = null
-  RETURN t13
+  t14 = null
+  RETURN t14
 
 }

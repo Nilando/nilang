@@ -10,11 +10,11 @@ block0:
   t1 = 9
   PRINT t1
   one_0 = fn1
-  t7 = CALL one_0
   t8 = CALL one_0
-  t9 = t7 + t8
-  PRINT t9
-  t11 = null
-  RETURN t11
+  t9 = CALL one_0
+  t10 = t8 + t9
+  PRINT t10
+  t12 = null
+  RETURN t12
 
 }

@@ -6,34 +6,34 @@ block0:
   STORE_ARG t0
   t2 = CALL str_0
   PRINT t2
-  t4 = null
-  STORE_ARG t4
-  t5 = CALL str_0
-  PRINT t5
-  t7 = 0
-  STORE_ARG t7
-  t8 = CALL str_0
-  PRINT t8
-  t10 = 1.234
-  STORE_ARG t10
-  t11 = CALL str_0
-  PRINT t11
-  t13 = true
+  t5 = null
+  STORE_ARG t5
+  t6 = CALL str_0
+  PRINT t6
+  t9 = 0
+  STORE_ARG t9
+  t10 = CALL str_0
+  PRINT t10
+  t13 = 1.234
   STORE_ARG t13
   t14 = CALL str_0
   PRINT t14
-  t16 = false
-  STORE_ARG t16
-  t17 = CALL str_0
-  PRINT t17
-  t19 = "test"
-  STORE_ARG t19
-  t20 = CALL str_0
-  PRINT t20
-  t22 = #foo
-  STORE_ARG t22
-  t23 = CALL str_0
-  PRINT t23
-  RETURN t4
+  t17 = true
+  STORE_ARG t17
+  t18 = CALL str_0
+  PRINT t18
+  t21 = false
+  STORE_ARG t21
+  t22 = CALL str_0
+  PRINT t22
+  t25 = "test"
+  STORE_ARG t25
+  t26 = CALL str_0
+  PRINT t26
+  t29 = #foo
+  STORE_ARG t29
+  t30 = CALL str_0
+  PRINT t30
+  RETURN t5
 
 }

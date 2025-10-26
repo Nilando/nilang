@@ -33,10 +33,11 @@ OUT  0
 READ 1
 LOC  0, 1
 EQ   0, 1, 0
-JNT  4, 0
+JNT  5, 0
 LOC  0, 4
 OUT  0
-JMP  3
+LDN  0
+RTN  0
 LOC  0, 5
 OUT  0
 LDN  0

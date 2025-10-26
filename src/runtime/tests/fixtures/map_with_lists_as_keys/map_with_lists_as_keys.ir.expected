@@ -23,27 +23,27 @@ block0:
   t21 << t8
   m_0[t21] = t20
   PRINT m_0
-  t27 = NEW_LIST
-  t27 << t2
-  t27 << t2
-  t32 = m_0[t27]
-  PRINT t32
-  t34 = NEW_LIST
-  t34 << t2
-  t34 << t8
-  t39 = m_0[t34]
-  PRINT t39
-  t41 = NEW_LIST
-  t41 << t8
-  t41 << t2
-  t46 = m_0[t41]
-  PRINT t46
-  t48 = NEW_LIST
-  t48 << t8
-  t48 << t8
-  t53 = m_0[t48]
-  PRINT t53
-  t55 = null
-  RETURN t55
+  t28 = NEW_LIST
+  t28 << t2
+  t28 << t2
+  t33 = m_0[t28]
+  PRINT t33
+  t36 = NEW_LIST
+  t36 << t2
+  t36 << t8
+  t41 = m_0[t36]
+  PRINT t41
+  t44 = NEW_LIST
+  t44 << t8
+  t44 << t2
+  t49 = m_0[t44]
+  PRINT t49
+  t52 = NEW_LIST
+  t52 << t8
+  t52 << t8
+  t57 = m_0[t52]
+  PRINT t57
+  t59 = null
+  RETURN t59
 
 }

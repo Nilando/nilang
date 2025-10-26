@@ -50,11 +50,13 @@ block0:
   my_counter_0 = CALL new_counter_0
   t3 = CALL my_counter_0
   PRINT t3
-  t5 = CALL my_counter_0
-  PRINT t5
-  t7 = CALL my_counter_0
-  PRINT t7
-  t9 = null
-  RETURN t9
+  t5 = null
+  t6 = CALL my_counter_0
+  PRINT t6
+  t8 = null
+  t9 = CALL my_counter_0
+  PRINT t9
+  t11 = null
+  RETURN t11
 
 }

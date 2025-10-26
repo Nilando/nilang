@@ -11,11 +11,11 @@ block0:
   PRINT b_0
   a_1 = "foo"
   CLONE b_1 = a_1
-  t12 = "bar"
-  b_1 << t12
+  t14 = "bar"
+  b_1 << t14
   PRINT a_1
   PRINT b_1
-  t16 = null
-  RETURN t16
+  t19 = null
+  RETURN t19
 
 }

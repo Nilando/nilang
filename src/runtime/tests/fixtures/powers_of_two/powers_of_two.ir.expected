@@ -47,12 +47,12 @@ block2:
   STORE_ARG p_1
   t6 = CALL raise_0
   PRINT t6
-  t8 = 1
-  p_2 = p_1 + t8
+  t9 = 1
+  p_2 = p_1 + t9
   jump block1(p_2)
 
 block3:
-  t10 = null
-  RETURN t10
+  t11 = null
+  RETURN t11
 
 }

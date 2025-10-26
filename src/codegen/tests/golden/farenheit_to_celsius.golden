@@ -22,6 +22,7 @@ INT  0, 32
 ARG  0
 CALL 0, 1
 OUT  0
+LDN  0
 INT  0, 212
 ARG  0
 CALL 0, 1

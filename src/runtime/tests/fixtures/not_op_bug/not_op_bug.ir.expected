@@ -6,35 +6,33 @@ block0:
   next block1
 
 block1:
-  t12 = false
-  jump block3(t12)
+  t14 = false
+  jump block3(t14)
 
 block2:
   next block3(t1)
 
-block3(t9):
-  jnt t9 block5(t9)
+block3(t11):
+  jnt t11 block5(t11)
   next block4
 
 block4:
   next block5(t1)
 
-block5(t10):
-  jnt t10 block7
+block5(t12):
+  jnt t12 block8
   next block6
 
 block6:
   t4 = "error! uh oh spaghetti o"
   PRINT t4
-  jump block8
-
-block7:
-  t6 = "success!"
-  PRINT t6
-  next block8
+  t6 = null
+  RETURN t6
 
 block8:
-  t8 = null
-  RETURN t8
+  t7 = "success!"
+  PRINT t7
+  t9 = null
+  RETURN t9
 
 }

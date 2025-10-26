@@ -53,22 +53,26 @@ impl LoweringCtx {
         }
     }
 
-    fn lower_stmt(&mut self, stmt: Stmt) {
+    fn lower_stmt(&mut self, stmt: Stmt, implicit_return: bool) {
         match stmt {
             Stmt::Expr(expr) => {
-                self.lower_expr(expr);
+                let src = self.lower_expr(expr);
+
+                if implicit_return {
+                    self.emit(Tac::Return { src });
+                }
             }
             Stmt::ForLoop { item, store, stmts } => self.lower_for_loop(item, store, stmts),
             Stmt::Return(expr) => self.lower_return(expr),
             Stmt::Break => self.lower_break(),
             Stmt::Continue => self.lower_continue(),
             Stmt::While { cond, stmts } => self.lower_while_block(cond, stmts),
-            Stmt::If { cond, stmts } => self.lower_if_block(cond, stmts),
+            Stmt::If { cond, stmts } => self.lower_if_block(cond, stmts, implicit_return),
             Stmt::IfElse {
                 cond,
                 stmts,
                 else_stmts,
-            } => self.lower_if_else_block(cond, stmts, else_stmts),
+            } => self.lower_if_else_block(cond, stmts, else_stmts, implicit_return),
             Stmt::FuncDecl {
                 ident,
                 inputs,
@@ -133,7 +137,14 @@ impl LoweringCtx {
             Expr::Print(expr) => {
                 let var = self.lower_expr(*expr);
 
-                self.lower_print(var)
+                self.lower_print(var);
+
+                let dest = self.new_temp();
+                self.emit(Tac::LoadConst {
+                    dest,
+                    src: TacConst::Null,
+                });
+                dest
             }
             Expr::Import(expr) => {
                 let path = self.lower_expr(*expr);
@@ -441,7 +452,7 @@ impl LoweringCtx {
         self.emit(Tac::Binop { dest: temp, op: BinaryOp::Equal, lhs: value_reg, rhs: null_reg });
         self.emit(Tac::Jit { src: temp, label: end });
 
-        self.lower_stmts(stmts);
+        self.lower_stmts(stmts, false);
 
         self.emit_jump(start);
         self.emit_label(end);
@@ -481,7 +492,7 @@ impl LoweringCtx {
 
         self.funcs.push(generator);
 
-        self.lower_stmts(stmts);
+        self.lower_stmts(stmts, true);
 
         let func_builder = &self.funcs.last().unwrap().builder;
         let upvalues = func_builder.upvalues.clone();
@@ -498,13 +509,19 @@ impl LoweringCtx {
         self.lowered_funcs.push(func);
     }
 
-    fn lower_if_block(&mut self, cond: Spanned<Expr>, stmts: Vec<Stmt>) {
+    fn lower_if_block(&mut self, cond: Spanned<Expr>, stmts: Vec<Stmt>, implicit_return: bool) {
         let label = self.new_label();
         let src = self.lower_expr(cond);
 
         self.emit(Tac::Jnt { src, label });
-        self.lower_stmts(stmts);
+        self.lower_stmts(stmts, implicit_return);
         self.emit_label(label);
+
+        if implicit_return {
+            let t = self.new_temp();
+            self.emit(Tac::LoadConst { dest: t, src: TacConst::Null });
+            self.emit(Tac::Return { src: t });
+        }
     }
 
     fn lower_if_else_block(
@@ -512,6 +529,7 @@ impl LoweringCtx {
         cond: Spanned<Expr>,
         stmts: Vec<Stmt>,
         else_stmts: Vec<Stmt>,
+        implicit_return: bool
     ) {
         let else_end = self.new_label();
         let else_start = self.new_label();
@@ -521,10 +539,10 @@ impl LoweringCtx {
             src,
             label: else_start,
         });
-        self.lower_stmts(stmts);
+        self.lower_stmts(stmts, implicit_return);
         self.emit_jump(else_end);
         self.emit_label(else_start);
-        self.lower_stmts(else_stmts);
+        self.lower_stmts(else_stmts, implicit_return);
         self.emit_label(else_end);
     }
 
@@ -539,7 +557,7 @@ impl LoweringCtx {
         let src = self.lower_expr(cond);
 
         self.emit(Tac::Jnt { src, label: end });
-        self.lower_stmts(stmts);
+        self.lower_stmts(stmts, false);
         self.emit_jump(start);
         self.emit_label(end);
     }
@@ -777,9 +795,12 @@ impl LoweringCtx {
         self.get_current_func_mut().builder.upvalues.push(sym);
     }
 
-    fn lower_stmts(&mut self, stmts: Vec<Stmt>) {
-        for stmt in stmts.into_iter() {
-            self.lower_stmt(stmt);
+    fn lower_stmts(&mut self, stmts: Vec<Stmt>, implicit_return: bool) {
+        let len = stmts.len();
+        for (idx, stmt) in stmts.into_iter().enumerate() {
+            let is_last = idx == len - 1;
+
+            self.lower_stmt(stmt, is_last && implicit_return);
         }
     }
 
@@ -795,7 +816,7 @@ impl LoweringCtx {
 pub fn lower_ast(stmts: Vec<Stmt>, pretty_ir: bool) -> Vec<Func> {
     let mut ctx = LoweringCtx::new(pretty_ir);
 
-    ctx.lower_stmts(stmts);
+    ctx.lower_stmts(stmts, true);
 
     ctx.push_current_func();
 
@@ -835,11 +856,7 @@ pub mod tests {
                 dest: 0,
                 src: TacConst::Int(1),
             },
-            Tac::LoadConst {
-                dest: 1,
-                src: TacConst::Null,
-            },
-            Tac::Return { src: 1 },
+            Tac::Return { src: 0 },
         ];
         let input = "1;";
 
@@ -873,11 +890,7 @@ pub mod tests {
                 op: BinaryOp::Multiply,
                 rhs: 3,
             },
-            Tac::LoadConst {
-                dest: 5,
-                src: TacConst::Null,
-            },
-            Tac::Return { src: 5 },
+            Tac::Return { src: 4 },
         ];
         let input = "1 * 1 * 1;";
 
@@ -1088,11 +1101,7 @@ pub mod tests {
             Tac::StoreArg { src: 1 },
             Tac::StoreArg { src: 2 },
             Tac::Call { dest: 4, src: 3 },
-            Tac::LoadConst {
-                dest: 5,
-                src: TacConst::Null,
-            },
-            Tac::Return { src: 5 },
+            Tac::Return { src: 4 },
         ];
         let input = "a(0, 1, 2);";
 
@@ -1133,12 +1142,17 @@ pub mod tests {
                 src: TacConst::String(String::from("test")),
             },
             Tac::Print { src: 1 },
-            Tac::Label { label: 1 },
             Tac::LoadConst {
                 dest: 3,
                 src: TacConst::Null,
             },
             Tac::Return { src: 3 },
+            Tac::Label { label: 1 },
+            Tac::LoadConst {
+                dest: 4,
+                src: TacConst::Null,
+            },
+            Tac::Return { src: 4 },
         ];
         let input = "if true { print(\"test\"); }";
 

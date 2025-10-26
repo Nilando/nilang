@@ -2,6 +2,5 @@
 === FN 0 START ===
 LOC  0, 0
 CALL 0, 0
-LDN  0
 RTN  0
 === END ===

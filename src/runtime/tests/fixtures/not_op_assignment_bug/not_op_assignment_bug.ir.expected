@@ -6,16 +6,16 @@ block0:
   next block1
 
 block1:
-  t7 = false
-  jump block3(t7)
+  t8 = false
+  jump block3(t8)
 
 block2:
   next block3(t_0)
 
-block3(t6):
-  PRINT t6
+block3(t7):
+  PRINT t7
   PRINT t_0
-  t5 = null
-  RETURN t5
+  t6 = null
+  RETURN t6
 
 }

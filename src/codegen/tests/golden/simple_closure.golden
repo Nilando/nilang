@@ -28,6 +28,5 @@ LOC  1, 0
 STUV 1, 0
 CALL 0, 1
 CALL 0, 1
-LDN  0
 RTN  0
 === END ===

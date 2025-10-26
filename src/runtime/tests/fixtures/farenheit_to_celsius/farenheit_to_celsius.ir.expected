@@ -15,11 +15,11 @@ block0:
   STORE_ARG t1
   t2 = CALL farenheit_to_celsius_0
   PRINT t2
-  t4 = 212
-  STORE_ARG t4
-  t5 = CALL farenheit_to_celsius_0
-  PRINT t5
-  t7 = null
-  RETURN t7
+  t5 = 212
+  STORE_ARG t5
+  t6 = CALL farenheit_to_celsius_0
+  PRINT t6
+  t8 = null
+  RETURN t8
 
 }

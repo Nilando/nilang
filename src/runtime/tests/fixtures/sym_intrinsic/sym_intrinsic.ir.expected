@@ -21,12 +21,12 @@ block2:
   STORE_ARG t10
   t12 = CALL sym_0
   PRINT t12
-  t14 = 1
-  i_2 = i_1 + t14
+  t15 = 1
+  i_2 = i_1 + t15
   jump block1(i_2)
 
 block3:
-  t16 = null
-  RETURN t16
+  t17 = null
+  RETURN t17
 
 }

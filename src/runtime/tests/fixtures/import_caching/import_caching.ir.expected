@@ -6,16 +6,16 @@ block0:
   t3 = #foo
   t4 = data1_0[t3]
   PRINT t4
-  t6 = "./examples/export_example.nl"
-  IMPORT data2_0, t6
-  t10 = data2_0[t3]
-  PRINT t10
-  t12 = "./examples/export_example.nl"
-  IMPORT data3_0, t12
-  t16 = data3_0[t3]
-  PRINT t16
-  t18 = null
-  RETURN t18
+  t7 = "./examples/export_example.nl"
+  IMPORT data2_0, t7
+  t11 = data2_0[t3]
+  PRINT t11
+  t14 = "./examples/export_example.nl"
+  IMPORT data3_0, t14
+  t18 = data3_0[t3]
+  PRINT t18
+  t20 = null
+  RETURN t20
 
 }
 ========= FILE ./src/runtime/tests/fixtures/import_caching/import_caching.ir.actual ========
@@ -23,10 +23,10 @@ MAIN () {
 block0:
   t0 = "Calculating Important Data!"
   PRINT t0
-  t2 = NEW_MAP
-  t3 = #foo
-  t6 = 69
-  t2[t3] = t6
-  RETURN t2
+  t3 = NEW_MAP
+  t4 = #foo
+  t7 = 69
+  t3[t4] = t7
+  RETURN t3
 
 }

@@ -137,23 +137,23 @@ block0:
   t30 = t17[t6]
   t31 = CALL t30
   PRINT t31
-  t34 = t17[t10]
-  t35 = CALL t34
-  PRINT t35
-  t38 = t17[t14]
-  t39 = CALL t38
-  PRINT t39
+  t35 = t17[t10]
+  t36 = CALL t35
+  PRINT t36
+  t40 = t17[t14]
+  t41 = CALL t40
+  PRINT t41
   empty_0 = NEW_LIST
-  t44 = empty_0[t6]
-  t45 = CALL t44
-  PRINT t45
-  t48 = empty_0[t10]
-  t49 = CALL t48
-  PRINT t49
-  t52 = empty_0[t14]
+  t47 = empty_0[t6]
+  t48 = CALL t47
+  PRINT t48
+  t52 = empty_0[t10]
   t53 = CALL t52
   PRINT t53
-  t55 = null
-  RETURN t55
+  t57 = empty_0[t14]
+  t58 = CALL t57
+  PRINT t58
+  t60 = null
+  RETURN t60
 
 }

@@ -10,9 +10,11 @@ JMP  2
 JMP  3
 INT  0, 3
 NEQ  0, 2, 0
-JNT  3, 0
+JNT  5, 0
 LOC  0, 0
 OUT  0
+LDN  0
+RTN  0
 LDN  0
 RTN  0
 === END ===
@@ -47,6 +49,5 @@ ARG  3
 ARG  2
 ARG  1
 CALL 0, 4
-LDN  0
 RTN  0
 === END ===

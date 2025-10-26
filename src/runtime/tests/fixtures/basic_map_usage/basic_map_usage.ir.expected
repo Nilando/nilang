@@ -6,24 +6,24 @@ block0:
   t3 = #b
   a_0[t3] = t2
   PRINT a_0
-  t5 = 2
-  a_0[t3] = t5
+  t6 = 2
+  a_0[t3] = t6
   PRINT a_0
-  t9 = #a
-  a_0[t9] = t2
-  t10 = 3
-  t11 = #c
-  a_0[t11] = t10
-  t13 = a_0[t9]
-  PRINT t13
-  t16 = a_0[t3]
-  PRINT t16
-  t19 = a_0[t11]
+  t11 = #a
+  a_0[t11] = t2
+  t12 = 3
+  t13 = #c
+  a_0[t13] = t12
+  t15 = a_0[t11]
+  PRINT t15
+  t19 = a_0[t3]
   PRINT t19
-  t21 = #d
-  t22 = a_0[t21]
-  PRINT t22
-  t24 = null
-  RETURN t24
+  t23 = a_0[t13]
+  PRINT t23
+  t26 = #d
+  t27 = a_0[t26]
+  PRINT t27
+  t29 = null
+  RETURN t29
 
 }

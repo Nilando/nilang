@@ -23,10 +23,10 @@ block0:
   t11 = CALL t10
   PRINT t11
   value_1 = 2
-  t15 = value_1[t3]
-  t16 = CALL t15
-  PRINT t16
-  t18 = null
-  RETURN t18
+  t16 = value_1[t3]
+  t17 = CALL t16
+  PRINT t17
+  t19 = null
+  RETURN t19
 
 }

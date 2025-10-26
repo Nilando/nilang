@@ -32,30 +32,33 @@ block1:
 block2:
   t3 = "guess the lucky number: "
   PRINT t3
-  READ t5
-  t6 = #int
-  STORE_ARG t5
-  guess_0 = CALL t6
-  t9 = guess_0 == lucky_number_0
-  jnt t9 block5
+  t5 = null
+  READ t6
+  t7 = #int
+  STORE_ARG t6
+  guess_0 = CALL t7
+  t10 = guess_0 == lucky_number_0
+  jnt t10 block5
   next block3
 
 block3:
   jump block10
 
 block5:
-  t10 = guess_0 > lucky_number_0
-  jnt t10 block7
+  t11 = guess_0 > lucky_number_0
+  jnt t11 block7
   next block6
 
 block6:
-  t11 = "too high!"
-  PRINT t11
+  t12 = "too high!"
+  PRINT t12
+  t14 = null
   jump block8
 
 block7:
-  t13 = "too low :("
-  PRINT t13
+  t15 = "too low :("
+  PRINT t15
+  t17 = null
   next block8
 
 block8:
@@ -65,9 +68,9 @@ block9:
   jump block1
 
 block10:
-  t15 = "You got it!"
-  PRINT t15
-  t17 = null
-  RETURN t17
+  t18 = "You got it!"
+  PRINT t18
+  t20 = null
+  RETURN t20
 
 }

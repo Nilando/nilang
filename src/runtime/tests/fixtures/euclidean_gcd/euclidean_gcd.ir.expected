@@ -43,46 +43,46 @@ block0:
   STORE_ARG t1
   t3 = CALL find_gcd_0
   PRINT t3
-  t5 = 1
-  STORE_ARG t5
-  STORE_ARG t5
-  t7 = CALL find_gcd_0
-  PRINT t7
-  t9 = 13
-  STORE_ARG t9
-  STORE_ARG t9
-  t11 = CALL find_gcd_0
-  PRINT t11
-  t13 = 16
-  t14 = 32
-  STORE_ARG t13
-  STORE_ARG t14
-  t15 = CALL find_gcd_0
-  PRINT t15
-  t17 = 81
-  t18 = 18
+  t6 = 1
+  STORE_ARG t6
+  STORE_ARG t6
+  t8 = CALL find_gcd_0
+  PRINT t8
+  t11 = 13
+  STORE_ARG t11
+  STORE_ARG t11
+  t13 = CALL find_gcd_0
+  PRINT t13
+  t16 = 16
+  t17 = 32
+  STORE_ARG t16
   STORE_ARG t17
-  STORE_ARG t18
-  t19 = CALL find_gcd_0
-  PRINT t19
-  t21 = 31256365662
-  t22 = 14347398432
+  t18 = CALL find_gcd_0
+  PRINT t18
+  t21 = 81
+  t22 = 18
   STORE_ARG t21
   STORE_ARG t22
   t23 = CALL find_gcd_0
   PRINT t23
-  t25 = 1023
-  t26 = 64
-  STORE_ARG t25
+  t26 = 31256365662
+  t27 = 14347398432
   STORE_ARG t26
-  t27 = CALL find_gcd_0
-  PRINT t27
-  t29 = 1024
-  STORE_ARG t29
-  STORE_ARG t26
-  t31 = CALL find_gcd_0
-  PRINT t31
-  t33 = null
-  RETURN t33
+  STORE_ARG t27
+  t28 = CALL find_gcd_0
+  PRINT t28
+  t31 = 1023
+  t32 = 64
+  STORE_ARG t31
+  STORE_ARG t32
+  t33 = CALL find_gcd_0
+  PRINT t33
+  t36 = 1024
+  STORE_ARG t36
+  STORE_ARG t32
+  t38 = CALL find_gcd_0
+  PRINT t38
+  t40 = null
+  RETURN t40
 
 }

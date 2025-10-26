@@ -9,10 +9,11 @@ JNT  2, 0
 JMP  2
 JMP  2
 COPY 0, 1
-JNT  4, 0
+JNT  5, 0
 LOC  0, 0
 OUT  0
-JMP  3
+LDN  0
+RTN  0
 LOC  0, 1
 OUT  0
 LDN  0

@@ -15,21 +15,22 @@ block2:
   t8 = b_0 != t7
   next block3(t8)
 
-block3(t13):
-  next block4(t13)
+block3(t14):
+  next block4(t14)
 
-block4(t12):
-  jnt t12 block6
+block4(t13):
+  jnt t13 block6
   next block5
 
 block5:
   t9 = "test"
   PRINT t9
-  next block6
-
-block6:
   t11 = null
   RETURN t11
+
+block6:
+  t12 = null
+  RETURN t12
 
 }
 MAIN () {
@@ -64,7 +65,6 @@ block0:
   STORE_ARG t2
   STORE_ARG t3
   t24 = CALL test_0
-  t25 = null
-  RETURN t25
+  RETURN t24
 
 }

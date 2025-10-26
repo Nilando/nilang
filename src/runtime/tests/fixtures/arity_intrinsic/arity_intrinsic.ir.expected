@@ -42,25 +42,25 @@ block0:
   t0 = fn1
   t1 =  # t0
   PRINT t1
-  t3 = fn2
-  t4 =  # t3
-  PRINT t4
-  t6 = fn3
-  t7 =  # t6
-  PRINT t7
-  t9 = fn4
-  t10 =  # t9
-  PRINT t10
+  t4 = fn2
+  t5 =  # t4
+  PRINT t5
+  t8 = fn3
+  t9 =  # t8
+  PRINT t9
+  t12 = fn4
+  t13 =  # t12
+  PRINT t13
   x_0 = 123
-  t14 = fn5
-  STORE_UPVAL t14, x_0
-  t15 =  # t14
-  PRINT t15
+  t18 = fn5
+  STORE_UPVAL t18, x_0
+  t19 =  # t18
+  PRINT t19
   f_0 = fn6
-  t19 = null
-  BIND f_1 = f_0 < t19
-  t21 =  # f_1
-  PRINT t21
-  RETURN t19
+  t24 = null
+  BIND f_1 = f_0 < t24
+  t26 =  # f_1
+  PRINT t26
+  RETURN t24
 
 }

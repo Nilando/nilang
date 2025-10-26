@@ -28,12 +28,12 @@ block4(i_3):
 block5:
   t11 = m_0[i_3]
   PRINT t11
-  t13 = 1
-  i_4 = i_3 + t13
+  t14 = 1
+  i_4 = i_3 + t14
   jump block4(i_4)
 
 block6:
-  t15 = null
-  RETURN t15
+  t16 = null
+  RETURN t16
 
 }

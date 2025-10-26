@@ -38,12 +38,12 @@ block1(i_1):
 block2:
   t7 = CALL counter_0
   PRINT t7
-  t9 = 1
-  i_2 = i_1 + t9
+  t10 = 1
+  i_2 = i_1 + t10
   jump block1(i_2)
 
 block3:
-  t11 = null
-  RETURN t11
+  t12 = null
+  RETURN t12
 
 }

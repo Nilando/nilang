@@ -24,9 +24,10 @@ block1(x_1):
 
 block2:
   PRINT x_1
-  t4 = 1
-  t5 = x_1 == t4
-  jnt t5 block4
+  t4 = null
+  t5 = 1
+  t6 = x_1 == t5
+  jnt t6 block4
   next block3
 
 block3:
@@ -41,7 +42,7 @@ block5(x_3):
   jump block1(x_3)
 
 block6:
-  t8 = null
-  RETURN t8
+  t9 = null
+  RETURN t9
 
 }

@@ -4,14 +4,14 @@ block0:
   t0 = "./src/runtime/tests/test_programs/exporting.nl"
   IMPORT value_0, t0
   PRINT value_0
-  t4 = true
-  t5 = #flag
-  STORE_GLB t5, t4
-  t6 = "./src/runtime/tests/test_programs/exporting.nl"
-  IMPORT value_1, t6
+  t5 = true
+  t6 = #flag
+  STORE_GLB t6, t5
+  t7 = "./src/runtime/tests/test_programs/exporting.nl"
+  IMPORT value_1, t7
   PRINT value_1
-  t9 = null
-  RETURN t9
+  t10 = null
+  RETURN t10
 
 }
 ========= FILE ./src/runtime/tests/fixtures/importing/importing.ir.actual ========

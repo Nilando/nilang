@@ -55,8 +55,8 @@ block3:
 block4:
   next block5(t7)
 
-block5(t43):
-  jnt t43 block7
+block5(t44):
+  jnt t44 block7
   next block6
 
 block6:
@@ -65,8 +65,8 @@ block6:
 block7:
   next block8(t7)
 
-block8(t44):
-  PRINT t44
+block8(t45):
+  PRINT t45
   i_2 = i_1 + t9
   jump block1(i_2)
 

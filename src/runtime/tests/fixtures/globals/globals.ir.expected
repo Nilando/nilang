@@ -4,24 +4,23 @@ block0:
   t0 = #test
   LOAD_GLB t1, t0
   PRINT t1
-  LOAD_GLB t4, t0
-  t5 = 1
-  t6 = t4 + t5
-  STORE_GLB t0, t6
-  LOAD_GLB t9, t0
-  t10 = 10
-  t11 = t9 >= t10
-  jnt t11 block2
+  LOAD_GLB t5, t0
+  t6 = 1
+  t7 = t5 + t6
+  STORE_GLB t0, t7
+  LOAD_GLB t10, t0
+  t11 = 10
+  t12 = t10 >= t11
+  jnt t12 block2
   next block1
 
 block1:
-  RETURN t12
+  RETURN t13
 
 block2:
-  t13 = #b
-  LOAD_GLB t14, t13
-  t15 = CALL t14
-  t16 = null
+  t14 = #b
+  LOAD_GLB t15, t14
+  t16 = CALL t15
   RETURN t16
 
 }
@@ -30,14 +29,13 @@ block0:
   t0 = #test
   LOAD_GLB t1, t0
   PRINT t1
-  LOAD_GLB t4, t0
-  t5 = 1
-  t6 = t4 + t5
-  STORE_GLB t0, t6
-  t8 = #c
-  LOAD_GLB t9, t8
-  t10 = CALL t9
-  t11 = null
+  LOAD_GLB t5, t0
+  t6 = 1
+  t7 = t5 + t6
+  STORE_GLB t0, t7
+  t9 = #c
+  LOAD_GLB t10, t9
+  t11 = CALL t10
   RETURN t11
 
 }
@@ -46,14 +44,13 @@ block0:
   t0 = #test
   LOAD_GLB t1, t0
   PRINT t1
-  LOAD_GLB t4, t0
-  t5 = 1
-  t6 = t4 + t5
-  STORE_GLB t0, t6
-  t8 = #a
-  LOAD_GLB t9, t8
-  t10 = CALL t9
-  t11 = null
+  LOAD_GLB t5, t0
+  t6 = 1
+  t7 = t5 + t6
+  STORE_GLB t0, t7
+  t9 = #a
+  LOAD_GLB t10, t9
+  t11 = CALL t10
   RETURN t11
 
 }
@@ -73,7 +70,6 @@ block0:
   STORE_GLB t7, t6
   LOAD_GLB t9, t3
   t10 = CALL t9
-  t11 = null
-  RETURN t11
+  RETURN t10
 
 }

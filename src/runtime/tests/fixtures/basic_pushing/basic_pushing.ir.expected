@@ -25,7 +25,7 @@ block2:
 block3:
   PRINT a_0
   PRINT b_0
-  t16 = null
-  RETURN t16
+  t17 = null
+  RETURN t17
 
 }

@@ -110,31 +110,31 @@ block0:
   STORE_ARG t2
   t3 = CALL fizzbuzz_0
   PRINT t3
-  t5 = 10
-  STORE_ARG t5
-  t6 = CALL fizzbuzz_0
-  PRINT t6
-  t8 = 17
-  STORE_ARG t8
-  t9 = CALL fizzbuzz_0
-  PRINT t9
-  t11 = 14
-  STORE_ARG t11
-  t12 = CALL fizzbuzz_0
-  PRINT t12
-  t14 = 70
+  t6 = 10
+  STORE_ARG t6
+  t7 = CALL fizzbuzz_0
+  PRINT t7
+  t10 = 17
+  STORE_ARG t10
+  t11 = CALL fizzbuzz_0
+  PRINT t11
+  t14 = 14
   STORE_ARG t14
   t15 = CALL fizzbuzz_0
   PRINT t15
-  t17 = 35
-  STORE_ARG t17
-  t18 = CALL fizzbuzz_0
-  PRINT t18
-  t20 = 57
-  STORE_ARG t20
-  t21 = CALL fizzbuzz_0
-  PRINT t21
-  t23 = null
-  RETURN t23
+  t18 = 70
+  STORE_ARG t18
+  t19 = CALL fizzbuzz_0
+  PRINT t19
+  t22 = 35
+  STORE_ARG t22
+  t23 = CALL fizzbuzz_0
+  PRINT t23
+  t26 = 57
+  STORE_ARG t26
+  t27 = CALL fizzbuzz_0
+  PRINT t27
+  t29 = null
+  RETURN t29
 
 }

@@ -12,6 +12,5 @@ ARG  2
 ARG  1
 ARG  0
 CALL 0, 3
-LDN  0
 RTN  0
 === END ===

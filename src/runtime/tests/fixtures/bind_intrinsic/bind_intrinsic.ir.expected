@@ -29,13 +29,13 @@ block0:
   t15 = CALL add_0
   PRINT t15
   STORE_ARG t13
-  t18 = CALL add_two_0
-  PRINT t18
-  t20 = CALL get_three_0
-  PRINT t20
-  t22 = CALL get_four_0
+  t19 = CALL add_two_0
+  PRINT t19
+  t22 = CALL get_three_0
   PRINT t22
-  t24 = null
-  RETURN t24
+  t25 = CALL get_four_0
+  PRINT t25
+  t27 = null
+  RETURN t27
 
 }

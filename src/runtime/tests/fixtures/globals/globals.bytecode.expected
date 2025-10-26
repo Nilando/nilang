@@ -15,7 +15,6 @@ RTN  0
 SYM  0, #22
 LDGB 0, #0
 CALL 0, 0
-LDN  0
 RTN  0
 === END ===
 === FN 2 START ===
@@ -29,7 +28,6 @@ STGB 0, #1
 SYM  0, #23
 LDGB 0, #0
 CALL 0, 0
-LDN  0
 RTN  0
 === END ===
 === FN 3 START ===
@@ -43,7 +41,6 @@ STGB 0, #1
 SYM  0, #21
 LDGB 0, #0
 CALL 0, 0
-LDN  0
 RTN  0
 === END ===
 === FN 0 START ===
@@ -61,6 +58,5 @@ SYM  0, #23
 STGB 1, #0
 LDGB 0, #2
 CALL 0, 0
-LDN  0
 RTN  0
 === END ===

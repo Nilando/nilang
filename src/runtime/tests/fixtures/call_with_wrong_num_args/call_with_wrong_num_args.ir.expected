@@ -15,7 +15,6 @@ block0:
   STORE_ARG t2
   STORE_ARG t3
   t4 = CALL add_0
-  t5 = null
-  RETURN t5
+  RETURN t4
 
 }

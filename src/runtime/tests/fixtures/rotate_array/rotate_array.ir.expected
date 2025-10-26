@@ -40,15 +40,15 @@ block0:
   t11 = CALL rotate_array_0
   PRINT t1
   STORE_ARG t1
-  t13 = CALL rotate_array_0
-  PRINT t1
-  STORE_ARG t1
-  t15 = CALL rotate_array_0
+  t14 = CALL rotate_array_0
   PRINT t1
   STORE_ARG t1
   t17 = CALL rotate_array_0
   PRINT t1
-  t19 = null
-  RETURN t19
+  STORE_ARG t1
+  t20 = CALL rotate_array_0
+  PRINT t1
+  t22 = null
+  RETURN t22
 
 }

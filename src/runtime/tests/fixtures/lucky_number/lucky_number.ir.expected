@@ -5,35 +5,31 @@ block0:
   guess_0 = 10
   t4 = "guess the lucky number: "
   PRINT t4
-  t6 = false
-  jnt t6 block2
+  t7 = false
+  jnt t7 block3
   next block1
 
 block1:
-  t7 = "You got it!"
-  PRINT t7
-  jump block6
-
-block2:
-  t9 = guess_0 > lucky_number_0
-  jnt t9 block4
-  next block3
+  t8 = "You got it!"
+  PRINT t8
+  t10 = null
+  RETURN t10
 
 block3:
-  t10 = "too high!"
-  PRINT t10
-  jump block5
+  t11 = guess_0 > lucky_number_0
+  jnt t11 block6
+  next block4
 
 block4:
-  t12 = "too low :("
+  t12 = "too high!"
   PRINT t12
-  next block5
-
-block5:
-  next block6
-
-block6:
   t14 = null
   RETURN t14
+
+block6:
+  t15 = "too low :("
+  PRINT t15
+  t17 = null
+  RETURN t17
 
 }

@@ -9,8 +9,8 @@ block0:
   PRINT c_0
   LOAD_UPVAL d_0
   PRINT d_0
-  t8 = null
-  RETURN t8
+  t11 = null
+  RETURN t11
 
 }
 MAIN () {
@@ -25,7 +25,6 @@ block0:
   STORE_UPVAL print_stuff_0, c_0
   STORE_UPVAL print_stuff_0, d_0
   t9 = CALL print_stuff_0
-  t10 = null
-  RETURN t10
+  RETURN t9
 
 }

@@ -2,21 +2,20 @@
 fn1 (i_0) {
 block0:
   PRINT i_0
-  t2 = 10
-  t3 = i_0 == t2
-  jnt t3 block2
+  t3 = 10
+  t4 = i_0 == t3
+  jnt t4 block2
   next block1
 
 block1:
-  RETURN t4
+  RETURN t5
 
 block2:
-  t5 = 1
-  t6 = i_0 + t5
+  t6 = 1
+  t7 = i_0 + t6
   LOAD_UPVAL count_to_ten_from_0
-  STORE_ARG t6
-  t8 = CALL count_to_ten_from_0
-  t9 = null
+  STORE_ARG t7
+  t9 = CALL count_to_ten_from_0
   RETURN t9
 
 }
@@ -27,7 +26,6 @@ block0:
   t1 = 0
   STORE_ARG t1
   t2 = CALL count_to_ten_from_0
-  t3 = null
-  RETURN t3
+  RETURN t2
 
 }
