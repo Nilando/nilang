@@ -1,0 +1,47 @@
+========= FILE ./src/runtime/tests/fixtures/parsing_error/parsing_error.ast.actual ========
+[
+    Assign {
+        dest: Spanned {
+            item: Local(
+                20,
+            ),
+            span: Span {
+                start: 0,
+                end: 3,
+            },
+        },
+        src: Spanned {
+            item: Value(
+                Int(
+                    1,
+                ),
+            ),
+            span: Span {
+                start: 4,
+                end: 6,
+            },
+        },
+    },
+    Assign {
+        dest: Spanned {
+            item: Local(
+                23,
+            ),
+            span: Span {
+                start: 43,
+                end: 46,
+            },
+        },
+        src: Spanned {
+            item: Value(
+                Int(
+                    4,
+                ),
+            ),
+            span: Span {
+                start: 47,
+                end: 49,
+            },
+        },
+    },
+]

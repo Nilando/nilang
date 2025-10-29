@@ -12,7 +12,6 @@ pub enum LoadedLocal<'gc> {
     Func(Gc<'gc, Func<'gc>>),
     SymId(u32),
     Int(i64),
-    // BigInt(i64)
     Float(f64),
     Text(Gc<'gc, [char]>),
 }
@@ -28,9 +27,6 @@ impl<'gc> LoadedLocal<'gc> {
         }
     }
 }
-
-// Plan Combine Closure and Partial into Func
-// this makes space for a tagged pointer to point to an i64
 
 #[derive(Trace, Clone)]
 pub struct Func<'gc> {

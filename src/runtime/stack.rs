@@ -111,9 +111,11 @@ impl<'gc> Stack<'gc> {
         for i in 0..self.call_frames.len() {
             let call_frame = self.call_frames.get_idx(i).unwrap().unwrap();
             let module_path = call_frame.get_func().get_file_path();
+            let span = call_frame.get_func().get_spans().get(call_frame.get_ip().get()).copied();
+
             let bt_call = BacktraceCall {
                 path: module_path.map(|p| p.as_string()),
-                span: call_frame.get_func().get_spans().get(call_frame.get_ip().get()).unwrap().clone()
+                span 
             };
 
             bt.calls.push(bt_call);

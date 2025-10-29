@@ -1,0 +1,7 @@
+========= FILE ./src/runtime/tests/fixtures/parsing_error/parsing_error.ir.actual ========
+MAIN () {
+block0:
+  t4 = null
+  RETURN t4
+
+}

@@ -14,7 +14,7 @@ pub struct Backtrace {
 
 #[derive(Debug)]
 pub struct BacktraceCall {
-    pub span: Span,
+    pub span: Option<Span>,
     pub path: Option<String>
 }
 
@@ -37,22 +37,28 @@ impl RuntimeError {
             let mut bt_depth = backtrace.calls.len() as isize - 1;
             for bt in backtrace.calls.iter() {
                 if let Some(path) = bt.path.as_ref() {
-                    let span_snippet = retrieve_span_snippet(path, bt.span).unwrap();
-                    let line = span_snippet.line;
-                    let start = span_snippet.start;
-                    let end = span_snippet.end;
-                    let location_line = format!("  {bt_depth}: File \"{path}\", line: {line}:{end}\n");
-                    let source_len = span_snippet.source_line.len();
-                    let trimmed_source = span_snippet.source_line.trim_start();
-                    let trimmed_source_len = trimmed_source.len();
-                    let source = format!("    {}\n", trimmed_source);
+                    if let Some(span) = bt.span {
+                        let span_snippet = retrieve_span_snippet(path, span).unwrap();
+                        let line = span_snippet.line;
+                        let start = span_snippet.start;
+                        let end = span_snippet.end;
+                        let location_line = format!("  {bt_depth}: File \"{path}\", line: {line}:{end}\n");
+                        let source_len = span_snippet.source_line.len();
+                        let trimmed_source = span_snippet.source_line.trim_start();
+                        let trimmed_source_len = trimmed_source.len();
+                        let source = format!("    {}\n", trimmed_source);
 
-                    result.push_str(&location_line);
-                    result.push_str(&source);
-                    if bt_depth == 0 {
-                        let trimmed = source_len - trimmed_source_len;
-                        let underline = underline_range(&span_snippet.source_line, start - trimmed, end - trimmed - 1);
-                        result.push_str(&underline);
+                        result.push_str(&location_line);
+                        result.push_str(&source);
+                        if bt_depth == 0 {
+                            let trimmed = source_len - trimmed_source_len;
+                            let underline = underline_range(&span_snippet.source_line, start - trimmed, end - trimmed - 1);
+                            result.push_str(&underline);
+                        }
+                    } else {
+                        let location_line = format!("  {bt_depth}: File \"{path}\"\n");
+                        result.push_str(&location_line);
+                        result.push_str("    ???\n");
                     }
                 } else {
                     let location_line = format!("  {bt_depth}: Inline\n");

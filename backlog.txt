@@ -1,15 +1,8 @@
 VERSION 0.1.0
 
 IN PROGRESS:
-- implicit returns
-- FFI
-- try catch
-  try {
-    // ...
-  } catch(err) {
-    // ...
-  }
 - compile to wasm
+- load wasm modules for safe FFI
 
 OPTIMIZATION/REFACTOR BACKLOG:
 - add benchmarking

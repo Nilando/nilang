@@ -50,22 +50,6 @@ pub fn stmt<'a>() -> Parser<'a, Stmt> {
     })
 }
 
-// for loops are syntactic sugar!
-//
-// for value in list {
-//      print(value);
-// }
-//
-// translates into...
-//
-// iter = $iter(list);
-// while true {
-//      value = iter();
-//      if value == null {
-//          break;
-//      }
-//      print(value);
-// } 
 fn for_stmt(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
     keyword(KeyWord::For)
         .then(symbol())
@@ -151,7 +135,11 @@ fn closed_stmt(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
         .or(return_stmt(sp.clone()))
         .or(break_stmt())
         .or(continue_stmt())
-        .closed_by(ctrl(Ctrl::SemiColon).or(nothing()).expect("expected ';' at end of stmt"))
+        .closed_by(
+            ctrl(Ctrl::SemiColon)
+            // TODO: parse statements without requiring semicolons
+            //.or(nothing()).expect("expected ';' at end of stmt")
+        )
 }
 
 fn basic_stmt(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {

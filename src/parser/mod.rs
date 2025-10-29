@@ -154,7 +154,7 @@ impl<'a, T: 'a> Parser<'a, T> {
             if let Some(result) = self.parse(ctx) {
                 Some(result)
             } else {
-                let span = ctx.peek().map(|s| s.span).unwrap();
+                let span = ctx.peek()?.span;
                 let error = ParseErrorItem::Expected {
                     msg: error_msg.to_string(),
                     found: ctx.lexer.get_input()[span.start..span.end].to_string(),
@@ -443,7 +443,7 @@ where
 
 fn span<'a, T: 'a>(func: Parser<'a, T>) -> Parser<'a, Spanned<T>> {
     Parser::new(move |ctx| {
-        let start = ctx.peek().map(|s| s.span.start).unwrap();
+        let start = ctx.peek()?.span.start;
         let result: Option<T> = func.parse(ctx);
         let end = ctx.pos();
 
