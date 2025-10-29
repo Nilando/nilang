@@ -211,4 +211,14 @@ patch($map, $values, values);
 patch($map, $contains_key, contains_key);
 patch($map, $compact, map_compact);
 
-patch($fn, $iter, fn(self) { return self; });
+patch($fn, $iter, fn(self) { self; });
+
+patch($int, $times, fn(self, callback) { 
+  i = 0;
+  result = [];
+  while i < self {
+    result << (callback(i));
+    i = i + 1;
+  }
+  result;
+})
