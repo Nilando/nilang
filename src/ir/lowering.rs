@@ -7,7 +7,7 @@ use crate::parser::{Expr, LhsExpr, MapKey, SegmentedString, Span, Spanned, Stmt,
 use crate::op::{BinaryOp, UnaryOp};
 use crate::symbol_map::{SymID, SymbolMap, ITER_SYM};
 
-use std::collections::BTreeSet;
+use alloc::collections::BTreeSet;
 
 pub const MAIN_FUNC_ID: u32 = 0;
 

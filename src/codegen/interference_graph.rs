@@ -1,6 +1,6 @@
-use std::cell::RefCell;
-use std::collections::{BTreeMap, BTreeSet};
-use std::rc::Rc;
+use core::cell::RefCell;
+use alloc::collections::{BTreeMap, BTreeSet};
+use alloc::rc::Rc;
 
 use crate::ir::{Func, LivenessDFA, VReg, DFA};
 

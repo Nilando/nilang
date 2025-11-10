@@ -145,9 +145,10 @@ impl<'gc> VM<'gc> {
     ) -> Result<Option<ExitCode>, RuntimeError> {
         let instr = instr_stream.advance();
 
-        if std::env::var("VM_DEBUG").is_ok() {
-            println!("{}: {:?}", instr_stream.get_ip() - 1,instr);
-        }
+        // TODO: maybe find a better way to add this back?
+        //if std::env::var("VM_DEBUG").is_ok() {
+            //println!("{}: {:?}", instr_stream.get_ip() - 1,instr);
+        //}
 
         match instr {
             ByteCode::Noop => {}

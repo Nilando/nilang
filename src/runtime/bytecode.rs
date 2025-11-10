@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use core::fmt::Display;
 
 use sandpit::TraceLeaf;
 
@@ -57,7 +57,7 @@ pub enum ByteCode {
 }
 
 impl Display for ByteCode {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             ByteCode::Jump { offset } => write!(f, "JMP  {offset}"),
             ByteCode::Jnt { src, offset } => write!(f, "JNT  {offset}, {src}"),

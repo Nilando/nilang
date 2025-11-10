@@ -3,7 +3,7 @@ use super::block::{Block, BlockId};
 use super::func::Func;
 use super::func_printer::VRegMap;
 use super::tac::VReg;
-use std::collections::{BTreeMap, BTreeSet};
+use alloc::collections::{BTreeMap, BTreeSet};
 
 #[derive(Debug)]
 pub struct PhiNode {

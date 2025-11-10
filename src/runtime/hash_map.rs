@@ -1,5 +1,5 @@
 use crate::symbol_map::SymbolMap;
-use std::cell::Cell;
+use core::cell::Cell;
 
 use super::list::List;
 use super::op::equal;
@@ -307,7 +307,7 @@ fn hash_value(v: &Value<'_>) -> usize {
 
 /*
 impl Debug for GcHashMap<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "{{")?;
         for i in 0..self.buckets.len() {
             let entry = &self.buckets[i];

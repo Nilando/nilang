@@ -4,7 +4,8 @@ use super::super::func::Func;
 use super::super::tac::{Tac, TacConst};
 use crate::ir::tac::VReg;
 use crate::op::BinaryOp;
-use std::collections::{BTreeMap, HashMap};
+use alloc::collections::BTreeMap;
+use std::collections::HashMap;
 
 pub type ValueId = usize;
 

@@ -1,8 +1,8 @@
 use super::block::{Block, BlockId};
 use super::func_printer::VRegMap;
 use super::tac::{FuncID, LabelID, VReg};
-use std::fmt::Debug;
-use std::iter::Iterator;
+use core::fmt::Debug;
+use core::iter::Iterator;
 
 #[derive(Debug)]
 pub struct Func {

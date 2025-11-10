@@ -18,8 +18,8 @@ use super::symbol_map::{SymID, SymbolMap};
 
 pub use value::{SegmentedString, StringSegment};
 
-use std::cell::RefCell;
-use std::rc::Rc;
+use core::cell::RefCell;
+use alloc::rc::Rc;
 
 pub fn parse_program(
     input: &str,

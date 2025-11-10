@@ -1,4 +1,4 @@
-use std::cell::Cell;
+use core::cell::Cell;
 
 use sandpit::{Gc, Trace};
 use super::func::Func;

@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::rc::Rc;
+use alloc::rc::Rc;
 
 pub type SymID = u32;
 

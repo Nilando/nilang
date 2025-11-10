@@ -3,7 +3,7 @@ use crate::ir::Func;
 use super::super::block::{Block, BlockId};
 use super::super::tac::VReg;
 use super::dfa::DFA;
-use std::collections::{BTreeMap, BTreeSet};
+use alloc::collections::{BTreeMap, BTreeSet};
 
 // This works whether or not the IR is in SSA form.
 // That is helpful b/c a liveness analysis is needed to put the IR into SSA form,

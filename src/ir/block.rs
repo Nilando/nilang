@@ -3,7 +3,7 @@ use super::tac::VReg;
 use super::tac::{LabelID, Tac};
 use crate::parser::PackedSpans;
 use crate::parser::Span;
-use std::collections::BTreeSet;
+use alloc::collections::BTreeSet;
 
 pub type BlockId = usize;
 const ENTRY_BLOCK_ID: usize = 0;

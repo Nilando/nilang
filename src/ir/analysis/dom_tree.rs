@@ -1,7 +1,7 @@
 use super::super::block::Block;
 use super::super::block::BlockId;
 use super::super::func::Func;
-use std::collections::{BTreeMap, BTreeSet};
+use alloc::collections::{BTreeMap, BTreeSet};
 
 pub fn compute_dom_tree(func: &Func) -> BTreeMap<BlockId, Vec<BlockId>> {
     let entry_block = func.get_entry_block();

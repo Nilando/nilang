@@ -1,6 +1,6 @@
 use super::super::block::{Block, BlockId};
 use super::super::func::Func;
-use std::collections::BTreeMap;
+use alloc::collections::BTreeMap;
 
 pub trait DFA: Sized {
     type Data;

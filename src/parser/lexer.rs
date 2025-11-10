@@ -2,6 +2,8 @@ use super::spanned::Spanned;
 use super::Span;
 use crate::op::{BinaryOp, UnaryOp};
 use crate::symbol_map::{SymID, SymbolMap};
+use core::iter::Peekable;
+use core::str::Chars;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Ctrl {
@@ -142,9 +144,6 @@ enum Delimiter {
     Backtick,
     Curly,
 }
-
-use std::iter::Peekable;
-use std::str::Chars;
 
 pub struct Lexer<'a> {
     peek: Option<Spanned<Token>>,

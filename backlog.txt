@@ -1,8 +1,19 @@
 VERSION 0.1.0
 
 IN PROGRESS:
-- compile to wasm
-- load wasm modules for safe FFI
+- WASM SUPPORT
+  1. Allow Nimix to compile with no_std
+  2. update Sandpit to support single threaded/no_std mode
+  3. remove std usages from nilang
+  4. nimix update
+    4.1. make it support being a global allocator
+    4.2. have 2 modes linux allcoator, or wasm allocator
+  5. add update to support FFI
+  6. add update to support static linking of .so files
+  7. add a JS wrapper for WASM blob
+
+BACKLOG:
+- LSP
 
 OPTIMIZATION/REFACTOR BACKLOG:
 - add benchmarking
