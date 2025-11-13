@@ -1,6 +1,6 @@
 use super::lexer::{Ctrl, KeyWord, Token};
 use crate::op::{BinaryOp, UnaryOp};
-use super::spanned::Spanned;
+use crate::spanned::Spanned;
 use super::stmt::Stmt;
 use super::value::{value, Value};
 use super::{ctrl, keyword, nothing, recursive, symbol, Parser, Span};

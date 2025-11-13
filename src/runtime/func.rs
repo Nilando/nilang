@@ -1,6 +1,6 @@
 use sandpit::{field, Gc, GcOpt, Mutator, Trace};
 
-use crate::parser::GcPackedSpans;
+use crate::spanned::GcPackedSpans;
 use crate::runtime::string::VMString;
 
 use super::tagged_value::{TaggedValue, ValueTag};

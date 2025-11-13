@@ -5,9 +5,9 @@ use super::optimizer::remove_dead_blocks;
 use super::ssa::convert_to_ssa;
 use super::tac::{FuncID, LabelID, Tac, VReg};
 use crate::ir::TacConst;
-use crate::parser::Span;
+use crate::spanned::Span;
 use crate::symbol_map::{SymID, SELF_SYM};
-use std::collections::HashMap;
+use hashbrown::HashMap;
 
 pub struct FuncBuilder {
     id: FuncID,

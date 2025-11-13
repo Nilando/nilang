@@ -1,6 +1,5 @@
 pub use super::lexer::LexError;
-use super::retrieve_span_snippet;
-pub use super::spanned::Spanned;
+pub use crate::spanned::{Spanned, retrieve_span_snippet};
 
 #[derive(PartialEq, Debug)]
 pub struct ParseError {

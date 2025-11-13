@@ -1,13 +1,12 @@
 mod expr;
 mod lexer;
-mod spanned;
 mod stmt;
 mod value;
 mod error;
 
+use crate::spanned::{Spanned, Span};
 pub use expr::{Expr, LhsExpr};
 pub use lexer::{Ctrl, KeyWord, Lexer, Token};
-pub use spanned::{GcPackedSpans, PackedSpans, Span, Spanned, retrieve_span_snippet};
 pub use stmt::Stmt;
 pub use value::{MapKey, Value};
 pub use error::{ParseError, ParseErrorItem};

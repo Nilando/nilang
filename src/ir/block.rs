@@ -1,8 +1,7 @@
 use super::ssa::PhiNode;
 use super::tac::VReg;
 use super::tac::{LabelID, Tac};
-use crate::parser::PackedSpans;
-use crate::parser::Span;
+use crate::spanned::{Span, PackedSpans};
 use alloc::collections::BTreeSet;
 
 pub type BlockId = usize;

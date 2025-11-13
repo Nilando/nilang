@@ -1,4 +1,4 @@
-use crate::parser::{retrieve_span_snippet, Span};
+use crate::spanned::{retrieve_span_snippet, Span};
 
 #[derive(Debug)]
 pub struct RuntimeError {

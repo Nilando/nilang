@@ -1,7 +1,7 @@
 use super::func::{Func, LoadedLocal};
 use super::string::VMString;
 use sandpit::*;
-use std::collections::HashMap;
+use hashbrown::HashMap;
 use crate::codegen::{Func as ByteCodeFunc, Local};
 
 pub fn load_program<'gc>(program: Vec<ByteCodeFunc>, path: Option<&str>, mu: &'gc Mutator) -> Vec<Gc<'gc, Func<'gc>>> {

@@ -5,7 +5,7 @@ use super::super::tac::{Tac, TacConst};
 use crate::ir::tac::VReg;
 use crate::op::BinaryOp;
 use alloc::collections::BTreeMap;
-use std::collections::HashMap;
+use hashbrown::HashMap;
 
 pub type ValueId = usize;
 

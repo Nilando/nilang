@@ -6,6 +6,7 @@ mod symbol_map;
 mod compile;
 mod repl;
 mod op;
+mod spanned;
 
 extern crate alloc;
 

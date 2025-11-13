@@ -4,7 +4,7 @@ use super::lowering::MAIN_FUNC_ID;
 use super::tac::{Tac, TacConst, VReg};
 use crate::op::{BinaryOp, UnaryOp};
 use crate::symbol_map::{SymID, SymbolMap};
-use std::collections::HashMap;
+use hashbrown::HashMap;
 
 #[derive(Debug)]
 pub struct VRegMap {

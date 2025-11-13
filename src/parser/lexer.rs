@@ -1,5 +1,4 @@
-use super::spanned::Spanned;
-use super::Span;
+use crate::spanned::{Spanned, Span};
 use crate::op::{BinaryOp, UnaryOp};
 use crate::symbol_map::{SymID, SymbolMap};
 use core::iter::Peekable;

@@ -1,6 +1,6 @@
 use super::expr::{expr, Expr, LhsExpr};
 use super::lexer::{Ctrl, KeyWord, Token};
-use super::spanned::Spanned;
+use crate::spanned::Spanned;
 use super::{block, ctrl, inputs, keyword, nothing, recursive, symbol, Parser};
 
 use crate::symbol_map::SymID;
@@ -197,7 +197,7 @@ mod tests {
     use crate::parser::value::StringSegment;
     use crate::parser::ParseError;
     use super::*;
-    use crate::parser::Span;
+    use crate::spanned::Span;
     use crate::op::BinaryOp;
     use crate::symbol_map::SymbolMap;
     use pretty_assertions::assert_eq;

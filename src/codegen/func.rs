@@ -1,4 +1,4 @@
-use crate::parser::{PackedSpans, Span};
+use crate::spanned::{PackedSpans, Span};
 use crate::runtime::ByteCode;
 
 #[derive(Debug, PartialEq)]
