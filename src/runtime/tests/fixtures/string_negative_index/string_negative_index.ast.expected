@@ -1,0 +1,178 @@
+========= FILE ./src/runtime/tests/fixtures/string_negative_index/string_negative_index.ast.actual ========
+[
+    Assign {
+        dest: Spanned {
+            item: Local(
+                20,
+            ),
+            span: Span {
+                start: 0,
+                end: 3,
+            },
+        },
+        src: Spanned {
+            item: Value(
+                String(
+                    SegmentedString {
+                        segments: [
+                            String(
+                                "hello",
+                            ),
+                        ],
+                    },
+                ),
+            ),
+            span: Span {
+                start: 4,
+                end: 12,
+            },
+        },
+    },
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Index {
+                        store: Spanned {
+                            item: Value(
+                                Ident(
+                                    20,
+                                ),
+                            ),
+                            span: Span {
+                                start: 19,
+                                end: 20,
+                            },
+                        },
+                        key: Spanned {
+                            item: Unaop {
+                                op: Negate,
+                                expr: Spanned {
+                                    item: Value(
+                                        Int(
+                                            1,
+                                        ),
+                                    ),
+                                    span: Span {
+                                        start: 22,
+                                        end: 23,
+                                    },
+                                },
+                            },
+                            span: Span {
+                                start: 21,
+                                end: 24,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 19,
+                        end: 25,
+                    },
+                },
+            ),
+            span: Span {
+                start: 13,
+                end: 26,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Index {
+                        store: Spanned {
+                            item: Value(
+                                Ident(
+                                    20,
+                                ),
+                            ),
+                            span: Span {
+                                start: 33,
+                                end: 34,
+                            },
+                        },
+                        key: Spanned {
+                            item: Unaop {
+                                op: Negate,
+                                expr: Spanned {
+                                    item: Value(
+                                        Int(
+                                            2,
+                                        ),
+                                    ),
+                                    span: Span {
+                                        start: 36,
+                                        end: 37,
+                                    },
+                                },
+                            },
+                            span: Span {
+                                start: 35,
+                                end: 38,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 33,
+                        end: 39,
+                    },
+                },
+            ),
+            span: Span {
+                start: 27,
+                end: 40,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Index {
+                        store: Spanned {
+                            item: Value(
+                                Ident(
+                                    20,
+                                ),
+                            ),
+                            span: Span {
+                                start: 47,
+                                end: 48,
+                            },
+                        },
+                        key: Spanned {
+                            item: Unaop {
+                                op: Negate,
+                                expr: Spanned {
+                                    item: Value(
+                                        Int(
+                                            5,
+                                        ),
+                                    ),
+                                    span: Span {
+                                        start: 50,
+                                        end: 51,
+                                    },
+                                },
+                            },
+                            span: Span {
+                                start: 49,
+                                end: 52,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 47,
+                        end: 53,
+                    },
+                },
+            ),
+            span: Span {
+                start: 41,
+                end: 54,
+            },
+        },
+    ),
+]

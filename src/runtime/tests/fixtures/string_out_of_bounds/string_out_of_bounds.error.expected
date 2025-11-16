@@ -1,0 +1,6 @@
+RUNTIME ERROR
+Traceback: most recent call lowest
+  0: File "./src/runtime/tests/test_programs/string_out_of_bounds.nl", line: 2:12
+    print(s[10]);
+          ^^^^^
+OutOfBoundsAccess: Attempted to access string of len 2 at index 10

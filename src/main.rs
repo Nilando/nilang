@@ -9,10 +9,10 @@ use nilang::{
 use clap::Parser as CliParser;
 
 fn main() {
-    let config = Config::parse();
-    let source_path = config.get_source_path();
+    let mut config = Config::parse();
+
     let runtime =
-    match Runtime::init(SymbolMap::new(), config) {
+    match Runtime::init(SymbolMap::new(), config.clone()) {
         Ok(runtime) => runtime,
         Err(err) => {
             let err_msg = err.render();
@@ -22,7 +22,9 @@ fn main() {
         }
     };
 
-    if let Some(path) = source_path {
+    if config.repl_mode() {
+        run_repl(runtime);
+    } else if let Some(path) = config.get_source_path() {
         match run_script(runtime, path) {
             Ok(()) => {},
             Err(err) => {
@@ -31,13 +33,26 @@ fn main() {
                 eprintln!("{}", err_msg);
             }
         }
-    } else {
-        run_repl(runtime);
+    } else if let Some(source) = config.get_script() {
+        match run_inline(runtime, source) {
+            Ok(()) => {},
+            Err(err) => {
+                let err_msg = err.render();
+
+                eprintln!("{}", err_msg);
+            }
+        }
     }
 }
 
 fn run_script(mut runtime: Runtime, path: String) -> Result<(), InterpreterError> {
     runtime.load_module(&path)?;
+
+    runtime.run()
+}
+
+fn run_inline(mut runtime: Runtime, source: String) -> Result<(), InterpreterError> {
+    runtime.load_inline(&source)?;
 
     runtime.run()
 }

@@ -5,83 +5,13 @@
 */
 
 #[test]
-fn not_op_bug() {
-  super::fixture_test("not_op_bug")
-}
-
-#[test]
-fn clone_intrinsic() {
-  super::fixture_test("clone_intrinsic")
-}
-
-#[test]
-fn arity_intrinsic() {
-  super::fixture_test("arity_intrinsic")
-}
-
-#[test]
-fn int_intrinsic() {
-  super::fixture_test("int_intrinsic")
-}
-
-#[test]
-fn multi_val_closure() {
-  super::fixture_test("multi_val_closure")
-}
-
-#[test]
-fn forloop_custom_iterator() {
-  super::fixture_test("forloop_custom_iterator")
-}
-
-#[test]
-fn basic_popping() {
-  super::fixture_test("basic_popping")
-}
-
-#[test]
-fn fizzbuzz() {
-  super::fixture_test("fizzbuzz")
-}
-
-#[test]
-fn forloop_nested() {
-  super::fixture_test("forloop_nested")
-}
-
-#[test]
 fn powers_of_two() {
   super::fixture_test("powers_of_two")
 }
 
 #[test]
-fn farenheit_to_celsius() {
-  super::fixture_test("farenheit_to_celsius")
-}
-
-#[test]
-fn push_operator() {
-  super::fixture_test("push_operator")
-}
-
-#[test]
-fn expr_precedence() {
-  super::fixture_test("expr_precedence")
-}
-
-#[test]
-fn rotate_array() {
-  super::fixture_test("rotate_array")
-}
-
-#[test]
-fn shortcircuit() {
-  super::fixture_test("shortcircuit")
-}
-
-#[test]
-fn basic_interpolation() {
-  super::fixture_test("basic_interpolation")
+fn bad_import() {
+  super::fixture_test("bad_import")
 }
 
 #[test]
@@ -90,93 +20,8 @@ fn math_ops() {
 }
 
 #[test]
-fn binding() {
-  super::fixture_test("binding")
-}
-
-#[test]
-fn call_non_intrinsic_sym() {
-  super::fixture_test("call_non_intrinsic_sym")
-}
-
-#[test]
-fn switch_print() {
-  super::fixture_test("switch_print")
-}
-
-#[test]
-fn calling_non_func() {
-  super::fixture_test("calling_non_func")
-}
-
-#[test]
-fn null_intrinsic() {
-  super::fixture_test("null_intrinsic")
-}
-
-#[test]
-fn not_op_assignment_bug() {
-  super::fixture_test("not_op_assignment_bug")
-}
-
-#[test]
-fn globals() {
-  super::fixture_test("globals")
-}
-
-#[test]
-fn basic_map_usage() {
-  super::fixture_test("basic_map_usage")
-}
-
-#[test]
-fn recursive() {
-  super::fixture_test("recursive")
-}
-
-#[test]
-fn call_with_wrong_num_args() {
-  super::fixture_test("call_with_wrong_num_args")
-}
-
-#[test]
-fn patch_with_closure() {
-  super::fixture_test("patch_with_closure")
-}
-
-#[test]
-fn very_large_map() {
-  super::fixture_test("very_large_map")
-}
-
-#[test]
-fn import_caching() {
-  super::fixture_test("import_caching")
-}
-
-#[test]
-fn forloop_with_return() {
-  super::fixture_test("forloop_with_return")
-}
-
-#[test]
-fn access_list_via_float() {
-  super::fixture_test("access_list_via_float")
-}
-
-#[test]
-fn float_intrinsic() {
-  super::fixture_test("float_intrinsic")
-}
-
-#[test]
-fn map_with_lists_as_keys() {
-  super::fixture_test("map_with_lists_as_keys")
-}
-
-#[test]
-fn str_intrinsic() {
-  super::fixture_test("str_intrinsic")
+fn one_plus_one() {
+  super::fixture_test("one_plus_one")
 }
 
 #[test]
@@ -185,13 +30,228 @@ fn eratosthenes_sieve() {
 }
 
 #[test]
+fn farenheit_to_celsius() {
+  super::fixture_test("farenheit_to_celsius")
+}
+
+#[test]
+fn rotate_array() {
+  super::fixture_test("rotate_array")
+}
+
+#[test]
+fn exporting() {
+  super::fixture_test("exporting")
+}
+
+#[test]
+fn basic_pushing() {
+  super::fixture_test("basic_pushing")
+}
+
+#[test]
+fn forloop_empty_list() {
+  super::fixture_test("forloop_empty_list")
+}
+
+#[test]
+fn big_backtrace() {
+  super::fixture_test("big_backtrace")
+}
+
+#[test]
+fn basic_map_usage() {
+  super::fixture_test("basic_map_usage")
+}
+
+#[test]
+fn linear_search() {
+  super::fixture_test("linear_search")
+}
+
+#[test]
+fn fibonacci() {
+  super::fixture_test("fibonacci")
+}
+
+#[test]
+fn basic_interpolation() {
+  super::fixture_test("basic_interpolation")
+}
+
+#[test]
+fn expr_precedence() {
+  super::fixture_test("expr_precedence")
+}
+
+#[test]
+fn not_op_assignment_bug() {
+  super::fixture_test("not_op_assignment_bug")
+}
+
+#[test]
+fn push_operator() {
+  super::fixture_test("push_operator")
+}
+
+#[test]
+fn forloop_building_list() {
+  super::fixture_test("forloop_building_list")
+}
+
+#[test]
+fn forloop_with_return() {
+  super::fixture_test("forloop_with_return")
+}
+
+#[test]
+fn type_intrinsic() {
+  super::fixture_test("type_intrinsic")
+}
+
+#[test]
+fn call_with_wrong_num_args() {
+  super::fixture_test("call_with_wrong_num_args")
+}
+
+#[test]
+fn switch_print() {
+  super::fixture_test("switch_print")
+}
+
+#[test]
+fn string_negative_index() {
+  super::fixture_test("string_negative_index")
+}
+
+#[test]
+fn binding() {
+  super::fixture_test("binding")
+}
+
+#[test]
+fn basic_popping() {
+  super::fixture_test("basic_popping")
+}
+
+#[test]
+fn string_indexing() {
+  super::fixture_test("string_indexing")
+}
+
+#[test]
+fn basic_delete_usage() {
+  super::fixture_test("basic_delete_usage")
+}
+
+#[test]
+fn calling_non_func() {
+  super::fixture_test("calling_non_func")
+}
+
+#[test]
+fn access_list_via_float() {
+  super::fixture_test("access_list_via_float")
+}
+
+#[test]
+fn hello_world() {
+  super::fixture_test("hello_world")
+}
+
+#[test]
 fn closure_counter() {
   super::fixture_test("closure_counter")
 }
 
 #[test]
+fn multi_val_closure() {
+  super::fixture_test("multi_val_closure")
+}
+
+#[test]
+fn patch_multiple_methods() {
+  super::fixture_test("patch_multiple_methods")
+}
+
+#[test]
+fn forloop_nested() {
+  super::fixture_test("forloop_nested")
+}
+
+#[test]
+fn forloop_accumulator() {
+  super::fixture_test("forloop_accumulator")
+}
+
+#[test]
 fn forloop_basic() {
   super::fixture_test("forloop_basic")
+}
+
+#[test]
+fn importing() {
+  super::fixture_test("importing")
+}
+
+#[test]
+fn very_large_map() {
+  super::fixture_test("very_large_map")
+}
+
+#[test]
+fn patch_with_closure() {
+  super::fixture_test("patch_with_closure")
+}
+
+#[test]
+fn shortcircuit() {
+  super::fixture_test("shortcircuit")
+}
+
+#[test]
+fn not_op_bug() {
+  super::fixture_test("not_op_bug")
+}
+
+#[test]
+fn if_else() {
+  super::fixture_test("if_else")
+}
+
+#[test]
+fn str_intrinsic() {
+  super::fixture_test("str_intrinsic")
+}
+
+#[test]
+fn inserting_and_deleting_on_map() {
+  super::fixture_test("inserting_and_deleting_on_map")
+}
+
+#[test]
+fn forloop_string() {
+  super::fixture_test("forloop_string")
+}
+
+#[test]
+fn bool_intrinsic() {
+  super::fixture_test("bool_intrinsic")
+}
+
+#[test]
+fn call_non_intrinsic_sym() {
+  super::fixture_test("call_non_intrinsic_sym")
+}
+
+#[test]
+fn not_op() {
+  super::fixture_test("not_op")
+}
+
+#[test]
+fn clone_intrinsic() {
+  super::fixture_test("clone_intrinsic")
 }
 
 #[test]
@@ -205,53 +265,8 @@ fn dead_code() {
 }
 
 #[test]
-fn forloop_accumulator() {
-  super::fixture_test("forloop_accumulator")
-}
-
-#[test]
-fn fibonacci() {
-  super::fixture_test("fibonacci")
-}
-
-#[test]
-fn type_intrinsic() {
-  super::fixture_test("type_intrinsic")
-}
-
-#[test]
-fn hello_world() {
-  super::fixture_test("hello_world")
-}
-
-#[test]
-fn exporting() {
-  super::fixture_test("exporting")
-}
-
-#[test]
-fn inserting_and_deleting_on_map() {
-  super::fixture_test("inserting_and_deleting_on_map")
-}
-
-#[test]
-fn importing() {
-  super::fixture_test("importing")
-}
-
-#[test]
-fn big_backtrace() {
-  super::fixture_test("big_backtrace")
-}
-
-#[test]
-fn forloop_string() {
-  super::fixture_test("forloop_string")
-}
-
-#[test]
-fn not_op() {
-  super::fixture_test("not_op")
+fn import_caching() {
+  super::fixture_test("import_caching")
 }
 
 #[test]
@@ -260,68 +275,13 @@ fn out_of_bounds_index() {
 }
 
 #[test]
-fn basic_delete_usage() {
-  super::fixture_test("basic_delete_usage")
-}
-
-#[test]
-fn one_plus_one() {
-  super::fixture_test("one_plus_one")
-}
-
-#[test]
-fn bind_intrinsic() {
-  super::fixture_test("bind_intrinsic")
-}
-
-#[test]
-fn linear_search() {
-  super::fixture_test("linear_search")
-}
-
-#[test]
 fn constant_folding() {
   super::fixture_test("constant_folding")
 }
 
 #[test]
-fn forloop_building_list() {
-  super::fixture_test("forloop_building_list")
-}
-
-#[test]
-fn forloop_empty_list() {
-  super::fixture_test("forloop_empty_list")
-}
-
-#[test]
-fn string_indexing() {
-  super::fixture_test("string_indexing")
-}
-
-#[test]
-fn lucky_number() {
-  super::fixture_test("lucky_number")
-}
-
-#[test]
-fn divide_by_zero() {
-  super::fixture_test("divide_by_zero")
-}
-
-#[test]
-fn bool_intrinsic() {
-  super::fixture_test("bool_intrinsic")
-}
-
-#[test]
-fn patch_multiple_methods() {
-  super::fixture_test("patch_multiple_methods")
-}
-
-#[test]
-fn bad_import() {
-  super::fixture_test("bad_import")
+fn int_intrinsic() {
+  super::fixture_test("int_intrinsic")
 }
 
 #[test]
@@ -335,16 +295,66 @@ fn parsing_error() {
 }
 
 #[test]
+fn arity_intrinsic() {
+  super::fixture_test("arity_intrinsic")
+}
+
+#[test]
+fn recursive() {
+  super::fixture_test("recursive")
+}
+
+#[test]
+fn forloop_custom_iterator() {
+  super::fixture_test("forloop_custom_iterator")
+}
+
+#[test]
+fn map_with_lists_as_keys() {
+  super::fixture_test("map_with_lists_as_keys")
+}
+
+#[test]
+fn bind_intrinsic() {
+  super::fixture_test("bind_intrinsic")
+}
+
+#[test]
+fn string_out_of_bounds() {
+  super::fixture_test("string_out_of_bounds")
+}
+
+#[test]
+fn fizzbuzz() {
+  super::fixture_test("fizzbuzz")
+}
+
+#[test]
+fn divide_by_zero() {
+  super::fixture_test("divide_by_zero")
+}
+
+#[test]
+fn lucky_number() {
+  super::fixture_test("lucky_number")
+}
+
+#[test]
+fn float_intrinsic() {
+  super::fixture_test("float_intrinsic")
+}
+
+#[test]
+fn null_intrinsic() {
+  super::fixture_test("null_intrinsic")
+}
+
+#[test]
+fn globals() {
+  super::fixture_test("globals")
+}
+
+#[test]
 fn sym_intrinsic() {
   super::fixture_test("sym_intrinsic")
-}
-
-#[test]
-fn if_else() {
-  super::fixture_test("if_else")
-}
-
-#[test]
-fn basic_pushing() {
-  super::fixture_test("basic_pushing")
 }

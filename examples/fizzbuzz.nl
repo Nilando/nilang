@@ -1,17 +1,3 @@
-@DEFAULT_ITER_FN = fn(list) {
-  i = [0];
-
-  return fn() {
-    n = i[0];
-    if i[0] < #list {
-      i[0] = i[0] + 1;
-      return list[n];
-    } else {
-      return null;
-    }
-  };
-};
-
 fn contains(s, digit) {
   for c in s {
     if c == digit {

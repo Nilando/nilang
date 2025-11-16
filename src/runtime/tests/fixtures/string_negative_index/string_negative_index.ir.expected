@@ -1,0 +1,17 @@
+========= FILE ./src/runtime/tests/fixtures/string_negative_index/string_negative_index.ir.actual ========
+MAIN () {
+block0:
+  s_0 = "hello"
+  t3 = -1
+  t5 = s_0[t3]
+  PRINT t5
+  t10 = -2
+  t11 = s_0[t10]
+  PRINT t11
+  t16 = -5
+  t17 = s_0[t16]
+  PRINT t17
+  t19 = null
+  RETURN t19
+
+}

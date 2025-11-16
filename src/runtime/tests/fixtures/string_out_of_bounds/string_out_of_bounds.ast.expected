@@ -1,0 +1,71 @@
+========= FILE ./src/runtime/tests/fixtures/string_out_of_bounds/string_out_of_bounds.ast.actual ========
+[
+    Assign {
+        dest: Spanned {
+            item: Local(
+                20,
+            ),
+            span: Span {
+                start: 0,
+                end: 3,
+            },
+        },
+        src: Spanned {
+            item: Value(
+                String(
+                    SegmentedString {
+                        segments: [
+                            String(
+                                "hi",
+                            ),
+                        ],
+                    },
+                ),
+            ),
+            span: Span {
+                start: 4,
+                end: 9,
+            },
+        },
+    },
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Index {
+                        store: Spanned {
+                            item: Value(
+                                Ident(
+                                    20,
+                                ),
+                            ),
+                            span: Span {
+                                start: 16,
+                                end: 17,
+                            },
+                        },
+                        key: Spanned {
+                            item: Value(
+                                Int(
+                                    10,
+                                ),
+                            ),
+                            span: Span {
+                                start: 18,
+                                end: 21,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 16,
+                        end: 22,
+                    },
+                },
+            ),
+            span: Span {
+                start: 10,
+                end: 23,
+            },
+        },
+    ),
+]

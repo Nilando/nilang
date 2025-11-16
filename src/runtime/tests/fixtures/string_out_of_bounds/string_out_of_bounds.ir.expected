@@ -1,0 +1,11 @@
+========= FILE ./src/runtime/tests/fixtures/string_out_of_bounds/string_out_of_bounds.ir.actual ========
+MAIN () {
+block0:
+  s_0 = "hi"
+  t2 = 10
+  t3 = s_0[t2]
+  PRINT t3
+  t5 = null
+  RETURN t5
+
+}

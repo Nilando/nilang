@@ -103,6 +103,11 @@ pub fn divide<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, Runti
 
 pub fn modulo<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, RuntimeError> {
     match (lhs, rhs) {
+        (_, Value::Int(0)) | (_, Value::Float(0.0))=> Err(RuntimeError::new(
+            RuntimeErrorKind::DivideByZero,
+            Some(format!("Attempted to modulo by zero")),
+            None
+        )),
         (Value::Float(lhs), Value::Float(rhs)) => Ok(Value::Float(lhs % rhs)),
         (Value::Int(lhs), Value::Int(rhs)) => Ok(Value::Int(lhs % rhs)),
         (Value::Float(lhs), Value::Int(rhs)) => Ok(Value::Float(lhs % rhs as f64)),
@@ -336,12 +341,33 @@ pub fn mem_load<'gc>(
             Ok(list.at(adjusted_idx))
         }
         (Value::String(s), Value::Int(idx)) => {
-            if let Some(c) = s.at(usize::try_from(idx).unwrap()) {
+            let out_of_bounds = if idx >= 0  {
+                s.len() <= idx as usize
+            } else {
+                s.len() < idx.abs() as usize
+            };
+
+            if out_of_bounds {
+                return Err(RuntimeError::new(
+                        RuntimeErrorKind::OutOfBoundsAccess,
+                        Some(format!("Attempted to access string of len {} at index {}", s.len(), idx)),
+                        None
+                    ));
+            }
+
+            let adjusted_idx = if idx >= 0  {
+                idx as usize
+            } else {
+                s.len() - idx.abs() as usize
+            };
+
+            if let Some(c) = s.at(adjusted_idx) {
                 let text: [char; 1] = [c];
                 let vm_str = VMString::alloc(text.into_iter(), mu);
 
                 Ok(Value::String(Gc::new(mu, vm_str)))
             } else {
+                // This should be unreachable due to bounds checking above
                 Ok(Value::Null)
             }
         }
