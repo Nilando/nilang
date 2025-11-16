@@ -1,10 +1,10 @@
 ========= FILE ./src/runtime/tests/fixtures/big_backtrace/big_backtrace.ast.actual ========
 [
     FuncDecl {
-        ident: 20,
+        ident: 13,
         inputs: Spanned {
             item: [
-                21,
+                14,
             ],
             span: Span {
                 start: 22,
@@ -18,7 +18,7 @@
                         lhs: Spanned {
                             item: Value(
                                 Ident(
-                                    21,
+                                    14,
                                 ),
                             ),
                             span: Span {
@@ -100,7 +100,7 @@
                                 calle: Spanned {
                                     item: Value(
                                         Ident(
-                                            20,
+                                            13,
                                         ),
                                     ),
                                     span: Span {
@@ -114,7 +114,7 @@
                                             lhs: Spanned {
                                                 item: Value(
                                                     Ident(
-                                                        21,
+                                                        14,
                                                     ),
                                                 ),
                                                 span: Span {
@@ -158,7 +158,7 @@
                 calle: Spanned {
                     item: Value(
                         Ident(
-                            20,
+                            13,
                         ),
                     ),
                     span: Span {

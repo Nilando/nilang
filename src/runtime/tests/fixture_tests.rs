@@ -80,6 +80,11 @@ fn basic_interpolation() {
 }
 
 #[test]
+fn string_index_assignment_error() {
+  super::fixture_test("string_index_assignment_error")
+}
+
+#[test]
 fn expr_precedence() {
   super::fixture_test("expr_precedence")
 }
@@ -180,6 +185,11 @@ fn forloop_nested() {
 }
 
 #[test]
+fn clone_map() {
+  super::fixture_test("clone_map")
+}
+
+#[test]
 fn forloop_accumulator() {
   super::fixture_test("forloop_accumulator")
 }
@@ -265,6 +275,11 @@ fn dead_code() {
 }
 
 #[test]
+fn function_as_key() {
+  super::fixture_test("function_as_key")
+}
+
+#[test]
 fn import_caching() {
   super::fixture_test("import_caching")
 }
@@ -300,6 +315,11 @@ fn arity_intrinsic() {
 }
 
 #[test]
+fn map_intrinsic() {
+  super::fixture_test("map_intrinsic")
+}
+
+#[test]
 fn recursive() {
   super::fixture_test("recursive")
 }
@@ -315,8 +335,23 @@ fn map_with_lists_as_keys() {
 }
 
 #[test]
+fn map_intrinsic_errors() {
+  super::fixture_test("map_intrinsic_errors")
+}
+
+#[test]
+fn fn_intrinsic() {
+  super::fixture_test("fn_intrinsic")
+}
+
+#[test]
 fn bind_intrinsic() {
   super::fixture_test("bind_intrinsic")
+}
+
+#[test]
+fn map_as_key() {
+  super::fixture_test("map_as_key")
 }
 
 #[test]

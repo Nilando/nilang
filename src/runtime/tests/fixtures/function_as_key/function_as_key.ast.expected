@@ -1,0 +1,359 @@
+========= FILE ./src/runtime/tests/fixtures/function_as_key/function_as_key.ast.actual ========
+[
+    Assign {
+        dest: Spanned {
+            item: Local(
+                7,
+            ),
+            span: Span {
+                start: 41,
+                end: 46,
+            },
+        },
+        src: Spanned {
+            item: Value(
+                Map(
+                    [],
+                ),
+            ),
+            span: Span {
+                start: 47,
+                end: 50,
+            },
+        },
+    },
+    FuncDecl {
+        ident: 13,
+        inputs: Spanned {
+            item: [],
+            span: Span {
+                start: 90,
+                end: 91,
+            },
+        },
+        stmts: [
+            Return(
+                Some(
+                    Spanned {
+                        item: Value(
+                            Int(
+                                42,
+                            ),
+                        ),
+                        span: Span {
+                            start: 103,
+                            end: 106,
+                        },
+                    },
+                ),
+            ),
+        ],
+    },
+    Assign {
+        dest: Spanned {
+            item: Index {
+                store: Spanned {
+                    item: Value(
+                        Ident(
+                            7,
+                        ),
+                    ),
+                    span: Span {
+                        start: 110,
+                        end: 113,
+                    },
+                },
+                key: Spanned {
+                    item: Value(
+                        Ident(
+                            13,
+                        ),
+                    ),
+                    span: Span {
+                        start: 114,
+                        end: 122,
+                    },
+                },
+            },
+            span: Span {
+                start: 110,
+                end: 124,
+            },
+        },
+        src: Spanned {
+            item: Value(
+                String(
+                    SegmentedString {
+                        segments: [
+                            String(
+                                "function value",
+                            ),
+                        ],
+                    },
+                ),
+            ),
+            span: Span {
+                start: 125,
+                end: 142,
+            },
+        },
+    },
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Index {
+                        store: Spanned {
+                            item: Value(
+                                Ident(
+                                    7,
+                                ),
+                            ),
+                            span: Span {
+                                start: 149,
+                                end: 152,
+                            },
+                        },
+                        key: Spanned {
+                            item: Value(
+                                Ident(
+                                    13,
+                                ),
+                            ),
+                            span: Span {
+                                start: 153,
+                                end: 161,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 149,
+                        end: 162,
+                    },
+                },
+            ),
+            span: Span {
+                start: 143,
+                end: 163,
+            },
+        },
+    ),
+    Assign {
+        dest: Spanned {
+            item: Local(
+                14,
+            ),
+            span: Span {
+                start: 204,
+                end: 207,
+            },
+        },
+        src: Spanned {
+            item: Value(
+                Ident(
+                    13,
+                ),
+            ),
+            span: Span {
+                start: 208,
+                end: 216,
+            },
+        },
+    },
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Index {
+                        store: Spanned {
+                            item: Value(
+                                Ident(
+                                    7,
+                                ),
+                            ),
+                            span: Span {
+                                start: 223,
+                                end: 226,
+                            },
+                        },
+                        key: Spanned {
+                            item: Value(
+                                Ident(
+                                    14,
+                                ),
+                            ),
+                            span: Span {
+                                start: 227,
+                                end: 229,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 223,
+                        end: 230,
+                    },
+                },
+            ),
+            span: Span {
+                start: 217,
+                end: 231,
+            },
+        },
+    ),
+    FuncDecl {
+        ident: 15,
+        inputs: Spanned {
+            item: [],
+            span: Span {
+                start: 293,
+                end: 294,
+            },
+        },
+        stmts: [
+            Return(
+                Some(
+                    Spanned {
+                        item: Value(
+                            Int(
+                                42,
+                            ),
+                        ),
+                        span: Span {
+                            start: 306,
+                            end: 309,
+                        },
+                    },
+                ),
+            ),
+        ],
+    },
+    Assign {
+        dest: Spanned {
+            item: Index {
+                store: Spanned {
+                    item: Value(
+                        Ident(
+                            7,
+                        ),
+                    ),
+                    span: Span {
+                        start: 313,
+                        end: 316,
+                    },
+                },
+                key: Spanned {
+                    item: Value(
+                        Ident(
+                            15,
+                        ),
+                    ),
+                    span: Span {
+                        start: 317,
+                        end: 328,
+                    },
+                },
+            },
+            span: Span {
+                start: 313,
+                end: 330,
+            },
+        },
+        src: Spanned {
+            item: Value(
+                String(
+                    SegmentedString {
+                        segments: [
+                            String(
+                                "other value",
+                            ),
+                        ],
+                    },
+                ),
+            ),
+            span: Span {
+                start: 331,
+                end: 345,
+            },
+        },
+    },
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Index {
+                        store: Spanned {
+                            item: Value(
+                                Ident(
+                                    7,
+                                ),
+                            ),
+                            span: Span {
+                                start: 352,
+                                end: 355,
+                            },
+                        },
+                        key: Spanned {
+                            item: Value(
+                                Ident(
+                                    15,
+                                ),
+                            ),
+                            span: Span {
+                                start: 356,
+                                end: 367,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 352,
+                        end: 368,
+                    },
+                },
+            ),
+            span: Span {
+                start: 346,
+                end: 369,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Index {
+                        store: Spanned {
+                            item: Value(
+                                Ident(
+                                    7,
+                                ),
+                            ),
+                            span: Span {
+                                start: 376,
+                                end: 379,
+                            },
+                        },
+                        key: Spanned {
+                            item: Value(
+                                Ident(
+                                    13,
+                                ),
+                            ),
+                            span: Span {
+                                start: 380,
+                                end: 388,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 376,
+                        end: 389,
+                    },
+                },
+            ),
+            span: Span {
+                start: 370,
+                end: 390,
+            },
+        },
+    ),
+]

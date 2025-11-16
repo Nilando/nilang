@@ -1,0 +1,6 @@
+RUNTIME ERROR
+Traceback: most recent call lowest
+  0: File "./src/runtime/tests/test_programs/string_index_assignment_error.nl", line: 3:6
+    s[0] = "H";
+    ^^^^^
+TypeError: Invalid memory access of String via a Int

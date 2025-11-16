@@ -1,0 +1,67 @@
+========= FILE ./src/runtime/tests/fixtures/clone_map/clone_map.ir.actual ========
+MAIN () {
+block0:
+  t0 = NEW_MAP
+  t1 = #a
+  t2 = 1
+  t0[t1] = t2
+  t3 = #b
+  t4 = 2
+  t0[t3] = t4
+  t5 = #c
+  t6 = 3
+  t0[t5] = t6
+  CLONE cloned_0 = t0
+  t11 = cloned_0[t1]
+  PRINT t11
+  t15 = cloned_0[t3]
+  PRINT t15
+  t19 = cloned_0[t5]
+  PRINT t19
+  t22 = 100
+  cloned_0[t1] = t22
+  t24 = 4
+  t25 = #d
+  cloned_0[t25] = t24
+  t27 = t0[t1]
+  PRINT t27
+  t31 = t0[t3]
+  PRINT t31
+  t35 = t0[t5]
+  PRINT t35
+  t39 = t0[t25]
+  PRINT t39
+  t43 = cloned_0[t1]
+  PRINT t43
+  t47 = cloned_0[t25]
+  PRINT t47
+  t50 = NEW_MAP
+  t51 = #inner
+  t52 = NEW_MAP
+  t53 = #x
+  t54 = 10
+  t52[t53] = t54
+  t55 = #y
+  t56 = 20
+  t52[t55] = t56
+  t50[t51] = t52
+  CLONE nested_clone_0 = t50
+  t61 = nested_clone_0[t51]
+  t63 = t61[t53]
+  PRINT t63
+  t67 = nested_clone_0[t51]
+  t69 = t67[t55]
+  PRINT t69
+  empty_0 = NEW_MAP
+  CLONE empty_clone_0 = empty_0
+  t76 = "value"
+  t77 = #test
+  empty_clone_0[t77] = t76
+  t79 = empty_clone_0[t77]
+  PRINT t79
+  t83 = empty_0[t77]
+  PRINT t83
+  t85 = null
+  RETURN t85
+
+}

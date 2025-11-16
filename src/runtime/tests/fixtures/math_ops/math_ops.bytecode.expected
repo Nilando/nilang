@@ -3,13 +3,13 @@
 LOC  0, 0
 OUT  0
 INT  4, 1
-LOC  6, 1
-LOC  7, 2
-OUT  7
-OUT  7
-OUT  7
-INT  5, 2
+LOC  2, 1
+LOC  5, 2
 OUT  5
+OUT  5
+OUT  5
+INT  6, 2
+OUT  6
 LOC  0, 3
 OUT  0
 OUT  0
@@ -20,17 +20,17 @@ LOC  0, 5
 OUT  0
 LOC  0, 6
 OUT  0
-LOC  2, 7
-OUT  2
-OUT  2
-OUT  2
+LOC  1, 7
+OUT  1
+OUT  1
+OUT  1
 INT  3, 0
 OUT  3
 LOC  0, 8
 OUT  0
 LOC  0, 9
 OUT  0
-OUT  6
+OUT  2
 LOC  0, 10
 OUT  0
 INT  0, 9
@@ -40,7 +40,6 @@ OUT  0
 OUT  0
 LOC  0, 12
 OUT  0
-INT  1, -1
 LOC  0, 13
 OUT  0
 LOC  0, 14
@@ -48,49 +47,23 @@ OUT  0
 LOC  0, 15
 OUT  0
 OUT  4
-OUT  5
+OUT  6
 OUT  3
 LOC  0, 16
 OUT  0
 OUT  0
 OUT  0
-OUT  7
+OUT  5
 LOC  0, 17
 OUT  0
 OUT  3
 OUT  3
 OUT  4
-OUT  6
-OUT  6
-OUT  6
 OUT  2
+OUT  2
+OUT  2
+OUT  1
 LOC  0, 18
-OUT  0
-INT  2, 4
-SYM  0, #14
-ARG  5
-ARG  2
-CALL 0, 0
-OUT  0
-INT  2, 16
-SYM  0, #15
-ARG  2
-ARG  5
-CALL 0, 0
-OUT  0
-SYM  0, #11
-ARG  1
-CALL 0, 0
-OUT  0
-SYM  0, #13
-ARG  3
-CALL 0, 0
-OUT  0
-SYM  0, #12
-ARG  3
-CALL 0, 0
-OUT  0
-LOC  0, 19
 OUT  0
 GT   0, 4, 3
 OUT  0

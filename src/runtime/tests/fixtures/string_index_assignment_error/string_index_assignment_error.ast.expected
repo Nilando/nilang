@@ -1,0 +1,80 @@
+========= FILE ./src/runtime/tests/fixtures/string_index_assignment_error/string_index_assignment_error.ast.actual ========
+[
+    Assign {
+        dest: Spanned {
+            item: Local(
+                13,
+            ),
+            span: Span {
+                start: 59,
+                end: 62,
+            },
+        },
+        src: Spanned {
+            item: Value(
+                String(
+                    SegmentedString {
+                        segments: [
+                            String(
+                                "hello",
+                            ),
+                        ],
+                    },
+                ),
+            ),
+            span: Span {
+                start: 63,
+                end: 71,
+            },
+        },
+    },
+    Assign {
+        dest: Spanned {
+            item: Index {
+                store: Spanned {
+                    item: Value(
+                        Ident(
+                            13,
+                        ),
+                    ),
+                    span: Span {
+                        start: 72,
+                        end: 73,
+                    },
+                },
+                key: Spanned {
+                    item: Value(
+                        Int(
+                            0,
+                        ),
+                    ),
+                    span: Span {
+                        start: 74,
+                        end: 76,
+                    },
+                },
+            },
+            span: Span {
+                start: 72,
+                end: 78,
+            },
+        },
+        src: Spanned {
+            item: Value(
+                String(
+                    SegmentedString {
+                        segments: [
+                            String(
+                                "H",
+                            ),
+                        ],
+                    },
+                ),
+            ),
+            span: Span {
+                start: 79,
+                end: 83,
+            },
+        },
+    },
+]

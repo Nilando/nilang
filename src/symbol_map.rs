@@ -61,15 +61,8 @@ generate_intrinsic_syms! {
     MAP_SYM,
     FN_SYM,
 
-    // MAYBE REMOVE THESE
+    // Utility intrinsics
     ARGS_SYM,
-    READ_FILE_SYM,
-    ABS_SYM,
-    FLOOR_SYM,
-    CEIL_SYM,
-    POW_SYM,
-    LOG_SYM,
-    SLEEP_SYM,
     PATCH_SYM,
 
     // TODO: REMOVE THESE JUST MAKE CONSTANT NOT INTRINSIC

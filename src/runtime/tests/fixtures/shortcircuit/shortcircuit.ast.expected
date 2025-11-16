@@ -1,12 +1,12 @@
 ========= FILE ./src/runtime/tests/fixtures/shortcircuit/shortcircuit.ast.actual ========
 [
     FuncDecl {
-        ident: 20,
+        ident: 13,
         inputs: Spanned {
             item: [
-                21,
-                22,
-                23,
+                14,
+                15,
+                16,
             ],
             span: Span {
                 start: 8,
@@ -20,7 +20,7 @@
                         lhs: Spanned {
                             item: Value(
                                 Ident(
-                                    21,
+                                    14,
                                 ),
                             ),
                             span: Span {
@@ -36,7 +36,7 @@
                                         lhs: Spanned {
                                             item: Value(
                                                 Ident(
-                                                    22,
+                                                    15,
                                                 ),
                                             ),
                                             span: Span {
@@ -68,7 +68,7 @@
                                         lhs: Spanned {
                                             item: Value(
                                                 Ident(
-                                                    23,
+                                                    16,
                                                 ),
                                             ),
                                             span: Span {
@@ -144,7 +144,7 @@
                 calle: Spanned {
                     item: Value(
                         Ident(
-                            20,
+                            13,
                         ),
                     ),
                     span: Span {
@@ -200,7 +200,7 @@
                 calle: Spanned {
                     item: Value(
                         Ident(
-                            20,
+                            13,
                         ),
                     ),
                     span: Span {
@@ -256,7 +256,7 @@
                 calle: Spanned {
                     item: Value(
                         Ident(
-                            20,
+                            13,
                         ),
                     ),
                     span: Span {
@@ -312,7 +312,7 @@
                 calle: Spanned {
                     item: Value(
                         Ident(
-                            20,
+                            13,
                         ),
                     ),
                     span: Span {
@@ -368,7 +368,7 @@
                 calle: Spanned {
                     item: Value(
                         Ident(
-                            20,
+                            13,
                         ),
                     ),
                     span: Span {
@@ -424,7 +424,7 @@
                 calle: Spanned {
                     item: Value(
                         Ident(
-                            20,
+                            13,
                         ),
                     ),
                     span: Span {

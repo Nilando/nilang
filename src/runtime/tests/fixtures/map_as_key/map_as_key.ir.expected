@@ -1,0 +1,47 @@
+========= FILE ./src/runtime/tests/fixtures/map_as_key/map_as_key.ir.actual ========
+MAIN () {
+block0:
+  outer_0 = NEW_MAP
+  t2 = NEW_MAP
+  t3 = #a
+  t4 = 1
+  t2[t3] = t4
+  t5 = #b
+  t6 = 2
+  t2[t5] = t6
+  t8 = "first value"
+  outer_0[t2] = t8
+  t9 = outer_0[t2]
+  PRINT t9
+  t12 = NEW_MAP
+  t12[t3] = t4
+  t12[t5] = t6
+  t18 = "second value"
+  outer_0[t12] = t18
+  t19 = outer_0[t2]
+  PRINT t19
+  t22 = outer_0[t12]
+  PRINT t22
+  t25 = NEW_MAP
+  t25[t3] = t4
+  t29 = 3
+  t25[t5] = t29
+  t31 = "third value"
+  outer_0[t25] = t31
+  t32 = outer_0[t25]
+  PRINT t32
+  t35 = NEW_MAP
+  t36 = #inner
+  t37 = NEW_MAP
+  t38 = #x
+  t39 = 10
+  t37[t38] = t39
+  t35[t36] = t37
+  t41 = "nested"
+  outer_0[t35] = t41
+  t42 = outer_0[t35]
+  PRINT t42
+  t44 = null
+  RETURN t44
+
+}

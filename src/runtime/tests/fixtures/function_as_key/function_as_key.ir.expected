@@ -1,0 +1,34 @@
+========= FILE ./src/runtime/tests/fixtures/function_as_key/function_as_key.ir.actual ========
+fn1 () {
+block0:
+  t0 = 42
+  RETURN t0
+
+}
+fn2 () {
+block0:
+  t0 = 42
+  RETURN t0
+
+}
+MAIN () {
+block0:
+  map_0 = NEW_MAP
+  my_func_0 = fn1
+  t3 = "function value"
+  map_0[my_func_0] = t3
+  t4 = map_0[my_func_0]
+  PRINT t4
+  t8 = map_0[my_func_0]
+  PRINT t8
+  other_func_0 = fn2
+  t12 = "other value"
+  map_0[other_func_0] = t12
+  t13 = map_0[other_func_0]
+  PRINT t13
+  t16 = map_0[my_func_0]
+  PRINT t16
+  t18 = null
+  RETURN t18
+
+}

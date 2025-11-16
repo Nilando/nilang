@@ -9,7 +9,7 @@ fn step_function(n) {
 steps = 0;
 x = int(read);
 
-if (x == null) || (x != floor(x)) {
+if x == null {
   print("Invalid integer");
   return;
 }

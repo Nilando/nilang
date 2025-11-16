@@ -1,10 +1,8 @@
-use std::time::Duration;
-
 use sandpit::{Gc, Mutator};
 
 use crate::runtime::string::VMString;
 use crate::symbol_map::{
-    SymID, SymbolMap, ABS_SYM, ARGS_SYM, BOOL_SYM, CEIL_SYM, FLOAT_SYM, FLOOR_SYM, FN_SYM, INT_SYM, LIST_SYM, LOG_SYM, MAP_SYM, NULL_SYM, PATCH_SYM, POW_SYM, READ_FILE_SYM, SLEEP_SYM, STR_SYM, SYM_SYM
+    SymID, SymbolMap, ARGS_SYM, BOOL_SYM, FLOAT_SYM, FN_SYM, INT_SYM, LIST_SYM, MAP_SYM, NULL_SYM, PATCH_SYM, STR_SYM, SYM_SYM
 };
 
 use super::hash_map::GcHashMap;
@@ -99,12 +97,102 @@ pub fn call_intrinsic<'gc>(
             }
         }
         FN_SYM => {
-            // return a 0 arg function that returns the value passed
-            todo!()
+            // fn(value) → returns a 0-arg function that returns value
+            expect_arg_count(1, supplied_args)?;
+            let arg = extract_arg(args, stack);
+            let tagged_arg = arg.as_tagged(mu);
+
+            // Create a function with one upvalue containing the wrapped value
+            let upvalues_array = mu.alloc_array_from_fn(1, |_| tagged_arg.clone());
+            let upvalues = sandpit::GcOpt::from(upvalues_array);
+
+            // Create bytecode: load upvalue 0 into register 0, then return it
+            use super::bytecode::ByteCode;
+            let code = mu.alloc_array_from_fn(2, |idx| {
+                match idx {
+                    0 => ByteCode::LoadUpvalue { dest: 0, id: 0 },
+                    1 => ByteCode::Return { src: 0 },
+                    _ => unreachable!()
+                }
+            });
+
+            // Create the function
+            use super::func::{Func, LoadedLocal};
+            let func = Func::new(
+                0,                                      // id (doesn't matter for synthetic functions)
+                false,                                  // auto_binds
+                0,                                      // arity (0 args)
+                1,                                      // max_clique (1 register needed)
+                mu.alloc_array_from_fn(0, |_| LoadedLocal::Int(0)), // no locals
+                code,
+                upvalues,
+                sandpit::GcOpt::new_none(),            // no bound_args
+                None,                                   // no spans
+                None,                                   // no file_path
+                false                                   // not top_level
+            );
+
+            Ok(Value::Func(sandpit::Gc::new(mu, func)))
         }
         MAP_SYM => {
-            // not sure how this should work..
-            todo!()
+            match supplied_args {
+                0 => {
+                    // map() → {}
+                    Ok(Value::Map(GcHashMap::alloc(mu)))
+                }
+                1 => {
+                    let arg = extract_arg(args, stack);
+                    match arg {
+                        Value::Map(_) => {
+                            // map({a:1}) → {a:1} (identity)
+                            Ok(arg)
+                        }
+                        Value::List(list) => {
+                            // map([[a,1], [b,2]]) → {a:1, b:2}
+                            let new_map = GcHashMap::alloc(mu);
+
+                            for i in 0..list.len() {
+                                let item = list.at(i);
+
+                                // Each item must be a 2-element list [key, value]
+                                match item {
+                                    Value::List(pair) => {
+                                        if pair.len() != 2 {
+                                            return Err((
+                                                RuntimeErrorKind::TypeError,
+                                                format!("map() expects list of 2-element pairs, found list of length {}", pair.len())
+                                            ));
+                                        }
+                                        let key = pair.at(0);
+                                        let val = pair.at(1);
+                                        GcHashMap::insert(new_map.clone(), key.as_tagged(mu), val.as_tagged(mu), mu);
+                                    }
+                                    _ => {
+                                        return Err((
+                                            RuntimeErrorKind::TypeError,
+                                            format!("map() expects list of pairs, found {} in list", item.type_str())
+                                        ));
+                                    }
+                                }
+                            }
+
+                            Ok(Value::Map(new_map))
+                        }
+                        _ => {
+                            Err((
+                                RuntimeErrorKind::TypeError,
+                                format!("map() cannot convert {} to map", arg.type_str())
+                            ))
+                        }
+                    }
+                }
+                _ => {
+                    Err((
+                        RuntimeErrorKind::TypeError,
+                        format!("map() expects 0 or 1 argument, got {}", supplied_args)
+                    ))
+                }
+            }
         }
        
         ARGS_SYM => get_program_args(mu), // Maybe store in a global?
@@ -117,54 +205,8 @@ pub fn call_intrinsic<'gc>(
             patch(arg1, arg2, arg3, type_objects, mu)
         }
 
-        // NOT SUPER SURE ABOUT THESE, MIGHT REMOVE
-        SLEEP_SYM => {
-            expect_arg_count(1, supplied_args)?;
-            let arg = extract_arg(args, stack);
-            sleep(arg)
-        }
-        READ_FILE_SYM => {
-            expect_arg_count(1, supplied_args)?;
-            let arg = extract_arg(args, stack);
-            read_file(arg, mu)
-        }
-        ABS_SYM => {
-            expect_arg_count(1, supplied_args)?;
-            let arg = extract_arg(args, stack);
-            abs(arg)
-        }
-        FLOOR_SYM => {
-            expect_arg_count(1, supplied_args)?;
-            let arg = extract_arg(args, stack);
-            floor(arg)
-        }
-        CEIL_SYM => {
-            expect_arg_count(1, supplied_args)?;
-            let arg = extract_arg(args, stack);
-            ceil(arg)
-        }
-        POW_SYM => {
-            expect_arg_count(2, supplied_args)?;
-            let (arg1, arg2) = extract_two_args(args, stack);
-            pow(arg1, arg2)
-        }
-        LOG_SYM => {
-            expect_arg_count(2, supplied_args)?;
-            let (arg1, arg2) = extract_two_args(args, stack);
-            log(arg1, arg2)
-        }
         _ => todo!(),
     }
-}
-
-fn extract_two_args<'gc>(
-    instr_stream: &mut InstructionStream<'gc>,
-    stack: &Stack<'gc>
-) -> (Value<'gc>, Value<'gc>) {
-    let arg1 = extract_arg(instr_stream, stack);
-    let arg2 = extract_arg(instr_stream, stack);
-
-    (arg1, arg2)
 }
 
 fn extract_arg<'a, 'gc>(
@@ -188,126 +230,6 @@ fn expect_arg_count(
         Err((RuntimeErrorKind::WrongNumArgs, msg))
     } else {
         Ok(())
-    }
-}
-
-fn log<'gc>(
-    base: Value<'gc>,
-    exponent: Value<'gc>,
-) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
-    match (base, &exponent) {
-        (Value::Int(a), Value::Int(b)) => Ok(Value::Float((a as f64).log(*b as f64))),
-        (Value::Int(a), Value::Float(b)) => Ok(Value::Float((a as f64).log(*b))),
-        (Value::Float(a), Value::Int(b)) => Ok(Value::Float(a.log(*b as f64))),
-        (Value::Float(a), Value::Float(b)) => Ok(Value::Float(a.log(*b))),
-        _ => {
-            return Err((
-                RuntimeErrorKind::TypeError,
-                format!("Unexpected arg of type {}", exponent.type_str()),
-            ))
-        }
-    }
-}
-
-fn pow<'gc>(
-    base: Value<'gc>,
-    exponent: Value<'gc>,
-) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
-    match (base, &exponent) {
-        (Value::Int(a), Value::Int(b)) => Ok(Value::Float((a as f64).powf(*b as f64))),
-        (Value::Int(a), Value::Float(b)) => Ok(Value::Float((a as f64).powf(*b))),
-        (Value::Float(a), Value::Int(b)) => Ok(Value::Float(a.powf(*b as f64))),
-        (Value::Float(a), Value::Float(b)) => Ok(Value::Float(a.powf(*b))),
-        _ => {
-            return Err((
-                RuntimeErrorKind::TypeError,
-                format!("Unexpected arg of type {}", exponent.type_str()),
-            ))
-        }
-    }
-}
-
-fn abs<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
-    match arg {
-        Value::Int(i) => Ok(Value::Int(i.abs())),
-        Value::Float(f) => Ok(Value::Float(f.abs())),
-        _ => {
-            return Err((
-                RuntimeErrorKind::TypeError,
-                format!("Unexpected arg of type {}", arg.type_str()),
-            ))
-        }
-    }
-}
-
-fn floor<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
-    match arg {
-        Value::Int(i) => Ok(Value::Int(i)),
-        Value::Float(f) => Ok(Value::Float(f.floor())),
-        _ => {
-            return Err((
-                RuntimeErrorKind::TypeError,
-                format!("Unexpected arg of type {}", arg.type_str()),
-            ))
-        }
-    }
-}
-
-fn ceil<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
-    match arg {
-        Value::Int(i) => Ok(Value::Int(i)),
-        Value::Float(f) => Ok(Value::Float(f.ceil())),
-        _ => {
-            return Err((
-                RuntimeErrorKind::TypeError,
-                format!("Unexpected arg of type {}", arg.type_str()),
-            ))
-        }
-    }
-}
-
-fn read_file<'gc>(
-    arg: Value<'gc>,
-    mu: &'gc Mutator,
-) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
-    // TODO: this could also be done via "ExitCode"
-
-    if let Value::String(vm_str) = arg {
-        let file_name = vm_str.as_string();
-        let file_str = std::fs::read_to_string(file_name).expect("open file");
-
-        Ok(Value::String(Gc::new(
-            mu,
-            VMString::alloc(file_str.chars(), mu),
-        )))
-    } else {
-        Err((
-            RuntimeErrorKind::TypeError,
-            format!("Unexpected arg of type {}", arg.type_str()),
-        ))
-    }
-}
-
-
-fn sleep<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
-    // TODO: add sleep ExitCode, this way gc can happen during sleep
-    match arg {
-        Value::Int(i) => {
-            std::thread::sleep(Duration::from_secs(u64::try_from(i).unwrap()));
-
-            Ok(Value::Null)
-        }
-        Value::Float(f) => {
-            std::thread::sleep(Duration::from_millis((1000.0 * f) as u64));
-
-            Ok(Value::Null)
-        }
-        _ => {
-            return Err((
-                RuntimeErrorKind::TypeError,
-                format!("Unexpected arg of type {}", arg.type_str()),
-            ))
-        }
     }
 }
 

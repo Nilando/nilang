@@ -27,7 +27,7 @@ STUV 1, 0
 RTN  1
 === END ===
 === FN 3 START ===
-SYM  1, #19
+SYM  1, #12
 MEML 0, 0[1]
 CALL 2, 0
 CALL 1, 2
@@ -45,9 +45,9 @@ RTN  3
 === END ===
 === FN 0 START ===
 SYM  3, #6
-SYM  2, #19
+SYM  2, #12
 LOC  1, 0
-SYM  0, #17
+SYM  0, #10
 ARG  3
 ARG  2
 ARG  1

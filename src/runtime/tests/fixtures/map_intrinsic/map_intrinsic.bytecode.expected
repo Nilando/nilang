@@ -1,0 +1,86 @@
+========= FILE ./src/runtime/tests/fixtures/map_intrinsic/map_intrinsic.bytecode.actual ========
+=== FN 0 START ===
+SYM  8, #7
+CALL 0, 8
+TYPE 0, 0
+OUT  0
+MAP  2
+SYM  0, #15
+INT  1, 1
+MEMS 2[0], 1
+SYM  4, #16
+INT  3, 2
+MEMS 2[4], 3
+ARG  2
+CALL 5, 8
+MEML 2, 5[0]
+OUT  2
+MEML 2, 5[4]
+OUT  2
+LIST 6
+LIST 2
+PUSH 2, 0
+PUSH 2, 1
+PUSH 6, 2
+LIST 2
+PUSH 2, 4
+PUSH 2, 3
+PUSH 6, 2
+LIST 5
+SYM  3, #19
+PUSH 5, 3
+INT  2, 3
+PUSH 5, 2
+PUSH 6, 5
+ARG  6
+CALL 2, 8
+MEML 0, 2[0]
+OUT  0
+MEML 0, 2[4]
+OUT  0
+MEML 0, 2[3]
+OUT  0
+LIST 0
+ARG  0
+CALL 0, 8
+TYPE 0, 0
+OUT  0
+LIST 7
+LIST 3
+SYM  0, #24
+PUSH 3, 0
+LOC  2, 0
+PUSH 3, 2
+PUSH 7, 3
+LIST 3
+SYM  4, #25
+PUSH 3, 4
+INT  2, 30
+PUSH 3, 2
+PUSH 7, 3
+LIST 6
+SYM  3, #26
+PUSH 6, 3
+LIST 5
+LOC  2, 1
+PUSH 5, 2
+LOC  2, 2
+PUSH 5, 2
+PUSH 6, 5
+PUSH 7, 6
+ARG  7
+CALL 2, 8
+MEML 0, 2[0]
+OUT  0
+MEML 0, 2[4]
+OUT  0
+MEML 4, 2[3]
+INT  0, 0
+MEML 0, 4[0]
+OUT  0
+MEML 0, 2[3]
+MEML 0, 0[1]
+OUT  0
+LDN  0
+RTN  0
+=== END ===

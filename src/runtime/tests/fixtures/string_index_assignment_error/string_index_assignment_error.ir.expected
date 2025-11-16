@@ -1,0 +1,11 @@
+========= FILE ./src/runtime/tests/fixtures/string_index_assignment_error/string_index_assignment_error.ir.actual ========
+MAIN () {
+block0:
+  s_0 = "hello"
+  t2 = "H"
+  t3 = 0
+  s_0[t3] = t2
+  t4 = null
+  RETURN t4
+
+}

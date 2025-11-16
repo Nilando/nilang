@@ -3,7 +3,7 @@
     Assign {
         dest: Spanned {
             item: Local(
-                20,
+                13,
             ),
             span: Span {
                 start: 0,
@@ -25,7 +25,7 @@
     Assign {
         dest: Spanned {
             item: Local(
-                23,
+                16,
             ),
             span: Span {
                 start: 43,

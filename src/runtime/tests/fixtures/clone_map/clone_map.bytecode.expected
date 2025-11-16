@@ -1,0 +1,65 @@
+========= FILE ./src/runtime/tests/fixtures/clone_map/clone_map.bytecode.actual ========
+=== FN 0 START ===
+MAP  4
+SYM  3, #14
+INT  0, 1
+MEMS 4[3], 0
+SYM  6, #15
+INT  0, 2
+MEMS 4[6], 0
+SYM  5, #16
+INT  0, 3
+MEMS 4[5], 0
+CLONE 2, 4
+MEML 0, 2[3]
+OUT  0
+MEML 0, 2[6]
+OUT  0
+MEML 0, 2[5]
+OUT  0
+INT  0, 100
+MEMS 2[3], 0
+INT  0, 4
+SYM  1, #18
+MEMS 2[1], 0
+MEML 0, 4[3]
+OUT  0
+MEML 0, 4[6]
+OUT  0
+MEML 0, 4[5]
+OUT  0
+MEML 0, 4[1]
+OUT  0
+MEML 0, 2[3]
+OUT  0
+MEML 0, 2[1]
+OUT  0
+MAP  5
+SYM  3, #20
+MAP  2
+SYM  4, #21
+INT  0, 10
+MEMS 2[4], 0
+SYM  1, #22
+INT  0, 20
+MEMS 2[1], 0
+MEMS 5[3], 2
+CLONE 2, 5
+MEML 0, 2[3]
+MEML 0, 0[4]
+OUT  0
+MEML 0, 2[3]
+MEML 0, 0[1]
+OUT  0
+MAP  2
+CLONE 3, 2
+LOC  0, 0
+SYM  1, #26
+MEMS 3[1], 0
+MEML 0, 3[1]
+OUT  0
+MEML 0, 2[1]
+OUT  0
+LDN  0
+RTN  0
+=== END ===

@@ -1,0 +1,113 @@
+========= FILE ./src/runtime/tests/fixtures/map_intrinsic_errors/map_intrinsic_errors.ast.actual ========
+[
+    Assign {
+        dest: Spanned {
+            item: Local(
+                13,
+            ),
+            span: Span {
+                start: 79,
+                end: 89,
+            },
+        },
+        src: Spanned {
+            item: Value(
+                List(
+                    [
+                        Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 91,
+                                end: 93,
+                            },
+                        },
+                        Spanned {
+                            item: Value(
+                                Int(
+                                    2,
+                                ),
+                            ),
+                            span: Span {
+                                start: 94,
+                                end: 96,
+                            },
+                        },
+                        Spanned {
+                            item: Value(
+                                Int(
+                                    3,
+                                ),
+                            ),
+                            span: Span {
+                                start: 97,
+                                end: 99,
+                            },
+                        },
+                        Spanned {
+                            item: Value(
+                                Int(
+                                    4,
+                                ),
+                            ),
+                            span: Span {
+                                start: 100,
+                                end: 102,
+                            },
+                        },
+                    ],
+                ),
+            ),
+            span: Span {
+                start: 90,
+                end: 103,
+            },
+        },
+    },
+    Assign {
+        dest: Spanned {
+            item: Local(
+                14,
+            ),
+            span: Span {
+                start: 104,
+                end: 107,
+            },
+        },
+        src: Spanned {
+            item: Call {
+                calle: Spanned {
+                    item: Value(
+                        Ident(
+                            7,
+                        ),
+                    ),
+                    span: Span {
+                        start: 108,
+                        end: 111,
+                    },
+                },
+                args: [
+                    Spanned {
+                        item: Value(
+                            Ident(
+                                13,
+                            ),
+                        ),
+                        span: Span {
+                            start: 112,
+                            end: 121,
+                        },
+                    },
+                ],
+            },
+            span: Span {
+                start: 108,
+                end: 122,
+            },
+        },
+    },
+]

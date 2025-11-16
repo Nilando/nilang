@@ -41,7 +41,6 @@ block0:
   PRINT t96
   t106 = 10.889999999999999
   PRINT t106
-  t111 = -1
   t113 = -3.3
   PRINT t113
   t118 = 29230847366465196000
@@ -65,67 +64,41 @@ block0:
   PRINT t4
   PRINT t4
   PRINT t53
-  t197 = "=====  MATH INTRINSICS"
+  t197 = "=====  COMPARISONS"
   PRINT t197
-  t201 = 4
-  pow_0 = #pow
-  STORE_ARG t20
-  STORE_ARG t201
-  t203 = CALL pow_0
-  PRINT t203
-  t206 = 16
-  log_0 = #log
-  STORE_ARG t206
-  STORE_ARG t20
-  t209 = CALL log_0
-  PRINT t209
-  abs_0 = #abs
-  STORE_ARG t111
-  t216 = CALL abs_0
-  PRINT t216
-  ceil_0 = #ceil
-  STORE_ARG t68
-  t221 = CALL ceil_0
-  PRINT t221
-  floor_0 = #floor
-  STORE_ARG t68
-  t226 = CALL floor_0
-  PRINT t226
-  t229 = "=====  COMPARISONS"
-  PRINT t229
-  t234 = t3 > t68
-  PRINT t234
-  t239 = t3 >= t68
-  PRINT t239
-  t244 = t3 < t68
-  PRINT t244
-  t249 = t3 <= t68
-  PRINT t249
-  t254 = false
-  PRINT t254
-  t259 = true
-  PRINT t259
-  t264 = t3 > t3
-  PRINT t264
-  t269 = t3 >= t3
-  PRINT t269
-  t274 = t3 < t3
-  PRINT t274
-  t279 = t3 <= t3
-  PRINT t279
-  PRINT t259
-  PRINT t254
-  t294 = t68 > t3
-  PRINT t294
-  t299 = t68 >= t3
-  PRINT t299
-  t304 = t68 < t3
-  PRINT t304
-  t309 = t68 <= t3
-  PRINT t309
-  PRINT t254
-  PRINT t259
-  t321 = null
-  RETURN t321
+  t202 = t3 > t68
+  PRINT t202
+  t207 = t3 >= t68
+  PRINT t207
+  t212 = t3 < t68
+  PRINT t212
+  t217 = t3 <= t68
+  PRINT t217
+  t222 = false
+  PRINT t222
+  t227 = true
+  PRINT t227
+  t232 = t3 > t3
+  PRINT t232
+  t237 = t3 >= t3
+  PRINT t237
+  t242 = t3 < t3
+  PRINT t242
+  t247 = t3 <= t3
+  PRINT t247
+  PRINT t227
+  PRINT t222
+  t262 = t68 > t3
+  PRINT t262
+  t267 = t68 >= t3
+  PRINT t267
+  t272 = t68 < t3
+  PRINT t272
+  t277 = t68 <= t3
+  PRINT t277
+  PRINT t222
+  PRINT t227
+  t289 = null
+  RETURN t289
 
 }

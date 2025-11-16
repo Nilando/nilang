@@ -1629,7 +1629,7 @@
                             SegmentedString {
                                 segments: [
                                     String(
-                                        "=====  MATH INTRINSICS",
+                                        "=====  COMPARISONS",
                                     ),
                                 ],
                             },
@@ -1637,13 +1637,13 @@
                     ),
                     span: Span {
                         start: 785,
-                        end: 810,
+                        end: 806,
                     },
                 },
             ),
             span: Span {
                 start: 779,
-                end: 811,
+                end: 807,
             },
         },
     ),
@@ -1651,52 +1651,40 @@
         Spanned {
             item: Print(
                 Spanned {
-                    item: Call {
-                        calle: Spanned {
+                    item: Binop {
+                        lhs: Spanned {
                             item: Value(
-                                Ident(
-                                    14,
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 814,
+                                end: 815,
+                            },
+                        },
+                        op: Gt,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    0,
                                 ),
                             ),
                             span: Span {
                                 start: 818,
-                                end: 821,
+                                end: 820,
                             },
                         },
-                        args: [
-                            Spanned {
-                                item: Value(
-                                    Int(
-                                        2,
-                                    ),
-                                ),
-                                span: Span {
-                                    start: 822,
-                                    end: 824,
-                                },
-                            },
-                            Spanned {
-                                item: Value(
-                                    Int(
-                                        4,
-                                    ),
-                                ),
-                                span: Span {
-                                    start: 825,
-                                    end: 827,
-                                },
-                            },
-                        ],
                     },
                     span: Span {
-                        start: 818,
-                        end: 828,
+                        start: 814,
+                        end: 820,
                     },
                 },
             ),
             span: Span {
-                start: 812,
-                end: 829,
+                start: 808,
+                end: 821,
             },
         },
     ),
@@ -1704,52 +1692,40 @@
         Spanned {
             item: Print(
                 Spanned {
-                    item: Call {
-                        calle: Spanned {
+                    item: Binop {
+                        lhs: Spanned {
                             item: Value(
-                                Ident(
-                                    15,
+                                Int(
+                                    1,
                                 ),
                             ),
                             span: Span {
-                                start: 836,
-                                end: 839,
+                                start: 828,
+                                end: 829,
                             },
                         },
-                        args: [
-                            Spanned {
-                                item: Value(
-                                    Int(
-                                        16,
-                                    ),
+                        op: Gte,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    0,
                                 ),
-                                span: Span {
-                                    start: 840,
-                                    end: 843,
-                                },
+                            ),
+                            span: Span {
+                                start: 833,
+                                end: 835,
                             },
-                            Spanned {
-                                item: Value(
-                                    Int(
-                                        2,
-                                    ),
-                                ),
-                                span: Span {
-                                    start: 844,
-                                    end: 846,
-                                },
-                            },
-                        ],
+                        },
                     },
                     span: Span {
-                        start: 836,
-                        end: 847,
+                        start: 828,
+                        end: 835,
                     },
                 },
             ),
             span: Span {
-                start: 830,
-                end: 848,
+                start: 822,
+                end: 836,
             },
         },
     ),
@@ -1757,50 +1733,81 @@
         Spanned {
             item: Print(
                 Spanned {
-                    item: Call {
-                        calle: Spanned {
+                    item: Binop {
+                        lhs: Spanned {
                             item: Value(
-                                Ident(
-                                    11,
+                                Int(
+                                    1,
                                 ),
                             ),
                             span: Span {
-                                start: 855,
+                                start: 843,
+                                end: 844,
+                            },
+                        },
+                        op: Lt,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    0,
+                                ),
+                            ),
+                            span: Span {
+                                start: 847,
+                                end: 849,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 843,
+                        end: 849,
+                    },
+                },
+            ),
+            span: Span {
+                start: 837,
+                end: 850,
+            },
+        },
+    ),
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 857,
                                 end: 858,
                             },
                         },
-                        args: [
-                            Spanned {
-                                item: Unaop {
-                                    op: Negate,
-                                    expr: Spanned {
-                                        item: Value(
-                                            Int(
-                                                1,
-                                            ),
-                                        ),
-                                        span: Span {
-                                            start: 860,
-                                            end: 861,
-                                        },
-                                    },
-                                },
-                                span: Span {
-                                    start: 859,
-                                    end: 862,
-                                },
+                        op: Lte,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    0,
+                                ),
+                            ),
+                            span: Span {
+                                start: 862,
+                                end: 864,
                             },
-                        ],
+                        },
                     },
                     span: Span {
-                        start: 855,
-                        end: 863,
+                        start: 857,
+                        end: 864,
                     },
                 },
             ),
             span: Span {
-                start: 849,
-                end: 864,
+                start: 851,
+                end: 865,
             },
         },
     ),
@@ -1808,40 +1815,39 @@
         Spanned {
             item: Print(
                 Spanned {
-                    item: Call {
-                        calle: Spanned {
+                    item: Binop {
+                        lhs: Spanned {
                             item: Value(
-                                Ident(
-                                    13,
+                                Int(
+                                    1,
                                 ),
                             ),
                             span: Span {
-                                start: 871,
-                                end: 875,
+                                start: 872,
+                                end: 873,
                             },
                         },
-                        args: [
-                            Spanned {
-                                item: Value(
-                                    Int(
-                                        0,
-                                    ),
+                        op: Equal,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    0,
                                 ),
-                                span: Span {
-                                    start: 876,
-                                    end: 878,
-                                },
+                            ),
+                            span: Span {
+                                start: 877,
+                                end: 879,
                             },
-                        ],
+                        },
                     },
                     span: Span {
-                        start: 871,
+                        start: 872,
                         end: 879,
                     },
                 },
             ),
             span: Span {
-                start: 865,
+                start: 866,
                 end: 880,
             },
         },
@@ -1850,68 +1856,40 @@
         Spanned {
             item: Print(
                 Spanned {
-                    item: Call {
-                        calle: Spanned {
+                    item: Binop {
+                        lhs: Spanned {
                             item: Value(
-                                Ident(
-                                    12,
+                                Int(
+                                    1,
                                 ),
                             ),
                             span: Span {
                                 start: 887,
-                                end: 892,
+                                end: 888,
                             },
                         },
-                        args: [
-                            Spanned {
-                                item: Value(
-                                    Int(
-                                        0,
-                                    ),
+                        op: NotEqual,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    0,
                                 ),
-                                span: Span {
-                                    start: 893,
-                                    end: 895,
-                                },
+                            ),
+                            span: Span {
+                                start: 892,
+                                end: 894,
                             },
-                        ],
+                        },
                     },
                     span: Span {
                         start: 887,
-                        end: 896,
+                        end: 894,
                     },
                 },
             ),
             span: Span {
                 start: 881,
-                end: 897,
-            },
-        },
-    ),
-    Expr(
-        Spanned {
-            item: Print(
-                Spanned {
-                    item: Value(
-                        String(
-                            SegmentedString {
-                                segments: [
-                                    String(
-                                        "=====  COMPARISONS",
-                                    ),
-                                ],
-                            },
-                        ),
-                    ),
-                    span: Span {
-                        start: 905,
-                        end: 926,
-                    },
-                },
-            ),
-            span: Span {
-                start: 899,
-                end: 927,
+                end: 895,
             },
         },
     ),
@@ -1927,254 +1905,8 @@
                                 ),
                             ),
                             span: Span {
-                                start: 934,
-                                end: 935,
-                            },
-                        },
-                        op: Gt,
-                        rhs: Spanned {
-                            item: Value(
-                                Int(
-                                    0,
-                                ),
-                            ),
-                            span: Span {
-                                start: 938,
-                                end: 940,
-                            },
-                        },
-                    },
-                    span: Span {
-                        start: 934,
-                        end: 940,
-                    },
-                },
-            ),
-            span: Span {
-                start: 928,
-                end: 941,
-            },
-        },
-    ),
-    Expr(
-        Spanned {
-            item: Print(
-                Spanned {
-                    item: Binop {
-                        lhs: Spanned {
-                            item: Value(
-                                Int(
-                                    1,
-                                ),
-                            ),
-                            span: Span {
-                                start: 948,
-                                end: 949,
-                            },
-                        },
-                        op: Gte,
-                        rhs: Spanned {
-                            item: Value(
-                                Int(
-                                    0,
-                                ),
-                            ),
-                            span: Span {
-                                start: 953,
-                                end: 955,
-                            },
-                        },
-                    },
-                    span: Span {
-                        start: 948,
-                        end: 955,
-                    },
-                },
-            ),
-            span: Span {
-                start: 942,
-                end: 956,
-            },
-        },
-    ),
-    Expr(
-        Spanned {
-            item: Print(
-                Spanned {
-                    item: Binop {
-                        lhs: Spanned {
-                            item: Value(
-                                Int(
-                                    1,
-                                ),
-                            ),
-                            span: Span {
-                                start: 963,
-                                end: 964,
-                            },
-                        },
-                        op: Lt,
-                        rhs: Spanned {
-                            item: Value(
-                                Int(
-                                    0,
-                                ),
-                            ),
-                            span: Span {
-                                start: 967,
-                                end: 969,
-                            },
-                        },
-                    },
-                    span: Span {
-                        start: 963,
-                        end: 969,
-                    },
-                },
-            ),
-            span: Span {
-                start: 957,
-                end: 970,
-            },
-        },
-    ),
-    Expr(
-        Spanned {
-            item: Print(
-                Spanned {
-                    item: Binop {
-                        lhs: Spanned {
-                            item: Value(
-                                Int(
-                                    1,
-                                ),
-                            ),
-                            span: Span {
-                                start: 977,
-                                end: 978,
-                            },
-                        },
-                        op: Lte,
-                        rhs: Spanned {
-                            item: Value(
-                                Int(
-                                    0,
-                                ),
-                            ),
-                            span: Span {
-                                start: 982,
-                                end: 984,
-                            },
-                        },
-                    },
-                    span: Span {
-                        start: 977,
-                        end: 984,
-                    },
-                },
-            ),
-            span: Span {
-                start: 971,
-                end: 985,
-            },
-        },
-    ),
-    Expr(
-        Spanned {
-            item: Print(
-                Spanned {
-                    item: Binop {
-                        lhs: Spanned {
-                            item: Value(
-                                Int(
-                                    1,
-                                ),
-                            ),
-                            span: Span {
-                                start: 992,
-                                end: 993,
-                            },
-                        },
-                        op: Equal,
-                        rhs: Spanned {
-                            item: Value(
-                                Int(
-                                    0,
-                                ),
-                            ),
-                            span: Span {
-                                start: 997,
-                                end: 999,
-                            },
-                        },
-                    },
-                    span: Span {
-                        start: 992,
-                        end: 999,
-                    },
-                },
-            ),
-            span: Span {
-                start: 986,
-                end: 1000,
-            },
-        },
-    ),
-    Expr(
-        Spanned {
-            item: Print(
-                Spanned {
-                    item: Binop {
-                        lhs: Spanned {
-                            item: Value(
-                                Int(
-                                    1,
-                                ),
-                            ),
-                            span: Span {
-                                start: 1007,
-                                end: 1008,
-                            },
-                        },
-                        op: NotEqual,
-                        rhs: Spanned {
-                            item: Value(
-                                Int(
-                                    0,
-                                ),
-                            ),
-                            span: Span {
-                                start: 1012,
-                                end: 1014,
-                            },
-                        },
-                    },
-                    span: Span {
-                        start: 1007,
-                        end: 1014,
-                    },
-                },
-            ),
-            span: Span {
-                start: 1001,
-                end: 1015,
-            },
-        },
-    ),
-    Expr(
-        Spanned {
-            item: Print(
-                Spanned {
-                    item: Binop {
-                        lhs: Spanned {
-                            item: Value(
-                                Int(
-                                    1,
-                                ),
-                            ),
-                            span: Span {
-                                start: 1022,
-                                end: 1023,
+                                start: 902,
+                                end: 903,
                             },
                         },
                         op: Gt,
@@ -2185,20 +1917,20 @@
                                 ),
                             ),
                             span: Span {
-                                start: 1026,
-                                end: 1028,
+                                start: 906,
+                                end: 908,
                             },
                         },
                     },
                     span: Span {
-                        start: 1022,
-                        end: 1028,
+                        start: 902,
+                        end: 908,
                     },
                 },
             ),
             span: Span {
-                start: 1016,
-                end: 1029,
+                start: 896,
+                end: 909,
             },
         },
     ),
@@ -2214,8 +1946,8 @@
                                 ),
                             ),
                             span: Span {
-                                start: 1036,
-                                end: 1037,
+                                start: 916,
+                                end: 917,
                             },
                         },
                         op: Gte,
@@ -2226,20 +1958,20 @@
                                 ),
                             ),
                             span: Span {
-                                start: 1041,
-                                end: 1043,
+                                start: 921,
+                                end: 923,
                             },
                         },
                     },
                     span: Span {
-                        start: 1036,
-                        end: 1043,
+                        start: 916,
+                        end: 923,
                     },
                 },
             ),
             span: Span {
-                start: 1030,
-                end: 1044,
+                start: 910,
+                end: 924,
             },
         },
     ),
@@ -2255,8 +1987,8 @@
                                 ),
                             ),
                             span: Span {
-                                start: 1051,
-                                end: 1052,
+                                start: 931,
+                                end: 932,
                             },
                         },
                         op: Lt,
@@ -2267,20 +1999,20 @@
                                 ),
                             ),
                             span: Span {
-                                start: 1055,
-                                end: 1057,
+                                start: 935,
+                                end: 937,
                             },
                         },
                     },
                     span: Span {
-                        start: 1051,
-                        end: 1057,
+                        start: 931,
+                        end: 937,
                     },
                 },
             ),
             span: Span {
-                start: 1045,
-                end: 1058,
+                start: 925,
+                end: 938,
             },
         },
     ),
@@ -2296,8 +2028,8 @@
                                 ),
                             ),
                             span: Span {
-                                start: 1065,
-                                end: 1066,
+                                start: 945,
+                                end: 946,
                             },
                         },
                         op: Lte,
@@ -2308,20 +2040,20 @@
                                 ),
                             ),
                             span: Span {
-                                start: 1070,
-                                end: 1072,
+                                start: 950,
+                                end: 952,
                             },
                         },
                     },
                     span: Span {
-                        start: 1065,
-                        end: 1072,
+                        start: 945,
+                        end: 952,
                     },
                 },
             ),
             span: Span {
-                start: 1059,
-                end: 1073,
+                start: 939,
+                end: 953,
             },
         },
     ),
@@ -2337,8 +2069,8 @@
                                 ),
                             ),
                             span: Span {
-                                start: 1080,
-                                end: 1081,
+                                start: 960,
+                                end: 961,
                             },
                         },
                         op: Equal,
@@ -2349,20 +2081,20 @@
                                 ),
                             ),
                             span: Span {
-                                start: 1085,
-                                end: 1087,
+                                start: 965,
+                                end: 967,
                             },
                         },
                     },
                     span: Span {
-                        start: 1080,
-                        end: 1087,
+                        start: 960,
+                        end: 967,
                     },
                 },
             ),
             span: Span {
-                start: 1074,
-                end: 1088,
+                start: 954,
+                end: 968,
             },
         },
     ),
@@ -2378,8 +2110,8 @@
                                 ),
                             ),
                             span: Span {
-                                start: 1095,
-                                end: 1096,
+                                start: 975,
+                                end: 976,
                             },
                         },
                         op: NotEqual,
@@ -2390,20 +2122,20 @@
                                 ),
                             ),
                             span: Span {
-                                start: 1100,
-                                end: 1102,
+                                start: 980,
+                                end: 982,
                             },
                         },
                     },
                     span: Span {
-                        start: 1095,
-                        end: 1102,
+                        start: 975,
+                        end: 982,
                     },
                 },
             ),
             span: Span {
-                start: 1089,
-                end: 1103,
+                start: 969,
+                end: 983,
             },
         },
     ),
@@ -2419,8 +2151,8 @@
                                 ),
                             ),
                             span: Span {
-                                start: 1110,
-                                end: 1111,
+                                start: 990,
+                                end: 991,
                             },
                         },
                         op: Gt,
@@ -2431,20 +2163,20 @@
                                 ),
                             ),
                             span: Span {
-                                start: 1114,
-                                end: 1116,
+                                start: 994,
+                                end: 996,
                             },
                         },
                     },
                     span: Span {
-                        start: 1110,
-                        end: 1116,
+                        start: 990,
+                        end: 996,
                     },
                 },
             ),
             span: Span {
-                start: 1104,
-                end: 1117,
+                start: 984,
+                end: 997,
             },
         },
     ),
@@ -2460,8 +2192,8 @@
                                 ),
                             ),
                             span: Span {
-                                start: 1124,
-                                end: 1125,
+                                start: 1004,
+                                end: 1005,
                             },
                         },
                         op: Gte,
@@ -2472,20 +2204,20 @@
                                 ),
                             ),
                             span: Span {
-                                start: 1129,
-                                end: 1131,
+                                start: 1009,
+                                end: 1011,
                             },
                         },
                     },
                     span: Span {
-                        start: 1124,
-                        end: 1131,
+                        start: 1004,
+                        end: 1011,
                     },
                 },
             ),
             span: Span {
-                start: 1118,
-                end: 1132,
+                start: 998,
+                end: 1012,
             },
         },
     ),
@@ -2501,8 +2233,8 @@
                                 ),
                             ),
                             span: Span {
-                                start: 1139,
-                                end: 1140,
+                                start: 1019,
+                                end: 1020,
                             },
                         },
                         op: Lt,
@@ -2513,20 +2245,20 @@
                                 ),
                             ),
                             span: Span {
-                                start: 1143,
-                                end: 1145,
+                                start: 1023,
+                                end: 1025,
                             },
                         },
                     },
                     span: Span {
-                        start: 1139,
-                        end: 1145,
+                        start: 1019,
+                        end: 1025,
                     },
                 },
             ),
             span: Span {
-                start: 1133,
-                end: 1146,
+                start: 1013,
+                end: 1026,
             },
         },
     ),
@@ -2542,8 +2274,8 @@
                                 ),
                             ),
                             span: Span {
-                                start: 1153,
-                                end: 1154,
+                                start: 1033,
+                                end: 1034,
                             },
                         },
                         op: Lte,
@@ -2554,20 +2286,20 @@
                                 ),
                             ),
                             span: Span {
-                                start: 1158,
-                                end: 1160,
+                                start: 1038,
+                                end: 1040,
                             },
                         },
                     },
                     span: Span {
-                        start: 1153,
-                        end: 1160,
+                        start: 1033,
+                        end: 1040,
                     },
                 },
             ),
             span: Span {
-                start: 1147,
-                end: 1161,
+                start: 1027,
+                end: 1041,
             },
         },
     ),
@@ -2583,8 +2315,8 @@
                                 ),
                             ),
                             span: Span {
-                                start: 1168,
-                                end: 1169,
+                                start: 1048,
+                                end: 1049,
                             },
                         },
                         op: Equal,
@@ -2595,20 +2327,20 @@
                                 ),
                             ),
                             span: Span {
-                                start: 1173,
-                                end: 1175,
+                                start: 1053,
+                                end: 1055,
                             },
                         },
                     },
                     span: Span {
-                        start: 1168,
-                        end: 1175,
+                        start: 1048,
+                        end: 1055,
                     },
                 },
             ),
             span: Span {
-                start: 1162,
-                end: 1176,
+                start: 1042,
+                end: 1056,
             },
         },
     ),
@@ -2624,8 +2356,8 @@
                                 ),
                             ),
                             span: Span {
-                                start: 1183,
-                                end: 1184,
+                                start: 1063,
+                                end: 1064,
                             },
                         },
                         op: NotEqual,
@@ -2636,20 +2368,20 @@
                                 ),
                             ),
                             span: Span {
-                                start: 1188,
-                                end: 1190,
+                                start: 1068,
+                                end: 1070,
                             },
                         },
                     },
                     span: Span {
-                        start: 1183,
-                        end: 1190,
+                        start: 1063,
+                        end: 1070,
                     },
                 },
             ),
             span: Span {
-                start: 1177,
-                end: 1191,
+                start: 1057,
+                end: 1071,
             },
         },
     ),

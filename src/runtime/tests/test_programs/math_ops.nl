@@ -46,13 +46,6 @@ print(1%2.0);
 print(1.0%2.0);
 print(2.0%1.0);
 
-print("=====  MATH INTRINSICS");
-print(pow(2, 4));
-print(log(16, 2));
-print(abs(-1));
-print(ceil(0));
-print(floor(0));
-
 print("=====  COMPARISONS");
 print(1 > 0);
 print(1 >= 0);

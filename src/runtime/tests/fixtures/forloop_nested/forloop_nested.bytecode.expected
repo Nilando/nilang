@@ -28,9 +28,9 @@ RTN  1
 === END ===
 === FN 0 START ===
 SYM  2, #6
-SYM  5, #19
+SYM  5, #12
 LOC  1, 0
-SYM  0, #17
+SYM  0, #10
 ARG  2
 ARG  5
 ARG  1

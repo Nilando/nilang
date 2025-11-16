@@ -179,7 +179,7 @@ impl<'gc> GcHashMap<'gc> {
         self.buckets.len()
     }
 
-    fn entries_count(&self) -> usize {
+    pub fn entries_count(&self) -> usize {
         self.entries.get()
     }
 
@@ -220,6 +220,42 @@ impl<'gc> GcHashMap<'gc> {
                 return None;
             }
         }
+    }
+
+    pub fn copy_entries_to(&self, dest: Gc<'gc, Self>, mu: &'gc Mutator) {
+        // Copy all entries from self into dest
+        for i in 0..self.buckets.len() {
+            let entry = &self.buckets[i];
+            if entry.is_used() {
+                Self::insert(dest.clone(), entry.key.clone(), entry.val.clone(), mu);
+            }
+        }
+    }
+
+    pub fn is_structurally_equal_to(&self, other: &GcHashMap<'gc>) -> bool {
+        use super::value::Value;
+
+        if self.entries_count() != other.entries_count() {
+            return false;
+        }
+
+        // Check that all entries in self exist in other with same values
+        for i in 0..self.buckets.len() {
+            let entry = &self.buckets[i];
+            if entry.is_used() {
+                let key = &entry.key;
+                let val = &entry.val;
+
+                if let Some(other_val) = other.get(key) {
+                    if !Value::from(val).is_equal_to(&Value::from(&other_val)) {
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
+            }
+        }
+        true
     }
 
     pub fn to_string(&self, syms: &mut SymbolMap) -> String {
@@ -281,9 +317,12 @@ fn hash_value(v: &Value<'_>) -> usize {
                 buffer.extend_from_slice(&hash_value(&l.at(i)).to_ne_bytes());
             }
         }
-        Value::Func(_) => {
+        Value::Func(f) => {
             buffer.push(6);
-            todo!()
+            // Hash functions by their inner pointer address (identity-based)
+            // Use the raw pointer to the underlying Func, not the Gc wrapper
+            let ptr = &**f as *const _ as usize;
+            buffer.extend_from_slice(&ptr.to_ne_bytes());
         }
         Value::String(vm_str) => {
             buffer.push(7);
@@ -294,9 +333,21 @@ fn hash_value(v: &Value<'_>) -> usize {
                 buffer.push(b);
             }
         }
-        Value::Map(_) => {
+        Value::Map(m) => {
             buffer.push(9);
-            todo!()
+            // Hash maps by XORing all key-value pair hashes
+            // This is order-independent since XOR is commutative
+            let mut combined_hash: usize = 0;
+            for i in 0..m.buckets.len() {
+                let entry = &m.buckets[i];
+                if entry.is_used() {
+                    let key_hash = hash_value(&Value::from(&entry.key));
+                    let val_hash = hash_value(&Value::from(&entry.val));
+                    // Combine key and value hash, then XOR with accumulated
+                    combined_hash ^= key_hash.wrapping_mul(31).wrapping_add(val_hash);
+                }
+            }
+            buffer.extend_from_slice(&combined_hash.to_ne_bytes());
         }
     }
 

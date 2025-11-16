@@ -1,0 +1,45 @@
+========= FILE ./src/runtime/tests/fixtures/map_as_key/map_as_key.bytecode.actual ========
+=== FN 0 START ===
+MAP  2
+MAP  6
+SYM  4, #15
+INT  0, 1
+MEMS 6[4], 0
+SYM  3, #16
+INT  1, 2
+MEMS 6[3], 1
+LOC  5, 0
+MEMS 2[6], 5
+MEML 5, 2[6]
+OUT  5
+MAP  5
+MEMS 5[4], 0
+MEMS 5[3], 1
+LOC  1, 1
+MEMS 2[5], 1
+MEML 1, 2[6]
+OUT  1
+MEML 1, 2[5]
+OUT  1
+MAP  1
+MEMS 1[4], 0
+INT  0, 3
+MEMS 1[3], 0
+LOC  0, 2
+MEMS 2[1], 0
+MEML 0, 2[1]
+OUT  0
+MAP  1
+SYM  5, #20
+MAP  4
+SYM  3, #21
+INT  0, 10
+MEMS 4[3], 0
+MEMS 1[5], 4
+LOC  0, 3
+MEMS 2[1], 0
+MEML 0, 2[1]
+OUT  0
+LDN  0
+RTN  0
+=== END ===

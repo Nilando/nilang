@@ -1,6 +1,6 @@
 ========= FILE ./src/runtime/tests/fixtures/globals/globals.bytecode.actual ========
 === FN 1 START ===
-SYM  2, #20
+SYM  2, #13
 LDGB 1, #2
 OUT  1
 LDGB 3, #2
@@ -12,49 +12,49 @@ INT  1, 10
 GTE  1, 2, 1
 JNT  2, 1
 RTN  0
-SYM  0, #22
+SYM  0, #15
 LDGB 0, #0
 CALL 0, 0
 RTN  0
 === END ===
 === FN 2 START ===
-SYM  1, #20
+SYM  1, #13
 LDGB 0, #1
 OUT  0
 LDGB 2, #1
 INT  0, 1
 ADD  0, 2, 0
 STGB 0, #1
-SYM  0, #23
+SYM  0, #16
 LDGB 0, #0
 CALL 0, 0
 RTN  0
 === END ===
 === FN 3 START ===
-SYM  1, #20
+SYM  1, #13
 LDGB 0, #1
 OUT  0
 LDGB 2, #1
 INT  0, 1
 ADD  0, 2, 0
 STGB 0, #1
-SYM  0, #21
+SYM  0, #14
 LDGB 0, #0
 CALL 0, 0
 RTN  0
 === END ===
 === FN 0 START ===
 INT  1, 0
-SYM  0, #20
+SYM  0, #13
 STGB 1, #0
 LOC  0, 0
-SYM  2, #21
+SYM  2, #14
 STGB 0, #2
 LOC  1, 1
-SYM  0, #22
+SYM  0, #15
 STGB 1, #0
 LOC  1, 2
-SYM  0, #23
+SYM  0, #16
 STGB 1, #0
 LDGB 0, #2
 CALL 0, 0

@@ -1,0 +1,81 @@
+========= FILE ./src/runtime/tests/fixtures/fn_intrinsic/fn_intrinsic.ir.actual ========
+MAIN () {
+block0:
+  t0 = 42
+  t1 = #fn
+  STORE_ARG t0
+  wrapped_num_0 = CALL t1
+  t4 = CALL wrapped_num_0
+  PRINT t4
+  t7 = "hello"
+  STORE_ARG t7
+  wrapped_str_0 = CALL t1
+  t11 = CALL wrapped_str_0
+  PRINT t11
+  t14 = NEW_LIST
+  t15 = 1
+  t14 << t15
+  t17 = 2
+  t14 << t17
+  t19 = 3
+  t14 << t19
+  STORE_ARG t14
+  wrapped_list_0 = CALL t1
+  result_0 = CALL wrapped_list_0
+  t26 = 0
+  t27 = result_0[t26]
+  PRINT t27
+  t31 = result_0[t15]
+  PRINT t31
+  t35 = result_0[t17]
+  PRINT t35
+  t38 = NEW_MAP
+  t39 = #x
+  t40 = 10
+  t38[t39] = t40
+  t41 = #y
+  t42 = 20
+  t38[t41] = t42
+  STORE_ARG t38
+  wrapped_map_0 = CALL t1
+  m_0 = CALL wrapped_map_0
+  t49 = m_0[t39]
+  PRINT t49
+  t53 = m_0[t41]
+  PRINT t53
+  t56 = null
+  STORE_ARG t56
+  wrapped_null_0 = CALL t1
+  t60 = CALL wrapped_null_0
+  PRINT t60
+  t63 = 99
+  STORE_ARG t63
+  constant_0 = CALL t1
+  t67 = CALL constant_0
+  PRINT t67
+  t70 = CALL constant_0
+  PRINT t70
+  t73 = CALL constant_0
+  PRINT t73
+  t76 = NEW_LIST
+  STORE_ARG t15
+  t79 = CALL t1
+  t76 << t79
+  STORE_ARG t17
+  t83 = CALL t1
+  t76 << t83
+  STORE_ARG t19
+  t87 = CALL t1
+  t76 << t87
+  t91 = t76[t26]
+  t92 = CALL t91
+  PRINT t92
+  t96 = t76[t15]
+  t97 = CALL t96
+  PRINT t97
+  t101 = t76[t17]
+  t102 = CALL t101
+  PRINT t102
+  RETURN t56
+
+}

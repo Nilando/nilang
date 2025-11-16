@@ -1,0 +1,88 @@
+========= FILE ./src/runtime/tests/fixtures/map_intrinsic/map_intrinsic.ir.actual ========
+MAIN () {
+block0:
+  map_0 = #map
+  empty_0 = CALL map_0
+  TYPE t3 = empty_0
+  PRINT t3
+  t6 = NEW_MAP
+  t7 = #a
+  t8 = 1
+  t6[t7] = t8
+  t9 = #b
+  t10 = 2
+  t6[t9] = t10
+  STORE_ARG t6
+  same_0 = CALL map_0
+  t15 = same_0[t7]
+  PRINT t15
+  t19 = same_0[t9]
+  PRINT t19
+  t22 = NEW_LIST
+  t23 = NEW_LIST
+  t23 << t7
+  t23 << t8
+  t22 << t23
+  t29 = NEW_LIST
+  t29 << t9
+  t29 << t10
+  t22 << t29
+  t35 = NEW_LIST
+  t36 = #c
+  t35 << t36
+  t38 = 3
+  t35 << t38
+  t22 << t35
+  STORE_ARG t22
+  m_0 = CALL map_0
+  t45 = m_0[t7]
+  PRINT t45
+  t49 = m_0[t9]
+  PRINT t49
+  t53 = m_0[t36]
+  PRINT t53
+  empty_list_0 = NEW_LIST
+  STORE_ARG empty_list_0
+  empty_map_0 = CALL map_0
+  TYPE t60 = empty_map_0
+  PRINT t60
+  t63 = NEW_LIST
+  t64 = NEW_LIST
+  t65 = #name
+  t64 << t65
+  t67 = "Alice"
+  t64 << t67
+  t63 << t64
+  t70 = NEW_LIST
+  t71 = #age
+  t70 << t71
+  t73 = 30
+  t70 << t73
+  t63 << t70
+  t76 = NEW_LIST
+  t77 = #hobbies
+  t76 << t77
+  t79 = NEW_LIST
+  t80 = "reading"
+  t79 << t80
+  t82 = "coding"
+  t79 << t82
+  t76 << t79
+  t63 << t76
+  STORE_ARG t63
+  person_0 = CALL map_0
+  t90 = person_0[t65]
+  PRINT t90
+  t94 = person_0[t71]
+  PRINT t94
+  t98 = person_0[t77]
+  t99 = 0
+  t100 = t98[t99]
+  PRINT t100
+  t104 = person_0[t77]
+  t106 = t104[t8]
+  PRINT t106
+  t108 = null
+  RETURN t108
+
+}

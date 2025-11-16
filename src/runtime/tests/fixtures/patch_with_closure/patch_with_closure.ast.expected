@@ -3,7 +3,7 @@
     Assign {
         dest: Spanned {
             item: Local(
-                20,
+                13,
             ),
             span: Span {
                 start: 38,
@@ -28,7 +28,7 @@
                 calle: Spanned {
                     item: Value(
                         Ident(
-                            17,
+                            10,
                         ),
                     ),
                     span: Span {
@@ -51,7 +51,7 @@
                     Spanned {
                         item: Value(
                             Symbol(
-                                21,
+                                14,
                             ),
                         ),
                         span: Span {
@@ -64,7 +64,7 @@
                             InlineFunc {
                                 inputs: Spanned {
                                     item: [
-                                        18,
+                                        11,
                                     ],
                                     span: Span {
                                         start: 79,
@@ -79,7 +79,7 @@
                                                     lhs: Spanned {
                                                         item: Value(
                                                             Ident(
-                                                                18,
+                                                                11,
                                                             ),
                                                         ),
                                                         span: Span {
@@ -91,7 +91,7 @@
                                                     rhs: Spanned {
                                                         item: Value(
                                                             Ident(
-                                                                20,
+                                                                13,
                                                             ),
                                                         ),
                                                         span: Span {
@@ -126,7 +126,7 @@
     Assign {
         dest: Spanned {
             item: Local(
-                22,
+                15,
             ),
             span: Span {
                 start: 120,
@@ -155,7 +155,7 @@
                                 store: Spanned {
                                     item: Value(
                                         Ident(
-                                            22,
+                                            15,
                                         ),
                                     ),
                                     span: Span {
@@ -163,7 +163,7 @@
                                         end: 142,
                                     },
                                 },
-                                key: 21,
+                                key: 14,
                             },
                             span: Span {
                                 start: 137,
@@ -187,7 +187,7 @@
     Assign {
         dest: Spanned {
             item: Local(
-                22,
+                15,
             ),
             span: Span {
                 start: 154,
@@ -216,7 +216,7 @@
                                 store: Spanned {
                                     item: Value(
                                         Ident(
-                                            22,
+                                            15,
                                         ),
                                     ),
                                     span: Span {
@@ -224,7 +224,7 @@
                                         end: 176,
                                     },
                                 },
-                                key: 21,
+                                key: 14,
                             },
                             span: Span {
                                 start: 171,

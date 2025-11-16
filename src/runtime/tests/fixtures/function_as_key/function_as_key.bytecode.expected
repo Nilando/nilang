@@ -1,0 +1,28 @@
+========= FILE ./src/runtime/tests/fixtures/function_as_key/function_as_key.bytecode.actual ========
+=== FN 1 START ===
+INT  0, 42
+RTN  0
+=== END ===
+=== FN 2 START ===
+INT  0, 42
+RTN  0
+=== END ===
+=== FN 0 START ===
+MAP  2
+LOC  1, 0
+LOC  0, 1
+MEMS 2[1], 0
+MEML 0, 2[1]
+OUT  0
+MEML 0, 2[1]
+OUT  0
+LOC  3, 2
+LOC  0, 3
+MEMS 2[3], 0
+MEML 0, 2[3]
+OUT  0
+MEML 0, 2[1]
+OUT  0
+LDN  0
+RTN  0
+=== END ===

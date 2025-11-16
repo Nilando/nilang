@@ -1,0 +1,17 @@
+========= FILE ./src/runtime/tests/fixtures/map_intrinsic_errors/map_intrinsic_errors.bytecode.actual ========
+=== FN 0 START ===
+LIST 1
+INT  0, 1
+PUSH 1, 0
+INT  0, 2
+PUSH 1, 0
+INT  0, 3
+PUSH 1, 0
+INT  0, 4
+PUSH 1, 0
+SYM  0, #7
+ARG  1
+CALL 0, 0
+LDN  0
+RTN  0
+=== END ===

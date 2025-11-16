@@ -446,11 +446,8 @@ pub fn mem_store<'gc>(
         }
         (Value::Map(map), key) => {
             GcHashMap::insert(map, key.as_tagged(mu), src.as_tagged(mu), mu);
-            
+
             Ok(())
-        }
-        (Value::String(_), Value::Int(_)) => {
-            todo!("assign to char index of string?")
         }
         (lhs, rhs) => Err(RuntimeError::new(
             RuntimeErrorKind::TypeError,
@@ -547,7 +544,11 @@ pub fn clone<'gc>(
 
             Value::String(new)
         }
-        Value::Map(_) => todo!("clone map"),
+        Value::Map(old_map) => {
+            let new_map = GcHashMap::alloc(mu);
+            old_map.copy_entries_to(new_map.clone(), mu);
+            Value::Map(new_map)
+        }
         Value::List(old) => {
             let new_list = Gc::new(mu, List::alloc(mu));
 

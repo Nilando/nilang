@@ -1,0 +1,19 @@
+========= FILE ./src/runtime/tests/fixtures/map_intrinsic_errors/map_intrinsic_errors.ir.actual ========
+MAIN () {
+block0:
+  t0 = NEW_LIST
+  t1 = 1
+  t0 << t1
+  t3 = 2
+  t0 << t3
+  t5 = 3
+  t0 << t5
+  t7 = 4
+  t0 << t7
+  map_0 = #map
+  STORE_ARG t0
+  m_0 = CALL map_0
+  t13 = null
+  RETURN t13
+
+}

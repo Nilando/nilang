@@ -103,6 +103,15 @@ impl<'gc> Value<'gc> {
 
                 true
             }
+            (Value::Map(lhs), Value::Map(rhs)) => {
+                // Maps are compared structurally - check all key-value pairs
+                lhs.is_structurally_equal_to(rhs)
+            }
+            (Value::Func(lhs), Value::Func(rhs)) => {
+                // Functions are compared by reference (identity)
+                // Compare the underlying Func pointers, not the Gc wrappers
+                core::ptr::eq(&**lhs as *const _, &**rhs as *const _)
+            }
             _ => false,
         }
     }

@@ -1,0 +1,9 @@
+========= FILE ./src/runtime/tests/fixtures/string_index_assignment_error/string_index_assignment_error.bytecode.actual ========
+=== FN 0 START ===
+LOC  2, 0
+LOC  1, 1
+INT  0, 0
+MEMS 2[0], 1
+LDN  0
+RTN  0
+=== END ===
