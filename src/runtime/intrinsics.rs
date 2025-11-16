@@ -205,7 +205,13 @@ pub fn call_intrinsic<'gc>(
             patch(arg1, arg2, arg3, type_objects, mu)
         }
 
-        _ => todo!(),
+        _ => {
+            let intrinsic_name = symbol_map.get_str(sym_id);
+            Err((
+                RuntimeErrorKind::TypeError,
+                format!("Unknown intrinsic: ${}", intrinsic_name)
+            ))
+        }
     }
 }
 

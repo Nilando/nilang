@@ -239,7 +239,7 @@ impl<'gc> VM<'gc> {
             ByteCode::Return { src } => {
                 let val = self.get_reg(src);
 
-                self.handle_return(val.clone(), instr_stream, mu);
+                self.handle_return(val.clone(), instr_stream, mu)?;
 
                 if self.stack.is_empty() {
                     // Store the return value in output_item for REPL to access
@@ -466,11 +466,11 @@ impl<'gc> VM<'gc> {
         }
     }
 
-    fn handle_return(&self, return_val: TaggedValue<'gc>, instr_stream: &mut InstructionStream<'gc>, mu: &'gc Mutator) {
+    fn handle_return(&self, return_val: TaggedValue<'gc>, instr_stream: &mut InstructionStream<'gc>, mu: &'gc Mutator) -> Result<(), RuntimeError> {
         let _popped_callframe = self.stack.pop_cf();
 
         if self.stack.is_empty() {
-            return;
+            return Ok(());
         }
 
         *instr_stream = self.create_instruction_stream().unwrap();
@@ -486,8 +486,13 @@ impl<'gc> VM<'gc> {
             // do set the return reg after, b/c return reg and path reg may be the same
             self.set_reg(return_val, dest, mu);
         } else {
-            todo!("bad return from function")
+            return Err(RuntimeError::new(
+                RuntimeErrorKind::InvalidByteCode,
+                Some("return statement outside of function call context".to_string()),
+                None
+            ));
         }
+        Ok(())
     }
 
     fn count_args_then_call(

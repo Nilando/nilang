@@ -23,7 +23,9 @@ fn main() {
     };
 
     if config.repl_mode() {
-        run_repl(runtime);
+        if let Err(err) = run_repl(runtime) {
+            eprintln!("REPL error: {}", err);
+        }
     } else if let Some(path) = config.get_source_path() {
         match run_script(runtime, path) {
             Ok(()) => {},

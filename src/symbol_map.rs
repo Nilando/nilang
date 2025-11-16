@@ -63,12 +63,12 @@ generate_intrinsic_syms! {
 
     // Utility intrinsics
     ARGS_SYM,
-    PATCH_SYM,
-
-    // TODO: REMOVE THESE JUST MAKE CONSTANT NOT INTRINSIC
-    SELF_SYM,
-    ITER_SYM
+    PATCH_SYM
 }
+
+// Non-intrinsic but reserved symbol IDs
+pub const SELF_SYM: SymID = 11;
+pub const ITER_SYM: SymID = 12;
 
 impl SymbolMap {
     pub fn new() -> Self {
@@ -78,6 +78,10 @@ impl SymbolMap {
         };
 
         this.insert_intrinsics();
+
+        // Insert reserved non-intrinsic symbols
+        this.insert("self".to_string());
+        this.insert("iter".to_string());
 
         this
     }
