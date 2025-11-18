@@ -407,9 +407,9 @@ dependencies = [
 
 [[package]]
 name = "nimix"
-version = "0.1.2"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d56961b106692bf2613074a405ed25b0978fd4738936851a23259580df62cd8c"
+checksum = "90c6177d797bb9e1cd711e1744e1a21a5387f4ade88ae550d73f28d987b37d41"
 
 [[package]]
 name = "num-traits"
@@ -581,8 +581,9 @@ dependencies = [
 
 [[package]]
 name = "sandpit"
-version = "0.3.0"
-source = "git+https://github.com/Nilando/sandpit?branch=develop#5709b01183d53ee9d5fe25e793ca6ea5a8fc521e"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c77b25ae3d3b0920fa3d77c9181ca037bacba75a888599c3e1c62c6c8bb7079f"
 dependencies = [
  "crossbeam-channel",
  "higher-kinded-types",
@@ -592,8 +593,9 @@ dependencies = [
 
 [[package]]
 name = "sandpit_derive"
-version = "0.3.0"
-source = "git+https://github.com/Nilando/sandpit?branch=develop#5709b01183d53ee9d5fe25e793ca6ea5a8fc521e"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c10403d1d01a234406e2bcb24e570b6f0c791ce7b1eb73412ebd2159a66f630e"
 dependencies = [
  "proc-macro2",
  "quote",

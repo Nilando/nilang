@@ -2,11 +2,20 @@
 name = "nilang"
 version = "0.1.0"
 edition = "2021"
+description = "A scripting language interpreter for Advent of Code"
+license = "MIT"
+authors = ["Niland Schumacher <niland.schumacher@gmail.com>"]
+repository = "https://github.com/Nilando/nilang"
+homepage = "https://github.com/Nilando/nilang"
+documentation = "https://docs.rs/nilang"
+keywords = ["language", "interpreter", "scripting"]
+categories = ["command-line-utilities"]
+readme = "README.md"
 
 [dependencies]
 clap = { version = "4.5.8", features = ["derive"] }
 murmurhash3 = "0.0.5"
-sandpit = { git = "https://github.com/Nilando/sandpit", branch = "develop" }
+sandpit = { version = "0.4.0", features = ["multi_threaded"] }
 termion = "4.0.4"
 hashbrown = { version = "0.14", default-features = false, features = ["ahash"] }
 
