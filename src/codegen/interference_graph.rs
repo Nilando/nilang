@@ -67,14 +67,12 @@ impl InterferenceGraph {
                     }
                 }
 
-                for u in instr.used_regs() {
-                    if let Some(new_var) = u {
-                        if live_vars.insert(*new_var) {
-                            graph.add_node(*new_var);
+                for new_var in instr.used_regs().into_iter().flatten() {
+                    if live_vars.insert(*new_var) {
+                        graph.add_node(*new_var);
 
-                            for var in live_vars.iter() {
-                                graph.add_edge(new_var, var);
-                            }
+                        for var in live_vars.iter() {
+                            graph.add_edge(new_var, var);
                         }
                     }
                 }

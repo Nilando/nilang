@@ -23,7 +23,7 @@ impl<'gc> LoadedLocal<'gc> {
             LoadedLocal::Int(i) => Value::Int(*i),
             LoadedLocal::Float(f) => Value::Float(*f),
             LoadedLocal::Func(f) => Value::Func(f.clone()),
-            LoadedLocal::Text(gc_text) => Value::String(Gc::new(mu, VMString::alloc(gc_text.iter().map(|c| *c), mu))),
+            LoadedLocal::Text(gc_text) => Value::String(Gc::new(mu, VMString::alloc(gc_text.iter().copied(), mu))),
         }
     }
 }
@@ -61,7 +61,7 @@ impl<'gc> Func<'gc> {
             code: self.code.clone(),
             spans: self.spans.clone(),
             file_path: self.file_path.clone(),
-            top_level: self.top_level.clone(),
+            top_level: self.top_level,
             bound_args: GcOpt::new_none(),
             upvalues,
         };
@@ -150,7 +150,7 @@ impl<'gc> Func<'gc> {
             code: self.code.clone(),
             spans: self.spans.clone(),
             file_path: self.file_path.clone(),
-            top_level: self.top_level.clone(),
+            top_level: self.top_level,
             upvalues: self.upvalues.clone(),
             bound_args: GcOpt::from(bound_args),
         };
@@ -185,7 +185,7 @@ impl<'gc> Func<'gc> {
         self.code.clone()
     }
 
-    pub fn get_spans(&self) -> GcPackedSpans {
+    pub fn get_spans(&self) -> GcPackedSpans<'_> {
         self.spans.clone().unwrap()
     }
 

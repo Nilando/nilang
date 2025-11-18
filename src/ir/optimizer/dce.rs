@@ -44,10 +44,8 @@ fn dce_inner(block: &mut Block, live_vars: &mut BTreeSet<VReg>) -> usize {
         }
 
         // this is not a dead instruction, so make sure the args are marked live
-        for var in instr.used_regs() {
-            if let Some(v) = var {
-                live_vars.insert(*v);
-            }
+        for v in instr.used_regs().into_iter().flatten() {
+            live_vars.insert(*v);
         }
 
         // keep this instruction

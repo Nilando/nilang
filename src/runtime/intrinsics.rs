@@ -251,7 +251,7 @@ fn sym<'gc>(
         Value::String(s) => Ok(Value::SymId(syms.get_id(&s.as_string()))),
         Value::SymId(_) => Ok(arg),
         _ => {
-            return Err((
+            Err((
                 RuntimeErrorKind::TypeError,
                 format!("Unexpected arg of type {}", arg.type_str()),
             ))
@@ -303,10 +303,8 @@ fn get_program_args<'gc>(mu: &'gc Mutator) -> Result<Value<'gc>, (RuntimeErrorKi
             let vm_str = Value::String(Gc::new(mu, VMString::alloc(arg.chars(), mu)));
 
             gc_list.push(vm_str.as_tagged(mu), mu);
-        } else {
-            if arg == "--" {
-                flag = true;
-            }
+        } else if arg == "--" {
+            flag = true;
         }
     }
 
@@ -367,26 +365,23 @@ fn patch<'gc>(
     type_objects: &TypeObjects<'gc>,
     mu: &'gc Mutator,
 ) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
-    match primitive_sym {
-        Value::SymId(sym_id) => {
-            if let Some(type_obj) = type_objects.get_type_obj(sym_id) {
-                if let Value::SymId(_) = key {
-                    GcHashMap::insert(type_obj, key.as_tagged(mu), value.as_tagged(mu), mu);
+    if let Value::SymId(sym_id) = primitive_sym {
+        if let Some(type_obj) = type_objects.get_type_obj(sym_id) {
+            if let Value::SymId(_) = key {
+                GcHashMap::insert(type_obj, key.as_tagged(mu), value.as_tagged(mu), mu);
 
-                    return Ok(Value::Null);
-                } else {
-                    return Err((
-                        RuntimeErrorKind::TypeError,
-                        format!("Patch expects a symbol as key, received {}", key.type_str()),
-                    ));
-                }
-            } 
-        },
-        _ => {}
+                return Ok(Value::Null);
+            } else {
+                return Err((
+                    RuntimeErrorKind::TypeError,
+                    format!("Patch expects a symbol as key, received {}", key.type_str()),
+                ));
+            }
+        } 
     }
 
     Err((
         RuntimeErrorKind::TypeError,
-        format!("Failed to patch non primitive symbol"),
+        "Failed to patch non primitive symbol".to_string(),
     ))
 }

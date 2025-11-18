@@ -123,6 +123,12 @@ impl<T> Spanned<T> {
     }
 }
 
+impl Default for PackedSpans {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PackedSpans {
     pub fn new() -> Self {
         Self { spans: vec![] }

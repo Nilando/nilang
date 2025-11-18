@@ -18,14 +18,14 @@ pub enum StringSegment {
 
 pub fn segmented_string<'a>(ep: Parser<'a, Spanned<Expr>>) -> Parser<'a, Value> {
     atom_string()
-        .map(|s| StringSegment::String(s))
+        .map(StringSegment::String)
         .append(
                 ep.clone()
                 .delimited(ctrl(Ctrl::InterpolatedLeftCurly), ctrl(Ctrl::InterpolatedRightCurly))
-                .map(|e| StringSegment::Expr(e))
+                .map(StringSegment::Expr)
                 .append(
                     atom_string()
-                    .map(|s| StringSegment::String(s))
+                    .map(StringSegment::String)
                 )
                 .zero_or_more()
 

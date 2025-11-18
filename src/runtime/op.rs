@@ -79,7 +79,7 @@ pub fn divide<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, Runti
     match (lhs, rhs) {
         (_, Value::Int(0)) | (_, Value::Float(0.0))=> Err(RuntimeError::new(
             RuntimeErrorKind::DivideByZero,
-            Some(format!("Attempted to divide by zero")),
+            Some("Attempted to divide by zero".to_string()),
             None
         )),
         (Value::Int(lhs), Value::Int(rhs)) => Ok(match lhs.checked_div(rhs) {
@@ -105,7 +105,7 @@ pub fn modulo<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, Runti
     match (lhs, rhs) {
         (_, Value::Int(0)) | (_, Value::Float(0.0))=> Err(RuntimeError::new(
             RuntimeErrorKind::DivideByZero,
-            Some(format!("Attempted to modulo by zero")),
+            Some("Attempted to modulo by zero".to_string()),
             None
         )),
         (Value::Float(lhs), Value::Float(rhs)) => Ok(Value::Float(lhs % rhs)),
@@ -321,7 +321,7 @@ pub fn mem_load<'gc>(
             let out_of_bounds = if idx >= 0  {
                 list.len() <= idx as usize
             } else {
-                list.len() < idx.abs() as usize
+                list.len() < idx.unsigned_abs() as usize
             };
 
             if out_of_bounds {
@@ -335,7 +335,7 @@ pub fn mem_load<'gc>(
             let adjusted_idx = if idx >= 0  {
                 idx as usize
             } else {
-                list.len() - idx.abs() as usize
+                list.len() - idx.unsigned_abs() as usize
             };
 
             Ok(list.at(adjusted_idx))
@@ -344,7 +344,7 @@ pub fn mem_load<'gc>(
             let out_of_bounds = if idx >= 0  {
                 s.len() <= idx as usize
             } else {
-                s.len() < idx.abs() as usize
+                s.len() < idx.unsigned_abs() as usize
             };
 
             if out_of_bounds {
@@ -358,7 +358,7 @@ pub fn mem_load<'gc>(
             let adjusted_idx = if idx >= 0  {
                 idx as usize
             } else {
-                s.len() - idx.abs() as usize
+                s.len() - idx.unsigned_abs() as usize
             };
 
             if let Some(c) = s.at(adjusted_idx) {
@@ -384,12 +384,10 @@ pub fn mem_load<'gc>(
                     }
                     value => Ok(value)
                 }
+            } else if let Value::SymId(sym_id) = Value::from(&tagged_key) {
+                access_type_object(Value::Map(map), sym_id, type_objects, mu)
             } else {
-                if let Value::SymId(sym_id) = Value::from(&tagged_key) {
-                    access_type_object(Value::Map(map), sym_id, type_objects, mu)
-                } else {
-                    Ok(Value::Null)
-                }
+                Ok(Value::Null)
             }
         }
         (store, Value::SymId(sym_id)) => access_type_object(store, sym_id, type_objects, mu),
@@ -497,7 +495,7 @@ pub fn pop<'gc>(store: Value<'gc>, mu: &'gc Mutator) -> Result<Value<'gc>, Runti
             }
         },
         Value::List(list) => Ok(Value::from(&list.pop())),
-        _ => return Err(RuntimeError::new(
+        _ => Err(RuntimeError::new(
             RuntimeErrorKind::TypeError,
             Some(format!(
                 "Attempted to call pop on a {} type",
@@ -517,7 +515,7 @@ pub fn len<'gc>(val: Value<'gc>) -> Result<Value<'gc>, RuntimeError> {
         Value::Func(f) => { 
             Ok(Value::Int(f.arity() as i64))
         }
-        _ => return Err(RuntimeError::new(
+        _ => Err(RuntimeError::new(
             RuntimeErrorKind::TypeError,
             Some(format!(
                 "Attempted to call len on a {} type",
@@ -581,7 +579,7 @@ pub fn delete<'gc>(
                 Ok(Value::Null)
             }
         }
-        _ => return Err(RuntimeError::new(
+        _ => Err(RuntimeError::new(
             RuntimeErrorKind::TypeError,
             Some(format!(
                 "Attempted to call delete on a {} type",
@@ -598,7 +596,7 @@ pub fn bind<'gc>(func: Value<'gc>, arg: Value<'gc>, mu: &'gc Mutator<'gc>) -> Re
             if f.arity() == 0 {
                 return Err(RuntimeError::new(
                         RuntimeErrorKind::InvalidBind,
-                        Some(format!("Attempted to call bind on a 0 arg function")),
+                        Some("Attempted to call bind on a 0 arg function".to_string()),
                         None
                 ));
             }
@@ -607,7 +605,7 @@ pub fn bind<'gc>(func: Value<'gc>, arg: Value<'gc>, mu: &'gc Mutator<'gc>) -> Re
 
             Ok(Value::Func(partial))
         }
-        _ => return Err(RuntimeError::new(
+        _ => Err(RuntimeError::new(
             RuntimeErrorKind::TypeError,
             Some(format!(
                 "Attempted to call bind on a {} type",

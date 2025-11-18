@@ -126,7 +126,7 @@ impl<'gc> GcHashMap<'gc> {
     }
 
     fn get_entry(&self, key: &TaggedValue<'gc>) -> Option<&Entry<'gc>> {
-        let idx = self.get_key_index(&key)?;
+        let idx = self.get_key_index(key)?;
         let entry = &self.buckets[idx];
 
         if entry.is_free() {
@@ -277,7 +277,7 @@ impl<'gc> GcHashMap<'gc> {
                 if x != self.entries_count() {
                     format!("{}, ", v.to_string(syms, false))
                 } else {
-                    format!("{}", v.to_string(syms, false))
+                    v.to_string(syms, false)
                 };
 
                 s.push_str(&key_str);

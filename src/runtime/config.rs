@@ -71,7 +71,7 @@ impl Config {
     }
 
     pub fn get_source_path(&self) -> Option<String> {
-        self.file.as_ref().map(|path| path.clone())
+        self.file.clone()
     }
 
     pub fn get_output(&self) -> Box<dyn Write> {

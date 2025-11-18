@@ -23,8 +23,8 @@ impl<'gc> Stack<'gc> {
     }
 
     pub fn clear(&self) {
-        while let Some(_) = self.registers.pop() {}
-        while let Some(_) = self.call_frames.pop() {}
+        while self.registers.pop().is_some() {}
+        while self.call_frames.pop().is_some() {}
         self.frame_start.set(0);
     }
 

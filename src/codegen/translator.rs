@@ -70,35 +70,35 @@ pub fn translate_tac(tac: &Tac, graph: &InterferenceGraph, func: &mut Func) -> O
         Tac::Binop { dest, op, lhs, rhs } => Some(translate_binop(*dest, *op, *lhs, *rhs, graph)),
         Tac::Unaop { dest, op, src } => Some(translate_unaop(*dest, *op, *src, graph)),
         Tac::Pop { dest, src } => {
-            let dest = graph.get_reg(&dest);
-            let src = graph.get_reg(&src);
+            let dest = graph.get_reg(dest);
+            let src = graph.get_reg(src);
 
             Some(ByteCode::Pop { dest, src })
         }
         Tac::LoadConst { dest, src } => Some(translate_load_const(*dest, src, graph, func)),
         Tac::Type { dest, src } => {
-            let dest = graph.get_reg(&dest);
-            let src = graph.get_reg(&src);
+            let dest = graph.get_reg(dest);
+            let src = graph.get_reg(src);
 
             Some(ByteCode::Type { dest, src })
         }
         Tac::Clone { dest, src } => {
-            let dest = graph.get_reg(&dest);
-            let src = graph.get_reg(&src);
+            let dest = graph.get_reg(dest);
+            let src = graph.get_reg(src);
 
             Some(ByteCode::Clone { dest, src })
         }
         Tac::Bind { dest, func, arg } => {
-            let dest = graph.get_reg(&dest);
-            let func = graph.get_reg(&func);
-            let arg = graph.get_reg(&arg);
+            let dest = graph.get_reg(dest);
+            let func = graph.get_reg(func);
+            let arg = graph.get_reg(arg);
 
             Some(ByteCode::Bind { dest, func, arg })
         }
         Tac::Delete { dest, store, key } => {
-            let dest = graph.get_reg(&dest);
-            let store = graph.get_reg(&store);
-            let key = graph.get_reg(&key);
+            let dest = graph.get_reg(dest);
+            let store = graph.get_reg(store);
+            let key = graph.get_reg(key);
 
             Some(ByteCode::Delete { dest, store, key })
         }

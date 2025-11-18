@@ -26,7 +26,7 @@ pub struct FuncBuilder {
 
 impl FuncBuilder {
     pub fn new(id: FuncID, input_syms: &Vec<SymID>, pretty_ir: bool) -> Self {
-        let auto_binds = input_syms.len() > 0 && input_syms[0] == SELF_SYM;
+        let auto_binds = !input_syms.is_empty() && input_syms[0] == SELF_SYM;
         let mut this = Self {
             id,
             auto_binds,

@@ -78,11 +78,9 @@ impl DFA for LivenessDFA {
         }
 
         for instr in block.get_instrs().iter() {
-            for v in instr.used_regs() {
-                if let Some(var) = v {
-                    if defined.get(var).is_none() {
-                        updated_flag |= live_in.insert(*var);
-                    }
+            for var in instr.used_regs().into_iter().flatten() {
+                if defined.get(var).is_none() {
+                    updated_flag |= live_in.insert(*var);
                 }
             }
 

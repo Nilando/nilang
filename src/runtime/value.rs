@@ -28,7 +28,7 @@ impl<'gc> Value<'gc> {
             Value::Null => "null".to_string(),
             Value::Int(i) => format!("{i}"),
             Value::Float(v) => format!("{v}"),
-            Value::SymId(id) => format!("${}", syms.get_str(id).to_string()),
+            Value::SymId(id) => format!("${}", syms.get_str(id)),
             Value::Bool(b) => format!("{b}"),
             Value::Map(map) => map.to_string(syms),
             Value::List(list) => {

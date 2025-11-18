@@ -99,7 +99,7 @@ impl Runtime {
         self.load_module(&std_lib_path)?;
         self.run()?;
 
-        return Ok(());
+        Ok(())
     }
 
     pub fn run(&mut self) -> Result<(), InterpreterError> {
@@ -123,7 +123,7 @@ impl Runtime {
                 },
                 Ok(ExitCode::Yield) => {}
                 Ok(ExitCode::Print) => self.print(&mut output)?,
-                Ok(ExitCode::LoadModule(ref path)) => self.load_module(&path)?,
+                Ok(ExitCode::LoadModule(ref path)) => self.load_module(path)?,
                 Ok(ExitCode::Read) => self.read_input()?,
                 Err(err) => return Err(InterpreterError::RuntimeError(err)),
             }
@@ -137,7 +137,7 @@ impl Runtime {
     }
 
     pub fn load_inline(&mut self, source: &str) -> Result<(), InterpreterError> {
-        match self.compile_with_config(&source, None) {
+        match self.compile_with_config(source, None) {
             Err(err) => {
                 return Err(InterpreterError::ParseError(err));
             }
@@ -148,11 +148,11 @@ impl Runtime {
     }
 
     pub fn load_module(&mut self, path: &String) -> Result<(), InterpreterError> {
-        match std::fs::read_to_string(&path) {
+        match std::fs::read_to_string(path) {
             Ok(module) => match self.compile_with_config(&module, Some(path.clone())) {
                 Err(err) => Err(InterpreterError::ParseError(err)),
                 Ok(program) => {
-                    self.load_program(program, Some(&path));
+                    self.load_program(program, Some(path));
                     Ok(())
                 }
             }

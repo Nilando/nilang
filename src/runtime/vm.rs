@@ -64,12 +64,12 @@ impl<'gc> VM<'gc> {
         if let Some(cf) = self.stack.last_cf() {
             Ok(InstructionStream::from(cf.scoped_deref()))
         } else {
-            Err(RuntimeError::new(RuntimeErrorKind::InternalError, Some(format!("VMERROR: Attempted to create an instruction stream with an empty stack")), None))
+            Err(RuntimeError::new(RuntimeErrorKind::InternalError, Some("VMERROR: Attempted to create an instruction stream with an empty stack".to_string()), None))
         }
     }
 
     pub fn write_output(&self, f: &mut impl Write, syms: &mut SymbolMap) -> std::io::Result<()> {
-        write!(f, "{}\n", Value::from(&*self.output_item).to_string(syms, true))
+        writeln!(f, "{}", Value::from(&*self.output_item).to_string(syms, true))
     }
 
     pub fn run(&self, mu: &'gc Mutator, symbols: &mut SymbolMap) -> Result<ExitCode, RuntimeError> {
@@ -553,7 +553,7 @@ impl<'gc> VM<'gc> {
                     }
                 }
 
-                instr_stream.jump((-1) * ((supplied_args + 1) as i16));
+                instr_stream.jump(-((supplied_args + 1) as i16));
 
                 for arg_num in 0..supplied_args {
                     if let ByteCode::StoreArg { src } = instr_stream.advance() {
@@ -579,7 +579,7 @@ impl<'gc> VM<'gc> {
                     ));
                 }
 
-                instr_stream.jump((-1) * ((supplied_args + 1) as i16));
+                instr_stream.jump(-((supplied_args + 1) as i16));
 
                 let result = call_intrinsic(&self.stack, instr_stream, supplied_args, sym_id, syms, mu, &self.type_objects);
 
@@ -589,15 +589,15 @@ impl<'gc> VM<'gc> {
                     Ok(return_val) => {
                         self.set_reg(return_val.as_tagged(mu), dest, mu);
 
-                        return Ok(());
+                        Ok(())
                     }
                     Err((kind, msg)) => {
-                        return Err(self.new_error(kind, msg));
+                        Err(self.new_error(kind, msg))
                     }
                 }
             }
             calle => {
-                return Err(self.type_error(format!("Tried to call {} type", calle.type_str())));
+                Err(self.type_error(format!("Tried to call {} type", calle.type_str())))
             }
         }
     }

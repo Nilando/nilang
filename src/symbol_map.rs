@@ -70,6 +70,12 @@ generate_intrinsic_syms! {
 pub const SELF_SYM: SymID = 11;
 pub const ITER_SYM: SymID = 12;
 
+impl Default for SymbolMap {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SymbolMap {
     pub fn new() -> Self {
         let mut this = Self {

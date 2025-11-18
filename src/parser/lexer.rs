@@ -539,11 +539,7 @@ impl<'a> Lexer<'a> {
             if let Some(c) = self.chars.peek() {
                 if *c == '\\' {
                     self.advance();
-                    if escape_flag {
-                        escape_flag = false;
-                    } else {
-                        escape_flag = true;
-                    }
+                    escape_flag = !escape_flag;
                 } else if (*c == delimiter) && !escape_flag {
                     self.delimiter_stack.pop();
                     self.advance();
@@ -587,12 +583,10 @@ impl<'a> Lexer<'a> {
                 };
 
                 result.push(escaped_char);
+            } else if c == '\\' {
+                escape_flag = true;
             } else {
-                if c == '\\' {
-                    escape_flag = true;
-                } else {
-                    result.push(c);
-                }
+                result.push(c);
             }
         }
 

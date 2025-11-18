@@ -44,10 +44,8 @@ impl GVNC {
     }
 
     fn canonize_instr_used_regs(&mut self, instr: &mut Tac) {
-        for used_var in instr.used_regs_mut() {
-            if let Some(var) = used_var {
-                self.canonize_reg(var);
-            }
+        for var in instr.used_regs_mut().into_iter().flatten() {
+            self.canonize_reg(var);
         }
     }
 

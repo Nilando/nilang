@@ -128,10 +128,8 @@ impl SSAConverter {
 
     fn version_instructions(&mut self, block: &mut Block) {
         for code in block.get_instrs_mut().iter_mut() {
-            for vr in code.used_regs_mut() {
-                if let Some(vreg) = vr {
-                    self.update_reg(vreg);
-                }
+            for vreg in code.used_regs_mut().into_iter().flatten() {
+                self.update_reg(vreg);
             }
 
             if let Some(dest) = code.dest_reg_mut() {

@@ -38,7 +38,7 @@ impl<'gc> InstructionStream<'gc> {
         if offset > 0 {
             self.ip.set(self.ip.get() + offset as usize);
         } else {
-            self.ip.set(self.ip.get() - (offset.abs() as usize));
+            self.ip.set(self.ip.get() - (offset.unsigned_abs() as usize));
         }
     }
     
