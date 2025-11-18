@@ -85,7 +85,7 @@ impl Runtime {
     }
 
     fn load_std(&mut self) -> Result<(), InterpreterError> {
-        let std_lib_path = 
+        let std_lib_path =
         if let Some(arg) = &self.config.std_lib {
             if let Some(path) = arg {
                 path.clone()
@@ -93,7 +93,21 @@ impl Runtime {
                 return Ok(());
             }
         } else {
-            "./std/main.nl".to_string()
+            // In release mode, use ~/.nilang/std/main.nl
+            // In debug mode, use ./std/main.nl for local development
+            #[cfg(not(debug_assertions))]
+            {
+                // Release mode: use installed location
+                let home = std::env::var("HOME")
+                    .or_else(|_| std::env::var("USERPROFILE")) // Windows fallback
+                    .unwrap_or_else(|_| ".".to_string());
+                format!("{home}/.nilang/std/main.nl")
+            }
+            #[cfg(debug_assertions)]
+            {
+                // Debug mode: use local directory for development
+                "./std/main.nl".to_string()
+            }
         };
 
         self.load_module(&std_lib_path)?;

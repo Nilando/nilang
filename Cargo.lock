@@ -394,7 +394,7 @@ checksum = "cf5a574dadd7941adeaa71823ecba5e28331b8313fb2e1c6a5c7e5981ea53ad6"
 
 [[package]]
 name = "nilang"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "clap",
  "criterion",
@@ -581,9 +581,9 @@ dependencies = [
 
 [[package]]
 name = "sandpit"
-version = "0.4.0"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c77b25ae3d3b0920fa3d77c9181ca037bacba75a888599c3e1c62c6c8bb7079f"
+checksum = "97d7a46d056a53e580706e2ad8add10c917d7b439ad5c379538eafa89804c4ab"
 dependencies = [
  "crossbeam-channel",
  "higher-kinded-types",
@@ -593,9 +593,9 @@ dependencies = [
 
 [[package]]
 name = "sandpit_derive"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c10403d1d01a234406e2bcb24e570b6f0c791ce7b1eb73412ebd2159a66f630e"
+checksum = "83f062201e0c4028225b66a589557dcd88eff050bdfa155faad74d2fb0e5657c"
 dependencies = [
  "proc-macro2",
  "quote",

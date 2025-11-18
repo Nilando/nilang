@@ -10,17 +10,23 @@ Nilang is a dynamically-typed scripting language with a focus on simplicity and 
 - **REPL** - Interactive development
 - And much much more!
 ## Installation
-First [install cargo](https://rust-lang.org/tools/install/), then
+
+### Quick Install (Recommended)
+1. First, [install Rust and cargo](https://rust-lang.org/tools/install/)
+2. Run the installation script:
 ```bash
-cargo install nilang
+curl -sSf https://raw.githubusercontent.com/Nilando/nilang/main/install.sh | bash
 ```
 
-Or build from source:
+This will install nilang via cargo, download the standard library, and place it in `~/.nilang/std/`.
+
+### Building from Source
 
 ```bash
 git clone https://github.com/Nilando/nilang
 cd nilang
 cargo build --release
+./install.sh
 ```
 
 ## Usage
