@@ -345,6 +345,11 @@ fn fn_intrinsic() {
 }
 
 #[test]
+fn out_of_bounds_store() {
+  super::fixture_test("out_of_bounds_store")
+}
+
+#[test]
 fn bind_intrinsic() {
   super::fixture_test("bind_intrinsic")
 }

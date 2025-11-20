@@ -434,8 +434,28 @@ pub fn mem_store<'gc>(
 ) -> Result<(), RuntimeError> {
     match (store, key) {
         (Value::List(list), Value::Int(idx)) => {
+            let out_of_bounds = if idx >= 0  {
+                list.len() <= idx as usize
+            } else {
+                list.len() < idx.unsigned_abs() as usize
+            };
+
+            if out_of_bounds {
+                return Err(RuntimeError::new(
+                        RuntimeErrorKind::OutOfBoundsAccess,
+                        Some(format!("Attempted to store to list of len {} at index {}", list.len(), idx)),
+                        None
+                    ));
+            }
+
+            let adjusted_idx = if idx >= 0  {
+                idx as usize
+            } else {
+                list.len() - idx.unsigned_abs() as usize
+            };
+
             list.set(
-                usize::try_from(idx).unwrap(),
+                adjusted_idx,
                 src.as_tagged(mu),
                 mu,
             );

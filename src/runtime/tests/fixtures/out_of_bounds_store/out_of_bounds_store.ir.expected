@@ -1,0 +1,19 @@
+========= FILE ./src/runtime/tests/fixtures/out_of_bounds_store/out_of_bounds_store.ir.actual ========
+MAIN () {
+block0:
+  t0 = NEW_LIST
+  t1 = 1
+  t0 << t1
+  t3 = 2
+  t0 << t3
+  t5 = 3
+  t0 << t5
+  t8 = 42
+  t9 = 10
+  t0[t9] = t8
+  t11 = t0[t9]
+  PRINT t11
+  t13 = null
+  RETURN t13
+
+}

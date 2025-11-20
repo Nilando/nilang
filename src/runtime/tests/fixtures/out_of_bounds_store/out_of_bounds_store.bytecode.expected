@@ -1,0 +1,17 @@
+========= FILE ./src/runtime/tests/fixtures/out_of_bounds_store/out_of_bounds_store.bytecode.actual ========
+=== FN 0 START ===
+LIST 2
+INT  0, 1
+PUSH 2, 0
+INT  0, 2
+PUSH 2, 0
+INT  0, 3
+PUSH 2, 0
+INT  1, 42
+INT  0, 10
+MEMS 2[0], 1
+MEML 0, 2[0]
+OUT  0
+LDN  0
+RTN  0
+=== END ===

@@ -1,0 +1,142 @@
+========= FILE ./src/runtime/tests/fixtures/out_of_bounds_store/out_of_bounds_store.ast.actual ========
+[
+    Assign {
+        dest: Spanned {
+            item: Local(
+                13,
+            ),
+            span: Span {
+                start: 0,
+                end: 3,
+            },
+        },
+        src: Spanned {
+            item: Value(
+                List(
+                    [
+                        Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 5,
+                                end: 7,
+                            },
+                        },
+                        Spanned {
+                            item: Value(
+                                Int(
+                                    2,
+                                ),
+                            ),
+                            span: Span {
+                                start: 8,
+                                end: 10,
+                            },
+                        },
+                        Spanned {
+                            item: Value(
+                                Int(
+                                    3,
+                                ),
+                            ),
+                            span: Span {
+                                start: 11,
+                                end: 13,
+                            },
+                        },
+                    ],
+                ),
+            ),
+            span: Span {
+                start: 4,
+                end: 14,
+            },
+        },
+    },
+    Assign {
+        dest: Spanned {
+            item: Index {
+                store: Spanned {
+                    item: Value(
+                        Ident(
+                            13,
+                        ),
+                    ),
+                    span: Span {
+                        start: 15,
+                        end: 16,
+                    },
+                },
+                key: Spanned {
+                    item: Value(
+                        Int(
+                            10,
+                        ),
+                    ),
+                    span: Span {
+                        start: 17,
+                        end: 20,
+                    },
+                },
+            },
+            span: Span {
+                start: 15,
+                end: 22,
+            },
+        },
+        src: Spanned {
+            item: Value(
+                Int(
+                    42,
+                ),
+            ),
+            span: Span {
+                start: 23,
+                end: 26,
+            },
+        },
+    },
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Index {
+                        store: Spanned {
+                            item: Value(
+                                Ident(
+                                    13,
+                                ),
+                            ),
+                            span: Span {
+                                start: 33,
+                                end: 34,
+                            },
+                        },
+                        key: Spanned {
+                            item: Value(
+                                Int(
+                                    10,
+                                ),
+                            ),
+                            span: Span {
+                                start: 35,
+                                end: 38,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 33,
+                        end: 39,
+                    },
+                },
+            ),
+            span: Span {
+                start: 27,
+                end: 40,
+            },
+        },
+    ),
+]
