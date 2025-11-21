@@ -427,7 +427,7 @@ impl<'gc> VM<'gc> {
                 }
                 _ => {
                     instr_stream.rewind();
-                    let upvalues = self.collect_upvalues(upval_count, instr_stream, mu);
+                    let upvalues = self.collect_upvalues(upval_count, instr_stream, mu)?;
 
                     self.create_closure(func, upvalues, recursive_upval_index, mu)?;
                     return Ok(());
@@ -436,16 +436,28 @@ impl<'gc> VM<'gc> {
         }
     }
 
-    fn collect_upvalues(&self, upvalues: usize, instr_stream: &InstructionStream<'gc>,mu: &'gc Mutator) -> Gc<'gc, [TaggedValue<'gc>]> {
+    fn collect_upvalues(&self, upvalues: usize, instr_stream: &InstructionStream<'gc>,mu: &'gc Mutator) -> Result<Gc<'gc, [TaggedValue<'gc>]>, RuntimeError> {
         let ip = instr_stream.get_ip() - upvalues;
 
-        mu.alloc_array_from_fn(upvalues, |idx| {
+        // Validate all instructions before allocating
+        for idx in 0..upvalues {
+            if !matches!(instr_stream.get_instr_at(ip + idx), ByteCode::StoreUpvalue { .. }) {
+                return Err(RuntimeError::new(
+                    RuntimeErrorKind::InvalidByteCode,
+                    Some(format!("Expected StoreUpvalue instruction at position {}, found {:?}", ip + idx, instr_stream.get_instr_at(ip + idx))),
+                    Some(self.get_backtrace())
+                ));
+            }
+        }
+
+        // Now safe to allocate - all instructions are valid
+        Ok(mu.alloc_array_from_fn(upvalues, |idx| {
             if let ByteCode::StoreUpvalue { src, .. } = instr_stream.get_instr_at(ip + idx) {
                 self.get_reg(src)
             } else {
-                panic!("should be unreachable")
+                unreachable!("Already validated all instructions are StoreUpvalue")
             }
-        })
+        }))
     }
 
     fn create_closure(
@@ -464,7 +476,11 @@ impl<'gc> VM<'gc> {
 
                 Ok(())
             }
-            _ => panic!("bad bytecode"),
+            _ => Err(RuntimeError::new(
+                RuntimeErrorKind::InvalidByteCode,
+                Some(format!("Expected function in register {}, found {}", dest, Value::from(&self.get_reg(dest)).type_str())),
+                Some(self.get_backtrace())
+            )),
         }
     }
 
@@ -559,11 +575,15 @@ impl<'gc> VM<'gc> {
 
                 for arg_num in 0..supplied_args {
                     if let ByteCode::StoreArg { src } = instr_stream.advance() {
-                        let tagged_val = self.stack.get_prev_cf_reg(src); 
+                        let tagged_val = self.stack.get_prev_cf_reg(src);
 
                         self.set_reg(tagged_val, (arg_num + num_bound_args) as u8, mu);
                     } else {
-                        panic!("InternalError: unexpected")
+                        return Err(RuntimeError::new(
+                            RuntimeErrorKind::InvalidByteCode,
+                            Some(format!("Expected StoreArg instruction at argument {}, found {:?}", arg_num, instr_stream.prev())),
+                            Some(self.get_backtrace())
+                        ));
                     }
                 }
 
