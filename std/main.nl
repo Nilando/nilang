@@ -55,7 +55,7 @@ fn reverse_str(self) {
   result = "";
   while i > 0 {
     i = i - 1;
-    result << self[i];
+    result << (self[i]);
   }
   return result;
 }
@@ -221,4 +221,4 @@ patch($int, $times, fn(self, callback) {
     i = i + 1;
   }
   result;
-})
+});
