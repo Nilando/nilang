@@ -26,27 +26,27 @@ pub fn call_intrinsic<'gc>(
     match sym_id {
         FLOAT_SYM => {
             expect_arg_count(1, supplied_args)?;
-            let arg = extract_arg(args, stack);
+            let arg = extract_arg(args, stack)?;
             float(arg)
         }
         INT_SYM => {
             expect_arg_count(1, supplied_args)?;
-            let arg = extract_arg(args, stack);
+            let arg = extract_arg(args, stack)?;
             int(arg)
         }
         STR_SYM => {
             expect_arg_count(1, supplied_args)?;
-            let arg = extract_arg(args, stack);
+            let arg = extract_arg(args, stack)?;
             str(arg, mu, symbol_map)
         }
         SYM_SYM => {
             expect_arg_count(1, supplied_args)?;
-            let arg = extract_arg(args, stack);
+            let arg = extract_arg(args, stack)?;
             sym(arg, symbol_map)
         }
         BOOL_SYM => {
             expect_arg_count(1, supplied_args)?;
-            let arg = extract_arg(args, stack);
+            let arg = extract_arg(args, stack)?;
             bbool(arg)
         }
         NULL_SYM => {
@@ -56,7 +56,7 @@ pub fn call_intrinsic<'gc>(
             match supplied_args {
                 0 => Ok(Value::List(Gc::new(mu, List::alloc(mu)))),
                 1 => {
-                    let arg = extract_arg(args, stack);
+                    let arg = extract_arg(args, stack)?;
                     match arg {
                         Value::List(_) => Ok(arg),
                         Value::String(vm_string) => {
@@ -88,7 +88,7 @@ pub fn call_intrinsic<'gc>(
                     let gc_list = Gc::new(mu, List::alloc(mu));
 
                     for _ in 0..supplied_args {
-                        let arg = extract_arg(args, stack);
+                        let arg = extract_arg(args, stack)?;
                         gc_list.push(arg.as_tagged(mu), mu);
                     }
 
@@ -99,7 +99,7 @@ pub fn call_intrinsic<'gc>(
         FN_SYM => {
             // fn(value) → returns a 0-arg function that returns value
             expect_arg_count(1, supplied_args)?;
-            let arg = extract_arg(args, stack);
+            let arg = extract_arg(args, stack)?;
             let tagged_arg = arg.as_tagged(mu);
 
             // Create a function with one upvalue containing the wrapped value
@@ -141,7 +141,7 @@ pub fn call_intrinsic<'gc>(
                     Ok(Value::Map(GcHashMap::alloc(mu)))
                 }
                 1 => {
-                    let arg = extract_arg(args, stack);
+                    let arg = extract_arg(args, stack)?;
                     match arg {
                         Value::Map(_) => {
                             // map({a:1}) → {a:1} (identity)
@@ -199,9 +199,9 @@ pub fn call_intrinsic<'gc>(
                                           //
         PATCH_SYM => {
             expect_arg_count(3, supplied_args)?;
-            let arg1 = extract_arg(args, stack);
-            let arg2 = extract_arg(args, stack);
-            let arg3 = extract_arg(args, stack);
+            let arg1 = extract_arg(args, stack)?;
+            let arg2 = extract_arg(args, stack)?;
+            let arg3 = extract_arg(args, stack)?;
             patch(arg1, arg2, arg3, type_objects, mu)
         }
 
@@ -218,11 +218,14 @@ pub fn call_intrinsic<'gc>(
 fn extract_arg<'a, 'gc>(
     instr_stream: &mut InstructionStream<'gc>,
     stack: &Stack<'gc>
-) -> Value<'gc> {
+) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
     if let ByteCode::StoreArg { src } = instr_stream.advance() {
-        Value::from(&stack.get_reg(src))
+        Ok(Value::from(&stack.get_reg(src)))
     } else {
-        panic!("failed to extract arg")
+        Err((
+            RuntimeErrorKind::InvalidByteCode,
+            format!("Expected StoreArg instruction, found {:?}", instr_stream.prev())
+        ))
     }
 }
 
