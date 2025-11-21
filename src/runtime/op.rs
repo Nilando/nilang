@@ -205,13 +205,6 @@ pub fn bit_shift<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, Ru
                 Ok(Value::Int(lhs >> rhs.abs()))
             }
         }
-        (Value::Float(lhs), Value::Int(rhs)) => {
-            if rhs > 0 {
-                Ok(Value::Float(f64::from_bits(lhs.to_bits() << rhs)))
-            } else {
-                Ok(Value::Float(f64::from_bits(lhs.to_bits() >> rhs.abs())))
-            }
-        }
         (lhs, rhs) => Err(RuntimeError::new(
             RuntimeErrorKind::TypeError,
             Some(format!(
@@ -228,9 +221,6 @@ pub fn bit_xor<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, Runt
     match (lhs, rhs) {
         (Value::Int(lhs), Value::Int(rhs)) => {
             Ok(Value::Int(lhs ^ rhs))
-        }
-        (Value::Float(lhs), Value::Int(rhs)) | (Value::Int(rhs), Value::Float(lhs)) => {
-            Ok(Value::Float(f64::from_bits(lhs.to_bits() ^ rhs as u64)))
         }
         (lhs, rhs) => Err(RuntimeError::new(
             RuntimeErrorKind::TypeError,
@@ -249,9 +239,6 @@ pub fn bit_or<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, Runti
         (Value::Int(lhs), Value::Int(rhs)) => {
             Ok(Value::Int(lhs | rhs))
         }
-        (Value::Float(lhs), Value::Int(rhs)) | (Value::Int(rhs), Value::Float(lhs)) => {
-            Ok(Value::Float(f64::from_bits(lhs.to_bits() | rhs as u64)))
-        }
         (lhs, rhs) => Err(RuntimeError::new(
             RuntimeErrorKind::TypeError,
             Some(format!(
@@ -269,9 +256,6 @@ pub fn bit_and<'gc>(lhs: Value<'gc>, rhs: Value<'gc>) -> Result<Value<'gc>, Runt
         (Value::Int(lhs), Value::Int(rhs)) => {
             Ok(Value::Int(lhs & rhs))
         }
-        (Value::Float(lhs), Value::Int(rhs)) | (Value::Int(rhs), Value::Float(lhs)) => {
-            Ok(Value::Float(f64::from_bits(lhs.to_bits() & rhs as u64)))
-        }
         (lhs, rhs) => Err(RuntimeError::new(
             RuntimeErrorKind::TypeError,
             Some(format!(
@@ -287,9 +271,6 @@ pub fn bit_flip<'gc>(src: Value<'gc>) -> Result<Value<'gc>, RuntimeError> {
     match src {
         Value::Int(src) => {
             Ok(Value::Int(!src))
-        }
-        Value::Float(src) => {
-            Ok(Value::Float(f64::from_bits(!src.to_bits())))
         }
         src => Err(RuntimeError::new(
             RuntimeErrorKind::TypeError,
