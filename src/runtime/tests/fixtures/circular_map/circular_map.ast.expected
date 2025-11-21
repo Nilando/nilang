@@ -1,0 +1,89 @@
+========= FILE ./src/runtime/tests/fixtures/circular_map/circular_map.ast.actual ========
+[
+    Assign {
+        dest: Spanned {
+            item: Local(
+                13,
+            ),
+            span: Span {
+                start: 47,
+                end: 50,
+            },
+        },
+        src: Spanned {
+            item: Value(
+                Map(
+                    [],
+                ),
+            ),
+            span: Span {
+                start: 51,
+                end: 54,
+            },
+        },
+    },
+    Assign {
+        dest: Spanned {
+            item: Index {
+                store: Spanned {
+                    item: Value(
+                        Ident(
+                            13,
+                        ),
+                    ),
+                    span: Span {
+                        start: 55,
+                        end: 56,
+                    },
+                },
+                key: Spanned {
+                    item: Value(
+                        Symbol(
+                            11,
+                        ),
+                    ),
+                    span: Span {
+                        start: 57,
+                        end: 63,
+                    },
+                },
+            },
+            span: Span {
+                start: 55,
+                end: 65,
+            },
+        },
+        src: Spanned {
+            item: Value(
+                Ident(
+                    13,
+                ),
+            ),
+            span: Span {
+                start: 66,
+                end: 68,
+            },
+        },
+    },
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Value(
+                        Ident(
+                            13,
+                        ),
+                    ),
+                    span: Span {
+                        start: 75,
+                        end: 77,
+                    },
+                },
+            ),
+            span: Span {
+                start: 69,
+                end: 78,
+            },
+        },
+    ),
+]

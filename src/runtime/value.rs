@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use sandpit::{Gc, Mutator};
 
 use crate::symbol_map::{SymID, SymbolMap, BOOL_SYM, FLOAT_SYM, FN_SYM, INT_SYM, LIST_SYM, MAP_SYM, NULL_SYM, STR_SYM, SYM_SYM};
@@ -24,22 +26,40 @@ pub enum Value<'gc> {
 
 impl<'gc> Value<'gc> {
     pub fn to_string(self, syms: &mut SymbolMap, top_level: bool) -> String {
+        let mut visited = HashSet::new();
+        self.to_string_internal(syms, top_level, &mut visited)
+    }
+
+    pub(crate) fn to_string_internal(self, syms: &mut SymbolMap, top_level: bool, visited: &mut HashSet<usize>) -> String {
         match self {
             Value::Null => "null".to_string(),
             Value::Int(i) => format!("{i}"),
             Value::Float(v) => format!("{v}"),
             Value::SymId(id) => format!("${}", syms.get_str(id)),
             Value::Bool(b) => format!("{b}"),
-            Value::Map(map) => map.to_string(syms),
+            Value::Map(map) => {
+                let ptr = &*map as *const _ as usize;
+                if visited.contains(&ptr) {
+                    return "{...}".to_string();
+                }
+                visited.insert(ptr);
+                let result = map.to_string_internal(syms, visited);
+                visited.remove(&ptr);
+                result
+            }
             Value::List(list) => {
-                let mut s = String::new();
+                let ptr = &*list as *const _ as usize;
+                if visited.contains(&ptr) {
+                    return "[...]".to_string();
+                }
+                visited.insert(ptr);
 
+                let mut s = String::new();
                 s.push('[');
 
                 for i in 0..list.len() {
                     let item = list.at(i);
-
-                    s.push_str(item.to_string(syms, false).as_str());
+                    s.push_str(item.to_string_internal(syms, false, visited).as_str());
 
                     if i != list.len() - 1 {
                         s.push_str(", ");
@@ -47,7 +67,7 @@ impl<'gc> Value<'gc> {
                 }
 
                 s.push(']');
-
+                visited.remove(&ptr);
                 s
             }
             Value::String(vm_str) => {

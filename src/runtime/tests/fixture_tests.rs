@@ -370,6 +370,11 @@ fn parsing_error() {
 }
 
 #[test]
+fn circular_map() {
+  super::fixture_test("circular_map")
+}
+
+#[test]
 fn arity_intrinsic() {
   super::fixture_test("arity_intrinsic")
 }

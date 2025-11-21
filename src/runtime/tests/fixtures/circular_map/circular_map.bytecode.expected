@@ -1,0 +1,9 @@
+========= FILE ./src/runtime/tests/fixtures/circular_map/circular_map.bytecode.actual ========
+=== FN 0 START ===
+MAP  1
+SYM  0, #11
+MEMS 1[0], 1
+OUT  1
+LDN  0
+RTN  0
+=== END ===

@@ -259,6 +259,11 @@ impl<'gc> GcHashMap<'gc> {
     }
 
     pub fn to_string(&self, syms: &mut SymbolMap) -> String {
+        let mut visited = std::collections::HashSet::new();
+        self.to_string_internal(syms, &mut visited)
+    }
+
+    pub(crate) fn to_string_internal(&self, syms: &mut SymbolMap, visited: &mut std::collections::HashSet<usize>) -> String {
         let mut s = String::new();
 
         s.push('{');
@@ -271,13 +276,13 @@ impl<'gc> GcHashMap<'gc> {
 
             if entry.is_used() {
                 x += 1;
-                let key_str = format!("{}: ", k.to_string(syms, false));
+                let key_str = format!("{}: ", k.to_string_internal(syms, false, visited));
 
-                let val_str = 
+                let val_str =
                 if x != self.entries_count() {
-                    format!("{}, ", v.to_string(syms, false))
+                    format!("{}, ", v.to_string_internal(syms, false, visited))
                 } else {
-                    v.to_string(syms, false)
+                    v.to_string_internal(syms, false, visited)
                 };
 
                 s.push_str(&key_str);

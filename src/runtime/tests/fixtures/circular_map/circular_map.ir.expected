@@ -1,0 +1,11 @@
+========= FILE ./src/runtime/tests/fixtures/circular_map/circular_map.ir.actual ========
+MAIN () {
+block0:
+  a_0 = NEW_MAP
+  t2 = #self
+  a_0[t2] = a_0
+  PRINT a_0
+  t4 = null
+  RETURN t4
+
+}
