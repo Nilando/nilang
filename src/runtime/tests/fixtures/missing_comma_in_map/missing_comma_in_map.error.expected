@@ -1,0 +1,7 @@
+parser error: Expected '}', found something else, found y
+ 2 | a = {x: 1 y: 2};
+parser error: expected expression after '=', found y
+ 2 | a = {x: 1 y: 2};
+parser error: expected ';' at end of stmt, found y
+ 2 | a = {x: 1 y: 2};
+parser error: Failed to parse "./src/runtime/tests/test_programs/missing_comma_in_map.nl" due to the previous 3 errors.

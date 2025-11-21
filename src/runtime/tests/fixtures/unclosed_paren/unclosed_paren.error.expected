@@ -1,0 +1,5 @@
+parser error: Expected ')', found something else, found ;
+ 2 | result = (1 + 2 * 3;
+parser error: expected expression after '=', found ;
+ 2 | result = (1 + 2 * 3;
+parser error: Failed to parse "./src/runtime/tests/test_programs/unclosed_paren.nl" due to the previous 2 errors.

@@ -1,0 +1,5 @@
+parser error: Expected ']', found something else, found ;
+ 2 | a = [1, 2, 3;
+parser error: expected expression after '=', found ;
+ 2 | a = [1, 2, 3;
+parser error: Failed to parse "./src/runtime/tests/test_programs/unclosed_list_bracket.nl" due to the previous 2 errors.

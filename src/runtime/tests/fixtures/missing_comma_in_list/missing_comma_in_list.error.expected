@@ -1,0 +1,7 @@
+parser error: Expected ']', found something else, found 2
+ 2 | a = [1 2 3];
+parser error: expected expression after '=', found 2
+ 2 | a = [1 2 3];
+parser error: expected ';' at end of stmt, found 2
+ 2 | a = [1 2 3];
+parser error: Failed to parse "./src/runtime/tests/test_programs/missing_comma_in_list.nl" due to the previous 3 errors.

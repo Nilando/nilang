@@ -1,0 +1,7 @@
+parser error: expected ':' found something else, found "value"
+ 2 | a = {key "value"};
+parser error: Expected '}', found something else, found "value"
+ 2 | a = {key "value"};
+parser error: expected ';' at end of stmt, found }
+ 2 | a = {key "value"};
+parser error: Failed to parse "./src/runtime/tests/test_programs/missing_map_colon.nl" due to the previous 3 errors.

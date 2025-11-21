@@ -31,12 +31,14 @@ impl ParseError {
 
         if let Some(path) = self.path.as_ref() {
             for spanned_err in self.items.iter() {
-                let span_snippet = retrieve_span_snippet(path, spanned_err.span).unwrap();
-                let line = span_snippet.line;
-                let source = format!(" {} | {}\n", line, span_snippet.source_line.trim());
-
                 result.push_str(&format!("{}\n", spanned_err.item.render()));
-                result.push_str(&source);
+                if let Ok(span_snippet) = retrieve_span_snippet(path, spanned_err.span) {
+                    let line = span_snippet.line;
+                    let source = format!(" {} | {}\n", line, span_snippet.source_line.trim());
+                    result.push_str(&source);
+                } else {
+                    result.push_str("  EOF\n");
+                }
             }
 
             result.push_str(&format!("parser error: Failed to parse \"{}\" due to the previous {} errors.", path, self.items.len()));

@@ -1,0 +1,7 @@
+lexical error: Unclosed string
+ 2 | message = "Hello, world;
+parser error: expected expression after '=', found 
+  EOF
+parser error: expected ';' at end of stmt, found 
+  EOF
+parser error: Failed to parse "./src/runtime/tests/test_programs/unclosed_string.nl" due to the previous 3 errors.

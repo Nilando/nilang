@@ -1,0 +1,7 @@
+parser error: expected ':' found something else, found ;
+ 3 | print("test");
+parser error: Expected '}', found something else, found ;
+ 3 | print("test");
+parser error: Expected expression after 'if' keyword, found ;
+ 3 | print("test");
+parser error: Failed to parse "./src/runtime/tests/test_programs/missing_condition_paren.nl" due to the previous 3 errors.

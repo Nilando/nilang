@@ -1,0 +1,3 @@
+parser error: Expected left hand side expression, found 5 =
+ 2 | 5 = x;
+parser error: Failed to parse "./src/runtime/tests/test_programs/invalid_assignment_target.nl" due to the previous 1 errors.

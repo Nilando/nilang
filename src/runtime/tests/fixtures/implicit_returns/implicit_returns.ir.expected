@@ -1,0 +1,193 @@
+========= FILE ./src/runtime/tests/fixtures/implicit_returns/implicit_returns.ir.actual ========
+fn1 () {
+block0:
+  t0 = 5
+  RETURN t0
+
+}
+fn2 (a_0, b_0) {
+block0:
+  t2 = a_0 + b_0
+  RETURN t2
+
+}
+fn3 (a_0, b_0) {
+block0:
+  t2 = a_0 > b_0
+  jnt t2 block3
+  next block1
+
+block1:
+  RETURN a_0
+
+block3:
+  RETURN b_0
+
+}
+fn4 (x_0) {
+block0:
+  t1 = 0
+  t2 = x_0 > t1
+  jnt t2 block2
+  next block1
+
+block1:
+  RETURN x_0
+
+block2:
+  t3 = null
+  RETURN t3
+
+}
+fn5 () {
+block0:
+  t2 = null
+  RETURN t2
+
+}
+fn7 (y_0) {
+block0:
+  LOAD_UPVAL x_0
+  t2 = x_0 + y_0
+  RETURN t2
+
+}
+fn6 (x_0) {
+block0:
+  inner_0 = fn7
+  STORE_UPVAL inner_0, x_0
+  t2 = 10
+  STORE_ARG t2
+  t3 = CALL inner_0
+  RETURN t3
+
+}
+fn8 (n_0) {
+block0:
+  t1 = 2
+  result_0 = n_0 * t1
+  t4 = 10
+  temp_0 = result_0 + t4
+  t7 = 5
+  t8 = temp_0 - t7
+  RETURN t8
+
+}
+fn9 (num_0) {
+block0:
+  t1 = 0
+  t2 = num_0 < t1
+  jnt t2 block3
+  next block1
+
+block1:
+  category_1 = "negative"
+  RETURN category_1
+
+block3:
+  category_0 = "non-negative"
+  RETURN category_0
+
+}
+fn10 (name_0) {
+block0:
+  t1 = "Hello, "
+  t1 << name_0
+  RETURN t1
+
+}
+fn11 () {
+block0:
+  t0 = NEW_LIST
+  t1 = 1
+  t0 << t1
+  t3 = 2
+  t0 << t3
+  t5 = 3
+  t0 << t5
+  t7 = 4
+  t0 << t7
+  t9 = 5
+  t0 << t9
+  RETURN t0
+
+}
+fn12 () {
+block0:
+  t0 = NEW_MAP
+  t1 = #key
+  t2 = "value"
+  t0[t1] = t2
+  t3 = #num
+  t4 = 42
+  t0[t3] = t4
+  RETURN t0
+
+}
+MAIN () {
+block0:
+  get_five_0 = fn1
+  t1 = CALL get_five_0
+  PRINT t1
+  add_nums_0 = fn2
+  t5 = 3
+  t6 = 7
+  STORE_ARG t5
+  STORE_ARG t6
+  t7 = CALL add_nums_0
+  PRINT t7
+  max_0 = fn3
+  t11 = 10
+  t12 = 20
+  STORE_ARG t11
+  STORE_ARG t12
+  t13 = CALL max_0
+  PRINT t13
+  t16 = 50
+  t17 = 30
+  STORE_ARG t16
+  STORE_ARG t17
+  t18 = CALL max_0
+  PRINT t18
+  positive_or_null_0 = fn4
+  t22 = 5
+  STORE_ARG t22
+  t23 = CALL positive_or_null_0
+  PRINT t23
+  t28 = -5
+  STORE_ARG t28
+  t29 = CALL positive_or_null_0
+  PRINT t29
+  do_nothing_0 = fn5
+  t33 = CALL do_nothing_0
+  PRINT t33
+  outer_0 = fn6
+  STORE_ARG t22
+  t38 = CALL outer_0
+  PRINT t38
+  compute_0 = fn8
+  STORE_ARG t6
+  t43 = CALL compute_0
+  PRINT t43
+  categorize_0 = fn9
+  STORE_ARG t28
+  t50 = CALL categorize_0
+  PRINT t50
+  STORE_ARG t22
+  t54 = CALL categorize_0
+  PRINT t54
+  greet_0 = fn10
+  t58 = "World"
+  STORE_ARG t58
+  t59 = CALL greet_0
+  PRINT t59
+  make_list_0 = fn11
+  t63 = CALL make_list_0
+  PRINT t63
+  make_map_0 = fn12
+  t67 = CALL make_map_0
+  PRINT t67
+  t69 = null
+  RETURN t69
+
+}

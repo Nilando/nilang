@@ -136,7 +136,7 @@ fn closed_stmt(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
         .or(break_stmt())
         .or(continue_stmt())
         .closed_by(
-            ctrl(Ctrl::SemiColon)
+            ctrl(Ctrl::SemiColon).expect("expected ';' at end of stmt")
             // TODO: parse statements without requiring semicolons
             //.or(nothing()).expect("expected ';' at end of stmt")
         )

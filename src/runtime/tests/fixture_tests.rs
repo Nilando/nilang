@@ -45,6 +45,11 @@ fn exporting() {
 }
 
 #[test]
+fn unclosed_paren() {
+  super::fixture_test("unclosed_paren")
+}
+
+#[test]
 fn basic_pushing() {
   super::fixture_test("basic_pushing")
 }
@@ -65,8 +70,18 @@ fn basic_map_usage() {
 }
 
 #[test]
+fn missing_map_colon() {
+  super::fixture_test("missing_map_colon")
+}
+
+#[test]
 fn linear_search() {
   super::fixture_test("linear_search")
+}
+
+#[test]
+fn unclosed_if_block() {
+  super::fixture_test("unclosed_if_block")
 }
 
 #[test]
@@ -110,6 +125,11 @@ fn forloop_with_return() {
 }
 
 #[test]
+fn missing_condition_paren() {
+  super::fixture_test("missing_condition_paren")
+}
+
+#[test]
 fn type_intrinsic() {
   super::fixture_test("type_intrinsic")
 }
@@ -122,6 +142,11 @@ fn call_with_wrong_num_args() {
 #[test]
 fn switch_print() {
   super::fixture_test("switch_print")
+}
+
+#[test]
+fn unclosed_string() {
+  super::fixture_test("unclosed_string")
 }
 
 #[test]
@@ -140,8 +165,18 @@ fn basic_popping() {
 }
 
 #[test]
+fn missing_comma_in_list() {
+  super::fixture_test("missing_comma_in_list")
+}
+
+#[test]
 fn string_indexing() {
   super::fixture_test("string_indexing")
+}
+
+#[test]
+fn unclosed_map_brace() {
+  super::fixture_test("unclosed_map_brace")
 }
 
 #[test]
@@ -170,6 +205,16 @@ fn closure_counter() {
 }
 
 #[test]
+fn missing_comma_in_map() {
+  super::fixture_test("missing_comma_in_map")
+}
+
+#[test]
+fn unclosed_list_bracket() {
+  super::fixture_test("unclosed_list_bracket")
+}
+
+#[test]
 fn multi_val_closure() {
   super::fixture_test("multi_val_closure")
 }
@@ -177,6 +222,11 @@ fn multi_val_closure() {
 #[test]
 fn patch_multiple_methods() {
   super::fixture_test("patch_multiple_methods")
+}
+
+#[test]
+fn missing_func_body() {
+  super::fixture_test("missing_func_body")
 }
 
 #[test]
@@ -222,6 +272,11 @@ fn shortcircuit() {
 #[test]
 fn not_op_bug() {
   super::fixture_test("not_op_bug")
+}
+
+#[test]
+fn implicit_returns() {
+  super::fixture_test("implicit_returns")
 }
 
 #[test]
@@ -337,6 +392,11 @@ fn map_with_lists_as_keys() {
 #[test]
 fn map_intrinsic_errors() {
   super::fixture_test("map_intrinsic_errors")
+}
+
+#[test]
+fn invalid_assignment_target() {
+  super::fixture_test("invalid_assignment_target")
 }
 
 #[test]

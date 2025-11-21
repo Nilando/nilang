@@ -1,5 +1,0 @@
-========= FILE ./src/runtime/tests/fixtures/parsing_error/parsing_error.bytecode.actual ========
-=== FN 0 START ===
-LDN  0
-RTN  0
-=== END ===

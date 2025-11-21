@@ -1,0 +1,3 @@
+parser error: Expected block '{ .. }' after function inputs, found print
+ 4 | print("This should not run");
+parser error: Failed to parse "./src/runtime/tests/test_programs/missing_func_body.nl" due to the previous 1 errors.
