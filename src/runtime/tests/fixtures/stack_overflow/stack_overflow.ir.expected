@@ -1,0 +1,21 @@
+========= FILE ./src/runtime/tests/fixtures/stack_overflow/stack_overflow.ir.actual ========
+fn1 (n_0) {
+block0:
+  t1 = 1
+  t2 = n_0 + t1
+  LOAD_UPVAL recurse_0
+  STORE_ARG t2
+  t4 = CALL recurse_0
+  RETURN t4
+
+}
+MAIN () {
+block0:
+  recurse_0 = fn1
+  STORE_UPVAL recurse_0, recurse_0
+  t1 = 0
+  STORE_ARG t1
+  t2 = CALL recurse_0
+  RETURN t2
+
+}

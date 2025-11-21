@@ -1,0 +1,107 @@
+========= FILE ./src/runtime/tests/fixtures/stack_overflow/stack_overflow.ast.actual ========
+[
+    FuncDecl {
+        ident: 13,
+        inputs: Spanned {
+            item: [
+                14,
+            ],
+            span: Span {
+                start: 61,
+                end: 63,
+            },
+        },
+        stmts: [
+            Return(
+                Some(
+                    Spanned {
+                        item: Call {
+                            calle: Spanned {
+                                item: Value(
+                                    Ident(
+                                        13,
+                                    ),
+                                ),
+                                span: Span {
+                                    start: 75,
+                                    end: 82,
+                                },
+                            },
+                            args: [
+                                Spanned {
+                                    item: Binop {
+                                        lhs: Spanned {
+                                            item: Value(
+                                                Ident(
+                                                    14,
+                                                ),
+                                            ),
+                                            span: Span {
+                                                start: 83,
+                                                end: 84,
+                                            },
+                                        },
+                                        op: Plus,
+                                        rhs: Spanned {
+                                            item: Value(
+                                                Int(
+                                                    1,
+                                                ),
+                                            ),
+                                            span: Span {
+                                                start: 87,
+                                                end: 89,
+                                            },
+                                        },
+                                    },
+                                    span: Span {
+                                        start: 83,
+                                        end: 89,
+                                    },
+                                },
+                            ],
+                        },
+                        span: Span {
+                            start: 75,
+                            end: 90,
+                        },
+                    },
+                ),
+            ),
+        ],
+    },
+    Expr(
+        Spanned {
+            item: Call {
+                calle: Spanned {
+                    item: Value(
+                        Ident(
+                            13,
+                        ),
+                    ),
+                    span: Span {
+                        start: 94,
+                        end: 101,
+                    },
+                },
+                args: [
+                    Spanned {
+                        item: Value(
+                            Int(
+                                0,
+                            ),
+                        ),
+                        span: Span {
+                            start: 102,
+                            end: 104,
+                        },
+                    },
+                ],
+            },
+            span: Span {
+                start: 94,
+                end: 105,
+            },
+        },
+    ),
+]

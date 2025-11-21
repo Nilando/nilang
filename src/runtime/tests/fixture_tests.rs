@@ -50,6 +50,11 @@ fn unclosed_paren() {
 }
 
 #[test]
+fn stack_overflow() {
+  super::fixture_test("stack_overflow")
+}
+
+#[test]
 fn basic_pushing() {
   super::fixture_test("basic_pushing")
 }

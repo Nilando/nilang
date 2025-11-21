@@ -1,0 +1,17 @@
+========= FILE ./src/runtime/tests/fixtures/stack_overflow/stack_overflow.bytecode.actual ========
+=== FN 1 START ===
+INT  1, 1
+ADD  1, 0, 1
+LDUV 0, 0
+ARG  1
+CALL 0, 0
+RTN  0
+=== END ===
+=== FN 0 START ===
+LOC  1, 0
+STUV 1, 1
+INT  0, 0
+ARG  0
+CALL 0, 1
+RTN  0
+=== END ===
