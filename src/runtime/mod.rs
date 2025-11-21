@@ -155,7 +155,7 @@ impl Runtime {
             Err(err) => {
                 return Err(InterpreterError::ParseError(err));
             }
-            Ok(program) => self.load_program(program, None),
+            Ok(program) => self.load_program(program, None)?,
         }
 
         Ok(())
@@ -166,7 +166,7 @@ impl Runtime {
             Ok(module) => match self.compile_with_config(&module, Some(path.clone())) {
                 Err(err) => Err(InterpreterError::ParseError(err)),
                 Ok(program) => {
-                    self.load_program(program, Some(path));
+                    self.load_program(program, Some(path))?;
                     Ok(())
                 }
             }
@@ -182,13 +182,19 @@ impl Runtime {
         }
     }
 
-    fn load_program(&mut self, program: Vec<Func>, path: Option<&str>) {
+    fn load_program(&mut self, program: Vec<Func>, path: Option<&str>) -> Result<(), InterpreterError> {
+        let mut result = Ok(());
+
         self.arena.mutate(|mu, vm| {
             let loaded_program = load_program(program, path, mu);
             let module_func = loaded_program.last().unwrap().clone();
 
-            vm.load_module(mu, module_func);
+            if let Err(err) = vm.load_module(mu, module_func) {
+                result = Err(InterpreterError::RuntimeError(err));
+            }
         });
+
+        result
     }
 
     pub fn print(&mut self, output: &mut impl Write) -> Result<(), InterpreterError> {

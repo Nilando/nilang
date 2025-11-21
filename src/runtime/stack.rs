@@ -3,8 +3,11 @@ use core::cell::Cell;
 use sandpit::{Gc, GcOpt, GcVec, Mutator, Tagged, Trace};
 
 use super::call_frame::CallFrame;
-use super::error::{Backtrace, BacktraceCall};
+use super::error::{Backtrace, BacktraceCall, RuntimeError, RuntimeErrorKind};
 use super::tagged_value::{TaggedValue, ValueTag};
+
+// Maximum call stack depth before triggering a stack overflow error
+const MAX_CALL_STACK_DEPTH: usize = 1000;
 
 #[derive(Trace)]
 pub struct Stack<'gc> {
@@ -36,7 +39,16 @@ impl<'gc> Stack<'gc> {
         &self,
         new_cf: CallFrame<'gc>,
         mu: &'gc Mutator,
-    ) {
+    ) -> Result<(), RuntimeError> {
+        // Check for stack overflow
+        if self.call_frames.len() >= MAX_CALL_STACK_DEPTH {
+            return Err(RuntimeError::new(
+                RuntimeErrorKind::StackOverflow,
+                Some(format!("Maximum call stack depth of {} exceeded", MAX_CALL_STACK_DEPTH)),
+                Some(self.get_backtrace())
+            ));
+        }
+
         let prev_frame_start = if let Some(cf) = self.last_cf() {
             cf.get_func().get_max_clique() as usize
         } else {
@@ -51,6 +63,8 @@ impl<'gc> Stack<'gc> {
 
         self.frame_start.set(new_frame_start);
         self.call_frames.push(mu, GcOpt::new(mu, new_cf));
+
+        Ok(())
     }
 
     pub fn last_cf(&self) -> Option<Gc<'gc, CallFrame<'gc>>> {

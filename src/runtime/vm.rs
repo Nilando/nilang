@@ -111,10 +111,12 @@ impl<'gc> VM<'gc> {
         &self,
         mu: &'gc Mutator,
         func: Gc<'gc, Func<'gc>>,
-    ) {
+    ) -> Result<(), RuntimeError> {
         let cf = CallFrame::new(func);
 
-        self.stack.push_cf(cf, mu);
+        self.stack.push_cf(cf, mu)?;
+
+        Ok(())
     }
 
     pub fn read_input_hook(
@@ -544,7 +546,7 @@ impl<'gc> VM<'gc> {
 
                 self.expect_args(expected_args, supplied_args)?;
 
-                self.stack.push_cf(CallFrame::new(func), mu);
+                self.stack.push_cf(CallFrame::new(func), mu)?;
 
                 if let Some(args) = bound_args {
                     for (arg_num, tagged_val) in args.iter().enumerate() {

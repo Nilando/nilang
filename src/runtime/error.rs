@@ -102,5 +102,6 @@ pub enum RuntimeErrorKind {
     InvalidByteCode,
     FailedImport,
     OutOfBoundsAccess,
-    DivideByZero
+    DivideByZero,
+    StackOverflow
 }
