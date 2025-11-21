@@ -493,8 +493,8 @@ pub fn push<'gc>(lhs: Value<'gc>, rhs: Value<'gc>, mu: &'gc Mutator) -> Result<(
             RuntimeErrorKind::TypeError,
             Some(format!(
                 "Attempted to push {} into a {}",
+                rhs.type_str(),
                 lhs.type_str(),
-                rhs.type_str()
             )),
             None
         ))
