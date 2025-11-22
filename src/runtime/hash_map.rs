@@ -255,11 +255,6 @@ impl<'gc> GcHashMap<'gc> {
         true
     }
 
-    pub fn to_string(&self, syms: &mut SymbolMap) -> String {
-        let mut visited = std::collections::HashSet::new();
-        self.to_string_internal(syms, &mut visited)
-    }
-
     pub(crate) fn to_string_internal(&self, syms: &mut SymbolMap, visited: &mut std::collections::HashSet<usize>) -> String {
         let mut s = String::new();
 
@@ -326,33 +321,6 @@ fn hash_value(v: &Value<'_>) -> usize {
 
     result.0 as usize ^ result.1 as usize
 }
-
-/*
-impl Debug for GcHashMap<'_> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "{{")?;
-        for i in 0..self.buckets.len() {
-            let entry = &self.buckets[i];
-            let k = Value::from(&entry.key);
-            let v = Value::from(&entry.val);
-
-            if entry.is_used() {
-                if k.is_string() {
-                    write!(f, "\"{:?}\": ", k)?;
-                } else {
-                    write!(f, "{:?}: ", k)?;
-                }
-                if v.is_string() {
-                    write!(f, "\"{:?}\"", v)?;
-                } else {
-                    write!(f, "{:?}", v)?;
-                }
-            }
-        }
-        write!(f, "}}")
-    }
-}
-*/
 
 #[cfg(test)]
 mod tests {
