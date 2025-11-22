@@ -214,8 +214,8 @@ impl<'gc> GcHashMap<'gc> {
                 EntryStatus::Dead => {}
             }
 
-            probe_pos = (hash_value + (probe_pos * probe_pos)) & mask;
             probes += 1;
+            probe_pos = (hash_value + (probes * probes)) & mask;
             if probes > max_probes {
                 return None;
             }

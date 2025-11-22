@@ -875,19 +875,19 @@ pub mod tests {
                 dest: 1,
                 src: TacConst::Int(1),
             },
-            Tac::LoadConst {
+            Tac::Binop {
                 dest: 2,
+                lhs: 0,
+                op: BinaryOp::Multiply,
+                rhs: 1,
+            },
+            Tac::LoadConst {
+                dest: 3,
                 src: TacConst::Int(1),
             },
             Tac::Binop {
-                dest: 3,
-                lhs: 1,
-                op: BinaryOp::Multiply,
-                rhs: 2,
-            },
-            Tac::Binop {
                 dest: 4,
-                lhs: 0,
+                lhs: 2,
                 op: BinaryOp::Multiply,
                 rhs: 3,
             },

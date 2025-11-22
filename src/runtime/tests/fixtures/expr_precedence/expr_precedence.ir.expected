@@ -7,8 +7,8 @@ block0:
 }
 MAIN () {
 block0:
-  t1 = 9
-  PRINT t1
+  t4 = 21
+  PRINT t4
   one_0 = fn1
   t8 = CALL one_0
   t9 = CALL one_0

@@ -6,20 +6,20 @@
                 Spanned {
                     item: Binop {
                         lhs: Spanned {
-                            item: Value(
-                                Int(
-                                    3,
-                                ),
-                            ),
-                            span: Span {
-                                start: 6,
-                                end: 7,
-                            },
-                        },
-                        op: Multiply,
-                        rhs: Spanned {
                             item: Binop {
                                 lhs: Spanned {
+                                    item: Value(
+                                        Int(
+                                            3,
+                                        ),
+                                    ),
+                                    span: Span {
+                                        start: 6,
+                                        end: 7,
+                                    },
+                                },
+                                op: Multiply,
+                                rhs: Spanned {
                                     item: Value(
                                         Int(
                                             9,
@@ -27,24 +27,24 @@
                                     ),
                                     span: Span {
                                         start: 10,
-                                        end: 11,
-                                    },
-                                },
-                                op: Minus,
-                                rhs: Spanned {
-                                    item: Value(
-                                        Int(
-                                            6,
-                                        ),
-                                    ),
-                                    span: Span {
-                                        start: 14,
-                                        end: 16,
+                                        end: 13,
                                     },
                                 },
                             },
                             span: Span {
-                                start: 10,
+                                start: 6,
+                                end: 13,
+                            },
+                        },
+                        op: Minus,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    6,
+                                ),
+                            ),
+                            span: Span {
+                                start: 14,
                                 end: 16,
                             },
                         },

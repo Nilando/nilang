@@ -301,6 +301,9 @@ pub fn mem_load<'gc>(
         (Value::List(list), Value::Int(idx)) => {
             let out_of_bounds = if idx >= 0  {
                 list.len() <= idx as usize
+            } else if idx == i64::MIN {
+                // Handle edge case: i64::MIN has no valid positive representation
+                true
             } else {
                 list.len() < idx.unsigned_abs() as usize
             };
@@ -324,6 +327,9 @@ pub fn mem_load<'gc>(
         (Value::String(s), Value::Int(idx)) => {
             let out_of_bounds = if idx >= 0  {
                 s.len() <= idx as usize
+            } else if idx == i64::MIN {
+                // Handle edge case: i64::MIN has no valid positive representation
+                true
             } else {
                 s.len() < idx.unsigned_abs() as usize
             };

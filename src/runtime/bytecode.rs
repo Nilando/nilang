@@ -104,7 +104,7 @@ impl Display for ByteCode {
             ByteCode::BitFlip { dest, src } => write!(f, "FLIP {dest}, {src}"),
             ByteCode::BitXor { dest, lhs, rhs } => write!(f, "XOR {dest}, {lhs}, {rhs}"),
             ByteCode::BitOr { dest, lhs, rhs } => write!(f, "OR {dest}, {lhs}, {rhs}"),
-            ByteCode::BitAnd { dest, lhs, rhs } => write!(f, "And {dest}, {lhs}, {rhs}"),
+            ByteCode::BitAnd { dest, lhs, rhs } => write!(f, "AND {dest}, {lhs}, {rhs}"),
             ByteCode::BitShift { dest, lhs, rhs } => write!(f, "SHIF {dest}, {lhs}, {rhs}"),
             ByteCode::Noop => write!(f, "NOOP"),
         }

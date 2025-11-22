@@ -35,7 +35,7 @@ fn read_move() {
     col = int(move[0]);
     row = int(move[1]);
 
-    if (col == null) || (row == null) {
+    if col == null || row == null {
       print_move_help();
     } else {
       return [row, col];
@@ -52,7 +52,7 @@ fn new_board() {
 }
 
 fn play_move(row, col, board, move) {
-  if (row > 2) || (row < 0) || (col > 2) || (col < 0) {
+  if row > 2 || row < 0 || col > 2 || col < 0 {
     print("move must be 0, 1, or 2");
     return false;
   }
@@ -68,15 +68,15 @@ fn play_move(row, col, board, move) {
 }
 
 fn is_row_complete(board, row) {
-  return (board[row][0] == board[row][1])
-    && (board[row][0] == board[row][2])
-    && (board[row][0] != null);
+  return board[row][0] == board[row][1]
+    && board[row][0] == board[row][2]
+    && board[row][0] != null;
 }
 
 fn is_col_complete(board, col) {
-  return (board[0][col] == board[1][col])
-    && (board[0][col] == board[2][col])
-    && (board[0][col] != null);
+  return board[0][col] == board[1][col]
+    && board[0][col] == board[2][col]
+    && board[0][col] != null;
 }
 
 fn game_over(board) {
@@ -94,8 +94,8 @@ fn game_over(board) {
     return false;
   }
 
-  return ((board[0][0] == board[1][1]) && (board[0][0] == board[2][2]))
-    || ((board[2][0] == board[1][1]) && (board[2][0] == board[0][2]));
+  return (board[0][0] == board[1][1] && board[0][0] == board[2][2])
+    || (board[2][0] == board[1][1] && board[2][0] == board[0][2]);
 }
 
 

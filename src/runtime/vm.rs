@@ -22,6 +22,8 @@ pub use super::bytecode::ByteCode;
 use sandpit::{field, Gc, GcOpt, Mutator, Trace};
 use std::io::Write;
 
+// Number of bytecode instructions to execute before yielding control back to the runtime
+// to check for GC pressure and handle interrupts. This value has not yet been benchmarked/tuned.
 const DISPATCH_LOOP_LENGTH: usize = 1000;
 
 #[derive(Debug)]
@@ -147,11 +149,6 @@ impl<'gc> VM<'gc> {
     ) -> Result<Option<ExitCode>, RuntimeError> {
         let instr = instr_stream.advance();
 
-        // TODO: maybe find a better way to add this back?
-        //if std::env::var("VM_DEBUG").is_ok() {
-            //println!("{}: {:?}", instr_stream.get_ip() - 1,instr);
-        //}
-
         match instr {
             ByteCode::Noop => {}
             ByteCode::NewList { dest } => {
@@ -254,12 +251,15 @@ impl<'gc> VM<'gc> {
                 }
             }
             ByteCode::Jump { offset } => {
+                // Subtract 1 because the instruction pointer was already advanced by advance()
+                // before we execute this instruction, so we compensate for that advancement
                 instr_stream.jump(offset - 1);
             }
             ByteCode::Jnt { src, offset } => {
                 let val = self.get_reg(src);
 
                 if !val.is_truthy() {
+                    // offset - 1 to compensate for already-advanced instruction pointer
                     instr_stream.jump(offset - 1);
                 }
             }
@@ -267,6 +267,7 @@ impl<'gc> VM<'gc> {
                 let val = self.get_reg(src);
 
                 if val.is_truthy() {
+                    // offset - 1 to compensate for already-advanced instruction pointer
                     instr_stream.jump(offset - 1);
                 }
             }

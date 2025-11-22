@@ -4,7 +4,7 @@ INT  0, 1
 RTN  0
 === END ===
 === FN 0 START ===
-INT  0, 9
+INT  0, 21
 OUT  0
 LOC  0, 0
 CALL 1, 0

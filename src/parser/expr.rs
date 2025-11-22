@@ -141,44 +141,92 @@ impl Expr {
 
 pub fn expr(sp: Parser<'_, Stmt>) -> Parser<'_, Spanned<Expr>> {
     recursive(move |ep| {
-        primary_expr(ep.clone(), sp.clone())
-            .mix(rhs_binop(ep), |lhs, rhs_binop| {
-                if let Some((op, rhs)) = rhs_binop {
-                    Some(Expr::Binop {
-                        lhs: Box::new(lhs),
-                        op,
-                        rhs: Box::new(rhs),
-                    })
-                } else {
-                    Some(lhs.item)
-                }
-            })
-            .spanned()
+        // Start with the lowest precedence level (0)
+        expr_with_precedence(0, ep.clone(), sp.clone())
     })
 }
 
-pub fn rhs_binop(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, (BinaryOp, Spanned<Expr>)> {
-    let expr = ep.expect("Expected expression after binary operator");
+// Parse expressions with precedence climbing
+fn expr_with_precedence<'a>(
+    min_precedence: u8,
+    ep: Parser<'a, Spanned<Expr>>,
+    sp: Parser<'a, Stmt>,
+) -> Parser<'a, Spanned<Expr>> {
+    Parser::new(move |ctx| {
+        // Parse the left-hand side (a primary expression)
+        let mut lhs = primary_expr(ep.clone(), sp.clone()).parse(ctx)?;
 
-    binop().append(expr)
-}
+        // Try to parse operators while their precedence >= min_precedence
+        loop {
+            // Peek at the next operator without consuming it
+            let op = match ctx.peek() {
+                Some(spanned_token) => match spanned_token.item {
+                    Token::Ctrl(ctrl) => match ctrl.as_binop() {
+                        Some(binop) => binop,
+                        None => break, // Not a binary operator
+                    },
+                    _ => break, // Not a control token
+                },
+                None => break, // No more tokens
+            };
 
+            let op_precedence = precedence(op);
 
-pub fn binop<'a>() -> Parser<'a, BinaryOp> {
-    Parser::new(move |ctx| match ctx.peek() {
-        Some(spanned_token) => match spanned_token.item {
-            Token::Ctrl(ctrl) => {
-                if let Some(binop) = ctrl.as_binop() {
-                    ctx.adv();
-                    Some(binop)
-                } else {
-                    None
-                }
+            // If this operator has lower precedence, we're done at this level
+            if op_precedence < min_precedence {
+                break;
             }
-            _ => None,
-        },
-        None => None,
-    })
+
+            // Consume the operator
+            ctx.adv();
+
+            // Calculate the minimum precedence for the RHS
+            // For left-associative operators, RHS must have strictly higher precedence
+            let next_min_precedence = if is_left_associative(op) {
+                op_precedence + 1
+            } else {
+                op_precedence
+            };
+
+            // Parse the right-hand side with appropriate precedence
+            let rhs = expr_with_precedence(next_min_precedence, ep.clone(), sp.clone())
+                .expect("Expected expression after operator")
+                .parse(ctx)?;
+
+            // Create a new binary operation node with combined span
+            let span = Span::new(lhs.span.start, rhs.span.end);
+            lhs = Spanned {
+                item: Expr::Binop {
+                    lhs: Box::new(lhs),
+                    op,
+                    rhs: Box::new(rhs),
+                },
+                span,
+            };
+        }
+
+        Some(lhs.item)
+    }).spanned()
+}
+
+// Get the precedence level for a binary operator (higher = tighter binding)
+fn precedence(op: BinaryOp) -> u8 {
+    match op {
+        BinaryOp::Or => 0,
+        BinaryOp::And => 1,
+        BinaryOp::Equal | BinaryOp::NotEqual
+        | BinaryOp::Lt | BinaryOp::Lte
+        | BinaryOp::Gt | BinaryOp::Gte => 2,
+        BinaryOp::BitXor | BinaryOp::BitOr
+        | BinaryOp::BitAnd | BinaryOp::Push | BinaryOp::BitShift => 3,
+        BinaryOp::Plus | BinaryOp::Minus => 4,
+        BinaryOp::Multiply | BinaryOp::Divide | BinaryOp::Modulo => 5,
+    }
+}
+
+// Check if an operator is left-associative (all our operators are)
+fn is_left_associative(_op: BinaryOp) -> bool {
+    true
 }
 
 fn primary_expr<'a>(
@@ -407,13 +455,13 @@ mod tests {
     fn binop_expr() {
         match parse_expr("1 + 2 - 3") {
             Ok(Some(Expr::Binop { lhs, op, rhs })) => {
-                assert!(lhs.item == Expr::Value(Value::Int(1)));
-                assert!(op == BinaryOp::Plus);
-                match rhs.item {
+                assert!(rhs.item == Expr::Value(Value::Int(3)));
+                assert!(op == BinaryOp::Minus);
+                match lhs.item {
                     Expr::Binop { lhs, op, rhs } => {
-                        assert!(lhs.item == Expr::Value(Value::Int(2)));
-                        assert!(op == BinaryOp::Minus);
-                        assert!(rhs.item == Expr::Value(Value::Int(3)));
+                        assert!(lhs.item == Expr::Value(Value::Int(1)));
+                        assert!(op == BinaryOp::Plus);
+                        assert!(rhs.item == Expr::Value(Value::Int(2)));
                     }
                     _ => assert!(false),
                 }
