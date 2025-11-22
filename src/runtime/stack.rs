@@ -3,11 +3,9 @@ use core::cell::Cell;
 use sandpit::{Gc, GcOpt, GcVec, Mutator, Tagged, Trace};
 
 use super::call_frame::CallFrame;
+use super::constants::MAX_CALL_STACK_DEPTH;
 use super::error::{Backtrace, BacktraceCall, RuntimeError, RuntimeErrorKind};
 use super::tagged_value::{TaggedValue, ValueTag};
-
-// Maximum call stack depth before triggering a stack overflow error
-const MAX_CALL_STACK_DEPTH: usize = 1000;
 
 #[derive(Trace)]
 pub struct Stack<'gc> {

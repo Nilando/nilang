@@ -1,22 +1,19 @@
 use crate::symbol_map::SymbolMap;
 use core::cell::Cell;
 
+use super::constants::{HASH_MAP_INIT_CAPACITY, HASH_MAP_MAX_LOAD};
 use super::list::List;
 use super::op::equal;
+use super::tagged_value::TaggedValue;
+use super::value::Value;
 
 use murmurhash3::murmurhash3_x64_128;
 use sandpit::{field, Gc, Mutator, Trace, TraceLeaf};
 
-use super::tagged_value::TaggedValue;
-use super::value::Value;
-
-// features of thie HashMap
+// features of this HashMap
 // - uses power of 2 capacities
 // - uses quadratic probing
 // - uses murmurhash3 hashing
-
-const MAX_LOAD: f64 = 0.7;
-const INIT_CAPACITY: usize = 16;
 
 #[derive(TraceLeaf, Copy, Clone, PartialEq)]
 enum EntryStatus {
@@ -78,7 +75,7 @@ impl<'gc> GcHashMap<'gc> {
 
     pub fn alloc(mu: &'gc Mutator) -> Gc<'gc, Self> {
         let hash_map = GcHashMap {
-            buckets: mu.alloc_array_from_fn(INIT_CAPACITY, |_| Entry::new()),
+            buckets: mu.alloc_array_from_fn(HASH_MAP_INIT_CAPACITY, |_| Entry::new()),
             entries: Cell::new(0),
         };
 
@@ -94,7 +91,7 @@ impl<'gc> GcHashMap<'gc> {
         if this.get_entry(&key).is_none() {
             this.entries.set(this.entries.get() + 1);
 
-            if this.get_load() > MAX_LOAD {
+            if this.get_load() > HASH_MAP_MAX_LOAD {
                 Self::grow(this.clone(), mu);
             }
         }

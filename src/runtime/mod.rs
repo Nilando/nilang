@@ -1,20 +1,21 @@
 mod bytecode;
 mod call_frame;
+mod config;
+mod constants;
+mod error;
 mod func;
 mod hash_map;
+mod instruction_stream;
 mod intrinsics;
 mod list;
+mod loading;
 mod op;
+mod stack;
 mod string;
 mod tagged_value;
+mod type_objects;
 mod value;
 mod vm;
-mod error;
-mod stack;
-mod instruction_stream;
-mod loading;
-mod config;
-mod type_objects;
 
 #[cfg(test)]
 mod tests;

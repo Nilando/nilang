@@ -1,30 +1,27 @@
 use crate::symbol_map::SymbolMap;
 
+use super::bytecode::Reg;
+use super::call_frame::CallFrame;
+use super::constants::DISPATCH_LOOP_LENGTH;
+use super::error::{Backtrace, RuntimeError, RuntimeErrorKind};
+use super::func::Func;
+use super::hash_map::GcHashMap;
 use super::instruction_stream::InstructionStream;
+use super::intrinsics::call_intrinsic;
+use super::list::List;
 use super::op::{
     add, bind, bit_and, bit_flip, bit_or, bit_shift, bit_xor, clone, delete, divide, equal, greater_than, greater_than_or_equal, len, less_than, less_than_or_equal, mem_load, mem_store, modulo, multiply, not_equal, pop, push, sub, ttype
 };
-use super::bytecode::Reg;
-use super::call_frame::CallFrame;
-use super::func::Func;
-use super::hash_map::GcHashMap;
-use super::intrinsics::call_intrinsic;
-use super::list::List;
 use super::stack::Stack;
 use super::string::VMString;
 use super::tagged_value::TaggedValue;
 use super::type_objects::TypeObjects;
 use super::value::Value;
-use super::error::{Backtrace, RuntimeError, RuntimeErrorKind};
 
 pub use super::bytecode::ByteCode;
 
 use sandpit::{field, Gc, GcOpt, Mutator, Trace};
 use std::io::Write;
-
-// Number of bytecode instructions to execute before yielding control back to the runtime
-// to check for GC pressure and handle interrupts. This value has not yet been benchmarked/tuned.
-const DISPATCH_LOOP_LENGTH: usize = 1000;
 
 #[derive(Debug)]
 pub enum ExitCode {
