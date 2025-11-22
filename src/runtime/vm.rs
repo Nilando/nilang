@@ -68,7 +68,15 @@ impl<'gc> VM<'gc> {
     }
 
     pub fn write_output(&self, f: &mut impl Write, syms: &mut SymbolMap) -> std::io::Result<()> {
-        writeln!(f, "{}", Value::from(&*self.output_item).to_string(syms, true))
+        match Value::from(&*self.output_item) {
+            Value::String(s) => {
+                for i in 0..s.len() {
+                    write!(f, "{}", s.at(i).unwrap())?;
+                }
+                writeln!(f, "")
+            }
+            value => writeln!(f, "{}", value.to_string(syms, true)),
+        }
     }
 
     pub fn run(&self, mu: &'gc Mutator, symbols: &mut SymbolMap) -> Result<ExitCode, RuntimeError> {
