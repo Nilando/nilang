@@ -6,4 +6,4 @@ fn print_seconds_in_days(seconds) {
   print(seconds / d);
 }
 
-print_seconds_in_days(read);
+print_seconds_in_days(int(read));

@@ -576,6 +576,10 @@ impl<'a> Lexer<'a> {
                     '\\'
                 } else if c == 'n' {
                     '\n'
+                } else if c == 'r' {
+                    '\r'
+                } else if c == 't' {
+                    '\t'
                 } else if c == delimiter {
                     c
                 } else {

@@ -1,16 +1,7 @@
-fn contains(s, digit) {
-  for c in s {
-    if c == digit {
-      return true;
-    }
-  }
-  return false;
-}
-
 fn fizzbuzz(n) {
   s = str(n);
-  fizz = ((n % 5) == 0) || contains(s, "5");
-  buzz = ((n % 7) == 0) || contains(s, "7");
+  fizz = (n % 5) == 0 || s.contains("5");
+  buzz = (n % 7) == 0 || s.contains("7");
 
   if fizz && buzz {
     return "fizzbuzz";
@@ -23,8 +14,12 @@ fn fizzbuzz(n) {
   if buzz {
     return "buzz";
   }
+
+  return "";
 }
 
+print(fizzbuzz(3));
+print(fizzbuzz(22));
 print(fizzbuzz(51)); // fizz
 print(fizzbuzz(10)); // fizz
 print(fizzbuzz(17)); // buzz
