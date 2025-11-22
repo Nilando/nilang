@@ -150,6 +150,11 @@ fn switch_print() {
 }
 
 #[test]
+fn forloop_with_null() {
+  super::fixture_test("forloop_with_null")
+}
+
+#[test]
 fn unclosed_string() {
   super::fixture_test("unclosed_string")
 }

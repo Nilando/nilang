@@ -29,10 +29,10 @@ OUT  0
 MEML 0, 1[3]
 OUT  0
 MAP  8
-SYM  0, #18
+SYM  0, #19
 INT  1, 10
 MEMS 8[0], 1
-SYM  2, #19
+SYM  2, #20
 INT  1, 20
 MEMS 8[2], 1
 ARG  8

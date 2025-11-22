@@ -6,7 +6,7 @@ use super::VReg;
 use crate::spanned::{Span, Spanned};
 use crate::parser::{Expr, LhsExpr, MapKey, SegmentedString, Stmt, StringSegment, Value};
 use crate::op::{BinaryOp, UnaryOp};
-use crate::symbol_map::{SymID, SymbolMap, ITER_SYM};
+use crate::symbol_map::{SymID, SymbolMap, ITER_SYM, ITER_END_SYM};
 
 use alloc::collections::BTreeSet;
 
@@ -448,9 +448,9 @@ impl LoweringCtx {
         let value_reg = self.lower_ident(item_sym);
         self.emit(Tac::Call { dest: value_reg, src: iter_fn_reg });
 
-        let null_reg = self.load_const(TacConst::Null);
+        let iter_end_reg = self.load_const(TacConst::Sym(ITER_END_SYM));
         let temp = self.new_temp();
-        self.emit(Tac::Binop { dest: temp, op: BinaryOp::Equal, lhs: value_reg, rhs: null_reg });
+        self.emit(Tac::Binop { dest: temp, op: BinaryOp::Equal, lhs: value_reg, rhs: iter_end_reg });
         self.emit(Tac::Jit { src: temp, label: end });
 
         self.lower_stmts(stmts, false);

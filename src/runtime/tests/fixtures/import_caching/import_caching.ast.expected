@@ -3,7 +3,7 @@
     Assign {
         dest: Spanned {
             item: Local(
-                13,
+                14,
             ),
             span: Span {
                 start: 212,
@@ -44,7 +44,7 @@
                         store: Spanned {
                             item: Value(
                                 Ident(
-                                    13,
+                                    14,
                                 ),
                             ),
                             span: Span {
@@ -52,7 +52,7 @@
                                 end: 271,
                             },
                         },
-                        key: 14,
+                        key: 15,
                     },
                     span: Span {
                         start: 266,
@@ -69,7 +69,7 @@
     Assign {
         dest: Spanned {
             item: Local(
-                15,
+                16,
             ),
             span: Span {
                 start: 351,
@@ -110,7 +110,7 @@
                         store: Spanned {
                             item: Value(
                                 Ident(
-                                    15,
+                                    16,
                                 ),
                             ),
                             span: Span {
@@ -118,7 +118,7 @@
                                 end: 410,
                             },
                         },
-                        key: 14,
+                        key: 15,
                     },
                     span: Span {
                         start: 405,
@@ -135,7 +135,7 @@
     Assign {
         dest: Spanned {
             item: Local(
-                16,
+                17,
             ),
             span: Span {
                 start: 465,
@@ -176,7 +176,7 @@
                         store: Spanned {
                             item: Value(
                                 Ident(
-                                    16,
+                                    17,
                                 ),
                             ),
                             span: Span {
@@ -184,7 +184,7 @@
                                 end: 524,
                             },
                         },
-                        key: 14,
+                        key: 15,
                     },
                     span: Span {
                         start: 519,
@@ -230,7 +230,7 @@
     Assign {
         dest: Spanned {
             item: Local(
-                17,
+                18,
             ),
             span: Span {
                 start: 39,
@@ -243,7 +243,7 @@
                     [
                         (
                             Sym(
-                                14,
+                                15,
                             ),
                             Spanned {
                                 item: Binop {
@@ -291,7 +291,7 @@
             Spanned {
                 item: Value(
                     Ident(
-                        17,
+                        18,
                     ),
                 ),
                 span: Span {

@@ -7,7 +7,7 @@ fn default_iter(self) {
       i[0] = n + 1;
       return self[n];
     } else {
-      return null;
+      return $iter_end;
     }
   };
 };
@@ -21,7 +21,7 @@ fn default_enumerate(self) {
       i[0] = n + 1;
       return [n, self[n]];
     } else {
-      return null;
+      return $iter_end;
     }
   };
 }

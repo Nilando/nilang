@@ -11,4 +11,4 @@ negative
 non-negative
 Hello, World
 [1, 2, 3, 4, 5]
-{$num: 42, $key: "value"}
+{$key: "value", $num: 42}

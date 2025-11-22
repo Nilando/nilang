@@ -20,7 +20,7 @@ block1:
   RETURN t14
 
 block3:
-  t15 = null
+  t15 = #iter_end
   RETURN t15
 
 }
@@ -62,7 +62,7 @@ block0:
 
 block1:
   num_0 = CALL t19
-  t21 = null
+  t21 = #iter_end
   t22 = num_0 == t21
   jit t22 block3
   next block2
@@ -72,6 +72,7 @@ block2:
   jump block1
 
 block3:
-  RETURN t21
+  t25 = null
+  RETURN t25
 
 }

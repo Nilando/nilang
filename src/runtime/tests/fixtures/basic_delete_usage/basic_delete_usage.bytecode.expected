@@ -1,13 +1,13 @@
 ========= FILE ./src/runtime/tests/fixtures/basic_delete_usage/basic_delete_usage.bytecode.actual ========
 === FN 0 START ===
 MAP  4
-SYM  1, #13
+SYM  1, #14
 INT  0, 0
 MEMS 4[1], 0
-SYM  6, #14
+SYM  6, #15
 INT  3, 1
 MEMS 4[6], 3
-SYM  5, #15
+SYM  5, #16
 INT  2, 2
 MEMS 4[5], 2
 OUT  4

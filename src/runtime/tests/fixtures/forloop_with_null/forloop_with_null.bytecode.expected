@@ -1,4 +1,4 @@
-========= FILE ./src/runtime/tests/fixtures/forloop_basic/forloop_basic.bytecode.actual ========
+========= FILE ./src/runtime/tests/fixtures/forloop_with_null/forloop_with_null.bytecode.actual ========
 === FN 2 START ===
 LDUV 4, 0
 INT  3, 0
@@ -27,33 +27,38 @@ STUV 1, 0
 RTN  1
 === END ===
 === FN 0 START ===
-SYM  3, #6
-SYM  2, #12
+SYM  2, #6
+SYM  4, #12
 LOC  1, 0
 SYM  0, #10
-ARG  3
 ARG  2
+ARG  4
 ARG  1
 CALL 0, 0
 LIST 1
-INT  0, 1
+INT  3, 1
+PUSH 1, 3
+LDN  2
+PUSH 1, 2
+LOC  0, 1
 PUSH 1, 0
-INT  0, 2
+PUSH 1, 2
+BOOL 0, true
 PUSH 1, 0
-INT  0, 3
+BOOL 0, false
 PUSH 1, 0
-INT  0, 4
+PUSH 1, 2
+INT  0, 42
 PUSH 1, 0
-INT  0, 5
-PUSH 1, 0
-MEML 0, 1[2]
-CALL 2, 0
-CALL 1, 2
-SYM  0, #13
-EQ   0, 1, 0
-JIT  3, 0
-OUT  1
+INT  0, 0
+MEML 1, 1[4]
+CALL 1, 1
+CALL 5, 1
+SYM  4, #13
+EQ   4, 5, 4
+JIT  3, 4
+ADD  0, 0, 3
 JMP  -5
-LDN  0
-RTN  0
+OUT  0
+RTN  2
 === END ===

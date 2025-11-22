@@ -1,11 +1,11 @@
 ========= FILE ./src/runtime/tests/fixtures/one_plus_one/one_plus_one.ast.actual ========
 [
     FuncDecl {
-        ident: 13,
+        ident: 14,
         inputs: Spanned {
             item: [
-                14,
                 15,
+                16,
             ],
             span: Span {
                 start: 7,
@@ -20,7 +20,7 @@
                             lhs: Spanned {
                                 item: Value(
                                     Ident(
-                                        14,
+                                        15,
                                     ),
                                 ),
                                 span: Span {
@@ -32,7 +32,7 @@
                             rhs: Spanned {
                                 item: Value(
                                     Ident(
-                                        15,
+                                        16,
                                     ),
                                 ),
                                 span: Span {
@@ -58,7 +58,7 @@
                         calle: Spanned {
                             item: Value(
                                 Ident(
-                                    13,
+                                    14,
                                 ),
                             ),
                             span: Span {

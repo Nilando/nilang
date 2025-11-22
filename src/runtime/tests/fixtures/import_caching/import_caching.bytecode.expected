@@ -2,7 +2,7 @@
 === FN 0 START ===
 LOC  0, 0
 IMPO 0, 0
-SYM  1, #14
+SYM  1, #15
 MEML 0, 0[1]
 OUT  0
 LOC  0, 0
@@ -21,7 +21,7 @@ RTN  0
 LOC  0, 0
 OUT  0
 MAP  2
-SYM  1, #14
+SYM  1, #15
 INT  0, 69
 MEMS 2[1], 0
 RTN  2

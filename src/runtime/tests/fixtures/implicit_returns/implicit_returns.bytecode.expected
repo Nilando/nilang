@@ -77,10 +77,10 @@ RTN  1
 === END ===
 === FN 12 START ===
 MAP  2
-SYM  1, #35
+SYM  1, #36
 LOC  0, 0
 MEMS 2[1], 0
-SYM  1, #29
+SYM  1, #30
 INT  0, 42
 MEMS 2[1], 0
 RTN  2

@@ -1,10 +1,10 @@
 ========= FILE ./src/runtime/tests/fixtures/stack_overflow/stack_overflow.ast.actual ========
 [
     FuncDecl {
-        ident: 13,
+        ident: 14,
         inputs: Spanned {
             item: [
-                14,
+                15,
             ],
             span: Span {
                 start: 61,
@@ -19,7 +19,7 @@
                             calle: Spanned {
                                 item: Value(
                                     Ident(
-                                        13,
+                                        14,
                                     ),
                                 ),
                                 span: Span {
@@ -33,7 +33,7 @@
                                         lhs: Spanned {
                                             item: Value(
                                                 Ident(
-                                                    14,
+                                                    15,
                                                 ),
                                             ),
                                             span: Span {
@@ -76,7 +76,7 @@
                 calle: Spanned {
                     item: Value(
                         Ident(
-                            13,
+                            14,
                         ),
                     ),
                     span: Span {

@@ -1,0 +1,8 @@
+RUNTIME ERROR
+Traceback: most recent call lowest
+  1: File "./src/runtime/tests/test_programs/patch_multiple_methods.nl", line: 40:20
+    print(numbers.sum());
+  0: File "./src/runtime/tests/test_programs/patch_multiple_methods.nl", line: 32:25
+    total = total + item;
+            ^^^^^^^^^^^^
+TypeError: Attempted to add Int with Null

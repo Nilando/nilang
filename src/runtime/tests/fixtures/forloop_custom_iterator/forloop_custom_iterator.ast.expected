@@ -1,11 +1,11 @@
 ========= FILE ./src/runtime/tests/fixtures/forloop_custom_iterator/forloop_custom_iterator.ast.actual ========
 [
     FuncDecl {
-        ident: 13,
+        ident: 14,
         inputs: Spanned {
             item: [
-                14,
                 15,
+                16,
             ],
             span: Span {
                 start: 99,
@@ -16,7 +16,7 @@
             Assign {
                 dest: Spanned {
                     item: Local(
-                        16,
+                        17,
                     ),
                     span: Span {
                         start: 115,
@@ -41,7 +41,7 @@
                         store: Spanned {
                             item: Value(
                                 Ident(
-                                    16,
+                                    17,
                                 ),
                             ),
                             span: Span {
@@ -49,7 +49,7 @@
                                 end: 134,
                             },
                         },
-                        key: 14,
+                        key: 15,
                     },
                     span: Span {
                         start: 129,
@@ -59,7 +59,7 @@
                 src: Spanned {
                     item: Value(
                         Ident(
-                            14,
+                            15,
                         ),
                     ),
                     span: Span {
@@ -74,7 +74,7 @@
                         store: Spanned {
                             item: Value(
                                 Ident(
-                                    16,
+                                    17,
                                 ),
                             ),
                             span: Span {
@@ -82,7 +82,7 @@
                                 end: 157,
                             },
                         },
-                        key: 15,
+                        key: 16,
                     },
                     span: Span {
                         start: 152,
@@ -92,7 +92,7 @@
                 src: Spanned {
                     item: Value(
                         Ident(
-                            15,
+                            16,
                         ),
                     ),
                     span: Span {
@@ -107,7 +107,7 @@
                         store: Spanned {
                             item: Value(
                                 Ident(
-                                    16,
+                                    17,
                                 ),
                             ),
                             span: Span {
@@ -138,7 +138,7 @@
                                 Assign {
                                     dest: Spanned {
                                         item: Local(
-                                            17,
+                                            18,
                                         ),
                                         span: Span {
                                             start: 200,
@@ -162,7 +162,7 @@
                                                                     end: 215,
                                                                 },
                                                             },
-                                                            key: 14,
+                                                            key: 15,
                                                         },
                                                         span: Span {
                                                             start: 211,
@@ -199,7 +199,7 @@
                                                                             store: Spanned {
                                                                                 item: Value(
                                                                                     Ident(
-                                                                                        17,
+                                                                                        18,
                                                                                     ),
                                                                                 ),
                                                                                 span: Span {
@@ -238,7 +238,7 @@
                                                                                     end: 268,
                                                                                 },
                                                                             },
-                                                                            key: 15,
+                                                                            key: 16,
                                                                         },
                                                                         span: Span {
                                                                             start: 264,
@@ -255,7 +255,7 @@
                                                                 Assign {
                                                                     dest: Spanned {
                                                                         item: Local(
-                                                                            18,
+                                                                            19,
                                                                         ),
                                                                         span: Span {
                                                                             start: 283,
@@ -267,7 +267,7 @@
                                                                             store: Spanned {
                                                                                 item: Value(
                                                                                     Ident(
-                                                                                        17,
+                                                                                        18,
                                                                                     ),
                                                                                 ),
                                                                                 span: Span {
@@ -299,7 +299,7 @@
                                                                             store: Spanned {
                                                                                 item: Value(
                                                                                     Ident(
-                                                                                        17,
+                                                                                        18,
                                                                                     ),
                                                                                 ),
                                                                                 span: Span {
@@ -331,7 +331,7 @@
                                                                                     store: Spanned {
                                                                                         item: Value(
                                                                                             Ident(
-                                                                                                17,
+                                                                                                18,
                                                                                             ),
                                                                                         ),
                                                                                         span: Span {
@@ -380,7 +380,7 @@
                                                                         Spanned {
                                                                             item: Value(
                                                                                 Ident(
-                                                                                    18,
+                                                                                    19,
                                                                                 ),
                                                                             ),
                                                                             span: Span {
@@ -396,11 +396,13 @@
                                                                     Some(
                                                                         Spanned {
                                                                             item: Value(
-                                                                                Null,
+                                                                                Symbol(
+                                                                                    13,
+                                                                                ),
                                                                             ),
                                                                             span: Span {
                                                                                 start: 388,
-                                                                                end: 393,
+                                                                                end: 398,
                                                                             },
                                                                         },
                                                                     ),
@@ -412,7 +414,7 @@
                                             ),
                                             span: Span {
                                                 start: 235,
-                                                end: 408,
+                                                end: 413,
                                             },
                                         },
                                     ),
@@ -422,7 +424,7 @@
                     ),
                     span: Span {
                         start: 185,
-                        end: 413,
+                        end: 418,
                     },
                 },
             },
@@ -431,12 +433,12 @@
                     Spanned {
                         item: Value(
                             Ident(
-                                16,
+                                17,
                             ),
                         ),
                         span: Span {
-                            start: 424,
-                            end: 430,
+                            start: 429,
+                            end: 435,
                         },
                     },
                 ),
@@ -446,11 +448,11 @@
     Assign {
         dest: Spanned {
             item: Local(
-                16,
+                17,
             ),
             span: Span {
-                start: 434,
-                end: 441,
+                start: 439,
+                end: 446,
             },
         },
         src: Spanned {
@@ -458,12 +460,12 @@
                 calle: Spanned {
                     item: Value(
                         Ident(
-                            13,
+                            14,
                         ),
                     ),
                     span: Span {
-                        start: 442,
-                        end: 452,
+                        start: 447,
+                        end: 457,
                     },
                 },
                 args: [
@@ -474,8 +476,8 @@
                             ),
                         ),
                         span: Span {
-                            start: 453,
-                            end: 455,
+                            start: 458,
+                            end: 460,
                         },
                     },
                     Spanned {
@@ -485,29 +487,29 @@
                             ),
                         ),
                         span: Span {
-                            start: 456,
-                            end: 458,
+                            start: 461,
+                            end: 463,
                         },
                     },
                 ],
             },
             span: Span {
-                start: 442,
-                end: 459,
+                start: 447,
+                end: 464,
             },
         },
     },
     ForLoop {
-        item: 19,
+        item: 20,
         store: Spanned {
             item: Value(
                 Ident(
-                    16,
+                    17,
                 ),
             ),
             span: Span {
-                start: 470,
-                end: 477,
+                start: 475,
+                end: 482,
             },
         },
         stmts: [
@@ -517,18 +519,18 @@
                         Spanned {
                             item: Value(
                                 Ident(
-                                    19,
+                                    20,
                                 ),
                             ),
                             span: Span {
-                                start: 486,
-                                end: 488,
+                                start: 491,
+                                end: 493,
                             },
                         },
                     ),
                     span: Span {
-                        start: 480,
-                        end: 489,
+                        start: 485,
+                        end: 494,
                     },
                 },
             ),

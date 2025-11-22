@@ -13,7 +13,7 @@ fn make_range(start, end) {
         current[0] = current[0] + 1;
         return val;
       } else {
-        return null;
+        return $iter_end;
       }
     };
   };

@@ -1,4 +1,4 @@
-========= FILE ./src/runtime/tests/fixtures/forloop_string/forloop_string.ir.actual ========
+========= FILE ./src/runtime/tests/fixtures/forloop_with_null/forloop_with_null.ir.actual ========
 fn2 () {
 block0:
   LOAD_UPVAL i_0
@@ -37,7 +37,7 @@ block0:
 }
 MAIN () {
 block0:
-  t0 = #str
+  t0 = #list
   t1 = #iter
   t2 = fn1
   patch_0 = #patch
@@ -45,24 +45,39 @@ block0:
   STORE_ARG t1
   STORE_ARG t2
   t4 = CALL patch_0
-  text_0 = "Hello"
-  t8 = text_0[t1]
-  t9 = CALL t8
-  next block1
+  t5 = NEW_LIST
+  t6 = 1
+  t5 << t6
+  t8 = null
+  t5 << t8
+  t10 = "hello"
+  t5 << t10
+  t5 << t8
+  t14 = true
+  t5 << t14
+  t16 = false
+  t5 << t16
+  t5 << t8
+  t20 = 42
+  t5 << t20
+  count_0 = 0
+  t26 = t5[t1]
+  t27 = CALL t26
+  next block1(count_0)
 
-block1:
-  char_0 = CALL t9
-  t11 = #iter_end
-  t12 = char_0 == t11
-  jit t12 block3
+block1(count_1):
+  x_0 = CALL t27
+  t29 = #iter_end
+  t30 = x_0 == t29
+  jit t30 block3
   next block2
 
 block2:
-  PRINT char_0
-  jump block1
+  count_2 = count_1 + t6
+  jump block1(count_2)
 
 block3:
-  t15 = null
-  RETURN t15
+  PRINT count_1
+  RETURN t8
 
 }

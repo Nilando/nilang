@@ -3,7 +3,7 @@
     Assign {
         dest: Spanned {
             item: Local(
-                13,
+                14,
             ),
             span: Span {
                 start: 119,
@@ -42,7 +42,7 @@
                 Spanned {
                     item: Value(
                         Ident(
-                            13,
+                            14,
                         ),
                     ),
                     span: Span {
@@ -60,7 +60,7 @@
     Assign {
         dest: Spanned {
             item: Global(
-                14,
+                15,
             ),
             span: Span {
                 start: 201,
@@ -82,7 +82,7 @@
     Assign {
         dest: Spanned {
             item: Local(
-                13,
+                14,
             ),
             span: Span {
                 start: 316,
@@ -121,7 +121,7 @@
                 Spanned {
                     item: Value(
                         Ident(
-                            13,
+                            14,
                         ),
                     ),
                     span: Span {
@@ -142,7 +142,7 @@
         cond: Spanned {
             item: Value(
                 Global(
-                    14,
+                    15,
                 ),
             ),
             span: Span {

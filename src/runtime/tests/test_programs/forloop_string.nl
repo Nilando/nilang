@@ -8,7 +8,7 @@ patch($str, $iter, fn(self) {
       i[0] = i[0] + 1;
       return self[n];
     } else {
-      return null;
+      return $iter_end;
     }
   };
 });

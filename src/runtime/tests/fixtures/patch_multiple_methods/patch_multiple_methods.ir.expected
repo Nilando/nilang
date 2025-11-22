@@ -82,7 +82,7 @@ block0:
 
 block1(total_1):
   item_0 = CALL t5
-  t7 = null
+  t7 = #iter_end
   t8 = item_0 == t7
   jit t8 block3
   next block2

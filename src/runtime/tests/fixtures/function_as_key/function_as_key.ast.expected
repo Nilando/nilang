@@ -23,7 +23,7 @@
         },
     },
     FuncDecl {
-        ident: 13,
+        ident: 14,
         inputs: Spanned {
             item: [],
             span: Span {
@@ -66,7 +66,7 @@
                 key: Spanned {
                     item: Value(
                         Ident(
-                            13,
+                            14,
                         ),
                     ),
                     span: Span {
@@ -117,7 +117,7 @@
                         key: Spanned {
                             item: Value(
                                 Ident(
-                                    13,
+                                    14,
                                 ),
                             ),
                             span: Span {
@@ -141,7 +141,7 @@
     Assign {
         dest: Spanned {
             item: Local(
-                14,
+                15,
             ),
             span: Span {
                 start: 204,
@@ -151,7 +151,7 @@
         src: Spanned {
             item: Value(
                 Ident(
-                    13,
+                    14,
                 ),
             ),
             span: Span {
@@ -179,7 +179,7 @@
                         key: Spanned {
                             item: Value(
                                 Ident(
-                                    14,
+                                    15,
                                 ),
                             ),
                             span: Span {
@@ -201,7 +201,7 @@
         },
     ),
     FuncDecl {
-        ident: 15,
+        ident: 16,
         inputs: Spanned {
             item: [],
             span: Span {
@@ -244,7 +244,7 @@
                 key: Spanned {
                     item: Value(
                         Ident(
-                            15,
+                            16,
                         ),
                     ),
                     span: Span {
@@ -295,7 +295,7 @@
                         key: Spanned {
                             item: Value(
                                 Ident(
-                                    15,
+                                    16,
                                 ),
                             ),
                             span: Span {
@@ -335,7 +335,7 @@
                         key: Spanned {
                             item: Value(
                                 Ident(
-                                    13,
+                                    14,
                                 ),
                             ),
                             span: Span {

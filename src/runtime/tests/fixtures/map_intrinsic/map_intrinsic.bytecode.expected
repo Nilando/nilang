@@ -5,10 +5,10 @@ CALL 0, 8
 TYPE 0, 0
 OUT  0
 MAP  2
-SYM  0, #15
+SYM  0, #16
 INT  1, 1
 MEMS 2[0], 1
-SYM  4, #16
+SYM  4, #17
 INT  3, 2
 MEMS 2[4], 3
 ARG  2
@@ -27,7 +27,7 @@ PUSH 2, 4
 PUSH 2, 3
 PUSH 6, 2
 LIST 5
-SYM  3, #19
+SYM  3, #20
 PUSH 5, 3
 INT  2, 3
 PUSH 5, 2
@@ -47,19 +47,19 @@ TYPE 0, 0
 OUT  0
 LIST 7
 LIST 3
-SYM  0, #24
+SYM  0, #25
 PUSH 3, 0
 LOC  2, 0
 PUSH 3, 2
 PUSH 7, 3
 LIST 3
-SYM  4, #25
+SYM  4, #26
 PUSH 3, 4
 INT  2, 30
 PUSH 3, 2
 PUSH 7, 3
 LIST 6
-SYM  3, #26
+SYM  3, #27
 PUSH 6, 3
 LIST 5
 LOC  2, 1

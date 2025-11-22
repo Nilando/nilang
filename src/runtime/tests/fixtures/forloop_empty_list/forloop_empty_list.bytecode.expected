@@ -14,7 +14,7 @@ ADD  0, 5, 0
 MEMS 4[3], 0
 MEML 0, 1[2]
 RTN  0
-LDN  0
+SYM  0, #13
 RTN  0
 === END ===
 === FN 1 START ===
@@ -39,13 +39,14 @@ LIST 1
 INT  0, 0
 MEML 1, 1[2]
 CALL 1, 1
-CALL 2, 1
-LDN  3
-EQ   2, 2, 3
+CALL 3, 1
+SYM  2, #13
+EQ   2, 3, 2
 JIT  4, 2
 INT  2, 1
 ADD  0, 0, 2
 JMP  -6
 OUT  0
-RTN  3
+LDN  0
+RTN  0
 === END ===
