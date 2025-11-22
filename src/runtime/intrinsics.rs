@@ -196,6 +196,13 @@ fn str<'gc>(
             )));
         }
         Value::SymId(id) => syms.get_str(id).chars(),
+        Value::Map(_) | Value::List(_) => {
+            let string_repr = arg.to_string(syms, true);
+            return Ok(Value::String(Gc::new(
+                mu,
+                VMString::alloc(string_repr.chars(), mu),
+            )));
+        }
         _ => {
             return Err((
                 RuntimeErrorKind::TypeError,
