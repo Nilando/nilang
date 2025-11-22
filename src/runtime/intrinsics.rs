@@ -167,7 +167,7 @@ fn sym<'gc>(
         _ => {
             Err((
                 RuntimeErrorKind::TypeError,
-                format!("Unexpected arg of type {}", arg.type_str()),
+                format!("$sym() cannot convert {} to Symbol", arg.type_str()),
             ))
         }
     }
@@ -199,7 +199,7 @@ fn str<'gc>(
         _ => {
             return Err((
                 RuntimeErrorKind::TypeError,
-                format!("Unexpected arg of type {}", arg.type_str()),
+                format!("$str() cannot convert {} to String", arg.type_str()),
             ))
         }
     };
@@ -243,7 +243,7 @@ fn float<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)>
         }
         _ => Err((
             RuntimeErrorKind::TypeError,
-            format!("Unexpected arg of type {}", arg.type_str()),
+            format!("$float() cannot convert {} to Float", arg.type_str()),
         )),
     }
 }
@@ -266,11 +266,44 @@ fn int<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
         }
         _ => Err((
             RuntimeErrorKind::TypeError,
-            format!("Unexpected arg of type {}", arg.type_str()),
+            format!("$int() cannot convert {} to Int", arg.type_str()),
         )),
     }
 }
 
+fn convert_list_to_map<'gc>(
+    list: Gc<'gc, List<'gc>>,
+    mu: &'gc Mutator,
+) -> Result<Gc<'gc, GcHashMap<'gc>>, (RuntimeErrorKind, String)> {
+    let new_map = GcHashMap::alloc(mu);
+
+    for i in 0..list.len() {
+        let item = list.at(i);
+
+        // Each item must be a 2-element list [key, value]
+        match item {
+            Value::List(pair) => {
+                if pair.len() != 2 {
+                    return Err((
+                        RuntimeErrorKind::TypeError,
+                        format!("$map() expects list of 2-element pairs, found list of length {}", pair.len())
+                    ));
+                }
+                let key = pair.at(0);
+                let val = pair.at(1);
+                GcHashMap::insert(new_map.clone(), key.as_tagged(mu), val.as_tagged(mu), mu);
+            }
+            _ => {
+                return Err((
+                    RuntimeErrorKind::TypeError,
+                    format!("$map() expects list of pairs, found {} in list", item.type_str())
+                ));
+            }
+        }
+    }
+
+    Ok(new_map)
+}
 
 fn generate_map_intrinsic<'gc>(
     supplied_args: usize,
@@ -292,39 +325,13 @@ fn generate_map_intrinsic<'gc>(
                 }
                 Value::List(list) => {
                     // map([[a,1], [b,2]]) → {a:1, b:2}
-                    let new_map = GcHashMap::alloc(mu);
-
-                    for i in 0..list.len() {
-                        let item = list.at(i);
-
-                        // Each item must be a 2-element list [key, value]
-                        match item {
-                            Value::List(pair) => {
-                                if pair.len() != 2 {
-                                    return Err((
-                                        RuntimeErrorKind::TypeError,
-                                        format!("map() expects list of 2-element pairs, found list of length {}", pair.len())
-                                    ));
-                                }
-                                let key = pair.at(0);
-                                let val = pair.at(1);
-                                GcHashMap::insert(new_map.clone(), key.as_tagged(mu), val.as_tagged(mu), mu);
-                            }
-                            _ => {
-                                return Err((
-                                    RuntimeErrorKind::TypeError,
-                                    format!("map() expects list of pairs, found {} in list", item.type_str())
-                                ));
-                            }
-                        }
-                    }
-
+                    let new_map = convert_list_to_map(list, mu)?;
                     Ok(Value::Map(new_map))
                 }
                 _ => {
                     Err((
                         RuntimeErrorKind::TypeError,
-                        format!("map() cannot convert {} to map", arg.type_str())
+                        format!("$map() cannot convert {} to Map", arg.type_str())
                     ))
                 }
             }
@@ -392,7 +399,7 @@ fn patch<'gc>(
             } else {
                 return Err((
                     RuntimeErrorKind::TypeError,
-                    format!("Patch expects a symbol as key, received {}", key.type_str()),
+                    format!("$patch() expects Symbol as key, received {}", key.type_str()),
                 ));
             }
         } 
@@ -400,6 +407,6 @@ fn patch<'gc>(
 
     Err((
         RuntimeErrorKind::TypeError,
-        "Failed to patch non primitive symbol".to_string(),
+        "$patch() can only patch primitive type symbols".to_string(),
     ))
 }

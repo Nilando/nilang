@@ -58,6 +58,9 @@ RTN  0
 === END ===
 === FN 10 START ===
 LOC  1, 0
+SYM  2, #2
+ARG  0
+CALL 0, 2
 PUSH 1, 0
 RTN  1
 === END ===

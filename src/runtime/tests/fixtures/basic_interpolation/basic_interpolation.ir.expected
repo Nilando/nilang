@@ -3,11 +3,14 @@ MAIN () {
 block0:
   t0 = "Hello, "
   t1 = "interpolated"
-  t0 << t1
-  t2 = " world!"
-  t0 << t2
+  t2 = #str
+  STORE_ARG t1
+  t3 = CALL t2
+  t0 << t3
+  t4 = " world!"
+  t0 << t4
   PRINT t0
-  t4 = null
-  RETURN t4
+  t6 = null
+  RETURN t6
 
 }

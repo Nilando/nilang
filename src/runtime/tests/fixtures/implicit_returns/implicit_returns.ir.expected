@@ -92,7 +92,10 @@ block3:
 fn10 (name_0) {
 block0:
   t1 = "Hello, "
-  t1 << name_0
+  t2 = #str
+  STORE_ARG name_0
+  t3 = CALL t2
+  t1 << t3
   RETURN t1
 
 }

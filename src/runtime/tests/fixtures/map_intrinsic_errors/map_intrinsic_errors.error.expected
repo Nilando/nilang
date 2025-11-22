@@ -3,4 +3,4 @@ Traceback: most recent call lowest
   0: File "./src/runtime/tests/test_programs/map_intrinsic_errors.nl", line: 5:18
     m = map(bad_list);
         ^^^^^^^^^^^^^
-TypeError: map() expects list of pairs, found Int in list
+TypeError: $map() expects list of pairs, found Int in list

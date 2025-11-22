@@ -1,7 +1,10 @@
 ========= FILE ./src/runtime/tests/fixtures/basic_interpolation/basic_interpolation.bytecode.actual ========
 === FN 0 START ===
 LOC  1, 0
-LOC  0, 1
+LOC  2, 1
+SYM  0, #2
+ARG  2
+CALL 0, 0
 PUSH 1, 0
 LOC  0, 2
 PUSH 1, 0
