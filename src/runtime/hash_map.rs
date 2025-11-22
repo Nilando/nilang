@@ -296,50 +296,16 @@ impl<'gc> GcHashMap<'gc> {
 }
 
 fn hash_value(v: &Value<'_>) -> usize {
-    let mut buffer = Vec::new();
-
-    match v {
-        Value::Null => buffer.push(0),
-        Value::Bool(b) => {
-            buffer.push(1);
-            buffer.push(*b as u8);
-        }
-        Value::SymId(id) => {
-            buffer.push(2);
-            buffer.extend_from_slice(&id.to_ne_bytes());
-        }
-        Value::Int(i) => {
-            buffer.push(3);
-            buffer.extend_from_slice(&i.to_ne_bytes());
-        }
-        Value::Float(f) => {
-            buffer.push(4);
-            buffer.extend_from_slice(&f.to_ne_bytes());
-        }
+    let buffer = match v {
         Value::List(l) => {
-            buffer.push(5);
+            let mut buffer = vec![5];
             for i in 0..l.len() {
                 buffer.extend_from_slice(&hash_value(&l.at(i)).to_ne_bytes());
             }
-        }
-        Value::Func(f) => {
-            buffer.push(6);
-            // Hash functions by their inner pointer address (identity-based)
-            // Use the raw pointer to the underlying Func, not the Gc wrapper
-            let ptr = &**f as *const _ as usize;
-            buffer.extend_from_slice(&ptr.to_ne_bytes());
-        }
-        Value::String(vm_str) => {
-            buffer.push(7);
-
-            for i in 0..vm_str.len() {
-                let b = vm_str.at(i).unwrap() as u8;
-
-                buffer.push(b);
-            }
+            buffer
         }
         Value::Map(m) => {
-            buffer.push(9);
+            let mut buffer = vec![9];
             // Hash maps by XORing all key-value pair hashes
             // This is order-independent since XOR is commutative
             let mut combined_hash: usize = 0;
@@ -353,8 +319,11 @@ fn hash_value(v: &Value<'_>) -> usize {
                 }
             }
             buffer.extend_from_slice(&combined_hash.to_ne_bytes());
+            buffer
         }
-    }
+        // Use the hash_bytes method for all simple types
+        _ => v.hash_bytes(),
+    };
 
     let result = murmurhash3_x64_128(&buffer, 0);
 

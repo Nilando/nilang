@@ -163,4 +163,46 @@ impl<'gc> Value<'gc> {
             Value::Bool(_) => "Bool",
         }
     }
+
+    pub(crate) fn hash_bytes(&self) -> Vec<u8> {
+        match self {
+            Value::Null => vec![0],
+            Value::Bool(b) => vec![1, *b as u8],
+            Value::SymId(id) => {
+                let mut buffer = vec![2];
+                buffer.extend_from_slice(&id.to_ne_bytes());
+                buffer
+            }
+            Value::Int(i) => {
+                let mut buffer = vec![3];
+                buffer.extend_from_slice(&i.to_ne_bytes());
+                buffer
+            }
+            Value::Float(f) => {
+                let mut buffer = vec![4];
+                buffer.extend_from_slice(&f.to_ne_bytes());
+                buffer
+            }
+            Value::String(vm_str) => {
+                let mut buffer = vec![7];
+                for i in 0..vm_str.len() {
+                    let b = vm_str.at(i).unwrap() as u8;
+                    buffer.push(b);
+                }
+                buffer
+            }
+            Value::Func(f) => {
+                let mut buffer = vec![6];
+                // Hash functions by their inner pointer address (identity-based)
+                let ptr = &**f as *const _ as usize;
+                buffer.extend_from_slice(&ptr.to_ne_bytes());
+                buffer
+            }
+            // List and Map require special handling with recursive hashing
+            // These cases are handled directly in hash_value function in hash_map.rs
+            Value::List(_) | Value::Map(_) => {
+                panic!("List and Map hashing should be handled by hash_value function")
+            }
+        }
+    }
 }

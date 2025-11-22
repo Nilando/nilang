@@ -100,100 +100,9 @@ pub fn call_intrinsic<'gc>(
             // fn(value) → returns a 0-arg function that returns value
             expect_arg_count(1, supplied_args)?;
             let arg = extract_arg(args, stack)?;
-            let tagged_arg = arg.as_tagged(mu);
-
-            // Create a function with one upvalue containing the wrapped value
-            let upvalues_array = mu.alloc_array_from_fn(1, |_| tagged_arg.clone());
-            let upvalues = sandpit::GcOpt::from(upvalues_array);
-
-            // Create bytecode: load upvalue 0 into register 0, then return it
-            use super::bytecode::ByteCode;
-            let code = mu.alloc_array_from_fn(2, |idx| {
-                match idx {
-                    0 => ByteCode::LoadUpvalue { dest: 0, id: 0 },
-                    1 => ByteCode::Return { src: 0 },
-                    _ => unreachable!()
-                }
-            });
-
-            // Create the function
-            use super::func::{Func, LoadedLocal};
-            let func = Func::new(
-                0,                                      // id (doesn't matter for synthetic functions)
-                false,                                  // auto_binds
-                0,                                      // arity (0 args)
-                1,                                      // max_clique (1 register needed)
-                mu.alloc_array_from_fn(0, |_| LoadedLocal::Int(0)), // no locals
-                code,
-                upvalues,
-                sandpit::GcOpt::new_none(),            // no bound_args
-                None,                                   // no spans
-                None,                                   // no file_path
-                false                                   // not top_level
-            );
-
-            Ok(Value::Func(sandpit::Gc::new(mu, func)))
+            Ok(generate_fn_intrinsic(arg, mu))
         }
-        MAP_SYM => {
-            match supplied_args {
-                0 => {
-                    // map() → {}
-                    Ok(Value::Map(GcHashMap::alloc(mu)))
-                }
-                1 => {
-                    let arg = extract_arg(args, stack)?;
-                    match arg {
-                        Value::Map(_) => {
-                            // map({a:1}) → {a:1} (identity)
-                            Ok(arg)
-                        }
-                        Value::List(list) => {
-                            // map([[a,1], [b,2]]) → {a:1, b:2}
-                            let new_map = GcHashMap::alloc(mu);
-
-                            for i in 0..list.len() {
-                                let item = list.at(i);
-
-                                // Each item must be a 2-element list [key, value]
-                                match item {
-                                    Value::List(pair) => {
-                                        if pair.len() != 2 {
-                                            return Err((
-                                                RuntimeErrorKind::TypeError,
-                                                format!("map() expects list of 2-element pairs, found list of length {}", pair.len())
-                                            ));
-                                        }
-                                        let key = pair.at(0);
-                                        let val = pair.at(1);
-                                        GcHashMap::insert(new_map.clone(), key.as_tagged(mu), val.as_tagged(mu), mu);
-                                    }
-                                    _ => {
-                                        return Err((
-                                            RuntimeErrorKind::TypeError,
-                                            format!("map() expects list of pairs, found {} in list", item.type_str())
-                                        ));
-                                    }
-                                }
-                            }
-
-                            Ok(Value::Map(new_map))
-                        }
-                        _ => {
-                            Err((
-                                RuntimeErrorKind::TypeError,
-                                format!("map() cannot convert {} to map", arg.type_str())
-                            ))
-                        }
-                    }
-                }
-                _ => {
-                    Err((
-                        RuntimeErrorKind::TypeError,
-                        format!("map() expects 0 or 1 argument, got {}", supplied_args)
-                    ))
-                }
-            }
-        }
+        MAP_SYM => generate_map_intrinsic(supplied_args, args, stack, mu),
        
         ARGS_SYM => get_program_args(mu), // Maybe store in a global?
                                           //
@@ -360,6 +269,110 @@ fn int<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
     }
 }
 
+
+fn generate_map_intrinsic<'gc>(
+    supplied_args: usize,
+    args: &mut InstructionStream<'gc>,
+    stack: &Stack<'gc>,
+    mu: &'gc Mutator,
+) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
+    match supplied_args {
+        0 => {
+            // map() → {}
+            Ok(Value::Map(GcHashMap::alloc(mu)))
+        }
+        1 => {
+            let arg = extract_arg(args, stack)?;
+            match arg {
+                Value::Map(_) => {
+                    // map({a:1}) → {a:1} (identity)
+                    Ok(arg)
+                }
+                Value::List(list) => {
+                    // map([[a,1], [b,2]]) → {a:1, b:2}
+                    let new_map = GcHashMap::alloc(mu);
+
+                    for i in 0..list.len() {
+                        let item = list.at(i);
+
+                        // Each item must be a 2-element list [key, value]
+                        match item {
+                            Value::List(pair) => {
+                                if pair.len() != 2 {
+                                    return Err((
+                                        RuntimeErrorKind::TypeError,
+                                        format!("map() expects list of 2-element pairs, found list of length {}", pair.len())
+                                    ));
+                                }
+                                let key = pair.at(0);
+                                let val = pair.at(1);
+                                GcHashMap::insert(new_map.clone(), key.as_tagged(mu), val.as_tagged(mu), mu);
+                            }
+                            _ => {
+                                return Err((
+                                    RuntimeErrorKind::TypeError,
+                                    format!("map() expects list of pairs, found {} in list", item.type_str())
+                                ));
+                            }
+                        }
+                    }
+
+                    Ok(Value::Map(new_map))
+                }
+                _ => {
+                    Err((
+                        RuntimeErrorKind::TypeError,
+                        format!("map() cannot convert {} to map", arg.type_str())
+                    ))
+                }
+            }
+        }
+        _ => {
+            Err((
+                RuntimeErrorKind::TypeError,
+                format!("map() expects 0 or 1 argument, got {}", supplied_args)
+            ))
+        }
+    }
+}
+
+fn generate_fn_intrinsic<'gc>(
+    arg: Value<'gc>,
+    mu: &'gc Mutator,
+) -> Value<'gc> {
+    let tagged_arg = arg.as_tagged(mu);
+
+    // Create a function with one upvalue containing the wrapped value
+    let upvalues_array = mu.alloc_array_from_fn(1, |_| tagged_arg.clone());
+    let upvalues = sandpit::GcOpt::from(upvalues_array);
+
+    // Create bytecode: load upvalue 0 into register 0, then return it
+    let code = mu.alloc_array_from_fn(2, |idx| {
+        match idx {
+            0 => ByteCode::LoadUpvalue { dest: 0, id: 0 },
+            1 => ByteCode::Return { src: 0 },
+            _ => unreachable!()
+        }
+    });
+
+    // Create the function
+    use super::func::{Func, LoadedLocal};
+    let func = Func::new(
+        0,                                      // id (doesn't matter for synthetic functions)
+        false,                                  // auto_binds
+        0,                                      // arity (0 args)
+        1,                                      // max_clique (1 register needed)
+        mu.alloc_array_from_fn(0, |_| LoadedLocal::Int(0)), // no locals
+        code,
+        upvalues,
+        sandpit::GcOpt::new_none(),            // no bound_args
+        None,                                   // no spans
+        None,                                   // no file_path
+        false                                   // not top_level
+    );
+
+    Value::Func(sandpit::Gc::new(mu, func))
+}
 
 fn patch<'gc>(
     primitive_sym: Value<'gc>,
