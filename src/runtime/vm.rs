@@ -185,7 +185,7 @@ impl<'gc> VM<'gc> {
                 self.set_reg(val, dest, mu);
             }
             ByteCode::Print { src } => {
-                let val = self.get_reg(src);
+                let val = self.get_reg(src)?;
 
                 self.output_item.write_barrier(mu, |barrier| {
                     let barrier = field!(barrier, TaggedValue, ptr);
@@ -198,14 +198,14 @@ impl<'gc> VM<'gc> {
                 return Ok(Some(ExitCode::Read));
             }
             ByteCode::Swap { r1, r2 } => {
-                let r1_val = self.get_reg(r1);
-                let r2_val = self.get_reg(r2);
+                let r1_val = self.get_reg(r1)?;
+                let r2_val = self.get_reg(r2)?;
 
                 self.set_reg(r1_val, r2, mu);
                 self.set_reg(r2_val, r1, mu);
             }
             ByteCode::Copy { dest, src } => {
-                let val = self.get_reg(src);
+                let val = self.get_reg(src)?;
 
                 self.set_reg(val, dest, mu);
             }
@@ -219,8 +219,8 @@ impl<'gc> VM<'gc> {
                 self.collect_upvalues_and_create_closure(func, src, mu, instr_stream)?;
             }
             ByteCode::Bind { dest, func, arg } => {
-                let func = Value::from(&self.get_reg(func));
-                let arg = Value::from(&self.get_reg(arg));
+                let func = Value::from(&self.get_reg(func)?);
+                let arg = Value::from(&self.get_reg(arg)?);
                 let val = bind(func, arg, mu)?;
 
                 self.set_reg(TaggedValue::from_value(val, mu), dest, mu);
@@ -229,11 +229,11 @@ impl<'gc> VM<'gc> {
                 self.count_args_then_call(mu, symbols, instr_stream)?;
             }
             ByteCode::Call { dest, src } => {
-                let calle = Value::from(&self.get_reg(src));
+                let calle = Value::from(&self.get_reg(src)?);
                 self.call_function(dest, calle, 0, mu, symbols, instr_stream)?;
             }
             ByteCode::Return { src } => {
-                let val = self.get_reg(src);
+                let val = self.get_reg(src)?;
 
                 self.handle_return(val.clone(), instr_stream, mu)?;
 
@@ -253,7 +253,7 @@ impl<'gc> VM<'gc> {
                 instr_stream.jump(offset - 1);
             }
             ByteCode::Jnt { src, offset } => {
-                let val = self.get_reg(src);
+                let val = self.get_reg(src)?;
 
                 if !val.is_truthy() {
                     // offset - 1 to compensate for already-advanced instruction pointer
@@ -261,7 +261,7 @@ impl<'gc> VM<'gc> {
                 }
             }
             ByteCode::Jit { src, offset } => {
-                let val = self.get_reg(src);
+                let val = self.get_reg(src)?;
 
                 if val.is_truthy() {
                     // offset - 1 to compensate for already-advanced instruction pointer
@@ -269,58 +269,58 @@ impl<'gc> VM<'gc> {
                 }
             }
             ByteCode::MemLoad { dest, store, key } => {
-                let store = Value::from(&self.get_reg(store));
-                let key = Value::from(&self.get_reg(key));
+                let store = Value::from(&self.get_reg(store)?);
+                let key = Value::from(&self.get_reg(key)?);
                 let value = mem_load(store, key, &self.type_objects, mu)?;
 
                 self.set_reg(TaggedValue::from_value(value, mu), dest, mu);
             }
             ByteCode::MemStore { store, key, src } => {
-                let store = Value::from(&self.get_reg(store));
-                let key = Value::from(&self.get_reg(key));
-                let src = Value::from(&self.get_reg(src));
+                let store = Value::from(&self.get_reg(store)?);
+                let key = Value::from(&self.get_reg(key)?);
+                let src = Value::from(&self.get_reg(src)?);
 
                 mem_store(store, key, src, mu)?;
             }
             ByteCode::Delete { dest, store, key } => {
-                let store = Value::from(&self.get_reg(store));
-                let key = Value::from(&self.get_reg(key));
+                let store = Value::from(&self.get_reg(store)?);
+                let key = Value::from(&self.get_reg(key)?);
                 let val = delete(store, key, mu)?;
 
                 self.set_reg(TaggedValue::from_value(val, mu), dest, mu);
             }
             ByteCode::Push { store, src } => {
-                let store = Value::from(&self.get_reg(store));
-                let src = Value::from(&self.get_reg(src));
+                let store = Value::from(&self.get_reg(store)?);
+                let src = Value::from(&self.get_reg(src)?);
 
                 push(store, src, mu)?;
             }
             ByteCode::Pop { dest, src } => {
-                let src = Value::from(&self.get_reg(src));
+                let src = Value::from(&self.get_reg(src)?);
                 let val = pop(src, mu)?;
 
                 self.set_reg(TaggedValue::from_value(val, mu), dest, mu);
             }
             ByteCode::Clone { dest, src } => {
-                let src = Value::from(&self.get_reg(src));
+                let src = Value::from(&self.get_reg(src)?);
                 let val = clone(src, mu);
 
                 self.set_reg(TaggedValue::from_value(val, mu), dest, mu);
             }
             ByteCode::Type { dest, src } => {
-                let src = Value::from(&self.get_reg(src));
+                let src = Value::from(&self.get_reg(src)?);
                 let val = ttype(&src);
 
                 self.set_reg(TaggedValue::from_value(val, mu), dest, mu);
             }
             ByteCode::Len { dest, src } => {
-                let src = Value::from(&self.get_reg(src));
+                let src = Value::from(&self.get_reg(src)?);
                 let val = len(src)?;
 
                 self.set_reg(TaggedValue::from_value(val, mu), dest, mu);
             }
             ByteCode::LoadGlobal { dest, sym } => {
-                let sym_val = self.get_reg(sym);
+                let sym_val = self.get_reg(sym)?;
                 let tagged_val = match self.globals.get(&sym_val) {
                     Some(tagged) => tagged,
                     None => TaggedValue::new_null(),
@@ -329,14 +329,14 @@ impl<'gc> VM<'gc> {
                 self.set_reg(tagged_val, dest, mu);
             }
             ByteCode::StoreGlobal { src, sym } => {
-                let sym_val = self.get_reg(sym);
-                let src_val = self.get_reg(src);
+                let sym_val = self.get_reg(sym)?;
+                let src_val = self.get_reg(src)?;
 
                 GcHashMap::insert(self.globals.clone(), sym_val, src_val, mu);
             }
             ByteCode::Import { dest, path } => {
                 // The path register contains a VMString
-                let cache_key = self.get_reg(path);
+                let cache_key = self.get_reg(path)?;
 
                 // Check if this module is already cached
                 if let Some(cached_value) = self.import_cache.get(&cache_key) {
@@ -350,15 +350,15 @@ impl<'gc> VM<'gc> {
                 }
             }
             ByteCode::Equality { dest, lhs, rhs } => {
-                let lhs = Value::from(&self.get_reg(lhs));
-                let rhs = Value::from(&self.get_reg(rhs));
+                let lhs = Value::from(&self.get_reg(lhs)?);
+                let rhs = Value::from(&self.get_reg(rhs)?);
                 let val = equal(lhs, rhs);
                 self.set_reg_with_value(val, dest, mu);
 
             }
             ByteCode::Inequality { dest, lhs, rhs } => {
-                let lhs = Value::from(&self.get_reg(lhs));
-                let rhs = Value::from(&self.get_reg(rhs));
+                let lhs = Value::from(&self.get_reg(lhs)?);
+                let rhs = Value::from(&self.get_reg(rhs)?);
                 let val = not_equal(lhs, rhs);
                 self.set_reg_with_value(val, dest, mu);
 
@@ -377,7 +377,7 @@ impl<'gc> VM<'gc> {
             ByteCode::BitOr { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, bit_or, mu)?,
             ByteCode::BitAnd { dest, lhs, rhs } => self.generic_vm_op(dest, lhs, rhs, bit_and, mu)?,
             ByteCode::BitFlip { dest, src } => {
-                let src = Value::from(&self.get_reg(src));
+                let src = Value::from(&self.get_reg(src)?);
                 let val = bit_flip(src)?;
                 self.set_reg_with_value(val, dest, mu);
             }
@@ -391,11 +391,11 @@ impl<'gc> VM<'gc> {
         dest: Reg,
         lhs: Reg,
         rhs: Reg,
-        op: for<'a> fn(Value<'a>, Value<'a>) -> Result<Value<'a>, RuntimeError>, 
+        op: for<'a> fn(Value<'a>, Value<'a>) -> Result<Value<'a>, RuntimeError>,
         mu: &'gc Mutator
     ) -> Result<(), RuntimeError> {
-        let lhs = Value::from(&self.get_reg(lhs));
-        let rhs = Value::from(&self.get_reg(rhs));
+        let lhs = Value::from(&self.get_reg(lhs)?);
+        let rhs = Value::from(&self.get_reg(rhs)?);
         let val = op(lhs, rhs)?;
         self.set_reg_with_value(val, dest, mu);
 
@@ -451,7 +451,7 @@ impl<'gc> VM<'gc> {
         // Now safe to allocate - all instructions are valid
         Ok(mu.alloc_array_from_fn(upvalues, |idx| {
             if let ByteCode::StoreUpvalue { src, .. } = instr_stream.get_instr_at(ip + idx) {
-                self.get_reg(src)
+                self.get_reg(src).unwrap_or_else(|_| TaggedValue::new_null())
             } else {
                 unreachable!("Already validated all instructions are StoreUpvalue")
             }
@@ -465,7 +465,7 @@ impl<'gc> VM<'gc> {
         recursive_upval_idx: Option<usize>,
         mu: &'gc Mutator,
     ) -> Result<(), RuntimeError> {
-        match Value::from(&self.get_reg(dest)) {
+        match Value::from(&self.get_reg(dest)?) {
             Value::Func(func) => {
                 let closure = func.create_closure(GcOpt::from(upvalues), recursive_upval_idx, mu);
                 let value = Value::Func(closure);
@@ -476,7 +476,7 @@ impl<'gc> VM<'gc> {
             }
             _ => Err(RuntimeError::new(
                 RuntimeErrorKind::InvalidByteCode,
-                Some(format!("Expected function in register {}, found {}", dest, Value::from(&self.get_reg(dest)).type_str())),
+                Some(format!("Expected function in register {}, found {}", dest, Value::from(&self.get_reg(dest)?).type_str())),
                 Some(self.get_backtrace())
             )),
         }
@@ -496,7 +496,7 @@ impl<'gc> VM<'gc> {
         } else if let ByteCode::Import { dest, path } = instr_stream.prev() {
             // Cache the imported module's return value
             // The path register contains the VMString key we used to check the cache
-            let cache_key = self.get_reg(path);
+            let cache_key = self.get_reg(path)?;
             GcHashMap::insert(self.import_cache.clone(), cache_key, return_val.clone(), mu);
 
             // do set the return reg after, b/c return reg and path reg may be the same
@@ -525,7 +525,7 @@ impl<'gc> VM<'gc> {
                     count += 1;
                 }
                 ByteCode::Call { dest, src } => {
-                    let calle = Value::from(&self.get_reg(src));
+                    let calle = Value::from(&self.get_reg(src)?);
                     return self.call_function(dest, calle, count, mu, syms, instr_stream);
                 }
                 _ => {
@@ -573,7 +573,7 @@ impl<'gc> VM<'gc> {
 
                 for arg_num in 0..supplied_args {
                     if let ByteCode::StoreArg { src } = instr_stream.advance() {
-                        let tagged_val = self.stack.get_prev_cf_reg(src);
+                        let tagged_val = self.stack.get_prev_cf_reg(src)?;
 
                         self.set_reg(tagged_val, (arg_num + num_bound_args) as u8, mu);
                     } else {
@@ -661,7 +661,7 @@ impl<'gc> VM<'gc> {
         self.stack.get_backtrace()
     }
 
-    fn get_reg(&self, reg: u8) -> TaggedValue<'gc> {
+    fn get_reg(&self, reg: u8) -> Result<TaggedValue<'gc>, RuntimeError> {
         self.stack.get_reg(reg)
     }
 

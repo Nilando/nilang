@@ -129,7 +129,9 @@ fn extract_arg<'a, 'gc>(
     stack: &Stack<'gc>
 ) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
     if let ByteCode::StoreArg { src } = instr_stream.advance() {
-        Ok(Value::from(&stack.get_reg(src)))
+        let tagged_val = stack.get_reg(src)
+            .map_err(|e| (e.kind, e.message.unwrap_or_else(|| "Register access failed".to_string())))?;
+        Ok(Value::from(&tagged_val))
     } else {
         Err((
             RuntimeErrorKind::InvalidByteCode,

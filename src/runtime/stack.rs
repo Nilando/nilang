@@ -67,13 +67,15 @@ impl<'gc> Stack<'gc> {
 
     pub fn last_cf(&self) -> Option<Gc<'gc, CallFrame<'gc>>> {
         // TODO: GcVec::last
-        
+
         if self.is_empty() {
             return None;
         }
 
         let l = self.call_frames.len() - 1;
-        self.call_frames.get_idx(l).unwrap().as_option()
+        // Defensive access - safe because we checked is_empty()
+        self.call_frames.get_idx(l)
+            .and_then(|opt| opt.as_option())
     }
 
     pub fn pop_cf(&self) -> Option<Gc<'gc, CallFrame<'gc>>> {
@@ -89,18 +91,75 @@ impl<'gc> Stack<'gc> {
         old_cf.as_option()
     }
 
-    pub fn get_reg(&self, reg: u8) -> TaggedValue<'gc> {
+    pub fn get_reg(&self, reg: u8) -> Result<TaggedValue<'gc>, RuntimeError> {
         let i = self.add_reg_offset(reg);
 
-        TaggedValue::__new(self.registers.get_idx(i).unwrap())
+        self.registers.get_idx(i)
+            .ok_or_else(|| RuntimeError::new(
+                RuntimeErrorKind::InternalError,
+                Some(format!("Register {} out of bounds (index {}, stack size {})",
+                    reg, i, self.registers.len())),
+                None
+            ))
+            .map(|tagged| TaggedValue::__new(tagged))
     }
 
-    pub fn get_prev_cf_reg(&self, reg: u8) -> TaggedValue<'gc> {
-        let prev_cf = self.call_frames.get_idx(self.call_frames.len() - 2).unwrap().unwrap();
-        let prev_cf_reg_count = prev_cf.get_func().get_max_clique();
-        let i = reg as usize + (self.frame_start.get() - prev_cf_reg_count as usize);
+    pub fn get_prev_cf_reg(&self, reg: u8) -> Result<TaggedValue<'gc>, RuntimeError> {
+        // Validate we have at least 2 call frames
+        if self.call_frames.len() < 2 {
+            return Err(RuntimeError::new(
+                RuntimeErrorKind::InternalError,
+                Some(format!(
+                    "get_prev_cf_reg requires 2+ call frames, but only {} exist",
+                    self.call_frames.len()
+                )),
+                None
+            ));
+        }
 
-        TaggedValue::__new(self.registers.get_idx(i).unwrap())
+        // Safe to access len - 2
+        let prev_cf_opt = self.call_frames.get_idx(self.call_frames.len() - 2)
+            .ok_or_else(|| RuntimeError::new(
+                RuntimeErrorKind::InternalError,
+                Some("Failed to access previous call frame".to_string()),
+                None
+            ))?;
+
+        let prev_cf = prev_cf_opt.as_option()
+            .ok_or_else(|| RuntimeError::new(
+                RuntimeErrorKind::InternalError,
+                Some("Previous call frame is None".to_string()),
+                None
+            ))?;
+
+        let prev_cf_reg_count = prev_cf.get_func().get_max_clique() as usize;
+        let current_frame_start = self.frame_start.get();
+
+        // Validate arithmetic won't underflow
+        if current_frame_start < prev_cf_reg_count {
+            return Err(RuntimeError::new(
+                RuntimeErrorKind::InternalError,
+                Some(format!(
+                    "Frame arithmetic error: frame_start {} < prev_cf_reg_count {}",
+                    current_frame_start, prev_cf_reg_count
+                )),
+                None
+            ));
+        }
+
+        let i = reg as usize + (current_frame_start - prev_cf_reg_count);
+
+        // Validate register index is in bounds
+        self.registers.get_idx(i)
+            .ok_or_else(|| RuntimeError::new(
+                RuntimeErrorKind::InternalError,
+                Some(format!(
+                    "Previous frame register {} out of bounds (index {}, stack size {})",
+                    reg, i, self.registers.len()
+                )),
+                None
+            ))
+            .map(|tagged| TaggedValue::__new(tagged))
     }
 
     pub fn set_reg(&self, reg: u8, val: TaggedValue<'gc>, mu: &'gc Mutator<'gc>) {
@@ -121,16 +180,22 @@ impl<'gc> Stack<'gc> {
         };
 
         for i in 0..self.call_frames.len() {
-            let call_frame = self.call_frames.get_idx(i).unwrap().unwrap();
-            let module_path = call_frame.get_func().get_file_path();
-            let span = call_frame.get_func().get_spans().get(call_frame.get_ip().get()).copied();
+            // Safe access with error handling - skip invalid frames
+            if let Some(cf_opt) = self.call_frames.get_idx(i) {
+                if let Some(call_frame) = cf_opt.as_option() {
+                    let module_path = call_frame.get_func().get_file_path();
+                    let span = call_frame.get_func().get_spans()
+                        .get(call_frame.get_ip().get())
+                        .copied();
 
-            let bt_call = BacktraceCall {
-                path: module_path.map(|p| p.as_string()),
-                span 
-            };
+                    let bt_call = BacktraceCall {
+                        path: module_path.map(|p| p.as_string()),
+                        span
+                    };
 
-            bt.calls.push(bt_call);
+                    bt.calls.push(bt_call);
+                }
+            }
         }
 
         bt
