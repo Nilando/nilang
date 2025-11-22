@@ -394,7 +394,7 @@ checksum = "cf5a574dadd7941adeaa71823ecba5e28331b8313fb2e1c6a5c7e5981ea53ad6"
 
 [[package]]
 name = "nilang"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "clap",
  "criterion",
