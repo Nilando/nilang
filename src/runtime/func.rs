@@ -128,11 +128,25 @@ impl<'gc> Func<'gc> {
         }
     }
 
-    pub fn bind(&self, 
+    pub fn bind(&self,
         mu: &'gc Mutator<'gc>,
         tagged_val: TaggedValue<'gc>,
-    ) -> Gc<'gc, Self> {
+    ) -> Result<Gc<'gc, Self>, super::error::RuntimeError> {
         let new_bound_args_count = self.bound_args() + 1;
+
+        // Check that we're not binding more arguments than the function accepts
+        if new_bound_args_count > self.arity {
+            return Err(super::error::RuntimeError::new(
+                super::error::RuntimeErrorKind::InvalidBind,
+                Some(format!(
+                    "Attempted to bind {} arguments to a function with arity {}",
+                    new_bound_args_count,
+                    self.arity
+                )),
+                None
+            ));
+        }
+
         let bound_args = mu.alloc_array_from_fn(new_bound_args_count as usize, |idx| {
             if idx == self.bound_args() as usize {
                 tagged_val.clone()
@@ -155,7 +169,7 @@ impl<'gc> Func<'gc> {
             bound_args: GcOpt::from(bound_args),
         };
 
-        Gc::new(mu, partial)
+        Ok(Gc::new(mu, partial))
     }
 
     pub fn update_locals(

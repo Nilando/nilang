@@ -599,17 +599,8 @@ pub fn delete<'gc>(
 
 pub fn bind<'gc>(func: Value<'gc>, arg: Value<'gc>, mu: &'gc Mutator<'gc>) -> Result<Value<'gc>, RuntimeError> {
     match func {
-        Value::Func(f) => { 
-            if f.arity() == 0 {
-                return Err(RuntimeError::new(
-                        RuntimeErrorKind::InvalidBind,
-                        Some("Attempted to call bind on a 0 arg function".to_string()),
-                        None
-                ));
-            }
-
-            let partial = f.bind(mu, arg.as_tagged(mu));
-
+        Value::Func(f) => {
+            let partial = f.bind(mu, arg.as_tagged(mu))?;
             Ok(Value::Func(partial))
         }
         _ => Err(RuntimeError::new(
