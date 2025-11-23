@@ -620,18 +620,9 @@ fn list_sort(self, comparator) {
   while i < n - 1 {
     j = 0;
     while j < n - i - 1 {
-      compare_result = null;
-      if comparator != null {
-        compare_result = comparator(result[j], result[j + 1]);
-      } else {
-        if result[j] > result[j + 1] {
-          compare_result = 1;
-        } else {
-          compare_result = -1;
-        }
-      }
+      compare_result = comparator(result[j], result[j + 1]);
 
-      if compare_result > 0 {
+      if compare_result {
         temp = result[j];
         result[j] = result[j + 1];
         result[j + 1] = temp;
