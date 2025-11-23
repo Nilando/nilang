@@ -54,7 +54,7 @@ fn for_stmt(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
     keyword(KeyWord::For)
         .then(symbol())
         .append(keyword(KeyWord::In).then(expr(sp.clone())))
-        .append(block(sp))
+        .append(block(sp).looping(true))
         .map(|((item, store), stmts)| {
             Stmt::ForLoop { item,
                 store,

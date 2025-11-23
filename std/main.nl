@@ -189,7 +189,7 @@ fn is_whitespace(char) {
 
 fn trim_left(self) {
   start = 0;
-  while start < #self & is_whitespace(self[start]) {
+  while start < #self && is_whitespace(self[start]) {
     start = start + 1;
   }
 
@@ -205,7 +205,7 @@ fn trim_left(self) {
 
 fn trim_right(self) {
   end = #self;
-  while end > 0 & is_whitespace(self[end - 1]) {
+  while end > 0 && is_whitespace(self[end - 1]) {
     end = end - 1;
   }
 
@@ -645,6 +645,16 @@ fn list_sort(self, comparator) {
   return result;
 }
 
+fn list_swap_remove(self, idx) {
+  if idx == #self - 1 {
+    return ^self;
+  }
+
+  result = self[idx];
+  self[idx] = ^self;
+  return result;
+}
+
 patch($list, $first, fn(self) {
   if #self > 0 {
     return self[0];
@@ -681,6 +691,7 @@ patch($list, $concat, list_concat);
 patch($list, $reduce, list_reduce);
 patch($list, $zip, list_zip);
 patch($list, $sort, list_sort);
+patch($list, $swap_remove, list_swap_remove);
 
 patch($str, $iter, default_iter);
 patch($str, $enumerate, default_enumerate);
