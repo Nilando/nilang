@@ -43,7 +43,7 @@ nilang
 
 Pipe input to the interpreter:
 ```bash
-echo 'print(1 + 2)' | nilang -s
+echo 'print(1 + 2);' | nilang -s
 ```
 
 ## Quick Start
