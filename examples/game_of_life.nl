@@ -1,17 +1,27 @@
-fn new_grid(size) {
+// Linear Congruential Generator for random numbers
+fn lcg(seed) {
+  a = 1664525;
+  c = 1013904223;
+  m = 2.pow(32);
+
+  return ((a * seed + c) % m);
+}
+
+fn new_grid(size, seed) {
   grid = [];
+  current_seed = seed;
 
   row = 0;
   while row < size {
     vals = [];
     col = 0;
     while col < size {
+      // Generate random number between 0 and 99
+      current_seed = lcg(current_seed);
+      random_val = current_seed % 100;
 
-      // just doing something random stuff to try and get something to happen
-      vals << (col == 0) || 
-        (((((col*row) * 123) + 5) % 11) == 0) || 
-        (((((col*row) * 343) + 8) % 23) == 0) ||
-        (row == 5);
+      // 30% chance of cell being alive
+      vals << (random_val < 30);
 
       col = col + 1;
     }
@@ -114,7 +124,7 @@ fn print_grid(grid) {
   for row in grid {
     for cell in row {
       if cell {
-        s << "██";
+        s << "\033[32m██\033[0m";
       } else {
         s << "  ";
       }
@@ -125,15 +135,15 @@ fn print_grid(grid) {
 }
 
 fn run(grid) {
-  i = 0;
-  while i <= 120 {
+  while true {
     print_grid(grid);
-    //sleep(0.05);
     update_grid(grid);
-    i = i + 1;
   }
 }
 
-grid = new_grid(37);
+print("Enter a random seed:");
+seed = int(read);
+
+grid = new_grid(37, seed);
 
 run(grid);

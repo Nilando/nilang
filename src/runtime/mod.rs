@@ -21,6 +21,7 @@ mod vm;
 mod tests;
 
 use std::io::Write;
+use std::io::Read;
 
 use crate::codegen::Func;
 use crate::compile::compile;
@@ -220,7 +221,7 @@ impl Runtime {
     }
 
     fn read_input(&self) -> Result<(), InterpreterError> {
-        let stdin = std::io::stdin();
+        let mut stdin = std::io::stdin();
         let mut buf = String::new();
         let mut vm_result = Ok(());
 

@@ -88,6 +88,8 @@ pub enum LexError {
     UnclosedString,
     UnclosedComment,
     InvalidNumber,
+    InvalidUnicodeEscape,
+    InvalidOctalEscape,
 }
 
 impl LexError {
@@ -96,7 +98,9 @@ impl LexError {
             LexError::InvalidNumber => format!("Invalid number. largest supported integer is {}", i64::MAX),
             LexError::UnclosedComment => String::from("Unclosed multi line comment"),
             LexError::UnclosedString => String::from("Unclosed string"),
-            LexError::Unknown => String::from("Unexpected character")
+            LexError::Unknown => String::from("Unexpected character"),
+            LexError::InvalidUnicodeEscape => String::from("Invalid unicode escape sequence. Expected \\uXXXX where XXXX is a valid hexadecimal value"),
+            LexError::InvalidOctalEscape => String::from("Invalid octal escape sequence. Expected \\0XX where XX is a valid octal value (0-7)")
         }
     }
 }
@@ -566,31 +570,77 @@ impl<'a> Lexer<'a> {
 
     fn escape_string(str: &str, delimiter: char) -> Result<String, LexError> {
         let mut result = String::new();
-        let mut escape_flag = false;
+        let chars: Vec<char> = str.chars().collect();
+        let mut i = 0;
 
-        for c in str.chars() {
-            if escape_flag {
-                escape_flag = false;
-                let escaped_char = 
-                if c == '\\' {
-                    '\\'
-                } else if c == 'n' {
-                    '\n'
-                } else if c == 'r' {
-                    '\r'
-                } else if c == 't' {
-                    '\t'
-                } else if c == delimiter {
-                    c
+        while i < chars.len() {
+            if chars[i] == '\\' && i + 1 < chars.len() {
+                let next_char = chars[i + 1];
+
+                if next_char == '\\' {
+                    result.push('\\');
+                    i += 2;
+                } else if next_char == 'n' {
+                    result.push('\n');
+                    i += 2;
+                } else if next_char == 'r' {
+                    result.push('\r');
+                    i += 2;
+                } else if next_char == 't' {
+                    result.push('\t');
+                    i += 2;
+                } else if next_char == delimiter {
+                    result.push(delimiter);
+                    i += 2;
+                } else if next_char == 'u' {
+                    // Unicode escape sequence: \uXXXX
+                    if i + 6 <= chars.len() {
+                        let hex_str: String = chars[i+2..i+6].iter().collect();
+
+                        // Parse the 4 hex digits
+                        if let Ok(code_point) = u32::from_str_radix(&hex_str, 16) {
+                            // Convert to char
+                            if let Some(unicode_char) = char::from_u32(code_point) {
+                                result.push(unicode_char);
+                                i += 6; // Skip \uXXXX
+                            } else {
+                                return Err(LexError::InvalidUnicodeEscape);
+                            }
+                        } else {
+                            return Err(LexError::InvalidUnicodeEscape);
+                        }
+                    } else {
+                        return Err(LexError::InvalidUnicodeEscape);
+                    }
+                } else if next_char.is_digit(8) {
+                    // Octal escape sequence: \0, \00, \000 (1-3 octal digits)
+                    let mut octal_str = String::new();
+                    let mut j = i + 1;
+
+                    // Read up to 3 octal digits
+                    while j < chars.len() && octal_str.len() < 3 && chars[j].is_digit(8) {
+                        octal_str.push(chars[j]);
+                        j += 1;
+                    }
+
+                    if octal_str.is_empty() {
+                        return Err(LexError::InvalidOctalEscape);
+                    }
+
+                    // Parse the octal string
+                    if let Ok(byte_value) = u8::from_str_radix(&octal_str, 8) {
+                        // Convert byte to char
+                        result.push(byte_value as char);
+                        i = j; // Skip \XXX
+                    } else {
+                        return Err(LexError::InvalidOctalEscape);
+                    }
                 } else {
                     return Err(LexError::Unknown);
-                };
-
-                result.push(escaped_char);
-            } else if c == '\\' {
-                escape_flag = true;
+                }
             } else {
-                result.push(c);
+                result.push(chars[i]);
+                i += 1;
             }
         }
 
@@ -1155,6 +1205,160 @@ mod tests {
             Token::Ctrl(Ctrl::RightBracket),
             Token::Ctrl(Ctrl::LeftCurly),
             Token::Ctrl(Ctrl::RightCurly),
+        ];
+
+        assert_src_tokens(input, tokens, syms);
+    }
+
+    #[test]
+    fn lex_unicode_escape_basic() {
+        let syms = SymbolMap::new();
+        let input = r#""Hello \u0041\u0042\u0043""#;
+        let tokens = vec![
+            Token::String("Hello ABC".to_string()),
+        ];
+
+        assert_src_tokens(input, tokens, syms);
+    }
+
+    #[test]
+    fn lex_unicode_escape_emoji() {
+        let syms = SymbolMap::new();
+        let input = r#""Smiley: \u263A""#;
+        let tokens = vec![
+            Token::String("Smiley: \u{263A}".to_string()),
+        ];
+
+        assert_src_tokens(input, tokens, syms);
+    }
+
+    #[test]
+    fn lex_unicode_escape_mixed() {
+        let syms = SymbolMap::new();
+        let input = r#""Tab:\tUnicode:\u0048\u0069\nNewline""#;
+        let tokens = vec![
+            Token::String("Tab:\tUnicode:Hi\nNewline".to_string()),
+        ];
+
+        assert_src_tokens(input, tokens, syms);
+    }
+
+    #[test]
+    fn lex_unicode_escape_invalid_short() {
+        let mut syms = SymbolMap::new();
+        let input = r#""Hello \u004""#;
+        let mut lexer = Lexer::new(input);
+        let result = lexer.get_token(&mut syms);
+
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err().item, LexError::InvalidUnicodeEscape);
+    }
+
+    #[test]
+    fn lex_unicode_escape_invalid_hex() {
+        let mut syms = SymbolMap::new();
+        let input = r#""Hello \uXYZW""#;
+        let mut lexer = Lexer::new(input);
+        let result = lexer.get_token(&mut syms);
+
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err().item, LexError::InvalidUnicodeEscape);
+    }
+
+    #[test]
+    fn lex_unicode_escape_in_interpolated_string() {
+        let syms = SymbolMap::new();
+        let input = r#"`Unicode: \u0048\u0065\u006C\u006C\u006F`"#;
+        let tokens = vec![
+            Token::String("Unicode: Hello".to_string()),
+        ];
+
+        assert_src_tokens(input, tokens, syms);
+    }
+
+    #[test]
+    fn lex_octal_escape_basic() {
+        let syms = SymbolMap::new();
+        let input = r#""ESC: \033""#;
+        let tokens = vec![
+            Token::String("ESC: \x1B".to_string()),
+        ];
+
+        assert_src_tokens(input, tokens, syms);
+    }
+
+    #[test]
+    fn lex_octal_escape_ansi_red() {
+        let syms = SymbolMap::new();
+        let input = r#""\033[31mRed Text\033[0m""#;
+        let tokens = vec![
+            Token::String("\x1B[31mRed Text\x1B[0m".to_string()),
+        ];
+
+        assert_src_tokens(input, tokens, syms);
+    }
+
+    #[test]
+    fn lex_octal_escape_clear_screen() {
+        let syms = SymbolMap::new();
+        let input = r#""\033[2J\033[H""#;
+        let tokens = vec![
+            Token::String("\x1B[2J\x1B[H".to_string()),
+        ];
+
+        assert_src_tokens(input, tokens, syms);
+    }
+
+    #[test]
+    fn lex_octal_escape_various_lengths() {
+        let syms = SymbolMap::new();
+        let input = r#""\0\7\77\177""#;
+        let tokens = vec![
+            Token::String("\x00\x07\x3F\x7F".to_string()),
+        ];
+
+        assert_src_tokens(input, tokens, syms);
+    }
+
+    #[test]
+    fn lex_octal_escape_with_text() {
+        let syms = SymbolMap::new();
+        let input = r#""Hello\033[32m World\033[0m!""#;
+        let tokens = vec![
+            Token::String("Hello\x1B[32m World\x1B[0m!".to_string()),
+        ];
+
+        assert_src_tokens(input, tokens, syms);
+    }
+
+    #[test]
+    fn lex_octal_escape_invalid() {
+        let mut syms = SymbolMap::new();
+        let input = r#""Hello \8""#;
+        let mut lexer = Lexer::new(input);
+        let result = lexer.get_token(&mut syms);
+
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err().item, LexError::Unknown);
+    }
+
+    #[test]
+    fn lex_octal_and_unicode_mixed() {
+        let syms = SymbolMap::new();
+        let input = r#""\033[31mRed: \u2665\033[0m""#;
+        let tokens = vec![
+            Token::String("\x1B[31mRed: ♥\x1B[0m".to_string()),
+        ];
+
+        assert_src_tokens(input, tokens, syms);
+    }
+
+    #[test]
+    fn lex_octal_in_interpolated_string() {
+        let syms = SymbolMap::new();
+        let input = r#"`ANSI: \033[36mCyan\033[0m`"#;
+        let tokens = vec![
+            Token::String("ANSI: \x1B[36mCyan\x1B[0m".to_string()),
         ];
 
         assert_src_tokens(input, tokens, syms);
