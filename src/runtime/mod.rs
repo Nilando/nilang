@@ -115,6 +115,7 @@ impl Runtime {
         self.load_module(&std_lib_path)?;
         self.run()?;
 
+
         Ok(())
     }
 
@@ -221,11 +222,19 @@ impl Runtime {
     }
 
     fn read_input(&self) -> Result<(), InterpreterError> {
+        use std::io::IsTerminal;
+
         let mut stdin = std::io::stdin();
         let mut buf = String::new();
         let mut vm_result = Ok(());
 
-        stdin.read_line(&mut buf).expect("failed to read from stdin");
+        if stdin.is_terminal() {
+            // Interactive mode: read one line
+            stdin.read_line(&mut buf).expect("failed to read from stdin");
+        } else {
+            // Piped input: read all of stdin
+            stdin.read_to_string(&mut buf).expect("failed to read from stdin");
+        }
         buf = buf.trim_end().to_string();
 
         self.arena.mutate(|mu, vm| {
