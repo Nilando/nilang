@@ -245,6 +245,32 @@ fn char_to_lower(char) {
   return char;
 }
 
+fn str_slice(self, start, end) {
+  result = "";
+  actual_start = start;
+  actual_end = end;
+
+  if actual_start < 0 {
+    actual_start = 0;
+  }
+
+  if actual_end > #self {
+    actual_end = #self;
+  }
+
+  if actual_start >= actual_end {
+    return result;
+  }
+
+  i = actual_start;
+  while i < actual_end {
+    result << self[i];
+    i = i + 1;
+  }
+
+  return result;
+}
+
 fn to_upper(self) {
   result = "";
   for char in self {
@@ -696,6 +722,7 @@ patch($str, $trim_left, trim_left);
 patch($str, $trim_right, trim_right);
 patch($str, $to_upper, to_upper);
 patch($str, $to_lower, to_lower);
+patch($str, $slice, str_slice);
 
 patch($map, $iter, default_map_iter);
 patch($map, $keys, keys);
