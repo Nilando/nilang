@@ -1,6 +1,6 @@
 [package]
 name = "nilang"
-version = "0.2.1"
+version = "0.3.0"
 edition = "2021"
 description = "A scripting language interpreter for Advent of Code"
 license = "MIT"
@@ -15,7 +15,7 @@ readme = "README.md"
 [dependencies]
 clap = { version = "4.5.8", features = ["derive"] }
 murmurhash3 = "0.0.5"
-sandpit = { version = "0.4.2", features = ["multi_threaded"] }
+sandpit = {  version = "=0.5.1",  features = ["multi_threaded"] }
 termion = "4.0.4"
 hashbrown = { version = "0.14", default-features = false, features = ["ahash"] }
 
