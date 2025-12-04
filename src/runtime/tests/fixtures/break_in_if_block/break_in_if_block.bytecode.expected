@@ -1,0 +1,13 @@
+========= FILE ./src/runtime/tests/fixtures/break_in_if_block/break_in_if_block.bytecode.actual ========
+=== FN 0 START ===
+BOOL 0, true
+JNT  5, 0
+BOOL 0, false
+JNT  2, 0
+JMP  -2
+JMP  1
+LOC  0, 0
+OUT  0
+LDN  0
+RTN  0
+=== END ===

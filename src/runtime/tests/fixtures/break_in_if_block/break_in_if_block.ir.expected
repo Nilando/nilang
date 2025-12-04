@@ -1,0 +1,28 @@
+========= FILE ./src/runtime/tests/fixtures/break_in_if_block/break_in_if_block.ir.actual ========
+MAIN () {
+block0:
+  next block1
+
+block1:
+  t0 = true
+  jnt t0 block6
+  next block2
+
+block2:
+  t1 = false
+  jnt t1 block4
+  next block3
+
+block3:
+  jump block2
+
+block4:
+  jump block6
+
+block6:
+  t2 = "success!"
+  PRINT t2
+  t4 = null
+  RETURN t4
+
+}

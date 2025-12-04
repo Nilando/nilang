@@ -1,0 +1,60 @@
+========= FILE ./src/runtime/tests/fixtures/break_in_if_block/break_in_if_block.ast.actual ========
+[
+    While {
+        cond: Spanned {
+            item: Value(
+                Bool(
+                    true,
+                ),
+            ),
+            span: Span {
+                start: 6,
+                end: 12,
+            },
+        },
+        stmts: [
+            While {
+                cond: Spanned {
+                    item: Value(
+                        Bool(
+                            false,
+                        ),
+                    ),
+                    span: Span {
+                        start: 21,
+                        end: 28,
+                    },
+                },
+                stmts: [],
+            },
+            Break,
+        ],
+    },
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Value(
+                        String(
+                            SegmentedString {
+                                segments: [
+                                    String(
+                                        "success!",
+                                    ),
+                                ],
+                            },
+                        ),
+                    ),
+                    span: Span {
+                        start: 49,
+                        end: 60,
+                    },
+                },
+            ),
+            span: Span {
+                start: 43,
+                end: 61,
+            },
+        },
+    ),
+]

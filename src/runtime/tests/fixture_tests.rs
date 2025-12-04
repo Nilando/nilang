@@ -110,6 +110,11 @@ fn expr_precedence() {
 }
 
 #[test]
+fn break_in_if_block() {
+  super::fixture_test("break_in_if_block")
+}
+
+#[test]
 fn not_op_assignment_bug() {
   super::fixture_test("not_op_assignment_bug")
 }
@@ -352,6 +357,11 @@ fn import_caching() {
 #[test]
 fn out_of_bounds_index() {
   super::fixture_test("out_of_bounds_index")
+}
+
+#[test]
+fn bug_1() {
+  super::fixture_test("bug_1")
 }
 
 #[test]

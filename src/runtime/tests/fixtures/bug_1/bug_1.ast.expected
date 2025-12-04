@@ -1,0 +1,404 @@
+========= FILE ./src/runtime/tests/fixtures/bug_1/bug_1.ast.actual ========
+[
+    FuncDecl {
+        ident: 14,
+        inputs: Spanned {
+            item: [
+                15,
+            ],
+            span: Span {
+                start: 2153,
+                end: 2155,
+            },
+        },
+        stmts: [
+            IfElse {
+                cond: Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Ident(
+                                    15,
+                                ),
+                            ),
+                            span: Span {
+                                start: 2163,
+                                end: 2164,
+                            },
+                        },
+                        op: Equal,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    0,
+                                ),
+                            ),
+                            span: Span {
+                                start: 2168,
+                                end: 2171,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 2163,
+                        end: 2171,
+                    },
+                },
+                stmts: [
+                    Expr(
+                        Spanned {
+                            item: Print(
+                                Spanned {
+                                    item: Value(
+                                        String(
+                                            SegmentedString {
+                                                segments: [
+                                                    String(
+                                                        "0",
+                                                    ),
+                                                ],
+                                            },
+                                        ),
+                                    ),
+                                    span: Span {
+                                        start: 2182,
+                                        end: 2186,
+                                    },
+                                },
+                            ),
+                            span: Span {
+                                start: 2176,
+                                end: 2187,
+                            },
+                        },
+                    ),
+                ],
+                else_stmts: [
+                    IfElse {
+                        cond: Spanned {
+                            item: Binop {
+                                lhs: Spanned {
+                                    item: Value(
+                                        Ident(
+                                            15,
+                                        ),
+                                    ),
+                                    span: Span {
+                                        start: 2206,
+                                        end: 2207,
+                                    },
+                                },
+                                op: Equal,
+                                rhs: Spanned {
+                                    item: Value(
+                                        Int(
+                                            1,
+                                        ),
+                                    ),
+                                    span: Span {
+                                        start: 2211,
+                                        end: 2214,
+                                    },
+                                },
+                            },
+                            span: Span {
+                                start: 2206,
+                                end: 2214,
+                            },
+                        },
+                        stmts: [
+                            Expr(
+                                Spanned {
+                                    item: Print(
+                                        Spanned {
+                                            item: Value(
+                                                String(
+                                                    SegmentedString {
+                                                        segments: [
+                                                            String(
+                                                                "1",
+                                                            ),
+                                                        ],
+                                                    },
+                                                ),
+                                            ),
+                                            span: Span {
+                                                start: 2227,
+                                                end: 2231,
+                                            },
+                                        },
+                                    ),
+                                    span: Span {
+                                        start: 2221,
+                                        end: 2232,
+                                    },
+                                },
+                            ),
+                        ],
+                        else_stmts: [
+                            IfElse {
+                                cond: Spanned {
+                                    item: Binop {
+                                        lhs: Spanned {
+                                            item: Value(
+                                                Ident(
+                                                    15,
+                                                ),
+                                            ),
+                                            span: Span {
+                                                start: 2255,
+                                                end: 2256,
+                                            },
+                                        },
+                                        op: Equal,
+                                        rhs: Spanned {
+                                            item: Value(
+                                                Int(
+                                                    2,
+                                                ),
+                                            ),
+                                            span: Span {
+                                                start: 2260,
+                                                end: 2263,
+                                            },
+                                        },
+                                    },
+                                    span: Span {
+                                        start: 2255,
+                                        end: 2263,
+                                    },
+                                },
+                                stmts: [
+                                    Expr(
+                                        Spanned {
+                                            item: Print(
+                                                Spanned {
+                                                    item: Value(
+                                                        String(
+                                                            SegmentedString {
+                                                                segments: [
+                                                                    String(
+                                                                        "2",
+                                                                    ),
+                                                                ],
+                                                            },
+                                                        ),
+                                                    ),
+                                                    span: Span {
+                                                        start: 2278,
+                                                        end: 2282,
+                                                    },
+                                                },
+                                            ),
+                                            span: Span {
+                                                start: 2272,
+                                                end: 2283,
+                                            },
+                                        },
+                                    ),
+                                ],
+                                else_stmts: [
+                                    If {
+                                        cond: Spanned {
+                                            item: Binop {
+                                                lhs: Spanned {
+                                                    item: Value(
+                                                        Ident(
+                                                            15,
+                                                        ),
+                                                    ),
+                                                    span: Span {
+                                                        start: 2310,
+                                                        end: 2311,
+                                                    },
+                                                },
+                                                op: Equal,
+                                                rhs: Spanned {
+                                                    item: Value(
+                                                        Int(
+                                                            3,
+                                                        ),
+                                                    ),
+                                                    span: Span {
+                                                        start: 2315,
+                                                        end: 2318,
+                                                    },
+                                                },
+                                            },
+                                            span: Span {
+                                                start: 2310,
+                                                end: 2318,
+                                            },
+                                        },
+                                        stmts: [
+                                            Expr(
+                                                Spanned {
+                                                    item: Print(
+                                                        Spanned {
+                                                            item: Value(
+                                                                String(
+                                                                    SegmentedString {
+                                                                        segments: [
+                                                                            String(
+                                                                                "3",
+                                                                            ),
+                                                                        ],
+                                                                    },
+                                                                ),
+                                                            ),
+                                                            span: Span {
+                                                                start: 2335,
+                                                                end: 2339,
+                                                            },
+                                                        },
+                                                    ),
+                                                    span: Span {
+                                                        start: 2329,
+                                                        end: 2340,
+                                                    },
+                                                },
+                                            ),
+                                        ],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            },
+        ],
+    },
+    Assign {
+        dest: Spanned {
+            item: Local(
+                16,
+            ),
+            span: Span {
+                start: 2372,
+                end: 2375,
+            },
+        },
+        src: Spanned {
+            item: Value(
+                Int(
+                    0,
+                ),
+            ),
+            span: Span {
+                start: 2376,
+                end: 2378,
+            },
+        },
+    },
+    While {
+        cond: Spanned {
+            item: Binop {
+                lhs: Spanned {
+                    item: Value(
+                        Ident(
+                            16,
+                        ),
+                    ),
+                    span: Span {
+                        start: 2385,
+                        end: 2386,
+                    },
+                },
+                op: Lt,
+                rhs: Spanned {
+                    item: Value(
+                        Int(
+                            1000,
+                        ),
+                    ),
+                    span: Span {
+                        start: 2389,
+                        end: 2395,
+                    },
+                },
+            },
+            span: Span {
+                start: 2385,
+                end: 2395,
+            },
+        },
+        stmts: [
+            Expr(
+                Spanned {
+                    item: Call {
+                        calle: Spanned {
+                            item: Value(
+                                Ident(
+                                    14,
+                                ),
+                            ),
+                            span: Span {
+                                start: 2397,
+                                end: 2400,
+                            },
+                        },
+                        args: [
+                            Spanned {
+                                item: Value(
+                                    Ident(
+                                        16,
+                                    ),
+                                ),
+                                span: Span {
+                                    start: 2401,
+                                    end: 2403,
+                                },
+                            },
+                        ],
+                    },
+                    span: Span {
+                        start: 2397,
+                        end: 2404,
+                    },
+                },
+            ),
+            Assign {
+                dest: Spanned {
+                    item: Local(
+                        16,
+                    ),
+                    span: Span {
+                        start: 2406,
+                        end: 2409,
+                    },
+                },
+                src: Spanned {
+                    item: Binop {
+                        lhs: Spanned {
+                            item: Value(
+                                Ident(
+                                    16,
+                                ),
+                            ),
+                            span: Span {
+                                start: 2410,
+                                end: 2411,
+                            },
+                        },
+                        op: Plus,
+                        rhs: Spanned {
+                            item: Value(
+                                Int(
+                                    1,
+                                ),
+                            ),
+                            span: Span {
+                                start: 2414,
+                                end: 2416,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 2410,
+                        end: 2416,
+                    },
+                },
+            },
+        ],
+    },
+]
