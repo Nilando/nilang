@@ -463,6 +463,7 @@ impl LoweringCtx {
 
         self.emit_jump(start);
         self.emit_label(end);
+        self.pop_loop_ctx();
     }
 
     fn lower_func(
@@ -567,6 +568,8 @@ impl LoweringCtx {
         self.lower_stmts(stmts, false);
         self.emit_jump(start);
         self.emit_label(end);
+        
+        self.pop_loop_ctx();
     }
 
     fn lower_ident(&mut self, sym_id: SymID) -> VReg {
@@ -749,6 +752,10 @@ impl LoweringCtx {
 
     fn push_loop_ctx(&mut self, ctx: LoopCtx) {
         self.get_current_func_mut().loop_ctxs.push(ctx);
+    }
+
+    fn pop_loop_ctx(&mut self) {
+        self.get_current_func_mut().loop_ctxs.pop();
     }
 
     fn new_func_id(&mut self) -> FuncID {
