@@ -740,9 +740,26 @@ fn list_split(self, delimiter) {
     i = i + 1;
   }
 
+  if #new_row {
+    result << new_row;
+  }
+
   return result;
 }
 
+fn uniq(self) {
+  result = {};
+
+  for v in self {
+    if result[v] == null {
+      result[v] = true;
+    }
+  }
+
+  return result.keys();
+}
+
+patch($list, $uniq, uniq);
 patch($list, $first, list_first);
 patch($list, $last, list_last);
 patch($list, $sum, list_sum);
