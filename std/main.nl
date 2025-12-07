@@ -10,7 +10,7 @@ fn default_iter(self) {
       return $iter_end;
     }
   };
-};
+}
 
 fn default_enumerate(self) {
   i = [0];
@@ -223,26 +223,33 @@ fn trim(self) {
   return self.trim_left().trim_right();
 }
 
-fn char_to_upper(char) {
-  lowercase = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
-  uppercase = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
+lowercase = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
+uppercase = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
 
-  idx = lowercase.find(char);
-  if idx != null {
-    return uppercase[idx];
+fn to_upper(self) {
+  result = "";
+  for c in self {
+    idx = lowercase.find(c);
+    if idx != null {
+      result << uppercase[idx];
+    } else {
+      result << c;
+    }
   }
-  return char;
+  return result;
 }
 
-fn char_to_lower(char) {
-  lowercase = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
-  uppercase = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
-
-  idx = uppercase.find(char);
-  if idx != null {
-    return lowercase[idx];
+fn to_lower(self) {
+  result = "";
+  for c in self {
+    idx = uppercase.find(c);
+    if idx != null {
+      result << lowercase[idx];
+    } else {
+      result << c;
+    }
   }
-  return char;
+  return result;
 }
 
 fn str_slice(self, start, end) {
@@ -268,22 +275,6 @@ fn str_slice(self, start, end) {
     i = i + 1;
   }
 
-  return result;
-}
-
-fn to_upper(self) {
-  result = "";
-  for char in self {
-    result << char_to_upper(char);
-  }
-  return result;
-}
-
-fn to_lower(self) {
-  result = "";
-  for char in self {
-    result << char_to_lower(char);
-  }
   return result;
 }
 
@@ -672,28 +663,89 @@ fn list_swap_remove(self, idx) {
   return result;
 }
 
-patch($list, $first, fn(self) {
+fn list_first(self) {
   if #self > 0 {
     return self[0];
   }
   return null;
-});
+}
 
-patch($list, $last, fn(self) {
+fn list_last(self) {
   if #self > 0 {
     return self[#self - 1];
   }
   return null;
-});
+}
 
-patch($list, $sum, fn(self) {
+fn list_sum(self) {
   total = 0;
   for item in self {
     total = total + item;
   }
   return total;
-});
+}
 
+fn list_max(self) {
+  max = 0;
+
+  for item in self {
+    if max < item {
+      max = item;
+    }
+  }
+
+  return max;
+}
+
+
+fn times(self, callback) {
+  i = 0;
+  result = [];
+  while i < self {
+    result << (callback(i));
+    i = i + 1;
+  }
+  result;
+}
+
+fn transpose(self) {
+  result = [];
+
+  i = 0;
+  while i < #self[0] {
+    new_row = [];
+    for row in self {
+      new_row << row[i];
+    }
+    result << new_row;
+    i = i + 1;
+  }
+
+  return result;
+}
+
+fn list_split(self, delimiter) {
+  result = [];
+
+  new_row = [];
+  i = 0;
+  while i < #self {
+    if self[i] == delimiter {
+      result << new_row;
+      new_row = [];
+    } else {
+      new_row << self[i];
+    }
+
+    i = i + 1;
+  }
+
+  return result;
+}
+
+patch($list, $first, list_first);
+patch($list, $last, list_last);
+patch($list, $sum, list_sum);
 patch($list, $join, join);
 patch($list, $iter, default_iter);
 patch($list, $find, find);
@@ -709,6 +761,9 @@ patch($list, $reduce, list_reduce);
 patch($list, $zip, list_zip);
 patch($list, $sort, list_sort);
 patch($list, $swap_remove, list_swap_remove);
+patch($list, $max, list_max);
+patch($list, $transpose, transpose);
+patch($list, $split, list_split);
 
 patch($str, $iter, default_iter);
 patch($str, $enumerate, default_enumerate);
@@ -735,22 +790,16 @@ patch($map, $filter, map_filter);
 
 patch($fn, $iter, fn(self) { self; });
 
-patch($int, $times, fn(self, callback) {
-  i = 0;
-  result = [];
-  while i < self {
-    result << (callback(i));
-    i = i + 1;
-  }
-  result;
-});
-
+patch($int, $times, times);
 patch($int, $abs, abs);
 patch($int, $floor, floor);
 patch($int, $ceil, ceil);
 patch($int, $round, round);
 patch($int, $pow, pow);
 patch($int, $sqrt, sqrt);
+
+@INT_MAX = 9223372036854775807;
+@INT_MIN = -9223372036854775807 - 1;
 
 patch($float, $abs, abs);
 patch($float, $floor, floor);
