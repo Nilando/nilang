@@ -235,7 +235,7 @@ impl Runtime {
             // Piped input: read all of stdin
             stdin.read_to_string(&mut buf).expect("failed to read from stdin");
         }
-        buf = buf.trim_end().to_string();
+        buf = buf.to_string();
 
         self.arena.mutate(|mu, vm| {
             if let Err(err) = vm.read_input_hook(buf, mu) {
