@@ -290,13 +290,14 @@ impl<'a> Lexer<'a> {
             return Ok(token);
         }
 
+        self.advance();
+
         if self.pos >= self.input.len() {
             self.eof = true;
 
             return Ok(self.end_token());
         }
 
-        self.advance();
         Err(self.unexpected_token())
     }
 
@@ -725,6 +726,7 @@ impl<'a> Lexer<'a> {
                 '}' => {
                     if let Some(Delimiter::Curly) = self.delimiter_stack.pop() {
                     } else {
+                        self.advance();
                         return Err(LexError::Unknown) // TODO: make this a different error
                     }
 

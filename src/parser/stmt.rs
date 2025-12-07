@@ -85,6 +85,7 @@ fn func_decl(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
     Parser::new(move |ctx| {
         let next = ctx.peek_one_ahead();
 
+
         if let Some(token) = next {
             if let Token::Ident(_) = token.item {
                 return func_decl.parse(ctx);
@@ -163,6 +164,7 @@ fn basic_stmt(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
             };
 
             ctx.add_err(Spanned::new(error, span));
+
 
             None
         } else {
@@ -351,5 +353,23 @@ mod tests {
         let result = stmt().parse_str(input, &mut syms);
 
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn bad_method_chaining() {
+        let mut syms = SymbolMap::new();
+        let input = ".foo;";
+        let result = stmt().parse_str(input, &mut syms);
+
+        assert!(result.unwrap().is_none());
+    }
+
+    #[test]
+    fn unclosed_curly() {
+        let mut syms = SymbolMap::new();
+        let input = ";}";
+        let result = stmt().parse_str(input, &mut syms);
+
+        assert!(result.unwrap().is_none());
     }
 }

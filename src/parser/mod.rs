@@ -25,9 +25,10 @@ pub fn parse_program(
     syms: &mut SymbolMap,
     path: Option<&String>
 ) -> Result<Vec<Stmt>, ParseError> {
-    stmt()
-        .unless(ctrl(Ctrl::End))
+    (stmt()
         .recover(Ctrl::SemiColon)
+        .expect("Expected a statement"))
+        .unless(ctrl(Ctrl::End))
         .zero_or_more()
         .parse_str(input, syms)
         // This unwrap is a little weird, but can be done b/c "zero_or_more"
@@ -203,6 +204,7 @@ impl<'a, T: 'a> Parser<'a, T> {
             if let Some(value) = self.parse(ctx) {
                 Some(value)
             } else {
+
                 loop {
                     if ctx.eof() {
                         break;
@@ -411,9 +413,7 @@ fn inner_inputs<'a>() -> Parser<'a, Vec<SymID>> {
 
 fn block(sp: Parser<'_, Stmt>) -> Parser<'_, Vec<Stmt>> {
     let left_curly = ctrl(Ctrl::LeftCurly);
-    let right_curly = ctrl(Ctrl::RightCurly)
-        .recover(Ctrl::SemiColon)
-        .expect("Expected '}', found something else");
+    let right_curly = ctrl(Ctrl::RightCurly);
     let items = sp.zero_or_more();
 
     items.delimited(left_curly, right_curly)
@@ -448,4 +448,34 @@ fn span<'a, T: 'a>(func: Parser<'a, T>) -> Parser<'a, Spanned<T>> {
 
         result.map(|value| Spanned::new(value, Span::new(start, end)))
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::parser::ParseError;
+    use super::*;
+    use crate::symbol_map::SymbolMap;
+
+    fn parse_program_with_syms(input: &str, syms: &mut SymbolMap) -> Result<Vec<Stmt>, ParseError> {
+        let result = parse_program(input, syms, None);
+        result
+    }
+
+    #[test]
+    fn bad_method_chaining() {
+        let mut syms = SymbolMap::new();
+        let input = ".foo;";
+        let result = parse_program_with_syms(input, &mut syms);
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn unclosed_curly() {
+        let mut syms = SymbolMap::new();
+        let input = ";}";
+        let result = parse_program_with_syms(input, &mut syms);
+
+        assert!(result.is_err());
+    }
 }

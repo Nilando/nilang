@@ -1,5 +1,5 @@
-parser error: Expected '}', found something else, found 
-  EOF
 parser error: Expected a block '{ ... }' after if expression, found 
+  EOF
+parser error: Expected a statement, found 
   EOF
 parser error: Failed to parse "./src/runtime/tests/test_programs/unclosed_if_block.nl" due to the previous 2 errors.
