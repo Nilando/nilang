@@ -1,0 +1,6 @@
+RUNTIME ERROR
+Traceback: most recent call lowest
+  0: File "./src/runtime/tests/test_programs/runtime_error_underlines_invalid_addition_correctly.nl", line: 2:22
+    test[0] = test[0] + 1;
+              ^^^^^^^^^^^
+TypeError: Attempted to add Null with Int

@@ -95,21 +95,22 @@ impl LoweringCtx {
 
     fn lower_assign(&mut self, lhs_expr: Spanned<LhsExpr>, src: Spanned<Expr>) {
         let copy_flag = matches!(src.item, Expr::Value(Value::Ident(_)));
+        // let assign_span = lhs_expr.span.combine(&src.span);
         let src = self.lower_expr(src);
-        let span = lhs_expr.get_span();
+        let lhs_span = lhs_expr.span;
 
         match lhs_expr.item {
             LhsExpr::Index { store, key } => {
                 let store = self.lower_expr(*store);
                 let key = self.lower_expr(*key);
 
-                self.lower_key_store(store, key, src, span);
+                self.lower_key_store(store, key, src, lhs_span);
             }
             LhsExpr::Access { store, key } => {
                 let store = self.lower_expr(*store);
                 let key = self.load_const(TacConst::Sym(key));
 
-                self.lower_key_store(store, key, src, span);
+                self.lower_key_store(store, key, src, lhs_span);
             }
             LhsExpr::Local(sym_id) => {
                 self.define_var(sym_id);
@@ -208,11 +209,12 @@ impl LoweringCtx {
                     UnaryOp::Pop => {
                         let src = self.lower_expr(*expr);
                         let dest = self.new_temp();
-
-                        self.emit(Tac::Pop {
+                        let tac = Tac::Pop {
                             dest,
                             src
-                        });
+                        };
+
+                        self.emit_spanned(tac, span);
 
                         dest
                     }

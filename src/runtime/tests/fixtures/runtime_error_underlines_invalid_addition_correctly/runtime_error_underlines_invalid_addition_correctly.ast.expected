@@ -1,0 +1,107 @@
+========= FILE ./src/runtime/tests/fixtures/runtime_error_underlines_invalid_addition_correctly/runtime_error_underlines_invalid_addition_correctly.ast.actual ========
+[
+    Assign {
+        dest: Spanned {
+            item: Local(
+                14,
+            ),
+            span: Span {
+                start: 0,
+                end: 6,
+            },
+        },
+        src: Spanned {
+            item: Value(
+                Map(
+                    [],
+                ),
+            ),
+            span: Span {
+                start: 7,
+                end: 10,
+            },
+        },
+    },
+    Assign {
+        dest: Spanned {
+            item: Index {
+                store: Spanned {
+                    item: Value(
+                        Ident(
+                            14,
+                        ),
+                    ),
+                    span: Span {
+                        start: 11,
+                        end: 15,
+                    },
+                },
+                key: Spanned {
+                    item: Value(
+                        Int(
+                            0,
+                        ),
+                    ),
+                    span: Span {
+                        start: 16,
+                        end: 18,
+                    },
+                },
+            },
+            span: Span {
+                start: 11,
+                end: 20,
+            },
+        },
+        src: Spanned {
+            item: Binop {
+                lhs: Spanned {
+                    item: Index {
+                        store: Spanned {
+                            item: Value(
+                                Ident(
+                                    14,
+                                ),
+                            ),
+                            span: Span {
+                                start: 21,
+                                end: 25,
+                            },
+                        },
+                        key: Spanned {
+                            item: Value(
+                                Int(
+                                    0,
+                                ),
+                            ),
+                            span: Span {
+                                start: 26,
+                                end: 28,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: 21,
+                        end: 28,
+                    },
+                },
+                op: Plus,
+                rhs: Spanned {
+                    item: Value(
+                        Int(
+                            1,
+                        ),
+                    ),
+                    span: Span {
+                        start: 31,
+                        end: 33,
+                    },
+                },
+            },
+            span: Span {
+                start: 21,
+                end: 33,
+            },
+        },
+    },
+]

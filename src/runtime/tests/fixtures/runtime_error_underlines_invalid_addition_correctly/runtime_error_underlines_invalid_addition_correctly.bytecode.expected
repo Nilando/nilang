@@ -1,0 +1,11 @@
+========= FILE ./src/runtime/tests/fixtures/runtime_error_underlines_invalid_addition_correctly/runtime_error_underlines_invalid_addition_correctly.bytecode.actual ========
+=== FN 0 START ===
+MAP  2
+INT  1, 0
+MEML 3, 2[1]
+INT  0, 1
+ADD  0, 3, 0
+MEMS 2[1], 0
+LDN  0
+RTN  0
+=== END ===

@@ -185,7 +185,7 @@ impl<'gc> Stack<'gc> {
                 if let Some(call_frame) = cf_opt.as_option() {
                     let module_path = call_frame.get_func().get_file_path();
                     let span = call_frame.get_func().get_spans()
-                        .get(call_frame.get_ip().get())
+                        .get(call_frame.get_ip().get() - 1)
                         .copied();
 
                     let bt_call = BacktraceCall {

@@ -1,0 +1,13 @@
+========= FILE ./src/runtime/tests/fixtures/runtime_error_underlines_invalid_addition_correctly/runtime_error_underlines_invalid_addition_correctly.ir.actual ========
+MAIN () {
+block0:
+  test_0 = NEW_MAP
+  t2 = 0
+  t3 = test_0[t2]
+  t4 = 1
+  t5 = t3 + t4
+  test_0[t2] = t5
+  t7 = null
+  RETURN t7
+
+}

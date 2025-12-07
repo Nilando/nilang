@@ -330,6 +330,11 @@ fn not_op() {
 }
 
 #[test]
+fn runtime_error_underlines_invalid_addition_correctly() {
+  super::fixture_test("runtime_error_underlines_invalid_addition_correctly")
+}
+
+#[test]
 fn clone_intrinsic() {
   super::fixture_test("clone_intrinsic")
 }
