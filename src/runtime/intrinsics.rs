@@ -242,7 +242,7 @@ fn float<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)>
         Value::String(vm_str) => {
             let s = vm_str.as_string();
 
-            if let Ok(f) = s.parse::<f64>() {
+            if let Ok(f) = s.trim().parse::<f64>() {
                 return Ok(Value::Float(f));
             }
 
