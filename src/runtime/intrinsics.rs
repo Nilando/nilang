@@ -265,7 +265,7 @@ fn int<'gc>(arg: Value<'gc>) -> Result<Value<'gc>, (RuntimeErrorKind, String)> {
         Value::String(vm_str) => {
             let s = vm_str.as_string();
 
-            if let Ok(int) = s.parse::<i64>() {
+            if let Ok(int) = s.trim().parse::<i64>() {
                 return Ok(Value::Int(int));
             }
 
