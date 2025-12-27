@@ -6,7 +6,7 @@
 ///
 /// This prevents infinite recursion from exhausting memory.
 /// Value of 1000 allows for reasonable recursion depth while preventing abuse.
-pub const MAX_CALL_STACK_DEPTH: usize = 1000;
+pub const MAX_CALL_STACK_DEPTH: usize = 500;
 
 /// Number of bytecode instructions to execute before yielding control
 ///
