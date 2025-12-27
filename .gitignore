@@ -2,3 +2,7 @@
 .idea
 flamegraph.svg
 perf.data*
+*.png
+.DS_Store
+.obsidian/
+gc_metrics.csv
