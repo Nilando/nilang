@@ -1,4 +1,4 @@
-use super::lexer::{Ctrl, KeyWord, Token};
+use super::token::{Ctrl, KeyWord, Token};
 use crate::op::{BinaryOp, UnaryOp};
 use crate::spanned::Spanned;
 use super::stmt::Stmt;

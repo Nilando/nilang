@@ -3,10 +3,12 @@ mod lexer;
 mod stmt;
 mod value;
 mod error;
+mod token;
 
 use crate::spanned::{Spanned, Span};
 pub use expr::{Expr, LhsExpr};
-pub use lexer::{Ctrl, KeyWord, Lexer, Token};
+pub use token::{Ctrl, KeyWord, Token};
+pub use lexer::Lexer;
 pub use stmt::Stmt;
 pub use value::{MapKey, Value};
 pub use error::{ParseError, ParseErrorItem};

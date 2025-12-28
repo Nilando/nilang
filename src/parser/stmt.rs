@@ -1,5 +1,5 @@
 use super::expr::{expr, Expr, LhsExpr};
-use super::lexer::{Ctrl, KeyWord, Token};
+use super::token::{Ctrl, KeyWord, Token};
 use crate::spanned::Spanned;
 use super::{block, ctrl, inputs, keyword, nothing, recursive, symbol, Parser};
 

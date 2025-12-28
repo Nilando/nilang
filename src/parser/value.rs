@@ -1,4 +1,4 @@
-use super::lexer::{Ctrl, KeyWord, Token};
+use super::token::{Ctrl, KeyWord, Token};
 use super::{block, ctrl, inputs, keyword, nothing, Parser};
 use crate::parser::{Expr,Stmt};
 use crate::spanned::Spanned;
