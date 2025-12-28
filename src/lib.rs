@@ -5,7 +5,7 @@ mod runtime;
 mod symbol_map;
 mod compile;
 mod repl;
-mod op;
+mod operators;
 mod spanned;
 
 extern crate alloc;

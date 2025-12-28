@@ -3,7 +3,7 @@ use super::super::block::BlockId;
 use super::super::func::Func;
 use super::super::tac::{Tac, TacConst};
 use crate::ir::tac::VReg;
-use crate::op::BinaryOp;
+use crate::operators::BinaryOp;
 use alloc::collections::BTreeMap;
 use hashbrown::HashMap;
 

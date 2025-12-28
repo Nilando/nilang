@@ -2,7 +2,7 @@ use super::block::{Block, BlockId};
 use super::func::Func;
 use super::lowering::MAIN_FUNC_ID;
 use super::tac::{Tac, TacConst, VReg};
-use crate::op::{BinaryOp, UnaryOp};
+use crate::operators::{BinaryOp, UnaryOp};
 use crate::symbol_map::{SymID, SymbolMap};
 use hashbrown::HashMap;
 

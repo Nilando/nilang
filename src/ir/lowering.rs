@@ -5,7 +5,7 @@ use super::VReg;
 
 use crate::spanned::{Span, Spanned};
 use crate::parser::{Expr, LhsExpr, MapKey, SegmentedString, Stmt, StringSegment, Value};
-use crate::op::{BinaryOp, UnaryOp};
+use crate::operators::{BinaryOp, UnaryOp};
 use crate::symbol_map::{SymID, SymbolMap, ITER_SYM, ITER_END_SYM, STR_SYM};
 
 use alloc::collections::BTreeSet;

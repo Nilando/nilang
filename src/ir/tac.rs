@@ -1,4 +1,4 @@
-use crate::op::{BinaryOp, UnaryOp};
+use crate::operators::{BinaryOp, UnaryOp};
 use crate::symbol_map::SymID;
 
 pub type LabelID = usize;

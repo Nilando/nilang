@@ -9,7 +9,7 @@ use super::hash_map::GcHashMap;
 use super::instruction_stream::InstructionStream;
 use super::intrinsics::call_intrinsic;
 use super::list::List;
-use super::op::{
+use super::operations::{
     add, bind, bit_and, bit_flip, bit_or, bit_shift, bit_xor, clone, delete, divide, equal, greater_than, greater_than_or_equal, len, less_than, less_than_or_equal, mem_load, mem_store, modulo, multiply, not_equal, pop, push, sub, ttype
 };
 use super::stack::Stack;

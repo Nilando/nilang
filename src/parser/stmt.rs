@@ -200,7 +200,7 @@ mod tests {
     use crate::parser::ParseError;
     use super::*;
     use crate::spanned::Span;
-    use crate::op::BinaryOp;
+    use crate::operators::BinaryOp;
     use crate::symbol_map::SymbolMap;
     use pretty_assertions::assert_eq;
 

@@ -3,7 +3,7 @@ use core::cell::Cell;
 
 use super::constants::{HASH_MAP_INIT_CAPACITY, HASH_MAP_MAX_LOAD};
 use super::list::List;
-use super::op::equal;
+use super::operations::equal;
 use super::tagged_value::TaggedValue;
 use super::value::Value;
 

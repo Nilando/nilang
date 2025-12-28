@@ -9,7 +9,7 @@ mod instruction_stream;
 mod intrinsics;
 mod list;
 mod loading;
-mod op;
+mod operations;
 mod stack;
 mod string;
 mod tagged_value;

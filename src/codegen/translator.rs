@@ -1,7 +1,7 @@
 use crate::codegen::func::{Func, Local};
 use crate::codegen::InterferenceGraph;
 use crate::ir::{Tac, TacConst};
-use crate::op::{BinaryOp, UnaryOp};
+use crate::operators::{BinaryOp, UnaryOp};
 use crate::runtime::ByteCode;
 
 pub fn translate_tac(tac: &Tac, graph: &InterferenceGraph, func: &mut Func) -> Option<ByteCode> {
