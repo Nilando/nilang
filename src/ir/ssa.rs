@@ -1,9 +1,12 @@
+use crate::symbol_map::SymID;
+
 use super::analysis::{compute_dominance_frontier, LivenessDFA, DFA};
 use super::block::{Block, BlockId};
 use super::func::Func;
 use super::func_printer::VRegMap;
 use super::tac::VReg;
 use alloc::collections::{BTreeMap, BTreeSet};
+use hashbrown::HashMap;
 
 #[derive(Debug)]
 pub struct PhiNode {
@@ -11,8 +14,12 @@ pub struct PhiNode {
     pub srcs: BTreeMap<BlockId, VReg>,
 }
 
-pub fn convert_to_ssa(func: &mut Func, var_reg_map: Option<VRegMap>) {
-    SSAConverter::convert(func, var_reg_map);
+pub fn convert_to_ssa(func: &mut Func, var_reg_map: Option<HashMap<VReg, SymID>>) {
+    if let Some(vreg_map) = var_reg_map {
+        SSAConverter::convert(func, Some(VRegMap::new(vreg_map)));
+    } else {
+        SSAConverter::convert(func, None);
+    }
 }
 
 fn insert_phi_nodes(func: &mut Func) {

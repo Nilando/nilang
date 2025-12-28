@@ -1,6 +1,5 @@
 use super::block::{Block, BlockId};
 use super::func::Func;
-use super::func_printer::VRegMap;
 use super::optimizer::remove_dead_blocks;
 use super::ssa::convert_to_ssa;
 use super::tac::{FuncID, LabelID, Tac, VReg};
@@ -76,9 +75,7 @@ impl FuncBuilder {
         remove_dead_blocks(&mut func);
 
         if self.pretty_ir {
-            let vreg_map = VRegMap::new(self.sym_to_vreg);
-
-            convert_to_ssa(&mut func, Some(vreg_map));
+            convert_to_ssa(&mut func, Some(self.sym_to_vreg));
         } else {
             convert_to_ssa(&mut func, None);
         }
