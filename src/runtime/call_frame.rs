@@ -3,16 +3,6 @@ use core::cell::Cell;
 use sandpit::{Gc, Trace};
 use super::func::Func;
 
-//  GcVecMut
-//      fn push(&mut self) -> might error?
-//      fn pop(&mut self) -> might error?
-//      fn at_mut(&self) -> might error?
-//      fn at(&self) -> might error?
-//      fn mut_slice(&mut self) -> might error?
-//      fn as_slice(&self) -> might error?
-//
-//  then how would the Gc safely trace this bad boi?
-
 #[derive(Trace)]
 pub struct CallFrame<'gc> {
     func: Gc<'gc, Func<'gc>>,
