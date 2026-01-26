@@ -1,48 +1,39 @@
-VERSION 0.1.0
+VERSION 0.4.0
 
 IN PROGRESS:
-- WASM SUPPORT
-  1. Allow Nimix to compile with no_std
-  2. update Sandpit to support single threaded/no_std mode
-  3. remove std usages from nilang
-  4. nimix update
-    4.1. make it support being a global allocator
-    4.2. have 2 modes linux allcoator, or wasm allocator
-  5. Add Wasm bindgens for JS
-  6. add a JS wrapper for WASM blob
-  7. static or dynamic loading of script files?
+- No Std Support
+  [x] Update Nimix to compile with no std
+  [x] Update Sandpit to compile with no std
+    [x] multi threaded and single threaded modes
+  [ ] Update Nilang to compile with no std
+    - [x] Convert std usages to core where possible
+    - [ ] Brainstorm: When in no std what happens to operations that require std
+      - [ ] What happens when running repl?
+      - [ ] What happens when trying to load a file?
+      - [ ] What happens when trying to print
+      - [ ] What happens when trying to read
 
 BACKLOG:
-- BUG: some symbols should not be intrinsic
-- LSP
 - FFI
-  - dynamic & static linking of .so files
+- WASM
 
 OPTIMIZATION/REFACTOR BACKLOG:
 - add benchmarking
 - strength reduction for mod/mult/div by powers of 2
 - const locals for maps and lists
-- move span to its own module
-- GC updates:
-  - GcVecMut
-    - goal is to make it so that every call does not require a new callframe to
-      be allocated
-    - this update should be a big speed up by dramatically reducing number of
-      allocations
-  - there is some bugs around GcVec still
-- string internment
+- "super operators" ie Add Immediate
+- String Internment
 - Memory SSA
-- Jump threading pass
+- Jump Threading
 - Loop Invariant Code Motion
 - Peephole pass
-- AST pass
+- AST pass?
 - JIT?
 
 GOALS
-- complete AOC 2025 with this language [TODO]
-- learn about compilers and interpreters [IN PROGRESS]
-- have fun [IN PROGRESS]
-- make a game! [TODO]
+- complete AOC 2025 with this language!
+- learn about compilers and interpreters
+- have fun
 
 DECEMBER -> COMPLETE AOC
 NOVEMBER
