@@ -1,0 +1,153 @@
+========= FILE ./src/runtime/tests/fixtures/multi_threaded_gc_bug/multi_threaded_gc_bug.ast.actual ========
+[
+    FuncDecl {
+        ident: 14,
+        inputs: Spanned {
+            item: [],
+            span: Span {
+                start: 1073,
+                end: 1074,
+            },
+        },
+        stmts: [
+            Expr(
+                Spanned {
+                    item: Value(
+                        String(
+                            SegmentedString {
+                                segments: [
+                                    String(
+                                        "test",
+                                    ),
+                                ],
+                            },
+                        ),
+                    ),
+                    span: Span {
+                        start: 1079,
+                        end: 1086,
+                    },
+                },
+            ),
+        ],
+    },
+    FuncDecl {
+        ident: 15,
+        inputs: Spanned {
+            item: [],
+            span: Span {
+                start: 1109,
+                end: 1110,
+            },
+        },
+        stmts: [
+            Assign {
+                dest: Spanned {
+                    item: Local(
+                        16,
+                    ),
+                    span: Span {
+                        start: 1115,
+                        end: 1118,
+                    },
+                },
+                src: Spanned {
+                    item: Value(
+                        String(
+                            SegmentedString {
+                                segments: [
+                                    String(
+                                        "",
+                                    ),
+                                ],
+                            },
+                        ),
+                    ),
+                    span: Span {
+                        start: 1119,
+                        end: 1122,
+                    },
+                },
+            },
+            While {
+                cond: Spanned {
+                    item: Value(
+                        Bool(
+                            true,
+                        ),
+                    ),
+                    span: Span {
+                        start: 1131,
+                        end: 1137,
+                    },
+                },
+                stmts: [
+                    Expr(
+                        Spanned {
+                            item: Binop {
+                                lhs: Spanned {
+                                    item: Value(
+                                        Ident(
+                                            16,
+                                        ),
+                                    ),
+                                    span: Span {
+                                        start: 1142,
+                                        end: 1143,
+                                    },
+                                },
+                                op: Push,
+                                rhs: Spanned {
+                                    item: Call {
+                                        calle: Spanned {
+                                            item: Value(
+                                                Ident(
+                                                    14,
+                                                ),
+                                            ),
+                                            span: Span {
+                                                start: 1147,
+                                                end: 1154,
+                                            },
+                                        },
+                                        args: [],
+                                    },
+                                    span: Span {
+                                        start: 1147,
+                                        end: 1157,
+                                    },
+                                },
+                            },
+                            span: Span {
+                                start: 1142,
+                                end: 1157,
+                            },
+                        },
+                    ),
+                ],
+            },
+        ],
+    },
+    Expr(
+        Spanned {
+            item: Call {
+                calle: Spanned {
+                    item: Value(
+                        Ident(
+                            15,
+                        ),
+                    ),
+                    span: Span {
+                        start: 1165,
+                        end: 1180,
+                    },
+                },
+                args: [],
+            },
+            span: Span {
+                start: 1165,
+                end: 1183,
+            },
+        },
+    ),
+]

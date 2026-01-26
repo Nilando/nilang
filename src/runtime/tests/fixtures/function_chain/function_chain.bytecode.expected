@@ -1,0 +1,82 @@
+========= FILE ./src/runtime/tests/fixtures/function_chain/function_chain.bytecode.actual ========
+=== FN 1 START ===
+LOC  0, 0
+RTN  0
+=== END ===
+=== FN 2 START ===
+LDUV 0, 0
+CALL 0, 0
+RTN  0
+=== END ===
+=== FN 3 START ===
+LDUV 0, 0
+CALL 0, 0
+RTN  0
+=== END ===
+=== FN 4 START ===
+LDUV 0, 0
+CALL 0, 0
+RTN  0
+=== END ===
+=== FN 5 START ===
+LDUV 0, 0
+CALL 0, 0
+RTN  0
+=== END ===
+=== FN 6 START ===
+LDUV 0, 0
+CALL 0, 0
+RTN  0
+=== END ===
+=== FN 7 START ===
+LDUV 0, 0
+CALL 0, 0
+RTN  0
+=== END ===
+=== FN 8 START ===
+LDUV 0, 0
+CALL 0, 0
+RTN  0
+=== END ===
+=== FN 9 START ===
+LDUV 1, 0
+CALL 3, 1
+LOC  1, 0
+SYM  2, #2
+ARG  0
+CALL 0, 2
+PUSH 1, 0
+LOC  0, 1
+PUSH 1, 0
+ARG  3
+CALL 0, 2
+PUSH 1, 0
+OUT  1
+LDN  0
+RTN  0
+=== END ===
+=== FN 0 START ===
+LOC  1, 0
+LOC  0, 1
+STUV 0, 1
+LOC  1, 2
+STUV 1, 0
+LOC  0, 3
+STUV 0, 1
+LOC  1, 4
+STUV 1, 0
+LOC  0, 5
+STUV 0, 1
+LOC  1, 6
+STUV 1, 0
+LOC  0, 7
+STUV 0, 1
+LOC  1, 8
+STUV 1, 0
+INT  2, 100
+SYM  0, #23
+MEML 0, 2[0]
+ARG  1
+CALL 0, 0
+RTN  0
+=== END ===

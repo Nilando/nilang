@@ -1,0 +1,37 @@
+========= FILE ./src/runtime/tests/fixtures/multi_threaded_gc_bug/multi_threaded_gc_bug.ir.actual ========
+fn1 () {
+block0:
+  t0 = "test"
+  RETURN t0
+
+}
+fn2 () {
+block0:
+  s_0 = ""
+  next block1
+
+block1:
+  t2 = true
+  jnt t2 block3
+  next block2
+
+block2:
+  LOAD_UPVAL get_msg_0
+  t4 = CALL get_msg_0
+  s_0 << t4
+  jump block1
+
+block3:
+  t6 = null
+  RETURN t6
+
+}
+MAIN () {
+block0:
+  get_msg_0 = fn1
+  append_messages_0 = fn2
+  STORE_UPVAL append_messages_0, get_msg_0
+  t2 = CALL append_messages_0
+  RETURN t2
+
+}

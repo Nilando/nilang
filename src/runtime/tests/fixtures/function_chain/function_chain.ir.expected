@@ -1,0 +1,102 @@
+========= FILE ./src/runtime/tests/fixtures/function_chain/function_chain.ir.actual ========
+fn1 () {
+block0:
+  msg_0 = "test"
+  RETURN msg_0
+
+}
+fn2 () {
+block0:
+  LOAD_UPVAL h_0
+  t1 = CALL h_0
+  RETURN t1
+
+}
+fn3 () {
+block0:
+  LOAD_UPVAL g_0
+  t1 = CALL g_0
+  RETURN t1
+
+}
+fn4 () {
+block0:
+  LOAD_UPVAL f_0
+  t1 = CALL f_0
+  RETURN t1
+
+}
+fn5 () {
+block0:
+  LOAD_UPVAL e_0
+  t1 = CALL e_0
+  RETURN t1
+
+}
+fn6 () {
+block0:
+  LOAD_UPVAL d_0
+  t1 = CALL d_0
+  RETURN t1
+
+}
+fn7 () {
+block0:
+  LOAD_UPVAL c_0
+  t1 = CALL c_0
+  RETURN t1
+
+}
+fn8 () {
+block0:
+  LOAD_UPVAL b_0
+  t1 = CALL b_0
+  RETURN t1
+
+}
+fn9 (x_0) {
+block0:
+  LOAD_UPVAL a_0
+  msg_0 = CALL a_0
+  t4 = ""
+  t5 = #str
+  STORE_ARG x_0
+  t6 = CALL t5
+  t4 << t6
+  t7 = " : "
+  t4 << t7
+  STORE_ARG msg_0
+  t9 = CALL t5
+  t4 << t9
+  PRINT t4
+  t11 = null
+  RETURN t11
+
+}
+MAIN () {
+block0:
+  h_0 = fn1
+  g_0 = fn2
+  STORE_UPVAL g_0, h_0
+  f_0 = fn3
+  STORE_UPVAL f_0, g_0
+  e_0 = fn4
+  STORE_UPVAL e_0, f_0
+  d_0 = fn5
+  STORE_UPVAL d_0, e_0
+  c_0 = fn6
+  STORE_UPVAL c_0, d_0
+  b_0 = fn7
+  STORE_UPVAL b_0, c_0
+  a_0 = fn8
+  STORE_UPVAL a_0, b_0
+  t8 = fn9
+  STORE_UPVAL t8, a_0
+  t9 = 100
+  t10 = #times
+  t11 = t9[t10]
+  STORE_ARG t8
+  t12 = CALL t11
+  RETURN t12
+
+}

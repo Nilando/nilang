@@ -1,0 +1,23 @@
+========= FILE ./src/runtime/tests/fixtures/multi_threaded_gc_bug/multi_threaded_gc_bug.bytecode.actual ========
+=== FN 1 START ===
+LOC  0, 0
+RTN  0
+=== END ===
+=== FN 2 START ===
+LOC  1, 0
+BOOL 0, true
+JNT  5, 0
+LDUV 0, 0
+CALL 0, 0
+PUSH 1, 0
+JMP  -5
+LDN  0
+RTN  0
+=== END ===
+=== FN 0 START ===
+LOC  1, 0
+LOC  0, 1
+STUV 0, 1
+CALL 0, 0
+RTN  0
+=== END ===
