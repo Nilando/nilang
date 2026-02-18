@@ -7,6 +7,7 @@ use crate::symbol_map::{SymID, SymbolMap, BOOL_SYM, FLOAT_SYM, FN_SYM, INT_SYM, 
 use super::func::Func;
 use super::hash_map::GcHashMap;
 use super::list::List;
+use super::native_func::NativeFunc;
 use super::string::VMString;
 use super::tagged_value::TaggedValue;
 
@@ -22,6 +23,7 @@ pub enum Value<'gc> {
     String(Gc<'gc, VMString<'gc>>),
     Map(Gc<'gc, GcHashMap<'gc>>),
     Func(Gc<'gc, Func<'gc>>),
+    NativeFunc(Gc<'gc, NativeFunc>),
 }
 
 impl<'gc> Value<'gc> {
@@ -80,6 +82,7 @@ impl<'gc> Value<'gc> {
                 }
             }
             Value::Func(func) => format!("Func(id: {}, args: {})", func.get_id(), func.arity()),
+            Value::NativeFunc(_) => "<native fn>".to_string(),
         }
     }
 
@@ -132,6 +135,9 @@ impl<'gc> Value<'gc> {
                 // Compare the underlying Func pointers, not the Gc wrappers
                 core::ptr::eq(&**lhs as *const _, &**rhs as *const _)
             }
+            (Value::NativeFunc(lhs), Value::NativeFunc(rhs)) => {
+                core::ptr::eq(&**lhs as *const _, &**rhs as *const _)
+            }
             _ => false,
         }
     }
@@ -147,6 +153,7 @@ impl<'gc> Value<'gc> {
             Value::List(_) => LIST_SYM,
             Value::Map(_) => MAP_SYM,
             Value::Func(_) => FN_SYM,
+            Value::NativeFunc(_) => FN_SYM,
         }
     }
 
@@ -157,6 +164,7 @@ impl<'gc> Value<'gc> {
             Value::List(_) => "List",
             Value::String(_) => "String",
             Value::Func(_) => "Func",
+            Value::NativeFunc(_) => "NativeFunc",
             Value::Map(_) => "Map",
             Value::SymId(_) => "Symbol",
             Value::Null => "Null",
@@ -195,6 +203,12 @@ impl<'gc> Value<'gc> {
                 let mut buffer = vec![6];
                 // Hash functions by their inner pointer address (identity-based)
                 let ptr = &**f as *const _ as usize;
+                buffer.extend_from_slice(&ptr.to_ne_bytes());
+                buffer
+            }
+            Value::NativeFunc(nf) => {
+                let mut buffer = vec![8];
+                let ptr = &**nf as *const _ as usize;
                 buffer.extend_from_slice(&ptr.to_ne_bytes());
                 buffer
             }

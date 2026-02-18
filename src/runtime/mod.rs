@@ -8,6 +8,7 @@ mod hash_map;
 mod instruction_stream;
 mod intrinsics;
 mod list;
+mod native_func;
 mod loading;
 mod operations;
 mod stack;
@@ -46,6 +47,7 @@ pub use func::Func;
 pub use list::List;
 pub use string::VMString;
 pub use hash_map::GcHashMap;
+pub use native_func::{NativeFunc, NativeFn};
 
 #[derive(Debug)]
 pub enum InterpreterError {

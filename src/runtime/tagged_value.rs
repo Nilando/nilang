@@ -3,6 +3,7 @@ use sandpit::{Gc, Mutator, Tag, Tagged, Trace};
 use super::func::Func;
 use super::hash_map::GcHashMap;
 use super::list::List;
+use super::native_func::NativeFunc;
 use super::string::VMString;
 use super::value::Value;
 
@@ -26,6 +27,8 @@ pub enum ValueTag {
     String,
     #[ptr(GcHashMap<'gc>)]
     Map,
+    #[ptr(NativeFunc)]
+    NativeFunc,
 }
 
 impl<'gc> From<&TaggedValue<'gc>> for Value<'gc> {
@@ -61,6 +64,11 @@ impl<'gc> From<&TaggedValue<'gc>> for Value<'gc> {
                 let v = ValueTag::get_map(ptr).unwrap();
 
                 Value::Map(v)
+            }
+            ValueTag::NativeFunc => {
+                let v = ValueTag::get_nativefunc(ptr).unwrap();
+
+                Value::NativeFunc(v)
             }
             ValueTag::Packed => {
                 let raw = ptr.get_stripped_raw() as u64;
@@ -141,6 +149,7 @@ impl<'gc> TaggedValue<'gc> {
             Value::Float(f) => ValueTag::from_float(Gc::new(mu, f)),
             Value::String(s) => ValueTag::from_string(s),
             Value::Map(c) => ValueTag::from_map(c),
+            Value::NativeFunc(nf) => ValueTag::from_nativefunc(nf),
             Value::Int(i) => ValueTag::from_int(Gc::new(mu, i)),
             _ => panic!("failed to convert value into tagged value"),
         };
@@ -321,6 +330,110 @@ mod tests {
                 assert!(true);
             } else {
                 assert!(false);
+            }
+        });
+    }
+
+    #[test]
+    fn tagged_native_func_round_trip() {
+        use sandpit::Gc;
+        use crate::runtime::native_func::NativeFunc;
+        use crate::runtime::error::RuntimeError;
+
+        fn dummy_fn<'gc>(_args: &[Value<'gc>], _mu: &'gc Mutator) -> Result<Value<'gc>, RuntimeError> {
+            Ok(Value::Null)
+        }
+
+        let _: Arena<Root![()]> = Arena::new(|mu| {
+            let nf = NativeFunc { arity: 0, func: dummy_fn };
+            let gc_nf = Gc::new(mu, nf);
+            let v = Value::NativeFunc(gc_nf);
+
+            let tagged = v.as_tagged(mu);
+            assert_eq!(tagged.ptr.get_tag(), ValueTag::NativeFunc);
+
+            let unpacked = Value::from(&tagged);
+            if let Value::NativeFunc(recovered) = unpacked {
+                assert_eq!(recovered.arity, 0);
+            } else {
+                panic!("expected NativeFunc variant after round-trip");
+            }
+        });
+    }
+
+    #[test]
+    fn native_func_type_metadata() {
+        use sandpit::Gc;
+        use crate::runtime::native_func::NativeFunc;
+        use crate::runtime::error::RuntimeError;
+        use crate::symbol_map::FN_SYM;
+
+        fn dummy_fn<'gc>(_args: &[Value<'gc>], _mu: &'gc Mutator) -> Result<Value<'gc>, RuntimeError> {
+            Ok(Value::Null)
+        }
+
+        let _: Arena<Root![()]> = Arena::new(|mu| {
+            let nf = NativeFunc { arity: 2, func: dummy_fn };
+            let gc_nf = Gc::new(mu, nf);
+            let v = Value::NativeFunc(gc_nf);
+
+            assert_eq!(v.type_str(), "NativeFunc");
+            assert_eq!(v.get_type_id(), FN_SYM);
+            assert!(v.is_truthy());
+        });
+    }
+
+    #[test]
+    fn native_func_equality_is_identity() {
+        use sandpit::Gc;
+        use crate::runtime::native_func::NativeFunc;
+        use crate::runtime::error::RuntimeError;
+
+        fn dummy_fn<'gc>(_args: &[Value<'gc>], _mu: &'gc Mutator) -> Result<Value<'gc>, RuntimeError> {
+            Ok(Value::Null)
+        }
+
+        let _: Arena<Root![()]> = Arena::new(|mu| {
+            let nf = NativeFunc { arity: 0, func: dummy_fn };
+            let gc_a = Gc::new(mu, nf);
+            let gc_b = Gc::new(mu, nf);
+
+            let val_a1 = Value::NativeFunc(gc_a.clone());
+            let val_a2 = Value::NativeFunc(gc_a);
+            let val_b = Value::NativeFunc(gc_b);
+
+            // Same Gc pointer → equal
+            assert!(val_a1.is_equal_to(&val_a2));
+            // Different allocation → not equal
+            assert!(!val_a1.is_equal_to(&val_b));
+        });
+    }
+
+    #[test]
+    fn native_func_direct_call() {
+        use sandpit::Gc;
+        use crate::runtime::native_func::NativeFunc;
+        use crate::runtime::error::RuntimeError;
+
+        fn add_ints<'gc>(args: &[Value<'gc>], _mu: &'gc Mutator) -> Result<Value<'gc>, RuntimeError> {
+            if let (Value::Int(a), Value::Int(b)) = (&args[0], &args[1]) {
+                Ok(Value::Int(a + b))
+            } else {
+                panic!("expected two ints");
+            }
+        }
+
+        let _: Arena<Root![()]> = Arena::new(|mu| {
+            let nf = NativeFunc { arity: 2, func: add_ints };
+            let gc_nf = Gc::new(mu, nf);
+
+            let args = vec![Value::Int(10), Value::Int(32)];
+            let result = (gc_nf.func)(&args, mu).unwrap();
+
+            if let Value::Int(42) = result {
+                assert!(true);
+            } else {
+                panic!("expected Int(42)");
             }
         });
     }

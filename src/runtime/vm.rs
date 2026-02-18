@@ -599,6 +599,26 @@ impl<'gc> VM<'gc> {
 
                 Ok(())
             }
+            Value::NativeFunc(native_func) => {
+                self.expect_args(native_func.arity as usize, supplied_args)?;
+
+                instr_stream.jump(-((supplied_args + 1) as i16));
+
+                let mut args = Vec::with_capacity(supplied_args);
+                for _ in 0..supplied_args {
+                    if let ByteCode::StoreArg { src } = instr_stream.advance() {
+                        let tagged = self.stack.get_reg(src)?;
+                        args.push(Value::from(&tagged));
+                    }
+                }
+
+                instr_stream.advance(); // consume Call
+
+                let result = (native_func.func)(&args, mu)?;
+                self.set_reg(result.as_tagged(mu), dest, mu);
+
+                Ok(())
+            }
             Value::SymId(sym_id) => {
                 if !SymbolMap::is_intrinsic(sym_id) {
                     return Err(self.new_error(

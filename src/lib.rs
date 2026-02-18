@@ -18,7 +18,7 @@ pub use compile::compile;
 // Runtime types for FFI consumers
 pub use runtime::{
     Value, TaggedValue, ValueTag,
-    Func, List, VMString, GcHashMap,
+    Func, NativeFunc, NativeFn, List, VMString, GcHashMap,
     ByteCode, RuntimeError, RuntimeErrorKind,
     Backtrace, BacktraceCall,
 };
