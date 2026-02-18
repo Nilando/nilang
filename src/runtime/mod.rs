@@ -23,21 +23,29 @@ mod tests;
 use std::io::Write;
 use std::io::Read;
 
-use crate::codegen::Func;
+use crate::codegen::Func as CodegenFunc;
 use crate::compile::compile;
 use crate::parser::ParseError;
 use crate::symbol_map::SymbolMap;
 
-use self::error::RuntimeErrorKind;
+use self::error::RuntimeErrorKind as ErrorKind;
 use self::loading::load_program;
 use self::vm::ExitCode;
 use sandpit::*;
 
 pub use config::Config;
-pub use self::error::RuntimeError;
+pub use self::error::{RuntimeError, RuntimeErrorKind, Backtrace, BacktraceCall};
 
 pub use bytecode::ByteCode;
 pub use vm::VM;
+
+// FFI-visible types
+pub use value::Value;
+pub use tagged_value::{TaggedValue, ValueTag};
+pub use func::Func;
+pub use list::List;
+pub use string::VMString;
+pub use hash_map::GcHashMap;
 
 #[derive(Debug)]
 pub enum InterpreterError {
@@ -176,7 +184,7 @@ impl Runtime {
 
             Err(fs_err) => {
                 let runtime_error = RuntimeError::new(
-                    RuntimeErrorKind::FailedImport,
+                    ErrorKind::FailedImport,
                     Some(fs_err.to_string()),
                     None, // TODO: get a backtrace here
                 );
@@ -185,7 +193,7 @@ impl Runtime {
         }
     }
 
-    fn load_program(&mut self, program: Vec<Func>, path: Option<&str>) -> Result<(), InterpreterError> {
+    fn load_program(&mut self, program: Vec<CodegenFunc>, path: Option<&str>) -> Result<(), InterpreterError> {
         let mut result = Ok(());
 
         self.arena.mutate(|mu, vm| {
@@ -208,7 +216,7 @@ impl Runtime {
         Ok(())
     }
 
-    fn compile_with_config(&mut self, source: &str, path: Option<String>) -> Result<Vec<Func>, ParseError> {
+    fn compile_with_config(&mut self, source: &str, path: Option<String>) -> Result<Vec<CodegenFunc>, ParseError> {
         compile(
             &mut self.syms,
             source,

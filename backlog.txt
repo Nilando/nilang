@@ -13,8 +13,19 @@ IN PROGRESS:
       - [ ] What happens when trying to print
       - [ ] What happens when trying to read
 
-BACKLOG:
+IN PROGRESS:
 - FFI
+  [ ] Define a public FFI API crate/module exposing nilang types (Value, GC types, etc.)
+      so .so files can be developed from external Rust projects
+  [ ] Add FFIFunction variant (packed type or tagged type on existing function type)
+      that holds a pointer to a .so function
+  [ ] Implement dynamic loading of .so files via import("path.so")
+      - use libloading or dlopen to load at runtime
+      - .so must export a known entry point (e.g. nilang_register) that returns FFIFunctions
+  [ ] Wire up FFIFunction dispatch in the VM so calls go through the function pointer
+  [ ] Test roundtrip: build a .so from a separate Rust project, load it, call it from nilang
+
+BACKLOG:
 - WASM
 
 OPTIMIZATION/REFACTOR BACKLOG:
