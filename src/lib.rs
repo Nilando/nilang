@@ -22,6 +22,7 @@ pub use runtime::{
     ByteCode, RuntimeError, RuntimeErrorKind,
     Backtrace, BacktraceCall,
 };
+pub use spanned::Span;
 
 // Re-export sandpit types so FFI consumers don't need a separate sandpit dependency
 pub use sandpit::{Gc, GcOpt, Mutator, Arena, Root, Tagged, Trace, TraceLeaf, GcVec};

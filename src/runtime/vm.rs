@@ -26,6 +26,7 @@ use std::io::Write;
 #[derive(Debug)]
 pub enum ExitCode {
     LoadModule(String),
+    LoadSo(String),
     Print,
     Read,
     Yield,
@@ -354,7 +355,12 @@ impl<'gc> VM<'gc> {
                     // Module not cached, need to load it
                     let val = Value::from(&cache_key);
                     let path_string = val.to_string(symbols, true);
-                    return Ok(Some(ExitCode::LoadModule(path_string)));
+
+                    if path_string.ends_with(".so") {
+                        return Ok(Some(ExitCode::LoadSo(path_string)));
+                    } else {
+                        return Ok(Some(ExitCode::LoadModule(path_string)));
+                    }
                 }
             }
             ByteCode::Equality { dest, lhs, rhs } => {
@@ -688,6 +694,24 @@ impl<'gc> VM<'gc> {
     ) -> Backtrace {
         self.stack.get_backtrace()
     }
+
+    pub fn set_import_return_value(&self, mu: &'gc Mutator, value: Value<'gc>) -> Result<(), RuntimeError> {
+        let mut instr_stream = self.create_instruction_stream()?;
+        if let ByteCode::Import { dest, path } = instr_stream.prev() {
+            let return_val = value.as_tagged(mu);
+            let cache_key = self.get_reg(path)?;
+            GcHashMap::insert(self.import_cache.clone(), cache_key, return_val.clone(), mu);
+            self.set_reg(return_val, dest, mu);
+            Ok(())
+        } else {
+            Err(RuntimeError::new(
+                RuntimeErrorKind::InternalError,
+                Some("Expected Import instruction for set_import_return_value".to_string()),
+                None,
+            ))
+        }
+    }
+
 
     fn get_reg(&self, reg: u8) -> Result<TaggedValue<'gc>, RuntimeError> {
         self.stack.get_reg(reg)
