@@ -151,6 +151,7 @@ impl Runtime {
                 Ok(ExitCode::Yield) => {}
                 Ok(ExitCode::Print) => self.print(&mut output)?,
                 Ok(ExitCode::LoadModule(ref path)) => self.load_module(path)?,
+                Ok(ExitCode::LoadSo(ref path)) => self.load_so(path)?,
                 Ok(ExitCode::Read) => self.read_input()?,
                 Err(err) => return Err(InterpreterError::RuntimeError(err)),
             }
@@ -192,6 +193,44 @@ impl Runtime {
                 );
                 Err(InterpreterError::RuntimeError(runtime_error))
             }
+        }
+    }
+
+    fn load_so(&mut self, path: &str) -> Result<(), InterpreterError> {
+        unsafe {
+            let lib = libloading::Library::new(path).map_err(|e| {
+                InterpreterError::RuntimeError(RuntimeError::new(
+                    ErrorKind::FailedImport,
+                    Some(e.to_string()),
+                    None,
+                ))
+            })?;
+            let init: libloading::Symbol<NativeFn> = lib.get(b"nilang_init").map_err(|e| {
+                InterpreterError::RuntimeError(RuntimeError::new(
+                    ErrorKind::FailedImport,
+                    Some(format!("missing nilang_init symbol: {}", e)),
+                    None,
+                ))
+            })?;
+            // Keep library alive by leaking it — function pointers would dangle otherwise
+            let init_fn: NativeFn = *init;
+            std::mem::forget(lib);
+
+            let mut result = Ok(());
+            self.arena.mutate(|mu, vm| {
+                match init_fn(&[], mu) {
+                    Ok(value) => {
+                        if let Err(err) = vm.set_import_return_value(mu, value) {
+                            result = Err(InterpreterError::RuntimeError(err));
+                        }
+                    }
+                    Err(err) => {
+                        result = Err(InterpreterError::RuntimeError(err));
+                    }
+                }
+            });
+
+            result
         }
     }
 
