@@ -188,7 +188,8 @@ impl PackedSpans {
             }
 
             let (_, span_end) = self.spans[k + 1];
-            if start + 1 == span_end {
+            let adjusted_span_end = if i < span_end { span_end - 1 } else { span_end };
+            if start == adjusted_span_end {
                 remove_span = Some(k);
             }
         }
@@ -350,6 +351,22 @@ mod tests {
         ps.remove(10);
 
         assert_eq!(ps.spans.pop().unwrap(), (Span { start: 0, end: 0 }, 10));
+    }
+
+    #[test]
+    fn removing_far_past_adjacent_spans_should_not_collapse() {
+        // Regression: removing an instruction far past two adjacent spans
+        // should not incorrectly collapse them
+        let mut ps = PackedSpans::new();
+
+        ps.push(Span { start: 0, end: 0 }, 6);
+        ps.push(Span { start: 1, end: 1 }, 7);
+        ps.remove(9);
+
+        // Both spans should still exist
+        assert_eq!(ps.spans.len(), 2);
+        assert_eq!(ps.spans[0], (Span { start: 0, end: 0 }, 6));
+        assert_eq!(ps.spans[1], (Span { start: 1, end: 1 }, 7));
     }
 
     #[test]
