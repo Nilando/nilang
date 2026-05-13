@@ -1,0 +1,30 @@
+call_heavy.nl
+----------------------------------------
+  COMPILATION
+    parse:          9.04 ms      ( 72.7% of compile)
+    optimize:       985.0 µs     (  7.9% of compile)
+    codegen:        2.41 ms      ( 19.4% of compile)
+    total:          12.43 ms     (  2.7% of wall)
+  DISPATCH / VM
+    instructions:   8120283
+    dispatch loops: 188
+    dispatch time:  446.98 ms    ( 97.0% of wall)
+    avg dispatch:   55.05 ns
+    fn calls:       1010000
+    native calls:   0
+    stack avg/peak: 52.0 / 102
+  GC
+    collections:    186 (major: 52, minor: 134)
+    major avg:      0 ns
+    minor avg:      0 ns
+    pause count:    188
+    pause total:    275.45 ms    ( 59.8% of wall)
+    pause avg:      1.47 ms
+    pause max:      4.12 ms
+    arena peak:     304.0 KB
+    arena avg:      183.82 KB
+    old obj peak:   783
+    old obj avg:    540
+    snapshots:      8496
+  RUNTIME
+    wall:           460.63 ms

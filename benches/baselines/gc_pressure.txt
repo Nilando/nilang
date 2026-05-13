@@ -1,0 +1,30 @@
+gc_pressure.nl
+----------------------------------------
+  COMPILATION
+    parse:          8.76 ms      ( 72.0% of compile)
+    optimize:       985.0 µs     (  8.1% of compile)
+    codegen:        2.42 ms      ( 19.9% of compile)
+    total:          12.16 ms     (  0.7% of wall)
+  DISPATCH / VM
+    instructions:   19019288
+    dispatch loops: 2804
+    dispatch time:  1.73 s       ( 99.2% of wall)
+    avg dispatch:   91.03 ns
+    fn calls:       2000
+    native calls:   0
+    stack avg/peak: 2.0 / 2
+  GC
+    collections:    2802 (major: 1118, minor: 1684)
+    major avg:      0 ns
+    minor avg:      0 ns
+    pause count:    2804
+    pause total:    1.17 s       ( 67.1% of wall)
+    pause avg:      417.53 µs
+    pause max:      1.11 ms
+    arena peak:     1.11 MB
+    arena avg:      632.6 KB
+    old obj peak:   4483
+    old obj avg:    2177
+    snapshots:      24627
+  RUNTIME
+    wall:           1.75 s

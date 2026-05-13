@@ -162,7 +162,7 @@ impl Runtime {
             #[cfg(feature = "benchmark")]
             if let Some(t) = vm_exit_time {
                 let gap_ns = t.elapsed().as_nanos() as u64;
-                crate::macros::instrument!(crate::benchmark::Action::RecordYieldGapNs(gap_ns));
+                crate::macros::instrument!(crate::benchmark::Action::RecordGcPauseNs(gap_ns));
                 crate::benchmark::record_gc_metrics(self.arena.metrics());
             }
 

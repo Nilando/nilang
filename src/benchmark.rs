@@ -37,8 +37,6 @@ pub static TOTAL_ALLOCATED_BYTES:   AtomicU64 = AtomicU64::new(0);
 pub static PEAK_HEAP_BYTES:         AtomicU64 = AtomicU64::new(0);
 pub static DISPATCH_TIME_US:        AtomicU64 = AtomicU64::new(0);
 pub static GC_COLLECTIONS:          AtomicU64 = AtomicU64::new(0);
-pub static GC_TOTAL_PAUSE_US:       AtomicU64 = AtomicU64::new(0);
-pub static GC_MAX_PAUSE_US:         AtomicU64 = AtomicU64::new(0);
 pub static MAJOR_COLLECTIONS:       AtomicU64 = AtomicU64::new(0);
 pub static MINOR_COLLECTIONS:       AtomicU64 = AtomicU64::new(0);
 pub static MAJOR_COLLECT_AVG_NS:    AtomicU64 = AtomicU64::new(0);
@@ -48,9 +46,9 @@ pub static ARENA_SIZE_SUM_BYTES:    AtomicU64 = AtomicU64::new(0);
 pub static ARENA_SIZE_SAMPLES:      AtomicU64 = AtomicU64::new(0);
 pub static OLD_OBJECTS_PEAK:        AtomicU64 = AtomicU64::new(0);
 pub static OLD_OBJECTS_SUM:         AtomicU64 = AtomicU64::new(0);
-pub static YIELD_GAP_COUNT:         AtomicU64 = AtomicU64::new(0);
-pub static YIELD_GAP_TOTAL_NS:      AtomicU64 = AtomicU64::new(0);
-pub static YIELD_GAP_MAX_NS:        AtomicU64 = AtomicU64::new(0);
+pub static GC_PAUSE_COUNT:          AtomicU64 = AtomicU64::new(0);
+pub static GC_PAUSE_TOTAL_NS:       AtomicU64 = AtomicU64::new(0);
+pub static GC_PAUSE_MAX_NS:         AtomicU64 = AtomicU64::new(0);
 pub static PARSE_TIME_US:           AtomicU64 = AtomicU64::new(0);
 pub static OPTIMIZE_TIME_US:        AtomicU64 = AtomicU64::new(0);
 pub static CODEGEN_TIME_US:         AtomicU64 = AtomicU64::new(0);
@@ -75,14 +73,12 @@ pub enum Action<'a> {
 
     // increments by a value
     AddAllocatedBytes(u64),
-    AddGcPauseUs(u64),
     AddIoTimeUs(u64),
-    RecordYieldGapNs(u64),
+    RecordGcPauseNs(u64),
 
     // peak updates (CAS loop)
     UpdatePeakHeap(u64),
     UpdatePeakStackDepth(u64),
-    UpdateMaxGcPause(u64),
 
     // timed blocks
     TimeParse(&'a dyn Fn()),
@@ -142,17 +138,15 @@ pub fn dispatch(action: Action) {
         Action::DecrementStackDepth         => { CURRENT_STACK_DEPTH.fetch_sub(1, Relaxed); }
 
         Action::AddAllocatedBytes(n)        => { TOTAL_ALLOCATED_BYTES.fetch_add(n, Relaxed); }
-        Action::AddGcPauseUs(n)             => { GC_TOTAL_PAUSE_US.fetch_add(n, Relaxed); }
         Action::AddIoTimeUs(n)              => { IO_TIME_US.fetch_add(n, Relaxed); }
-        Action::RecordYieldGapNs(n)         => {
-            YIELD_GAP_COUNT.fetch_add(1, Relaxed);
-            YIELD_GAP_TOTAL_NS.fetch_add(n, Relaxed);
-            update_peak(&YIELD_GAP_MAX_NS, n);
+        Action::RecordGcPauseNs(n)          => {
+            GC_PAUSE_COUNT.fetch_add(1, Relaxed);
+            GC_PAUSE_TOTAL_NS.fetch_add(n, Relaxed);
+            update_peak(&GC_PAUSE_MAX_NS, n);
         }
 
         Action::UpdatePeakHeap(n)           => update_peak(&PEAK_HEAP_BYTES, n),
         Action::UpdatePeakStackDepth(n)     => update_peak(&STACK_DEPTH_PEAK, n),
-        Action::UpdateMaxGcPause(n)         => update_peak(&GC_MAX_PAUSE_US, n),
 
         Action::TimeParse(f)                => {
             let t = std::time::Instant::now();
@@ -207,8 +201,6 @@ fn write_report(path: &str) {
     let dispatch_ms     = dispatch_us as f64 / 1000.0;
     let function_calls  = FUNCTION_CALLS.load(Relaxed);
     let native_calls    = NATIVE_CALLS.load(Relaxed);
-    let gc_total_us     = GC_TOTAL_PAUSE_US.load(Relaxed);
-    let gc_max_us       = GC_MAX_PAUSE_US.load(Relaxed);
     let major_colls     = MAJOR_COLLECTIONS.load(Relaxed);
     let minor_colls     = MINOR_COLLECTIONS.load(Relaxed);
     let gc_collections  = major_colls + minor_colls;
@@ -223,13 +215,13 @@ fn write_report(path: &str) {
     let old_avg         = if arena_samples > 0 {
         OLD_OBJECTS_SUM.load(Relaxed) / arena_samples
     } else { 0 };
-    let yield_count     = YIELD_GAP_COUNT.load(Relaxed);
-    let yield_total_ns  = YIELD_GAP_TOTAL_NS.load(Relaxed);
-    let yield_max_ns    = YIELD_GAP_MAX_NS.load(Relaxed);
-    let yield_total_ms  = yield_total_ns as f64 / 1_000_000.0;
-    let yield_max_ms    = yield_max_ns as f64 / 1_000_000.0;
-    let yield_avg_ms    = if yield_count > 0 {
-        yield_total_ns as f64 / yield_count as f64 / 1_000_000.0
+    let gc_pause_count    = GC_PAUSE_COUNT.load(Relaxed);
+    let gc_pause_total_ns = GC_PAUSE_TOTAL_NS.load(Relaxed);
+    let gc_pause_max_ns   = GC_PAUSE_MAX_NS.load(Relaxed);
+    let gc_pause_total_ms = gc_pause_total_ns as f64 / 1_000_000.0;
+    let gc_pause_max_ms   = gc_pause_max_ns as f64 / 1_000_000.0;
+    let gc_pause_avg_ms   = if gc_pause_count > 0 {
+        gc_pause_total_ns as f64 / gc_pause_count as f64 / 1_000_000.0
     } else { 0.0 };
     let syscalls        = SYSCALL_COUNT.load(Relaxed);
     let io_us           = IO_TIME_US.load(Relaxed);
@@ -241,14 +233,6 @@ fn write_report(path: &str) {
 
     let avg_dispatch_ns = if instructions > 0 {
         (dispatch_us as f64 * 1000.0) / instructions as f64
-    } else { 0.0 };
-
-    let avg_gc_pause_ms = if gc_collections > 0 {
-        (gc_total_us as f64 / gc_collections as f64) / 1000.0
-    } else { 0.0 };
-    let max_gc_pause_ms = gc_max_us as f64 / 1000.0;
-    let gc_time_pct = if wall_us > 0 {
-        gc_total_us as f64 / wall_us as f64 * 100.0
     } else { 0.0 };
 
     let alloc_rate = if wall_us > 0 {
@@ -282,10 +266,8 @@ fn write_report(path: &str) {
 \"arena_peak_bytes\":{arena_peak},\"arena_avg_bytes\":{arena_avg_bytes},\
 \"old_objects_peak\":{old_peak},\"old_objects_avg\":{old_avg},\
 \"gc_snapshots\":{arena_samples},\
-\"avg_gc_pause_ms\":{avg_gc_pause_ms:?},\"max_gc_pause_ms\":{max_gc_pause_ms:?},\
-\"gc_time_pct\":{gc_time_pct:?},\"avg_arena_bytes\":0,\"heap_growth_rate\":0,\
-\"yield_gap_count\":{yield_count},\"yield_total_ms\":{yield_total_ms:?},\
-\"yield_avg_ms\":{yield_avg_ms:?},\"yield_max_ms\":{yield_max_ms:?},\
+\"gc_pause_count\":{gc_pause_count},\"gc_pause_total_ms\":{gc_pause_total_ms:?},\
+\"gc_pause_avg_ms\":{gc_pause_avg_ms:?},\"gc_pause_max_ms\":{gc_pause_max_ms:?},\
 \"syscall_count\":{syscalls},\"io_time_ms\":{io_ms:?},\
 \"wall_time_ms\":{wall_ms:?},\"cpu_time_ms\":0.0,\
 \"user_time_ms\":0.0,\"system_time_ms\":0.0,\

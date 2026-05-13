@@ -1,0 +1,30 @@
+bubble_sort.nl
+----------------------------------------
+  COMPILATION
+    parse:          9.97 ms      ( 72.4% of compile)
+    optimize:       1.11 ms      (  8.1% of compile)
+    codegen:        2.69 ms      ( 19.5% of compile)
+    total:          13.78 ms     (  0.2% of wall)
+  DISPATCH / VM
+    instructions:   162552862
+    dispatch loops: 7
+    dispatch time:  6.88 s       ( 99.8% of wall)
+    avg dispatch:   42.33 ns
+    fn calls:       2
+    native calls:   0
+    stack avg/peak: 1.5 / 2
+  GC
+    collections:    5 (major: 1, minor: 4)
+    major avg:      0 ns
+    minor avg:      0 ns
+    pause count:    7
+    pause total:    2.95 s       ( 42.7% of wall)
+    pause avg:      420.85 ms
+    pause max:      2.95 s
+    arena peak:     272.07 KB
+    arena avg:      240.05 KB
+    old obj peak:   456
+    old obj avg:    450
+    snapshots:      162566
+  RUNTIME
+    wall:           6.9 s
