@@ -5,13 +5,12 @@ use super::super::tac::{Tac, TacConst};
 use crate::ir::tac::VReg;
 use crate::operators::BinaryOp;
 use alloc::collections::BTreeMap;
-use hashbrown::HashMap;
 
 pub type ValueId = usize;
 
 pub fn global_value_numbering(
     func: &mut Func,
-    memory_access_ids: Option<HashMap<InstrLoc, MemoryAccessId>>,
+    memory_access_ids: Option<BTreeMap<InstrLoc, MemoryAccessId>>,
 ) {
     let dom_tree = compute_dom_tree(func);
     let mut ctx = GVNC::new(memory_access_ids);
@@ -22,17 +21,17 @@ pub fn global_value_numbering(
 // global value numbering context
 pub struct GVNC {
     id_counter: usize,
-    value_table: HashMap<ValueId, ValueEntry>,
-    memory_access_ids: Option<HashMap<InstrLoc, MemoryAccessId>>,
+    value_table: BTreeMap<ValueId, ValueEntry>,
+    memory_access_ids: Option<BTreeMap<InstrLoc, MemoryAccessId>>,
     //dead_values: HashMap<ValueId, ValueEntry>,
     value_stack: Vec<Vec<ValueId>>,
 }
 
 impl GVNC {
-    pub fn new(memory_access_ids: Option<HashMap<InstrLoc, MemoryAccessId>>) -> Self {
+    pub fn new(memory_access_ids: Option<BTreeMap<InstrLoc, MemoryAccessId>>) -> Self {
         Self {
             id_counter: 0,
-            value_table: HashMap::new(),
+            value_table: BTreeMap::new(),
             //dead_values: HashMap::new(),
             memory_access_ids,
             value_stack: vec![],

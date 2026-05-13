@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use super::block::{Block, BlockId};
 use super::func::Func;
 use super::lowering::MAIN_FUNC_ID;
@@ -8,14 +10,14 @@ use hashbrown::HashMap;
 
 #[derive(Debug)]
 pub struct VRegMap {
-    vars: HashMap<SymID, Vec<VReg>>,
-    regs: HashMap<VReg, SymID>,
+    vars: BTreeMap<SymID, Vec<VReg>>,
+    regs: BTreeMap<VReg, SymID>,
 }
 
 impl VRegMap {
     pub fn new(vreg_map: HashMap<SymID, VReg>) -> Self {
-        let mut vars = HashMap::new();
-        let mut regs = HashMap::new();
+        let mut vars = BTreeMap::new();
+        let mut regs = BTreeMap::new();
 
         for (var, reg) in vreg_map.iter() {
             vars.insert(*var, vec![*reg]);
