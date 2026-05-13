@@ -7,6 +7,10 @@ mod compile;
 mod repl;
 mod operators;
 mod spanned;
+mod macros;
+
+#[cfg(feature = "benchmark")]
+mod benchmark;
 
 extern crate alloc;
 

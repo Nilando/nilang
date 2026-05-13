@@ -86,6 +86,9 @@ impl<'gc> VM<'gc> {
         }
 
         loop {
+            #[cfg(feature = "benchmark")]
+            crate::benchmark::sample_sandpit_metrics();
+
             if mu.gc_yield() {
                 return Ok(ExitCode::Yield);
             }
@@ -93,6 +96,8 @@ impl<'gc> VM<'gc> {
             let mut instr_stream = self.create_instruction_stream()?;
 
             for _ in 0..DISPATCH_LOOP_LENGTH {
+                crate::macros::instrument!(crate::benchmark::Action::IncrementInstructions);
+
                 match self.dispatch_instruction(mu, symbols, &mut instr_stream) {
                     Ok(None) => {}
                     Ok(Some(command)) => {
@@ -564,6 +569,7 @@ impl<'gc> VM<'gc> {
     ) -> Result<(), RuntimeError> {
         match calle {
             Value::Func(func) => {
+                crate::macros::instrument!(crate::benchmark::Action::IncrementFunctionCalls);
                 let expected_args = func.arity() as usize;
                 let bound_args = func.get_bound_args();
                 let num_bound_args = if let Some(ref args) = bound_args {
@@ -606,6 +612,7 @@ impl<'gc> VM<'gc> {
                 Ok(())
             }
             Value::NativeFunc(native_func) => {
+                crate::macros::instrument!(crate::benchmark::Action::IncrementNativeCalls);
                 self.expect_args(native_func.arity as usize, supplied_args)?;
 
                 instr_stream.jump(-((supplied_args + 1) as i16));

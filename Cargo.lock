@@ -383,6 +383,7 @@ dependencies = [
  "murmurhash3",
  "pretty_assertions",
  "sandpit",
+ "serde",
  "termion",
 ]
 

@@ -12,6 +12,9 @@ keywords = ["language", "interpreter", "scripting"]
 categories = ["command-line-utilities"]
 readme = "README.md"
 
+[features]
+benchmark = ["dep:serde"]
+
 [dependencies]
 clap = { version = "4.5.8", features = ["derive"] }
 murmurhash3 = "0.0.5"
@@ -19,6 +22,7 @@ sandpit = { version = "=0.5.2" }
 termion = "4.0.4"
 libloading = "0.8"
 hashbrown = { version = "0.14", default-features = false, features = ["ahash"] }
+serde = { version = "1.0.228", features = ["derive"], optional = true }
 
 [dev-dependencies]
 criterion = "0.5.1"

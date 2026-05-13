@@ -22,18 +22,22 @@ pub fn compile(
     ir_output_path: Option<Option<String>>,
     bytecode_output_path: Option<Option<String>>,
 ) -> Result<Vec<Func>, ParseError> {
-    let ast = parse_program(source, symbols, source_path.as_ref())?;
+    let ast = crate::macros::instrument_timed!(PARSE_TIME_US, {
+        parse_program(source, symbols, source_path.as_ref())
+    })?;
     if let Some(path) = ast_output_path {
         output_string(format!("{:#?}", ast), path);
     }
 
     let mut ir = lower_ast(ast, pretty_ir);
 
-    if optimize {
-        for func in ir.iter_mut() {
-            optimize_func(func);
+    crate::macros::instrument_timed!(OPTIMIZE_TIME_US, {
+        if optimize {
+            for func in ir.iter_mut() {
+                optimize_func(func);
+            }
         }
-    }
+    });
 
     if let Some(path) = ir_output_path {
         let mut ir_string = String::new();
@@ -46,10 +50,12 @@ pub fn compile(
     }
 
     let mut program = vec![];
-    for ir_func in ir.into_iter() {
-        let func = generate_func(ir_func);
-        program.push(func);
-    }
+    crate::macros::instrument_timed!(CODEGEN_TIME_US, {
+        for ir_func in ir.into_iter() {
+            let func = generate_func(ir_func);
+            program.push(func);
+        }
+    });
 
     if let Some(path) = bytecode_output_path {
         let mut bc_str = String::new();

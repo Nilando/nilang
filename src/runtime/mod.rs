@@ -79,6 +79,8 @@ pub struct Runtime {
 
 impl Runtime {
     pub fn init(syms: SymbolMap, config: Config) -> Result<Self, InterpreterError> {
+        crate::macros::instrument!(crate::benchmark::Action::Start);
+
         let arena = Arena::new(|mu| VM::new(mu));
 
         let mut runtime = Runtime {
@@ -130,6 +132,9 @@ impl Runtime {
     }
 
     pub fn run(&mut self) -> Result<(), InterpreterError> {
+        #[cfg(feature = "benchmark")]
+        crate::benchmark::register_sandpit_metrics(self.arena.metrics());
+
         if self.config.dry_run {
             println!("DRY RUN: program compiled successfully");
             return Ok(());
@@ -139,13 +144,34 @@ impl Runtime {
         let mut output = self.config.get_output();
 
         loop {
-            self.arena.mutate(|mu, vm| {
-                vm_result = vm.run(mu, &mut self.syms);
+            crate::macros::instrument!(crate::benchmark::Action::IncrementDispatchLoops);
+
+            #[cfg(feature = "benchmark")]
+            let mut vm_exit_time: Option<std::time::Instant> = None;
+
+            crate::macros::instrument_timed!(DISPATCH_TIME_US, {
+                self.arena.mutate(|mu, vm| {
+                    vm_result = vm.run(mu, &mut self.syms);
+                    #[cfg(feature = "benchmark")]
+                    {
+                        vm_exit_time = Some(std::time::Instant::now());
+                    }
+                });
             });
+
+            #[cfg(feature = "benchmark")]
+            if let Some(t) = vm_exit_time {
+                let gap_ns = t.elapsed().as_nanos() as u64;
+                crate::macros::instrument!(crate::benchmark::Action::RecordYieldGapNs(gap_ns));
+                crate::benchmark::record_gc_metrics(self.arena.metrics());
+            }
 
             match vm_result {
                 // TODO have exit also return an exit value?
                 Ok(ExitCode::Exit) => {
+                    crate::macros::instrument!(crate::benchmark::Action::WriteReport(
+                        self.config.file.as_deref().unwrap_or("inline")
+                    ));
                     return Ok(());
                 },
                 Ok(ExitCode::Yield) => {}
