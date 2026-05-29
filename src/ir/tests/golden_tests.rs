@@ -23,6 +23,11 @@ fn if_else() {
 }
 
 #[test]
+fn constant_folding_extended() {
+  super::test_golden_ir("./src/ir/tests/golden/constant_folding_extended.golden")
+}
+
+#[test]
 fn shortcircuit() {
   super::test_golden_ir("./src/ir/tests/golden/shortcircuit.golden")
 }

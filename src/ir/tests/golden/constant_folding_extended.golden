@@ -1,0 +1,43 @@
+OPT=true
+
+%%%%
+
+a = 7 & 3;     // BitAnd  -> 3
+b = 5 | 2;     // BitOr   -> 7
+c = 6 ^ 3;     // BitXor  -> 5
+d = 10 > 3;    // Gt      -> true
+e = 4 >= 9;    // Gte     -> false
+f = 2 <= 2;    // Lte     -> true
+g = 1.5 < 2;   // Lt (mixed int/float) -> true
+h = 3.0 > 2.5; // Gt (float)  -> true
+
+print(a);
+print(b);
+print(c);
+print(d);
+print(e);
+print(f);
+print(g);
+print(h);
+
+%%%%
+
+MAIN () {
+block0:
+  t0 = 7
+  t1 = 3
+  t4 = 5
+  d_0 = true
+  e_0 = false
+  PRINT t1
+  PRINT t0
+  PRINT t4
+  PRINT d_0
+  PRINT e_0
+  PRINT d_0
+  PRINT d_0
+  PRINT d_0
+  t47 = null
+  RETURN t47
+
+}

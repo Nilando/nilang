@@ -5,6 +5,7 @@ use super::super::tac::{Tac, TacConst};
 use crate::ir::tac::VReg;
 use crate::operators::BinaryOp;
 use alloc::collections::BTreeMap;
+use core::cmp::Ordering;
 
 pub type ValueId = usize;
 
@@ -401,7 +402,52 @@ fn fold_constants(op: BinaryOp, lhs: &TacConst, rhs: &TacConst) -> Option<TacCon
         },
         BinaryOp::Equal => Some(TacConst::Bool(lhs == rhs)),
         BinaryOp::NotEqual => Some(TacConst::Bool(lhs != rhs)),
-        // TODO: more constant folding can be added, I just got lazy and stopped here
+        BinaryOp::Lt => const_cmp(lhs, rhs).map(|o| TacConst::Bool(o == Ordering::Less)),
+        BinaryOp::Lte => const_cmp(lhs, rhs).map(|o| TacConst::Bool(o != Ordering::Greater)),
+        BinaryOp::Gt => const_cmp(lhs, rhs).map(|o| TacConst::Bool(o == Ordering::Greater)),
+        BinaryOp::Gte => const_cmp(lhs, rhs).map(|o| TacConst::Bool(o != Ordering::Less)),
+        BinaryOp::BitXor => match (lhs, rhs) {
+            (TacConst::Int(a), TacConst::Int(b)) => Some(TacConst::Int(a ^ b)),
+            _ => None,
+        },
+        BinaryOp::BitOr => match (lhs, rhs) {
+            (TacConst::Int(a), TacConst::Int(b)) => Some(TacConst::Int(a | b)),
+            _ => None,
+        },
+        BinaryOp::BitAnd => match (lhs, rhs) {
+            (TacConst::Int(a), TacConst::Int(b)) => Some(TacConst::Int(a & b)),
+            _ => None,
+        },
+        BinaryOp::BitShift => match (lhs, rhs) {
+            (TacConst::Int(val), TacConst::Int(shift)) => {
+                // Mirror the runtime: positive shift = left, otherwise right by |shift|.
+                // Decline to fold when the shift would overflow (>= 64 bits or i64::MIN),
+                // since `<<`/`.abs()` would panic the compiler in a debug build. Those
+                // cases fall through to the runtime, leaving behavior unchanged.
+                if *shift > 0 {
+                    (*shift < 64).then(|| TacConst::Int(val << shift))
+                } else {
+                    shift
+                        .checked_abs()
+                        .filter(|s| *s < 64)
+                        .map(|s| TacConst::Int(val >> s))
+                }
+            }
+            _ => None,
+        },
+        BinaryOp::Push => None,
+    }
+}
+
+// Compares two constants the same way the runtime does (see runtime::operations):
+// Int/Int as i64, Float/Float as f64, mixed casts the int to f64. Any other pair
+// (or a NaN) yields None so the comparison is left for the runtime to evaluate.
+fn const_cmp(lhs: &TacConst, rhs: &TacConst) -> Option<Ordering> {
+    match (lhs, rhs) {
+        (TacConst::Int(a), TacConst::Int(b)) => a.partial_cmp(b),
+        (TacConst::Float(a), TacConst::Float(b)) => a.partial_cmp(b),
+        (TacConst::Int(a), TacConst::Float(b)) => (*a as f64).partial_cmp(b),
+        (TacConst::Float(a), TacConst::Int(b)) => a.partial_cmp(&(*b as f64)),
         _ => None,
     }
 }

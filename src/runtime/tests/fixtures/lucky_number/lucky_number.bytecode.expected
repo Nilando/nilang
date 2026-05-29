@@ -1,7 +1,5 @@
 ========= FILE ./src/runtime/tests/fixtures/lucky_number/lucky_number.bytecode.actual ========
 === FN 0 START ===
-INT  2, 42
-INT  1, 10
 LOC  0, 0
 OUT  0
 BOOL 0, false
@@ -10,7 +8,6 @@ LOC  0, 1
 OUT  0
 LDN  0
 RTN  0
-GT   0, 1, 2
 JNT  5, 0
 LOC  0, 2
 OUT  0

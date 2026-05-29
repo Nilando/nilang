@@ -66,38 +66,26 @@ block0:
   PRINT t53
   t197 = "=====  COMPARISONS"
   PRINT t197
-  t202 = t3 > t68
+  t202 = true
   PRINT t202
-  t207 = t3 >= t68
-  PRINT t207
-  t212 = t3 < t68
+  PRINT t202
+  t212 = false
   PRINT t212
-  t217 = t3 <= t68
-  PRINT t217
-  t222 = false
-  PRINT t222
-  t227 = true
-  PRINT t227
-  t232 = t3 > t3
-  PRINT t232
-  t237 = t3 >= t3
-  PRINT t237
-  t242 = t3 < t3
-  PRINT t242
-  t247 = t3 <= t3
-  PRINT t247
-  PRINT t227
-  PRINT t222
-  t262 = t68 > t3
-  PRINT t262
-  t267 = t68 >= t3
-  PRINT t267
-  t272 = t68 < t3
-  PRINT t272
-  t277 = t68 <= t3
-  PRINT t277
-  PRINT t222
-  PRINT t227
+  PRINT t212
+  PRINT t212
+  PRINT t202
+  PRINT t212
+  PRINT t202
+  PRINT t212
+  PRINT t202
+  PRINT t202
+  PRINT t212
+  PRINT t212
+  PRINT t212
+  PRINT t202
+  PRINT t202
+  PRINT t212
+  PRINT t202
   t289 = null
   RETURN t289
 
