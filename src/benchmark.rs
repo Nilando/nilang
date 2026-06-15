@@ -313,7 +313,15 @@ arena_avg = format_bytes(arena_avg_bytes),
 pause_avg = format_ms(gc_pause_avg_ms),
 );
 
-    let report = format!("{compilation_report}{dispatch_vm_report}{gc_report}");
+    let totals_report = format!(
+"\
+TOTALS
+\twall time:        {wall_time}
+",
+wall_time = format_ms(wall_ms),
+);
+
+    let report = format!("{compilation_report}{dispatch_vm_report}{gc_report}{totals_report}");
     let _ = std::fs::write(&output_path, report);
 }
 

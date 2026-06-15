@@ -1,15 +1,15 @@
 COMPILATION
-	parse:          8.8  ms (%67.5 of compile)
-	lower:          0.9  ms (%6.7  of compile)
-	optimize:       1.0  ms (%7.5  of compile)
-	codegen:        2.4  ms (%18.3 of compile)
-	total:          13.0 ms (%98.0 of wall)
+	parse:          8.3  ms (%66.4 of compile)
+	lower:          0.9  ms (%6.9  of compile)
+	optimize:       1.0  ms (%7.7  of compile)
+	codegen:        2.4  ms (%19.0 of compile)
+	total:          12.5 ms (%98.0 of wall)
 DISPATCH / VM
-	VM load:        0.1  ms (%0.5  of *wall)
+	VM load:        0.1  ms (%0.6  of *wall)
 	instructions:   277
 	dispatch loops: 4
 	dispatch time:  0.0  ms (%0.2  of wall)
-	avg dispatch:   104.7 ns
+	avg dispatch:   101.1 ns
 	fn calls:       0
 	native calls:   0
 	stack max:      1
@@ -22,3 +22,5 @@ GC / MEMORY
 	gc/mem samples:   8
 	old obj peak:     308
 	old obj avg:      308
+TOTALS
+	wall time:        12.8 ms
