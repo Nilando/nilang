@@ -93,7 +93,9 @@ impl<'gc> VM<'gc> {
                 return Ok(ExitCode::Yield);
             }
 
+            // TODO: move this out of the loop
             let mut instr_stream = self.create_instruction_stream()?;
+
 
             for _ in 0..DISPATCH_LOOP_LENGTH {
                 crate::macros::instrument!(crate::benchmark::Action::IncrementInstructions);

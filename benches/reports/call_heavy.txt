@@ -1,0 +1,24 @@
+COMPILATION
+	parse:          8.7  ms (%67.0 of compile)
+	lower:          0.9  ms (%7.1  of compile)
+	optimize:       1.0  ms (%7.5  of compile)
+	codegen:        2.4  ms (%18.4 of compile)
+	total:          12.9 ms (%2.8  of wall)
+DISPATCH / VM
+	VM load:        0.1  ms (%0.0  of *wall)
+	instructions:   8120283
+	dispatch loops: 188
+	dispatch time:  174.4 ms (%38.3 of wall)
+	avg dispatch:   21.5 ns
+	fn calls:       1010000
+	native calls:   0
+	stack max:      102
+GC / MEMORY
+	total pause:      267.7 ms (%58.8 of wall)
+	pause avg:        1.4  ms
+	collections:      186 (major: 52, minor: 134)
+	arena peak:       311.3 kb
+	arena avg:        188.2 kb
+	gc/mem samples:   8496
+	old obj peak:     783
+	old obj avg:      540

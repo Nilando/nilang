@@ -29,7 +29,10 @@ pub fn compile(
         output_string(format!("{:#?}", ast), path);
     }
 
-    let mut ir = lower_ast(ast, pretty_ir);
+
+    let mut ir = crate::macros::instrument_timed!(LOWER_TIME_US, {
+        lower_ast(ast, pretty_ir)
+    });
 
     crate::macros::instrument_timed!(OPTIMIZE_TIME_US, {
         if optimize {

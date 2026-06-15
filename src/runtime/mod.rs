@@ -149,14 +149,15 @@ impl Runtime {
             #[cfg(feature = "benchmark")]
             let mut vm_exit_time: Option<std::time::Instant> = None;
 
-            crate::macros::instrument_timed!(DISPATCH_TIME_US, {
-                self.arena.mutate(|mu, vm| {
+            self.arena.mutate(|mu, vm| {
+                crate::macros::instrument_timed!(DISPATCH_TIME_US, {
                     vm_result = vm.run(mu, &mut self.syms);
-                    #[cfg(feature = "benchmark")]
-                    {
-                        vm_exit_time = Some(std::time::Instant::now());
-                    }
                 });
+
+                #[cfg(feature = "benchmark")]
+                {
+                    vm_exit_time = Some(std::time::Instant::now());
+                }
             });
 
             #[cfg(feature = "benchmark")]
@@ -261,18 +262,20 @@ impl Runtime {
     }
 
     fn load_program(&mut self, program: Vec<CodegenFunc>, path: Option<&str>) -> Result<(), InterpreterError> {
-        let mut result = Ok(());
+        crate::macros::instrument_timed!(VM_LOAD_TIME_US, {
+            let mut result = Ok(());
 
-        self.arena.mutate(|mu, vm| {
-            let loaded_program = load_program(program, path, mu);
-            let module_func = loaded_program.last().unwrap().clone();
+            self.arena.mutate(|mu, vm| {
+                let loaded_program = load_program(program, path, mu);
+                let module_func = loaded_program.last().unwrap().clone();
 
-            if let Err(err) = vm.load_module(mu, module_func) {
-                result = Err(InterpreterError::RuntimeError(err));
-            }
-        });
+                if let Err(err) = vm.load_module(mu, module_func) {
+                    result = Err(InterpreterError::RuntimeError(err));
+                }
+            });
 
-        result
+            result
+        })
     }
 
     pub fn print(&mut self, output: &mut impl Write) -> Result<(), InterpreterError> {

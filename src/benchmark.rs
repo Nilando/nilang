@@ -51,6 +51,8 @@ pub static GC_PAUSE_TOTAL_NS:       AtomicU64 = AtomicU64::new(0);
 pub static GC_PAUSE_MAX_NS:         AtomicU64 = AtomicU64::new(0);
 pub static PARSE_TIME_US:           AtomicU64 = AtomicU64::new(0);
 pub static OPTIMIZE_TIME_US:        AtomicU64 = AtomicU64::new(0);
+pub static LOWER_TIME_US:           AtomicU64 = AtomicU64::new(0);
+pub static VM_LOAD_TIME_US:         AtomicU64 = AtomicU64::new(0);
 pub static CODEGEN_TIME_US:         AtomicU64 = AtomicU64::new(0);
 pub static SYSCALL_COUNT:           AtomicU64 = AtomicU64::new(0);
 pub static IO_TIME_US:              AtomicU64 = AtomicU64::new(0);
@@ -179,14 +181,16 @@ fn write_report(path: &str) {
         .and_then(|s| s.to_str())
         .unwrap_or("bench");
 
-    let _ = std::fs::create_dir_all("target/bench");
-    let output_path = format!("target/bench/{}.json", basename);
+    let _ = std::fs::create_dir_all("benches/reports");
+    let output_path = format!("benches/reports/{}.txt", basename);
 
     let parse_ms    = PARSE_TIME_US.load(Relaxed) as f64 / 1000.0;
     let optimize_ms = OPTIMIZE_TIME_US.load(Relaxed) as f64 / 1000.0;
+    let lower_ms    = LOWER_TIME_US.load(Relaxed) as f64 / 1000.0;
     let codegen_ms  = CODEGEN_TIME_US.load(Relaxed) as f64 / 1000.0;
-    let compile_ms  = parse_ms + optimize_ms + codegen_ms;
+    let compile_ms  = parse_ms + lower_ms + optimize_ms + codegen_ms;
 
+    let vm_load_time_ms = VM_LOAD_TIME_US.load(Relaxed) as f64 / 1000.0;
     let instructions    = INSTRUCTIONS.load(Relaxed);
     let dispatch_loops  = DISPATCH_LOOPS.load(Relaxed);
     let stack_peak      = STACK_DEPTH_PEAK.load(Relaxed);
@@ -248,38 +252,102 @@ fn write_report(path: &str) {
     }
     let histogram_json = format!("{{{}}}", histogram_entries.join(","));
 
-    let json = format!(
-        "{{\
-\"lex_ms\":0.0,\"parse_ms\":{parse:?},\"analysis_ms\":0.0,\
-\"optimize_ms\":{optimize:?},\"codegen_ms\":{codegen:?},\"compile_ms\":{compile:?},\
-\"instructions\":{instructions},\"dispatch_loops\":{dispatch_loops},\
-\"dispatch_time_ms\":{dispatch_ms:?},\"avg_dispatch_ns\":{avg_dispatch_ns:?},\
-\"function_calls\":{function_calls},\"native_calls\":{native_calls},\
-\"stack_depth_avg\":{stack_avg:?},\"stack_depth_peak\":{stack_peak},\
-\"inline_cache_hits\":0,\"inline_cache_misses\":0,\
-\"peak_heap_bytes\":{peak_heap},\"total_allocated_bytes\":{total_alloc_b},\
-\"total_allocations\":{total_allocs},\
-\"allocation_rate_bytes_per_sec\":{alloc_rate},\
-\"gc_collections\":{gc_collections},\
-\"major_collections\":{major_colls},\"minor_collections\":{minor_colls},\
-\"major_collect_avg_ms\":{major_avg_ms:?},\"minor_collect_avg_ms\":{minor_avg_ms:?},\
-\"arena_peak_bytes\":{arena_peak},\"arena_avg_bytes\":{arena_avg_bytes},\
-\"old_objects_peak\":{old_peak},\"old_objects_avg\":{old_avg},\
-\"gc_snapshots\":{arena_samples},\
-\"gc_pause_count\":{gc_pause_count},\"gc_pause_total_ms\":{gc_pause_total_ms:?},\
-\"gc_pause_avg_ms\":{gc_pause_avg_ms:?},\"gc_pause_max_ms\":{gc_pause_max_ms:?},\
-\"syscall_count\":{syscalls},\"io_time_ms\":{io_ms:?},\
-\"wall_time_ms\":{wall_ms:?},\"cpu_time_ms\":0.0,\
-\"user_time_ms\":0.0,\"system_time_ms\":0.0,\
-\"opcode_histogram\":{histogram_json}\
-}}",
-        parse = parse_ms,
-        optimize = optimize_ms,
-        codegen = codegen_ms,
-        compile = compile_ms,
-        dispatch_ms = dispatch_ms,
-        io_ms = io_us as f64 / 1000.0,
-    );
 
-    let _ = std::fs::write(&output_path, json);
+    let compilation_report = format!(
+"\
+COMPILATION
+\tparse:          {parse_ms} ({parse_pct} of compile)
+\tlower:          {lowering_ms} ({lowering_pct} of compile)
+\toptimize:       {optimize_ms} ({optimize_pct} of compile)
+\tcodegen:        {codegen_ms} ({codegen_pct} of compile)
+\ttotal:          {total_ms} ({total_pct} of wall)
+",
+parse_ms = format_ms(parse_ms),
+parse_pct = format_pct(parse_ms, compile_ms),
+lowering_ms = format_ms(lower_ms),
+lowering_pct = format_pct(lower_ms, compile_ms),
+optimize_ms = format_ms(optimize_ms),
+optimize_pct = format_pct(optimize_ms, compile_ms),
+codegen_ms = format_ms(codegen_ms),
+codegen_pct = format_pct(codegen_ms, compile_ms),
+total_ms = format_ms(compile_ms),
+total_pct = format_pct(compile_ms, wall_ms),
+);
+
+
+    let dispatch_vm_report = format!(
+"\
+DISPATCH / VM
+\tVM load:        {loading_ms} ({loading_pct} of *wall)
+\tinstructions:   {instructions}
+\tdispatch loops: {dispatch_loops}
+\tdispatch time:  {dispatch_ms} ({dispatch_pct} of wall)
+\tavg dispatch:   {avg_dispatch_ns} ns
+\tfn calls:       {function_calls}
+\tnative calls:   {native_calls}
+\tstack max:      {stack_peak}
+",
+loading_ms = format_ms(vm_load_time_ms),
+loading_pct = format_pct(vm_load_time_ms, wall_ms),
+dispatch_ms = format_ms(dispatch_ms),
+dispatch_pct = format_pct(dispatch_ms, wall_ms),
+avg_dispatch_ns = format!("{avg_dispatch_ns:<4.1}")
+);
+
+    let gc_report = format!(
+"\
+GC / MEMORY
+\ttotal pause:      {total_pause} ({total_pause_pct} of wall)
+\tpause avg:        {pause_avg}
+\tcollections:      {gc_collections} (major: {major_colls}, minor: {minor_colls})
+\tarena peak:       {arena_peak}
+\tarena avg:        {arena_avg}
+\tgc/mem samples:   {arena_samples}
+\told obj peak:     {old_peak}
+\told obj avg:      {old_avg}
+",
+total_pause = format_ms(gc_pause_total_ms),
+total_pause_pct = format_pct(gc_pause_total_ms, wall_ms),
+arena_peak = format_bytes(arena_peak),
+arena_avg = format_bytes(arena_avg_bytes),
+pause_avg = format_ms(gc_pause_avg_ms),
+);
+
+    let report = format!("{compilation_report}{dispatch_vm_report}{gc_report}");
+    let _ = std::fs::write(&output_path, report);
+}
+
+fn format_bytes(bytes: u64) -> String {
+    if bytes < 1000 {
+        format!("{bytes:<4.1} bytes")
+    } else if bytes < 1000_u64.pow(2) {
+        let kb = bytes as f64 / 1000.0_f64.powi(1);
+
+        format!("{kb:<4.1} kb")
+    } else if bytes < 1000_u64.pow(3) {
+        let mb = bytes as f64 / 1000.0_f64.powi(2);
+
+        format!("{mb:<4.1} mb")
+    } else if bytes < 1000_u64.pow(4) {
+        let gb = bytes as f64 / 1000.0_f64.powi(3);
+
+        format!("{gb:<4.1} gb")
+    } else {
+        panic!("bad byte count while formatting benchmark report")
+    }
+}
+
+fn format_pct(part: f64, total: f64) -> String {
+    let pct = (part / total) * 100.0;
+
+    format!("%{pct:<4.1}")
+}
+
+fn format_ms(ms: f64) -> String {
+    if ms >= 1000.0 {
+        let secs = ms / 1000.0;
+        format!("{secs:<4.1} s ")
+    } else {
+        format!("{ms:<4.1} ms")
+    }
 }
