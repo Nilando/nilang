@@ -18,7 +18,7 @@ benchmark = ["dep:serde"]
 [dependencies]
 clap = { version = "4.5.8", features = ["derive"] }
 murmurhash3 = "0.0.5"
-sandpit = { version = "=0.5.2" }
+sandpit = { version = "=0.5.3", features=["multi_threaded"] }
 termion = "4.0.4"
 libloading = "0.8"
 hashbrown = { version = "0.14", default-features = false, features = ["ahash"] }

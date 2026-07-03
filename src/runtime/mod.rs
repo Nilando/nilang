@@ -142,14 +142,20 @@ impl Runtime {
 
         let mut vm_result = Ok(ExitCode::Yield);
         let mut output = self.config.get_output();
+        #[cfg(feature = "benchmark")]
+        let mut vm_exit_time: Option<std::time::Instant> = None;
 
         loop {
             crate::macros::instrument!(crate::benchmark::Action::IncrementDispatchLoops);
 
-            #[cfg(feature = "benchmark")]
-            let mut vm_exit_time: Option<std::time::Instant> = None;
-
             self.arena.mutate(|mu, vm| {
+                #[cfg(feature = "benchmark")]
+                if let Some(t) = vm_exit_time {
+                    let gap_ns = t.elapsed().as_nanos() as u64;
+                    crate::macros::instrument!(crate::benchmark::Action::RecordGcPauseNs(gap_ns));
+                    crate::benchmark::record_gc_metrics(self.arena.metrics());
+                }
+
                 crate::macros::instrument_timed!(DISPATCH_TIME_US, {
                     vm_result = vm.run(mu, &mut self.syms);
                 });
@@ -160,12 +166,6 @@ impl Runtime {
                 }
             });
 
-            #[cfg(feature = "benchmark")]
-            if let Some(t) = vm_exit_time {
-                let gap_ns = t.elapsed().as_nanos() as u64;
-                crate::macros::instrument!(crate::benchmark::Action::RecordGcPauseNs(gap_ns));
-                crate::benchmark::record_gc_metrics(self.arena.metrics());
-            }
 
             match vm_result {
                 // TODO have exit also return an exit value?
