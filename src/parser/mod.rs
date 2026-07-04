@@ -22,36 +22,38 @@ pub use value::{SegmentedString, StringSegment};
 use core::cell::RefCell;
 use alloc::rc::Rc;
 
+#[derive(Debug)]
 pub struct ParseResult<T> {
-    item: Option<T>,
-    errors: Vec<Spanned<ParseErrorItem>>,
-    tokens: Option<Vec<Spanned<Token>>>
+    pub item: Option<T>,
+    pub errors: Vec<Spanned<ParseErrorItem>>,
+    pub tokens: Vec<Spanned<Token>>
+}
+
+impl<T> ParseResult<T> {
+    pub fn has_errors(&self) -> bool {
+        !self.errors.is_empty()
+    }
 }
 
 pub fn parse_program(
     input: &str,
     syms: &mut SymbolMap,
-    path: Option<&String>
-) -> Result<Vec<Stmt>, ParseError> {
+    path: Option<&String>,
+    store_tokens: bool
+) -> ParseResult<Vec<Stmt>> {
     (stmt()
         .recover(Ctrl::SemiColon)
         .expect("Expected a statement"))
         .unless(ctrl(Ctrl::End))
         .zero_or_more()
-        .parse_str(input, syms)
-        // This unwrap is a little weird, but can be done b/c "zero_or_more"
-        // always returns Some(vec) but vec might be empty
-        .map(|result| result.unwrap())
-        .map_err(|mut err| {
-            err.set_path(path); 
-            err
-        })
+        .parse_str_v2(input, syms, store_tokens)
 }
 
 struct ParseContext<'a> {
     lexer: Lexer<'a>,
     syms: &'a mut SymbolMap,
     errors: Vec<Spanned<ParseErrorItem>>,
+    tokens: Option<Vec<Spanned<Token>>>,
     //warnings: Vec<Spanned<()>>,
     is_in_loop: bool,
 }
@@ -70,7 +72,11 @@ impl<'a> ParseContext<'a> {
     }
 
     fn adv(&mut self) {
-        let _ = self.lexer.get_token(self.syms);
+        if let Ok(token) = self.lexer.get_token(self.syms) {
+            if let Some(tokens) = &mut self.tokens {
+                tokens.push(token);
+            }
+        }
     }
 
     fn peek_one_ahead(&mut self) -> Option<Spanned<Token>> {
@@ -112,6 +118,7 @@ impl<'a, T: 'a> Parser<'a, T> {
             lexer,
             syms,
             errors: vec![],
+            tokens: None,
             //warnings: vec![],
             is_in_loop: false,
         };
@@ -125,20 +132,21 @@ impl<'a, T: 'a> Parser<'a, T> {
         }
     }
 
-    pub fn parse_str_v2(self, input: &'a str, syms: &'a mut SymbolMap) -> ParseResult<T> {
+    pub fn parse_str_v2(self, input: &'a str, syms: &'a mut SymbolMap, store_tokens: bool) -> ParseResult<T> {
         let lexer = Lexer::new(input);
 
         let mut ctx = ParseContext {
             lexer,
             syms,
             errors: vec![],
+            tokens: if store_tokens { Some(vec![]) } else { None },
             //warnings: vec![],
             is_in_loop: false,
         };
 
         let value = self.parse(&mut ctx);
 
-        ParseResult { item: value, errors: ctx.errors, tokens: None }
+        ParseResult { item: value, errors: ctx.errors, tokens: ctx.tokens.unwrap_or(vec![]) }
     }
 
     fn parse(&self, ctx: &mut ParseContext<'a>) -> Option<T> {
@@ -476,30 +484,24 @@ fn span<'a, T: 'a>(func: Parser<'a, T>) -> Parser<'a, Spanned<T>> {
 
 #[cfg(test)]
 mod tests {
-    use crate::parser::ParseError;
     use super::*;
     use crate::symbol_map::SymbolMap;
-
-    fn parse_program_with_syms(input: &str, syms: &mut SymbolMap) -> Result<Vec<Stmt>, ParseError> {
-        let result = parse_program(input, syms, None);
-        result
-    }
 
     #[test]
     fn bad_method_chaining() {
         let mut syms = SymbolMap::new();
         let input = ".foo;";
-        let result = parse_program_with_syms(input, &mut syms);
+        let result = parse_program(input, &mut syms, None, false);
 
-        assert!(result.is_err());
+        assert!(result.has_errors());
     }
 
     #[test]
     fn unclosed_curly() {
         let mut syms = SymbolMap::new();
         let input = ";}";
-        let result = parse_program_with_syms(input, &mut syms);
+        let result = parse_program(input, &mut syms, None, false);
 
-        assert!(result.is_err());
+        assert!(result.has_errors());
     }
 }

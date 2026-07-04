@@ -855,9 +855,10 @@ pub mod tests {
     }
 
     fn expect_tac_with_syms(input: &str, expected_code: Vec<Tac>, syms: &mut SymbolMap) {
-        let ast = parse_program(input, syms, None).unwrap();
+        let ast = parse_program(input, syms, None, false);
+        assert!(!ast.has_errors());
         let expected_func = instrs_to_func(expected_code);
-        let top_level_func = lower_ast(ast, false).pop().unwrap();
+        let top_level_func = lower_ast(ast.item.unwrap(), false).pop().unwrap();
 
         let expected_string = func_to_string(&expected_func, syms);
         let found_string = func_to_string(&top_level_func, syms);

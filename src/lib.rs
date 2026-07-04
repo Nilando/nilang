@@ -44,4 +44,8 @@ pub use parser::{
     ParseError,
     ParseErrorItem,
     LexError,
+    ParseResult,
+    Token,
+    Ctrl,
+    KeyWord
 };

@@ -34,8 +34,9 @@ fn test_golden_bytecode(filename: &str) {
     }
 
     let mut syms = SymbolMap::new();
-    let ast = parse_program(input, &mut syms, None).unwrap();
-    let mut ir = lower_ast(ast, !no_pretty);
+    let ast = parse_program(input, &mut syms, None, false);
+    assert!(!ast.has_errors());
+    let mut ir = lower_ast(ast.item.unwrap(), !no_pretty);
 
     for func in ir.iter_mut() {
         if opt {

@@ -23,8 +23,14 @@ pub fn compile(
     bytecode_output_path: Option<Option<String>>,
 ) -> Result<Vec<Func>, ParseError> {
     let ast = crate::macros::instrument_timed!(PARSE_TIME_US, {
-        parse_program(source, symbols, source_path.as_ref())
-    })?;
+        let parse_result = parse_program(source, symbols, source_path.as_ref(), false);
+
+        if parse_result.has_errors() {
+            return Err(ParseError::new(parse_result.errors, source_path));
+        } else {
+            parse_result.item.unwrap()
+        }
+    });
     if let Some(path) = ast_output_path {
         output_string(format!("{:#?}", ast), path);
     }

@@ -53,6 +53,10 @@ pub enum Ctrl {
 }
 
 impl Ctrl {
+    pub fn is_op(&self) -> bool {
+        self.as_binop().is_some() || self.as_unaop().is_some()
+    }
+
     pub fn as_binop(&self) -> Option<BinaryOp> {
         match self {
             Ctrl::Plus => Some(BinaryOp::Plus),

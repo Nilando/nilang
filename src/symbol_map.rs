@@ -1,11 +1,12 @@
+use std::sync::Arc;
+
 use hashbrown::HashMap;
-use alloc::rc::Rc;
 
 pub type SymID = u32;
 
 pub struct SymbolMap {
-    str_to_id: HashMap<Rc<String>, SymID>,
-    id_to_str: Vec<Rc<String>>,
+    str_to_id: HashMap<Arc<String>, SymID>,
+    id_to_str: Vec<Arc<String>>,
 }
 
 // special symbols
@@ -109,7 +110,7 @@ impl SymbolMap {
 
     fn insert(&mut self, str: String) -> SymID {
         let id = self.id_to_str.len() as u32;
-        let s = Rc::new(str);
+        let s = Arc::new(str);
 
         self.id_to_str.push(s.clone());
         self.str_to_id.insert(s.clone(), id);
