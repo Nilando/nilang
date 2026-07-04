@@ -3,7 +3,7 @@ pub use crate::spanned::{Spanned, retrieve_span_snippet};
 
 #[derive(PartialEq, Debug)]
 pub struct ParseError {
-    items: Vec<Spanned<ParseErrorItem>>,
+    pub items: Vec<Spanned<ParseErrorItem>>,
     path: Option<String>,
 }
 
@@ -55,7 +55,7 @@ impl ParseError {
 }
 
 impl ParseErrorItem {
-    fn render(&self) -> String {
+    pub fn render(&self) -> String {
         match self {
             ParseErrorItem::LexError(err) => format!("lexical error: {}", err.render()),
             ParseErrorItem::Expected { msg, found } => format!("parser error: {msg}, found {found}"),

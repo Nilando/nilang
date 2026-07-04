@@ -1,54 +1,49 @@
-VERSION 0.4.0
+# NILANG VERSION 0.4.1
 
-IN PROGRESS:
+## IN PROGRESS:
+- LSP
+  - [ ] Update parser to return more span and token information
+- FFI
+  - [ ] currently broken with multi threaded mode GC
+  - [ ] brainstorm ways to support FFI with no unsafe 
+    - How could this be done with WASM?
+  - [ ] Define a public FFI API crate/module exposing nilang types (Value, GC types, etc.)
+
+## BACKLOG:
+- WASM compilation
+  - [ ] No Std Support in Nilang
+  - [ ] Nimix/sandpit wasm support
+    - [ ] Nimix needs wasm allocation feature
+    - [ ] check if Sandpit single threaded mode can already be wasm compiled 
 - No Std Support
   [x] Update Nimix to compile with no std
   [x] Update Sandpit to compile with no std
     [x] multi threaded and single threaded modes
   [ ] Update Nilang to compile with no std
-    - [x] Convert std usages to core where possible
-    - [ ] Brainstorm: When in no std what happens to operations that require std
-      - [ ] What happens when running repl?
-      - [ ] What happens when trying to load a file?
-      - [ ] What happens when trying to print
-      - [ ] What happens when trying to read
+    - [ ] lots of core functionalities need disable paths to allow no std
 
-IN PROGRESS:
-- FFI
-  [ ] Define a public FFI API crate/module exposing nilang types (Value, GC types, etc.)
-      so .so files can be developed from external Rust projects
-  [ ] Add FFIFunction variant (packed type or tagged type on existing function type)
-      that holds a pointer to a .so function
-  [ ] Implement dynamic loading of .so files via import("path.so")
-      - use libloading or dlopen to load at runtime
-      - .so must export a known entry point (e.g. nilang_register) that returns FFIFunctions
-  [ ] Wire up FFIFunction dispatch in the VM so calls go through the function pointer
-  [ ] Test roundtrip: build a .so from a separate Rust project, load it, call it from nilang
-
-BACKLOG:
-- WASM
-
-OPTIMIZATION/REFACTOR BACKLOG:
-- add benchmarking
-- strength reduction for mod/mult/div by powers of 2
+### OPTIMIZATION/REFACTOR BACKLOG:
+- AddImmediate Operator (can be supported in GVN)
+- Peephole pass
+- strength reduction
 - const locals for maps and lists
-- "super operators" ie Add Immediate
 - String Internment
-- Memory SSA
+- Memory SSA (escape analysis)
 - Jump Threading
 - Loop Invariant Code Motion
-- Peephole pass
-- AST pass?
+- AST rewriting pass?
 - JIT?
 
-GOALS
+## EARLY HISTORY
+
+### ORIGINAL GOALS
 - complete AOC 2025 with this language!
 - learn about compilers and interpreters
 - have fun
 
-DECEMBER -> COMPLETE AOC
-NOVEMBER
-OCTOBER
+### DECEMBER -> COMPLETE AOC
+### NOVEMBER
+### OCTOBER
 - added string interpolation
 - push and pop operators
 - unary operators
@@ -56,24 +51,24 @@ OCTOBER
 - auto binding of functions with "self" arg
 - for loops
 
-SEPTEMBER
+### SEPTEMBER
 - added backtraces
 - re-worked how errors are displayed
 - added tests for error messages
 
-AUGUST
+### AUGUST
 - changed how intrinsic functions work
 - reorganized some code
 - added more tests and examples
 
-JULY
+### JULY
 - made an initial draft of intrinsic functions to add
 - added partial functions
 - implemented top level intrinsic functions
 - implemented num intrinsics
 - rough draft of importing/exporting
 
-JUNE
+### JUNE
 - ran first program, and many more
 - added intrinsic functions
 - added 'pretty' runtime errors
@@ -81,7 +76,7 @@ JUNE
 - ran some successful concurrent GC tests
 - added global variables
 
-MAY
+### MAY
 - dead code elimination
 - global value numbering pass 
 - register allocation
@@ -91,7 +86,7 @@ MAY
 - testing via golden files
 - beginning to draft out runtime/vm
 
-APRIL
+### APRIL
 - implemented cfg creation from tac
 - implemented converting cfg to ssa form
 - added boolean shortcircuiting
@@ -99,14 +94,13 @@ APRIL
 - completed escape dfa
 - cfg printing and graph vizualization
 
-MARCH
+### MARCH
 - refactored the lexer to be much more functional
 - completely redesigned the parser by using parser combinators
   - this gave a huge improvement in readability
 - started redesign of the tac generator
 
-
-THE BEFORE TIMES
+### THE BEFORE TIMES
 - I was working on the garbage collector, Sandpit, and its accompanying
   allocator, Nimix. Development on that I think lasted around 4 or 5 months and
   was slower going as I was still newer to Rust and there was lots more unsafe

@@ -8,7 +8,7 @@ mod token;
 use crate::spanned::{Spanned, Span};
 pub use expr::{Expr, LhsExpr};
 pub use token::{Ctrl, KeyWord, Token};
-pub use lexer::Lexer;
+pub use lexer::{Lexer, LexError};
 pub use stmt::Stmt;
 pub use value::{MapKey, Value};
 pub use error::{ParseError, ParseErrorItem};
@@ -21,6 +21,12 @@ pub use value::{SegmentedString, StringSegment};
 
 use core::cell::RefCell;
 use alloc::rc::Rc;
+
+pub struct ParserResult<T> {
+    items: Option<T>,
+    errors: Vec<Spanned<ParseErrorItem>>,
+    tokens: Option<Vec<Spanned<Token>>>
+}
 
 pub fn parse_program(
     input: &str,

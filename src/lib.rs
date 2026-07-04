@@ -26,7 +26,7 @@ pub use runtime::{
     ByteCode, RuntimeError, RuntimeErrorKind,
     Backtrace, BacktraceCall,
 };
-pub use spanned::Span;
+pub use spanned::{Span, Spanned};
 
 // Re-export sandpit types so FFI consumers don't need a separate sandpit dependency
 pub use sandpit::{Gc, GcOpt, Mutator, Arena, Root, Tagged, Trace, TraceLeaf, GcVec};
@@ -35,4 +35,13 @@ pub use sandpit::{Gc, GcOpt, Mutator, Arena, Root, Tagged, Trace, TraceLeaf, GcV
 pub use symbol_map::{
     SymID, INT_SYM, FLOAT_SYM, STR_SYM, BOOL_SYM, SYM_SYM,
     NULL_SYM, LIST_SYM, MAP_SYM, FN_SYM,
+};
+
+
+pub use parser::{
+    parse_program,
+    Stmt,
+    ParseError,
+    ParseErrorItem,
+    LexError,
 };
