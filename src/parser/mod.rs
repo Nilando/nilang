@@ -22,8 +22,8 @@ pub use value::{SegmentedString, StringSegment};
 use core::cell::RefCell;
 use alloc::rc::Rc;
 
-pub struct ParserResult<T> {
-    items: Option<T>,
+pub struct ParseResult<T> {
+    item: Option<T>,
     errors: Vec<Spanned<ParseErrorItem>>,
     tokens: Option<Vec<Spanned<Token>>>
 }
@@ -123,6 +123,22 @@ impl<'a, T: 'a> Parser<'a, T> {
         } else {
             Err(ParseError::new(ctx.errors, None))
         }
+    }
+
+    pub fn parse_str_v2(self, input: &'a str, syms: &'a mut SymbolMap) -> ParseResult<T> {
+        let lexer = Lexer::new(input);
+
+        let mut ctx = ParseContext {
+            lexer,
+            syms,
+            errors: vec![],
+            //warnings: vec![],
+            is_in_loop: false,
+        };
+
+        let value = self.parse(&mut ctx);
+
+        ParseResult { item: value, errors: ctx.errors, tokens: None }
     }
 
     fn parse(&self, ctx: &mut ParseContext<'a>) -> Option<T> {
