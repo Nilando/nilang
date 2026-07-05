@@ -1,7 +1,13 @@
 ========= FILE ./src/runtime/tests/fixtures/big_backtrace/big_backtrace.ast.actual ========
 [
     FuncDecl {
-        ident: 14,
+        ident: Spanned {
+            item: 14,
+            span: Span {
+                start: 3,
+                end: 21,
+            },
+        },
         inputs: Spanned {
             item: [
                 15,

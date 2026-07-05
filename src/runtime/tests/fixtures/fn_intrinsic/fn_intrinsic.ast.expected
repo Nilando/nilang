@@ -503,7 +503,13 @@
                                 end: 417,
                             },
                         },
-                        key: 19,
+                        key: Spanned {
+                            item: 19,
+                            span: Span {
+                                start: 418,
+                                end: 419,
+                            },
+                        },
                     },
                     span: Span {
                         start: 416,
@@ -533,7 +539,13 @@
                                 end: 429,
                             },
                         },
-                        key: 20,
+                        key: Spanned {
+                            item: 20,
+                            span: Span {
+                                start: 430,
+                                end: 431,
+                            },
+                        },
                     },
                     span: Span {
                         start: 428,

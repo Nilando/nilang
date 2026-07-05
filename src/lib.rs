@@ -34,7 +34,7 @@ pub use sandpit::{Gc, GcOpt, Mutator, Arena, Root, Tagged, Trace, TraceLeaf, GcV
 // Re-export symbol types
 pub use symbol_map::{
     SymID, INT_SYM, FLOAT_SYM, STR_SYM, BOOL_SYM, SYM_SYM,
-    NULL_SYM, LIST_SYM, MAP_SYM, FN_SYM,
+    NULL_SYM, LIST_SYM, MAP_SYM, FN_SYM, SELF_SYM, ITER_SYM, ITER_END_SYM
 };
 
 
@@ -47,5 +47,9 @@ pub use parser::{
     ParseResult,
     Token,
     Ctrl,
-    KeyWord
+    KeyWord,
+    Expr,
+    Value as ParseValue,
+    LhsExpr,
+    MapKey
 };

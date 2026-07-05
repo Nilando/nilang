@@ -1,7 +1,13 @@
 ========= FILE ./src/runtime/tests/fixtures/euclidean_gcd/euclidean_gcd.ast.actual ========
 [
     FuncDecl {
-        ident: 14,
+        ident: Spanned {
+            item: 14,
+            span: Span {
+                start: 3,
+                end: 11,
+            },
+        },
         inputs: Spanned {
             item: [
                 15,

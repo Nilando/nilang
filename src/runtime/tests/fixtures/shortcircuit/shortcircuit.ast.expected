@@ -1,7 +1,13 @@
 ========= FILE ./src/runtime/tests/fixtures/shortcircuit/shortcircuit.ast.actual ========
 [
     FuncDecl {
-        ident: 14,
+        ident: Spanned {
+            item: 14,
+            span: Span {
+                start: 3,
+                end: 7,
+            },
+        },
         inputs: Spanned {
             item: [
                 15,

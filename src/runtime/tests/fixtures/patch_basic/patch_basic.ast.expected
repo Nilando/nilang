@@ -195,7 +195,13 @@
                                 end: 174,
                             },
                         },
-                        key: 14,
+                        key: Spanned {
+                            item: 14,
+                            span: Span {
+                                start: 175,
+                                end: 182,
+                            },
+                        },
                     },
                     span: Span {
                         start: 167,

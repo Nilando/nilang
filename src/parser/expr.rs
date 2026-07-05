@@ -52,7 +52,7 @@ pub enum LhsExpr {
     },
     Access {
         store: Box<Spanned<Expr>>,
-        key: SymID,
+        key: Spanned<SymID>,
     },
     Global(SymID),
     Local(SymID),
@@ -84,7 +84,7 @@ pub enum Expr {
     },
     Access {
         store: Box<Spanned<Expr>>,
-        key: SymID,
+        key: Spanned<SymID>,
     },
     Index {
         store: Box<Spanned<Expr>>,
@@ -110,7 +110,7 @@ pub enum Expr {
 }
 
 enum ExprSuffix {
-    Access { key: SymID },
+    Access { key: Spanned<SymID> },
     Index { key: Box<Spanned<Expr>> },
     Call { args: Vec<Spanned<Expr>> },
 }
@@ -260,7 +260,7 @@ fn expr_suffix(ep: Parser<'_, Spanned<Expr>>) -> Parser<'_, Spanned<ExprSuffix>>
 
 fn access_suffix<'a>() -> Parser<'a, ExprSuffix> {
     let period = ctrl(Ctrl::Period);
-    let sym = symbol().expect("Expected and expression, found something else");
+    let sym = symbol().spanned().expect("Expected and expression, found something else");
 
     period.then(sym).map(|key| ExprSuffix::Access { key })
 }
@@ -495,10 +495,10 @@ mod tests {
     fn access_expr() {
         let mut syms = SymbolMap::new();
         if let Ok(Some(Expr::Access { store, key })) = parse_expr_with_syms("a.b.c", &mut syms) {
-            assert!(key == syms.get_id("c"));
+            assert!(key.item == syms.get_id("c"));
 
             if let Expr::Access { store, key } = store.item {
-                assert!(key == syms.get_id("b"));
+                assert!(key.item == syms.get_id("b"));
                 assert!(store.item == Expr::Value(Value::Ident(syms.get_id("a"))));
                 return;
             }
@@ -557,7 +557,7 @@ mod tests {
         if let Ok(Some(Expr::Access { store, key })) = parse_expr_with_syms("333.foo", &mut syms)
         {
             assert!(matches!(store.item, Expr::Value(Value::Int(333))));
-            assert!(key == syms.get_id("foo"));
+            assert!(key.item == syms.get_id("foo"));
         }
     }
 }

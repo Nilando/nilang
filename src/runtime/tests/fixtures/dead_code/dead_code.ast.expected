@@ -178,7 +178,13 @@
                         end: 99,
                     },
                 },
-                key: 17,
+                key: Spanned {
+                    item: 17,
+                    span: Span {
+                        start: 100,
+                        end: 101,
+                    },
+                },
             },
             span: Span {
                 start: 98,

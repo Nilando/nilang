@@ -13,7 +13,7 @@ pub enum Stmt {
         src: Spanned<Expr>,
     },
     FuncDecl {
-        ident: SymID,
+        ident: Spanned<SymID>,
         inputs: Spanned<Vec<SymID>>,
         stmts: Vec<Stmt>,
     },
@@ -66,6 +66,7 @@ fn for_stmt(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
 fn func_decl(sp: Parser<'_, Stmt>) -> Parser<'_, Stmt> {
     let func_decl = keyword(KeyWord::Fn).then(
         symbol()
+            .spanned()
             .expect("Expected function name after 'fn' keyword")
             .append(inputs().expect("Expected input list after 'fn name'"))
             .append(
@@ -262,7 +263,7 @@ mod tests {
                 inputs,
                 stmts,
             })) => {
-                assert!(ident == syms.get_id("add"));
+                assert!(ident.item == syms.get_id("add"));
                 assert!(inputs.item.len() == 2);
                 assert!(stmts.len() == 1);
             }

@@ -1,7 +1,13 @@
 ========= FILE ./src/runtime/tests/fixtures/bug_1/bug_1.ast.actual ========
 [
     FuncDecl {
-        ident: 14,
+        ident: Spanned {
+            item: 14,
+            span: Span {
+                start: 2149,
+                end: 2152,
+            },
+        },
         inputs: Spanned {
             item: [
                 15,

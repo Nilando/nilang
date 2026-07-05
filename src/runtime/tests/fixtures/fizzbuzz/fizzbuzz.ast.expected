@@ -1,7 +1,13 @@
 ========= FILE ./src/runtime/tests/fixtures/fizzbuzz/fizzbuzz.ast.actual ========
 [
     FuncDecl {
-        ident: 14,
+        ident: Spanned {
+            item: 14,
+            span: Span {
+                start: 3,
+                end: 11,
+            },
+        },
         inputs: Spanned {
             item: [
                 15,
@@ -208,7 +214,13 @@
         ],
     },
     FuncDecl {
-        ident: 18,
+        ident: Spanned {
+            item: 18,
+            span: Span {
+                start: 139,
+                end: 147,
+            },
+        },
         inputs: Spanned {
             item: [
                 19,

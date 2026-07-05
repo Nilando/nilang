@@ -1,7 +1,13 @@
 ========= FILE ./src/runtime/tests/fixtures/implicit_returns/implicit_returns.ast.actual ========
 [
     FuncDecl {
-        ident: 14,
+        ident: Spanned {
+            item: 14,
+            span: Span {
+                start: 67,
+                end: 75,
+            },
+        },
         inputs: Spanned {
             item: [],
             span: Span {
@@ -56,7 +62,13 @@
         },
     ),
     FuncDecl {
-        ident: 15,
+        ident: Spanned {
+            item: 15,
+            span: Span {
+                start: 153,
+                end: 161,
+            },
+        },
         inputs: Spanned {
             item: [
                 16,
@@ -157,7 +169,13 @@
         },
     ),
     FuncDecl {
-        ident: 18,
+        ident: Spanned {
+            item: 18,
+            span: Span {
+                start: 271,
+                end: 274,
+            },
+        },
         inputs: Spanned {
             item: [
                 16,
@@ -341,7 +359,13 @@
         },
     ),
     FuncDecl {
-        ident: 19,
+        ident: Spanned {
+            item: 19,
+            span: Span {
+                start: 431,
+                end: 447,
+            },
+        },
         inputs: Spanned {
             item: [
                 20,
@@ -496,7 +520,13 @@
         },
     ),
     FuncDecl {
-        ident: 21,
+        ident: Spanned {
+            item: 21,
+            span: Span {
+                start: 601,
+                end: 611,
+            },
+        },
         inputs: Spanned {
             item: [],
             span: Span {
@@ -560,7 +590,13 @@
         },
     ),
     FuncDecl {
-        ident: 22,
+        ident: Spanned {
+            item: 22,
+            span: Span {
+                start: 687,
+                end: 692,
+            },
+        },
         inputs: Spanned {
             item: [
                 20,
@@ -572,7 +608,13 @@
         },
         stmts: [
             FuncDecl {
-                ident: 23,
+                ident: Spanned {
+                    item: 23,
+                    span: Span {
+                        start: 703,
+                        end: 708,
+                    },
+                },
                 inputs: Spanned {
                     item: [
                         24,
@@ -697,7 +739,13 @@
         },
     ),
     FuncDecl {
-        ident: 25,
+        ident: Spanned {
+            item: 25,
+            span: Span {
+                start: 815,
+                end: 822,
+            },
+        },
         inputs: Spanned {
             item: [
                 26,
@@ -870,7 +918,13 @@
         },
     ),
     FuncDecl {
-        ident: 29,
+        ident: Spanned {
+            item: 29,
+            span: Span {
+                start: 969,
+                end: 979,
+            },
+        },
         inputs: Spanned {
             item: [
                 30,
@@ -1096,7 +1150,13 @@
         },
     ),
     FuncDecl {
-        ident: 32,
+        ident: Spanned {
+            item: 32,
+            span: Span {
+                start: 1193,
+                end: 1198,
+            },
+        },
         inputs: Spanned {
             item: [
                 33,
@@ -1190,7 +1250,13 @@
         },
     ),
     FuncDecl {
-        ident: 34,
+        ident: Spanned {
+            item: 34,
+            span: Span {
+                start: 1293,
+                end: 1302,
+            },
+        },
         inputs: Spanned {
             item: [],
             span: Span {
@@ -1301,7 +1367,13 @@
         },
     ),
     FuncDecl {
-        ident: 35,
+        ident: Spanned {
+            item: 35,
+            span: Span {
+                start: 1389,
+                end: 1397,
+            },
+        },
         inputs: Spanned {
             item: [],
             span: Span {

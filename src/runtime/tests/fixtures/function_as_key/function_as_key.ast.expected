@@ -23,7 +23,13 @@
         },
     },
     FuncDecl {
-        ident: 14,
+        ident: Spanned {
+            item: 14,
+            span: Span {
+                start: 82,
+                end: 89,
+            },
+        },
         inputs: Spanned {
             item: [],
             span: Span {
@@ -201,7 +207,13 @@
         },
     ),
     FuncDecl {
-        ident: 16,
+        ident: Spanned {
+            item: 16,
+            span: Span {
+                start: 282,
+                end: 292,
+            },
+        },
         inputs: Spanned {
             item: [],
             span: Span {

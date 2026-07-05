@@ -1,7 +1,13 @@
 ========= FILE ./src/runtime/tests/fixtures/forloop_custom_iterator/forloop_custom_iterator.ast.actual ========
 [
     FuncDecl {
-        ident: 14,
+        ident: Spanned {
+            item: 14,
+            span: Span {
+                start: 88,
+                end: 98,
+            },
+        },
         inputs: Spanned {
             item: [
                 15,
@@ -49,7 +55,13 @@
                                 end: 134,
                             },
                         },
-                        key: 15,
+                        key: Spanned {
+                            item: 15,
+                            span: Span {
+                                start: 135,
+                                end: 140,
+                            },
+                        },
                     },
                     span: Span {
                         start: 129,
@@ -82,7 +94,13 @@
                                 end: 157,
                             },
                         },
-                        key: 16,
+                        key: Spanned {
+                            item: 16,
+                            span: Span {
+                                start: 158,
+                                end: 161,
+                            },
+                        },
                     },
                     span: Span {
                         start: 152,
@@ -115,7 +133,13 @@
                                 end: 177,
                             },
                         },
-                        key: 12,
+                        key: Spanned {
+                            item: 12,
+                            span: Span {
+                                start: 178,
+                                end: 182,
+                            },
+                        },
                     },
                     span: Span {
                         start: 172,
@@ -162,7 +186,13 @@
                                                                     end: 215,
                                                                 },
                                                             },
-                                                            key: 15,
+                                                            key: Spanned {
+                                                                item: 15,
+                                                                span: Span {
+                                                                    start: 216,
+                                                                    end: 221,
+                                                                },
+                                                            },
                                                         },
                                                         span: Span {
                                                             start: 211,
@@ -238,7 +268,13 @@
                                                                                     end: 268,
                                                                                 },
                                                                             },
-                                                                            key: 16,
+                                                                            key: Spanned {
+                                                                                item: 16,
+                                                                                span: Span {
+                                                                                    start: 269,
+                                                                                    end: 272,
+                                                                                },
+                                                                            },
                                                                         },
                                                                         span: Span {
                                                                             start: 264,

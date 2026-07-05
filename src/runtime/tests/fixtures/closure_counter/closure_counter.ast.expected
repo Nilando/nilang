@@ -1,7 +1,13 @@
 ========= FILE ./src/runtime/tests/fixtures/closure_counter/closure_counter.ast.actual ========
 [
     FuncDecl {
-        ident: 14,
+        ident: Spanned {
+            item: 14,
+            span: Span {
+                start: 3,
+                end: 14,
+            },
+        },
         inputs: Spanned {
             item: [],
             span: Span {
@@ -76,7 +82,13 @@
                                                         end: 67,
                                                     },
                                                 },
-                                                key: 16,
+                                                key: Spanned {
+                                                    item: 16,
+                                                    span: Span {
+                                                        start: 68,
+                                                        end: 71,
+                                                    },
+                                                },
                                             },
                                             span: Span {
                                                 start: 62,
@@ -98,7 +110,13 @@
                                                                 end: 79,
                                                             },
                                                         },
-                                                        key: 16,
+                                                        key: Spanned {
+                                                            item: 16,
+                                                            span: Span {
+                                                                start: 80,
+                                                                end: 83,
+                                                            },
+                                                        },
                                                     },
                                                     span: Span {
                                                         start: 74,
@@ -139,7 +157,13 @@
                                                             end: 106,
                                                         },
                                                     },
-                                                    key: 16,
+                                                    key: Spanned {
+                                                        item: 16,
+                                                        span: Span {
+                                                            start: 107,
+                                                            end: 110,
+                                                        },
+                                                    },
                                                 },
                                                 span: Span {
                                                     start: 101,

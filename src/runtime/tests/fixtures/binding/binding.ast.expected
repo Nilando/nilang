@@ -1,7 +1,13 @@
 ========= FILE ./src/runtime/tests/fixtures/binding/binding.ast.actual ========
 [
     FuncDecl {
-        ident: 14,
+        ident: Spanned {
+            item: 14,
+            span: Span {
+                start: 3,
+                end: 6,
+            },
+        },
         inputs: Spanned {
             item: [
                 15,
@@ -155,7 +161,13 @@
         },
     },
     FuncDecl {
-        ident: 20,
+        ident: Spanned {
+            item: 20,
+            span: Span {
+                start: 99,
+                end: 110,
+            },
+        },
         inputs: Spanned {
             item: [
                 21,

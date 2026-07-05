@@ -78,7 +78,7 @@ impl LoweringCtx {
                 ident,
                 inputs,
                 stmts,
-            } => self.lower_func_decl(ident, inputs, stmts),
+            } => self.lower_func_decl(ident.item, inputs, stmts),
             Stmt::Assign { dest, src } => self.lower_assign(dest, src),
         };
     }
@@ -108,7 +108,7 @@ impl LoweringCtx {
             }
             LhsExpr::Access { store, key } => {
                 let store = self.lower_expr(*store);
-                let key = self.load_const(TacConst::Sym(key));
+                let key = self.load_const(TacConst::Sym(key.item));
 
                 self.lower_key_store(store, key, src, lhs_span);
             }
@@ -273,7 +273,7 @@ impl LoweringCtx {
             },
             Expr::Access { store, key } => {
                 let var = self.lower_expr(*store);
-                let key = self.load_const(TacConst::Sym(key));
+                let key = self.load_const(TacConst::Sym(key.item));
 
                 self.lower_key_load(var, key, span)
             }

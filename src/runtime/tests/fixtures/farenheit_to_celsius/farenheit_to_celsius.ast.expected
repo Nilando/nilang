@@ -1,7 +1,13 @@
 ========= FILE ./src/runtime/tests/fixtures/farenheit_to_celsius/farenheit_to_celsius.ast.actual ========
 [
     FuncDecl {
-        ident: 14,
+        ident: Spanned {
+            item: 14,
+            span: Span {
+                start: 3,
+                end: 23,
+            },
+        },
         inputs: Spanned {
             item: [
                 15,

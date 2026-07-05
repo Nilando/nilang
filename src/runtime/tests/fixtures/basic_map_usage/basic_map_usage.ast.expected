@@ -36,7 +36,13 @@
                         end: 9,
                     },
                 },
-                key: 15,
+                key: Spanned {
+                    item: 15,
+                    span: Span {
+                        start: 10,
+                        end: 11,
+                    },
+                },
             },
             span: Span {
                 start: 8,
@@ -197,7 +203,13 @@
                         end: 60,
                     },
                 },
-                key: 16,
+                key: Spanned {
+                    item: 16,
+                    span: Span {
+                        start: 61,
+                        end: 62,
+                    },
+                },
             },
             span: Span {
                 start: 59,
@@ -232,7 +244,13 @@
                                 end: 75,
                             },
                         },
-                        key: 14,
+                        key: Spanned {
+                            item: 14,
+                            span: Span {
+                                start: 76,
+                                end: 77,
+                            },
+                        },
                     },
                     span: Span {
                         start: 74,
@@ -262,7 +280,13 @@
                                 end: 87,
                             },
                         },
-                        key: 15,
+                        key: Spanned {
+                            item: 15,
+                            span: Span {
+                                start: 88,
+                                end: 89,
+                            },
+                        },
                     },
                     span: Span {
                         start: 86,
@@ -292,7 +316,13 @@
                                 end: 99,
                             },
                         },
-                        key: 16,
+                        key: Spanned {
+                            item: 16,
+                            span: Span {
+                                start: 100,
+                                end: 101,
+                            },
+                        },
                     },
                     span: Span {
                         start: 98,
@@ -322,7 +352,13 @@
                                 end: 111,
                             },
                         },
-                        key: 17,
+                        key: Spanned {
+                            item: 17,
+                            span: Span {
+                                start: 112,
+                                end: 113,
+                            },
+                        },
                     },
                     span: Span {
                         start: 110,
