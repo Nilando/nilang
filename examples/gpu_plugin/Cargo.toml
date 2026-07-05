@@ -8,5 +8,5 @@ crate-type = ["cdylib"]
 
 [dependencies]
 nilang = { path = "../.." }
-sandpit = { version = "=0.5.2" }
+sandpit = { version = "=0.5.3", features=["multi_threaded"] }
 minifb = "0.27"

@@ -157,6 +157,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b05b61dc5112cbb17e4b6cd61790d9845d13888356391624cbe7e41efeac1e75"
 
 [[package]]
+name = "crossbeam-channel"
+version = "0.5.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "82b8f8f868b36967f9606790d1903570de9ceaf870a7bf9fbbd3016d636a2cb2"
+dependencies = [
+ "crossbeam-utils",
+]
+
+[[package]]
+name = "crossbeam-utils"
+version = "0.8.21"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d0a5c400df2834b80a4c3327b3aad3a4c4cd4de0629063962b03235697506a28"
+
+[[package]]
 name = "dlib"
 version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -512,7 +527,7 @@ checksum = "cf5a574dadd7941adeaa71823ecba5e28331b8313fb2e1c6a5c7e5981ea53ad6"
 
 [[package]]
 name = "nilang"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "clap",
  "hashbrown 0.14.5",
@@ -651,10 +666,11 @@ checksum = "b39cdef0fa800fc44525c84ccb54a029961a8215f9619753635a9c0d2538d46d"
 
 [[package]]
 name = "sandpit"
-version = "0.5.2"
+version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7ed2ff3e0d6149d40125cceb9ca85797a6478f3f371cc284cb6ea13b39786d5b"
+checksum = "87a8f5a4ab0f1bcd3e74b42c379d40d1ac20c5fa71a2ab241c93f4dcac02cecb"
 dependencies = [
+ "crossbeam-channel",
  "higher-kinded-types",
  "nimix",
  "sandpit_derive",
@@ -662,9 +678,9 @@ dependencies = [
 
 [[package]]
 name = "sandpit_derive"
-version = "0.5.2"
+version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ed3aafd2b8870dfed28d483db6c8d33748d5c008885d0e7ec843e39e163ce444"
+checksum = "0c2f19dfbff5032b385019e224329128075af50ba0b6b298efee76e365564971"
 dependencies = [
  "proc-macro2",
  "quote",
