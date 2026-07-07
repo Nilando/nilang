@@ -12,6 +12,7 @@ pub enum LexError {
     InvalidNumber,
     InvalidUnicodeEscape,
     InvalidOctalEscape,
+    FailedToParseString,
 }
 
 impl LexError {
@@ -22,7 +23,8 @@ impl LexError {
             LexError::UnclosedString => String::from("Unclosed string"),
             LexError::Unknown => String::from("Unexpected character"),
             LexError::InvalidUnicodeEscape => String::from("Invalid unicode escape sequence. Expected \\uXXXX where XXXX is a valid hexadecimal value"),
-            LexError::InvalidOctalEscape => String::from("Invalid octal escape sequence. Expected \\0XX where XX is a valid octal value (0-7)")
+            LexError::InvalidOctalEscape => String::from("Invalid octal escape sequence. Expected \\0XX where XX is a valid octal value (0-7)"),
+            LexError::FailedToParseString => String::from("Failed to parse string")
         }
     }
 }
@@ -105,6 +107,7 @@ impl<'a> Lexer<'a> {
         }
 
         let saved_stack = self.delimiter_stack.clone();
+        let saved_string_mode = self.string_mode;
 
         for _ in 1..n {
             let _ = self.lex_token(syms);
@@ -114,6 +117,7 @@ impl<'a> Lexer<'a> {
 
         // rewind to where we started
         self.delimiter_stack = saved_stack;
+        self.string_mode = saved_string_mode;
         self.eof = eof;
         self.pos = starting_pos;
         self.chars = self.input[starting_pos..(self.input.len())]
@@ -422,12 +426,11 @@ impl<'a> Lexer<'a> {
     fn lex_string_segment(&mut self) -> Result<Token, LexError> {
         let start_pos = self.pos;
 
-        let delimiter;
-        match self.delimiter_stack.last() {
-            Some(Delimiter::DoubleQuote) => delimiter = '"',
-            Some(Delimiter::SingleQuote) => delimiter = '\'',
-            Some(Delimiter::Backtick) => delimiter = '`',
-            _ => panic!("bad lexer state"),
+        let delimiter = match self.delimiter_stack.last() {
+            Some(Delimiter::DoubleQuote) => '"',
+            Some(Delimiter::SingleQuote) => '\'',
+            Some(Delimiter::Backtick) => '`',
+            _ => return Err(LexError::FailedToParseString),
         };
 
         let mut escape_flag = false;
@@ -1244,6 +1247,39 @@ mod tests {
         ];
 
         assert_src_tokens(input, tokens, syms);
+    }
+
+    #[test]
+    fn peek_past_interpolation_end_preserves_lexer_state() {
+        let mut syms = SymbolMap::new();
+        let input = "`{1}`";
+        let mut lexer = Lexer::new(input);
+
+        assert_eq!(
+            lexer.get_token(&mut syms).unwrap().item,
+            Token::String("".to_string())
+        );
+        assert_eq!(
+            lexer.get_token(&mut syms).unwrap().item,
+            Token::Ctrl(Ctrl::InterpolatedLeftCurly)
+        );
+
+        // peeking past the interpolation's closing curly must not corrupt
+        // the lexer's string state once it rewinds
+        assert_eq!(
+            lexer.peek_nth(1, &mut syms).unwrap().item,
+            Token::Ctrl(Ctrl::InterpolatedRightCurly)
+        );
+
+        assert_eq!(lexer.get_token(&mut syms).unwrap().item, Token::Int(1));
+        assert_eq!(
+            lexer.get_token(&mut syms).unwrap().item,
+            Token::Ctrl(Ctrl::InterpolatedRightCurly)
+        );
+        assert_eq!(
+            lexer.get_token(&mut syms).unwrap().item,
+            Token::String("".to_string())
+        );
     }
 
     #[test]
