@@ -39,7 +39,7 @@ pub struct Lexer<'a> {
 
 impl<'a> Lexer<'a> {
     pub fn new(input: &'a str) -> Self {
-        Self {
+        let mut lexer = Self {
             input,
             chars: input.chars().peekable(),
             peek: None,
@@ -47,7 +47,11 @@ impl<'a> Lexer<'a> {
             eof: false,
             delimiter_stack: vec![],
             string_mode: false
-        }
+        };
+
+        lexer.lex_shebang();
+
+        lexer
     }
 
     pub fn get_token(
@@ -185,6 +189,14 @@ impl<'a> Lexer<'a> {
             if !self.lex_whitespace() && !self.lex_comment()? {
                 return Ok(());
             }
+        }
+    }
+
+    // a shebang is only valid as the very first bytes of the input,
+    // so this only needs to run once at construction
+    fn lex_shebang(&mut self) {
+        if self.input.starts_with("#!") {
+            self.read_until('\n');
         }
     }
 
@@ -1232,6 +1244,37 @@ mod tests {
         ];
 
         assert_src_tokens(input, tokens, syms);
+    }
+
+    #[test]
+    fn ignore_shebang_on_first_line() {
+        let syms = SymbolMap::new();
+        let source = "#!/usr/bin/env nilang\n42;";
+        let tokens = vec![Token::Int(42), Token::Ctrl(Ctrl::SemiColon)];
+
+        assert_src_tokens(source, tokens, syms);
+    }
+
+    #[test]
+    fn shebang_with_no_trailing_newline() {
+        let syms = SymbolMap::new();
+        let source = "#!/usr/bin/env nilang";
+        let tokens = vec![];
+
+        assert_src_tokens(source, tokens, syms);
+    }
+
+    #[test]
+    fn shebang_only_ignored_at_file_start() {
+        let syms = SymbolMap::new();
+        let source = "42 #!";
+        let tokens = vec![
+            Token::Int(42),
+            Token::Ctrl(Ctrl::HashTag),
+            Token::Ctrl(Ctrl::Not),
+        ];
+
+        assert_src_tokens(source, tokens, syms);
     }
 
     #[test]

@@ -1,0 +1,9 @@
+========= FILE ./src/runtime/tests/fixtures/shebang/shebang.ir.actual ========
+MAIN () {
+block0:
+  t0 = "shebang ignored"
+  PRINT t0
+  t2 = null
+  RETURN t2
+
+}

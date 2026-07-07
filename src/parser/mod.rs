@@ -497,6 +497,16 @@ mod tests {
     }
 
     #[test]
+    fn shebang_first_line_is_ignored() {
+        let mut syms = SymbolMap::new();
+        let input = "#!/usr/bin/env nilang\nprint(\"hi\");";
+        let result = parse_program(input, &mut syms, None, false);
+
+        assert!(!result.has_errors());
+        assert_eq!(result.item.unwrap().len(), 1);
+    }
+
+    #[test]
     fn unclosed_curly() {
         let mut syms = SymbolMap::new();
         let input = ";}";

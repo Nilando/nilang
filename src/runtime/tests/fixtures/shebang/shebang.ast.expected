@@ -1,0 +1,30 @@
+========= FILE ./src/runtime/tests/fixtures/shebang/shebang.ast.actual ========
+[
+    Expr(
+        Spanned {
+            item: Print(
+                Spanned {
+                    item: Value(
+                        String(
+                            SegmentedString {
+                                segments: [
+                                    String(
+                                        "shebang ignored",
+                                    ),
+                                ],
+                            },
+                        ),
+                    ),
+                    span: Span {
+                        start: 29,
+                        end: 47,
+                    },
+                },
+            ),
+            span: Span {
+                start: 23,
+                end: 48,
+            },
+        },
+    ),
+]

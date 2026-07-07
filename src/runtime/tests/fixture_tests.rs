@@ -475,6 +475,11 @@ fn string_out_of_bounds() {
 }
 
 #[test]
+fn shebang() {
+  super::fixture_test("shebang")
+}
+
+#[test]
 fn parsing_error() {
   super::fixture_test("parsing_error")
 }
