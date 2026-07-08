@@ -229,8 +229,7 @@ uppercase = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N
 fn to_upper(self) {
   result = "";
   for c in self {
-    idx = lowercase.find(c);
-    if idx != null {
+    if lowercase.find(fn(l) { l == c;}) {
       result << uppercase[idx];
     } else {
       result << c;
@@ -242,8 +241,7 @@ fn to_upper(self) {
 fn to_lower(self) {
   result = "";
   for c in self {
-    idx = uppercase.find(c);
-    if idx != null {
+    if uppercase.find(fn(u) { u == c;}) {
       result << lowercase[idx];
     } else {
       result << c;
@@ -421,10 +419,10 @@ fn default_map_iter(self) {
   return pairs.iter();
 }
 
-fn find(self, value) {
-  for pair in self.enumerate() {
-    if pair[1] == value {
-      return pair[0];
+fn find(self, condition) {
+  for item in self.iter() {
+    if condition(item) {
+      return item;
     }
   }
 }
@@ -479,7 +477,7 @@ fn values(self) {
 }
 
 fn contains_key(self, value) {
-  return self.keys().find(value) != null;
+  return self.keys().find(fn(key) { key == value; }) != null;
 }
 
 fn map(self, f) {
